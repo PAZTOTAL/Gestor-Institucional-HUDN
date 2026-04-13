@@ -30,7 +30,7 @@ urlpatterns = [
     path('consultas-externas/', include('consultas_externas.urls')),
     path('registro-anestesia/', include('registro_anestesia.urls')),
     path('meows/', include('meows.urls')),  # Sistema MEOWS
-    path('parto/', include('parto.urls')),  # Sistema Parto
+    path('parto/', include('trabajoparto.urls')),  # Sistema Parto
     path('consultas/', include('consultas.urls')),
     path('presupuesto/', include('presupuesto.urls')),
     path('consentimientos/', include('ConsentimientosInformados.urls')),

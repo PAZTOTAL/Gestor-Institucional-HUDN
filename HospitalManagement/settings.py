@@ -65,7 +65,7 @@ INSTALLED_APPS = [
     'consultas_externas',
     'registro_anestesia',
     'meows',  # Sistema de Alerta Temprana Obstétrico
-    'parto',  # Sistema Parto
+    'trabajoparto',
     'consultas',
     'presupuesto',
     'ConsentimientosInformados',
@@ -77,6 +77,8 @@ INSTALLED_APPS = [
     'trasplantes_donacion',
     'CertificadosDIAN',
     'horas_extras',
+    'frecuenciafetal',
+    'obstetriciaunificador',
 ]
 
 MIDDLEWARE = [
@@ -116,19 +118,22 @@ WSGI_APPLICATION = 'HospitalManagement.wsgi.application'
  
 
 # CONFIGURACION DE ENTORNO
-# Opciones: 'CASA', 'OFICINA'
-UBICACION = os.getenv('UBICACION', 'CASA')  # <--- SE TOMA DEL ARCHIVO .env
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
-}
-
-if UBICACION == 'OFICINA':
-    # La conexión MSSQL solo se activa si el servidor está disponible
-    DATABASES['readonly'] = {
+        'ENGINE': 'mssql',
+        'NAME': 'GestorInstitucional',
+        'USER': 'apantoja',
+        'PASSWORD': 'ConsultasPantojaHUDN_2026$', 
+        'HOST': '172.20.100.209',
+        'PORT': '',
+        'OPTIONS': {
+            'driver': 'ODBC Driver 17 for SQL Server',
+            'host_is_server': True,
+            'timeout': 60, # Mayor timeout para migraciones iniciales
+        },
+    },
+    'readonly': {
         'ENGINE': 'mssql',
         'NAME': 'DGEMPRES_NEXUS',
         'USER': 'apantoja',
@@ -138,12 +143,10 @@ if UBICACION == 'OFICINA':
         'OPTIONS': {
             'driver': 'ODBC Driver 17 for SQL Server',
             'host_is_server': True,
-            'timeout': 5, # Timeout corto para no colgar la app
+            'timeout': 10,
         },
     }
-else:
-    # DESARROLLO LOCAL
-    DATABASES['readonly'] = DATABASES['default'].copy()
+}
 
 
 
@@ -161,7 +164,7 @@ else:
 
 
 # Database Routers
-DATABASE_ROUTERS = ['HospitalManagement.routers.HospitalRouter', 'parto.db_router.PartoRouter']
+DATABASE_ROUTERS = ['HospitalManagement.routers.HospitalRouter', 'trabajoparto.db_router.ClinicoRouter']
 
 # Password validation
 # https://docs.djangoproject.com/en/5.0/ref/settings/#auth-password-validators

@@ -232,7 +232,7 @@ class HomeView(AccessControlMixin, TemplateView):
         asistenciales = [
             {'name': 'Registro de Anestesia', 'slug': 'registro_anestesia', 'description': 'Registro Clínico de Anestesia (FRQUI-032)', 'url': '/registro-anestesia/create/', 'icon': 'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z M14 2 14 8 20 8 M16 13H8 M16 17H8 M10 9H9H8'},
             {'name': 'Sistema MEOWS', 'slug': 'meows', 'description': 'Sistema de Alerta Temprana Obstétrico', 'url': '/meows/nuevo/0/', 'icon': 'M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z'},
-            {'name': 'Gestión de Partos', 'slug': 'parto', 'description': 'Historia Clínico y Partograma', 'url': '/parto/', 'icon': 'M9 12h.01 M15 12h.01 M10 16a2.5 2.5 0 0 0 4 0 M12 22a7 7 0 1 0 0-14 7 7 0 0 0 0 14z M12 8V2 M5.88 10.9a3.5 3.5 0 1 1 5.24 4.77 M18.12 10.9a3.5 3.5 0 1 0-5.24 4.77'},
+            {'name': 'Gestión de Partos', 'slug': 'trabajoparto', 'description': 'Historia Clínico y Partograma', 'url': '/parto/', 'icon': 'M9 12h.01 M15 12h.01 M10 16a2.5 2.5 0 0 0 4 0 M12 22a7 7 0 1 0 0-14 7 7 0 0 0 0 14z M12 8V2 M5.88 10.9a3.5 3.5 0 1 1 5.24 4.77 M18.12 10.9a3.5 3.5 0 1 0-5.24 4.77'},
             {'name': 'Consentimientos Informados', 'slug': 'ConsentimientosInformados', 'description': 'Autorizaciones y Firmas Electrónicas', 'url': '/consentimientos/', 'icon': 'M12 20h9 M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z'},
             {'name': 'Central de Mezclas', 'slug': 'CentralDeMezclas', 'description': 'Laboratorio de Preparaciones Estériles', 'url': '/central-mezclas/', 'icon': 'M16.3 3.4 12 10V2M11 10.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5z M5.5 15.5l1.5-2 M17 15.5l-1.5-2 M2 22h20 M7 22l1-4.5 M17 22l-1-4.5'},
         ]
@@ -241,6 +241,7 @@ class HomeView(AccessControlMixin, TemplateView):
             {'name': 'Generales y Seguridad', 'slug': 'usuarios', 'description': 'Configuración general y seguridad'},
             {'name': 'Consultas Base Externa', 'slug': 'consultas_externas', 'description': 'Consulta de datos GENTERCER y otros', 'url': '/consultas-externas/'},
             {'name': 'Talento Humano', 'slug': 'horas_extras', 'description': 'Gestión de Personal: Horas Extras e Informes', 'url': '/horas-extras/', 'icon': 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z'},
+            {'name': 'Formatos Institucionales', 'slug': 'BasesGenerales', 'description': 'Gestión de formatos y códigos FRXXX', 'url': '/modulo/BasesGenerales/tabla/Formatos_Hudn/', 'icon': 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z'},
             {'name': 'Presupuesto', 'slug': 'presupuesto', 'description': 'Gestión Presupuestal (CDP, RP, Obligaciones)', 'url': '/presupuesto/'},
             {'name': 'Bases Generales', 'slug': 'BasesGenerales', 'description': 'Configuración de bases generales'},
             {'name': 'Estudio De Conveniencia', 'slug': 'EstudioDeConveniencia', 'description': 'Generación de Estudios Previos', 'icon': 'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z M14 2 14 8 20 8 M16 13H8 M16 17H8 M10 9H9H8'},
@@ -346,9 +347,10 @@ class TableDetailView(AccessControlMixin, TemplateView):
         context = super().get_context_data(**kwargs)
         module_slug = self.kwargs.get('module_name')
         model_name = self.kwargs.get('model_name')
+        context['module_slug'] = module_slug
+        context['model_slug'] = model_name
 
         # Get the model class using app registry inside a loop or lookup
-        # Direct lookup is better if we assume standard path, but apps.get_model is safer
         try:
             model = apps.get_model(module_slug, model_name)
         except LookupError:
@@ -409,8 +411,6 @@ class TableDetailView(AccessControlMixin, TemplateView):
                 })
             
             context['model_name'] = model._meta.verbose_name
-            context['model_slug'] = model_name
-            context['module_slug'] = module_slug
             
             # Custom Label for Juridica
             if module_slug == 'juridica':

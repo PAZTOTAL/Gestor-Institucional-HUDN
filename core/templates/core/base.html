@@ -103,7 +103,7 @@
                 </a>
                 <nav class="flex gap-4">
                     <a href="{% url 'home' %}"
-                        class="nav-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}">Inicio</a>
+                        class="nav-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}">DashBOard</a>
 
                     {% if permisos_apps_global == 'ALL' or 'CertificadosDIAN' not in permisos_apps_global or permisos_apps_global|length > 1 %}
                     <!-- Menú Asistencial -->
