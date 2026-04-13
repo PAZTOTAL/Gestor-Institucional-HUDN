@@ -1,0 +1,150 @@
+MANUAL DEL PROGRAMADOR
+Sistema: MVP - Generador de Certificados Laborales
+
+1. Descripcion general
+Aplicacion web en Django que consulta contratos en SQL Server y genera certificados laborales en formato Word (.docx) con plantillas locales.
+
+Stack:
+- Backend y frontend: Django
+- Base de datos: SQL Server (via pyodbc)
+- Generacion DOCX: docxtpl
+
+2. Estructura del proyecto
+- mvp\config (configuracion Django)
+- mvp\certificados
+  - views.py
+  - urls.py
+  - services\db.py
+  - services\contract_repository.py
+  - services\certificate_service.py
+  - management\commands\db_test.py
+  - management\commands\db_index_cedula.py
+- mvp\templates\certificados\index.html
+- mvp\static\certificados\app.css
+- mvp\static\certificados\app.js
+- mvp\templates_docx\plantilla_masculina.docx
+- mvp\templates_docx\plantilla_femenina.docx
+
+3. Configuracion (.env)
+Archivo: mvp\.env
+
+Variables:
+- DB_HOST
+- DB_PORT
+- DB_USER
+- DB_PASSWORD
+- DB_NAME
+- DB_SCHEMA (por defecto: dbo)
+- DB_MAX_CONTRACT_YEAR (por defecto: 2026)
+- DB_ENCRYPT (true/false)
+- DB_TRUST_SERVER_CERTIFICATE (true/false)
+- DB_CONNECTION_TIMEOUT_MS
+- DB_REQUEST_TIMEOUT_MS
+- DB_METADATA_CACHE_TTL_MS
+- DB_INDEX_RETRIES
+- DJANGO_DEBUG
+- DJANGO_ALLOWED_HOSTS
+- DJANGO_SECRET_KEY
+
+4. Instalacion y ejecucion
+1) cd mvp
+2) py -m pip install -r requirements.txt
+3) py manage.py db_test
+4) py manage.py db_index_cedula
+5) py manage.py runserver 0.0.0.0:3001
+
+5. Flujo funcional
+1) El usuario ingresa cedula/NIT y selecciona genero de plantilla.
+2) La UI consulta GET /api/empleados/<cedula>.
+3) El backend busca contratos en tablas contratos_YYYY del esquema configurado.
+4) Se muestran datos del titular y contratos en pantalla.
+5) La UI solicita POST /api/certificados.
+6) El backend renderiza plantilla .docx y responde archivo para descarga.
+
+6. API
+GET /api/health
+- Respuesta: { "ok": true }
+
+GET /api/empleados/<cedula>
+- Exito: 200 con objeto de empleado.
+- Error: 404 con { "message": "..." }.
+
+POST /api/certificados
+- Body JSON:
+  {
+    "cedula": "123456789",
+    "genero": "masculino" | "femenino"
+  }
+- Exito: 200 con archivo Word (Content-Type docx).
+- Error: 400 con { "message": "..." }.
+
+7. Logica principal por archivo
+certificados\views.py
+- Define endpoints web/API y maneja respuestas JSON/archivo.
+
+certificados\services\contract_repository.py
+- Descubre tablas contratos_YYYY desde information_schema.
+- Mapea columnas con nombres alternos.
+- Normaliza cedula, fechas y valores.
+- Filtra registros con valor ejecutado en cero.
+- Devuelve estructura consolidada para UI y plantilla.
+
+certificados\services\certificate_service.py
+- Selecciona plantilla por genero.
+- Sanitiza textos (incluye correcciones de codificacion).
+- Renderiza variables con docxtpl.
+- Genera nombre de archivo de salida y stream final.
+
+certificados\management\commands\db_test.py
+- Verifica conexion y cantidad de tablas contratos_YYYY.
+
+certificados\management\commands\db_index_cedula.py
+- Crea columna calculada cedula_nit_digits si no existe.
+- Crea indice IX_*_cedula_nit_digits por tabla anual.
+- Reintenta segun DB_INDEX_RETRIES.
+
+8. Reglas de datos esperadas
+Tablas esperadas:
+- contratos_2015, contratos_2016, ..., contratos_YYYY
+
+Columnas minimas requeridas por tabla:
+- razon_social
+- cedula_nit
+- no_contrato
+- valor_cto
+
+Columnas opcionales:
+- objeto_ctto
+- tipo_vinculacion
+- fecha_firma
+- fecha_inicio
+- fecha_term
+- valorejecutado
+
+9. Plantillas Word y etiquetas
+Plantillas:
+- plantilla_masculina.docx
+- plantilla_femenina.docx
+
+Variables disponibles:
+- {{nombre}}
+- {{cedula}}
+- {{cargo}}
+- {{objeto_ctto}}
+- {{dia}}
+- {{mes}}
+- {{anio}}
+- {{fecha_expedicion_texto}}
+
+Tabla de contratos (bloque recomendado):
+- {{#contratos}}{{contratoNo}}
+- {{firmaContrato}}
+- {{fechaInicio}}
+- {{fechaTerminacion}}
+- {{valor}}{{/contratos}}
+
+10. Mantenimiento y recomendaciones
+- Mantener actualizado DB_MAX_CONTRACT_YEAR al crear nueva tabla anual.
+- Ejecutar py manage.py db_index_cedula despues de cambios en estructura de tablas de contratos.
+- Verificar que las plantillas conserven etiquetas exactas ({{ }}) para evitar errores de render.
+- Si hay errores de acentos/caracteres, revisar origen de codificacion en BD.
