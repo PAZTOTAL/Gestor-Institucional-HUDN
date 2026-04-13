@@ -1,0 +1,96 @@
+MANUAL DE USUARIO
+Sistema: Generador de Certificados Laborales
+Institucion: Hospital Universitario Departamental de Nariño
+
+1. Objetivo
+Este sistema permite consultar los contratos de una persona (por cédula o NIT) y generar su certificado laboral en formato Word.
+
+2. Requisitos para uso
+- Tener la aplicacion Django en ejecucion.
+- Tener conexion a la base de datos configurada por el equipo tecnico.
+- Navegador web actualizado (Chrome, Edge o Firefox).
+
+3. Acceso al sistema
+1) Abrir el navegador.
+2) Ingresar a la URL del sistema (normalmente http://localhost:3001).
+3) Verificar que cargue la pantalla "Generador de Certificados".
+
+4. Pantalla principal
+En la pantalla se encuentra:
+- Campo: "Numero de Cédula o NIT"
+- Selector de plantilla:
+  - Masculina
+  - Femenina
+- Botones:
+  - Buscar
+  - Generar
+- Mensaje de resultado (consulta o errores)
+- Tabla de contratos (aparece despues de buscar exitosamente)
+
+5. Proceso para consultar y generar certificado
+Paso 1: Ingresar documento
+- Escriba la cédula o NIT en el campo correspondiente.
+
+Paso 2: Seleccionar plantilla
+- Elija "Masculina" o "Femenina" segun corresponda.
+
+Paso 3: Buscar informacion
+- Presione "Buscar".
+- Si existe informacion, el sistema mostrara:
+  - Nombre del titular
+  - Cédula/NIT
+  - Lista de contratos (numero, fecha de firma, inicio, terminacion, valor)
+
+Paso 4: Generar certificado
+- Presione "Generar".
+- El sistema descargara un archivo Word con nombre similar a:
+  certificado_<cedula>.docx
+
+6. Mensajes comunes del sistema
+- "Consulta exitosa."
+  Significa que la cédula/NIT fue encontrada y se cargaron contratos.
+
+- "Certificado generado correctamente."
+  Significa que el documento fue creado y descargado.
+
+- "No se encontró la cédula o NIT"
+  No hay informacion disponible para el documento ingresado.
+
+- "La cédula es obligatoria."
+  Se intento generar sin diligenciar el campo de documento.
+
+- "No fue posible generar el certificado"
+  Ocurrio un problema al crear el archivo. Intente nuevamente.
+
+7. Recomendaciones de uso
+- Antes de generar, utilice "Buscar" para confirmar que los datos son correctos.
+- Verifique que el documento descargado abra correctamente en Word.
+- Si no descarga, revise permisos del navegador para descargas.
+- Ingrese solo el numero de documento, evitando texto adicional.
+
+8. Solucion de problemas (basico)
+- La pagina no carga:
+  Verifique con soporte tecnico que la aplicacion Django este encendida.
+
+- No aparecen contratos:
+  Confirme que la cédula/NIT este bien escrita.
+
+- No descarga el archivo:
+  Revise bloqueadores de ventanas/descargas del navegador.
+
+- Mensajes de error persistentes:
+  Reporte el caso al equipo tecnico con:
+  - Documento consultado
+  - Mensaje mostrado
+  - Fecha y hora del intento
+
+9. Alcance funcional
+El sistema:
+- Consulta contratos por cédula o NIT.
+- Muestra datos del titular y sus contratos.
+- Genera certificado laboral en Word con plantilla masculina o femenina.
+- Funciona solo con informacion 2015-2026 10/04/2026 proximamemente mayo 
+
+El sistema no:
+- Edita contratos desde la interfaz.
+- Modifica informacion en la base de datos.

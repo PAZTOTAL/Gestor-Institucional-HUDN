@@ -1,0 +1,78 @@
+{% load static %}
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Generador de Certificados</title>
+  <link rel="icon" type="image/jpeg" href="{% static 'certificados/logo.jpg' %}">
+  <link rel="stylesheet" href="{% static 'certificados/app.css' %}">
+</head>
+<body>
+  <div class="page">
+    <header class="topbar">
+      <img class="brand-logo" src="{% static 'certificados/logo.jpg' %}" alt="Logo Hospital">
+      <div>
+        <h1>Generador de Certificados</h1>
+        <p>Hospital Universitario Departamental de Nariño</p>
+      </div>
+    </header>
+
+    <main class="layout">
+      <section class="panel">
+        <h2>Generar Certificado</h2>
+        <p class="subtitle">Ingrese cédula o NIT y seleccione la plantilla</p>
+
+        <label class="field">
+          <span>Número de Cédula o NIT</span>
+          <input id="cedula" placeholder="Ej: 1234567890">
+        </label>
+
+        <div class="field">
+          <span>Plantilla del Certificado</span>
+          <div class="gender-options">
+            <button type="button" id="btn-masculino" class="gender-btn active" data-genero="masculino">
+              <span class="gender-icon">👤</span>
+              Masculina
+            </button>
+            <button type="button" id="btn-femenino" class="gender-btn" data-genero="femenino">
+              <span class="gender-icon">👤</span>
+              Femenina
+            </button>
+          </div>
+        </div>
+
+        <div class="actions-row">
+          <button type="button" class="secondary-btn" id="btn-buscar">Buscar</button>
+          <button type="button" class="primary-btn" id="btn-generar">Generar</button>
+        </div>
+
+        <p class="message" id="message"></p>
+      </section>
+
+      <section class="panel results hidden" id="results">
+        <h3>Datos del Titular</h3>
+        <div class="summary">
+          <p><strong>Nombre:</strong> <span id="res-nombre"></span></p>
+          <p><strong>Cédula/NIT:</strong> <span id="res-cedula"></span></p>
+        </div>
+
+        <h3>Contratos (<span id="res-total"></span>)</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>No</th>
+              <th>Firma</th>
+              <th>Inicio</th>
+              <th>Terminación</th>
+              <th>Valor</th>
+            </tr>
+          </thead>
+          <tbody id="res-contratos"></tbody>
+        </table>
+      </section>
+    </main>
+  </div>
+  <script src="{% static 'certificados/app.js' %}"></script>
+</body>
+</html>
