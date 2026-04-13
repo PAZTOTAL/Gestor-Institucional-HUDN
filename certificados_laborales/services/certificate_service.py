@@ -13,7 +13,7 @@ from lxml import etree
 from .date_utils import get_spanish_expedition_date
 
 BASE_DIR = Path(__file__).resolve().parents[2]
-TEMPLATES_DOCX_DIR = BASE_DIR / "templates_docx"
+TEMPLATES_DOCX_DIR = BASE_DIR / "media" / "templates_docx"
 
 
 def score_corruption(text):

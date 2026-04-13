@@ -1,0 +1,190 @@
+(() => {
+  const cedulaInput = document.getElementById("cedula");
+  const btnBuscar = document.getElementById("btn-buscar");
+  const btnGenerar = document.getElementById("btn-generar");
+  const btnMasculino = document.getElementById("btn-masculino");
+  const btnFemenino = document.getElementById("btn-femenino");
+  const message = document.getElementById("message");
+  const results = document.getElementById("results");
+  const resNombre = document.getElementById("res-nombre");
+  const resCedula = document.getElementById("res-cedula");
+  const resTotal = document.getElementById("res-total");
+  const resContratos = document.getElementById("res-contratos");
+
+  let genero = "masculino";
+  let loading = false;
+  let data = null;
+
+  // Helper to get CSRF token from cookies
+  function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+      const cookies = document.cookie.split(';');
+      for (let i = 0; i < cookies.length; i++) {
+        const cookie = cookies[i].trim();
+        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+          cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+          break;
+        }
+      }
+    }
+    return cookieValue;
+  }
+
+  const setMessage = (text, type = "info") => {
+    message.textContent = text || "";
+    message.className = "mt-4 text-center font-bold text-sm";
+    if (type === "error") {
+      message.classList.add("text-red-600");
+    } else {
+      message.classList.add("text-blue-600");
+    }
+  };
+
+  const setLoading = (value, actionText) => {
+    loading = value;
+    const disabled = loading || !cedulaInput.value.trim();
+    btnBuscar.disabled = disabled;
+    btnGenerar.disabled = disabled;
+    
+    if (loading) {
+        if (actionText === "buscar") btnBuscar.textContent = "Buscando...";
+        if (actionText === "generar") btnGenerar.textContent = "Generando...";
+    } else {
+        btnBuscar.textContent = "Visualizar Datos";
+        btnGenerar.textContent = "Generar Word";
+    }
+  };
+
+  const renderResults = (payload) => {
+    if (!payload) {
+      results.classList.add("hidden");
+      resContratos.innerHTML = "";
+      return;
+    }
+
+    const contratos = payload.contratos || [];
+    resNombre.textContent = payload.nombre || "";
+    resCedula.textContent = payload.cedula || "";
+    resTotal.textContent = String(contratos.length);
+    resContratos.innerHTML = "";
+    
+    contratos.forEach((item, index) => {
+      const tr = document.createElement("tr");
+      tr.className = "hover:bg-slate-50 transition-colors";
+      const columns = [
+        item.no_contrato || item.contratoNo || "",
+        item.fecha_firma || item.firmaContrato || "",
+        item.fecha_inicio || item.fechaInicio || "",
+        item.fecha_terminacion || item.fechaTerminacion || "",
+        item.valor_cto || item.valor || "",
+      ];
+      tr.innerHTML = columns.map((col) => `<td class="px-4 py-3 text-slate-700 font-medium">${String(col)}</td>`).join("");
+      resContratos.appendChild(tr);
+    });
+    results.classList.remove("hidden");
+    results.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
+  const selectGenero = (value) => {
+    genero = value;
+    btnMasculino.classList.toggle("active", genero === "masculino");
+    btnFemenino.classList.toggle("active", genero === "femenino");
+  };
+
+  const buscar = async () => {
+    const cedula = cedulaInput.value.trim();
+    if (!cedula) return;
+    setLoading(true, "buscar");
+    setMessage("Consultando base de datos...", "info");
+    
+    try {
+      const response = await fetch("api/consultar-contratos/", {
+        method: "POST",
+        headers: { 
+            "Content-Type": "application/json",
+            "X-CSRFToken": getCookie('csrftoken')
+        },
+        body: JSON.stringify({ cedula }),
+      });
+      
+      const payload = await response.json();
+      if (!response.ok) {
+        throw new Error(payload.error || "No se encontró la cédula o NIT");
+      }
+      data = payload;
+      renderResults(data);
+      setMessage("Datos cargados correctamente. Ahora puede generar el Word.", "info");
+    } catch (error) {
+      data = null;
+      renderResults(null);
+      setMessage(error.message || "Error en la consulta.", "error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const generarCertificado = async () => {
+    const cedula = cedulaInput.value.trim();
+    if (!cedula) return;
+    
+    // Si no hemos buscado datos, intentamos buscar primero o avisamos
+    if (!data || data.cedula !== cedula) {
+        setMessage("Por favor visualice los datos antes de generar el documento.", "error");
+        return;
+    }
+
+    setLoading(true, "generar");
+    setMessage("Generando documento Word...", "info");
+    
+    try {
+      const response = await fetch("api/generar-certificado/", {
+        method: "POST",
+        headers: { 
+            "Content-Type": "application/json",
+            "X-CSRFToken": getCookie('csrftoken')
+        },
+        body: JSON.stringify({ ...data, genero }),
+      });
+
+      if (!response.ok) {
+        const payload = await response.json();
+        throw new Error(payload.error || "No fue posible generar el certificado");
+      }
+      
+      const blob = await response.blob();
+      const disposition = response.headers.get("content-disposition") || "";
+      let filename = `certificado_${cedula}.docx`;
+      const match = disposition.match(/filename=(.+)/);
+      if (match && match[1]) filename = match[1];
+
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      a.style.display = "none";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 2000);
+      setMessage("Documento descargado con éxito.", "info");
+    } catch (error) {
+      setMessage(error.message || "No fue posible generar el certificado", "error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  cedulaInput.addEventListener("input", () => setLoading(false));
+  btnBuscar.addEventListener("click", buscar);
+  btnGenerar.addEventListener("click", generarCertificado);
+  btnMasculino.addEventListener("click", () => selectGenero("masculino"));
+  btnFemenino.addEventListener("click", () => selectGenero("femenino"));
+  
+  // Enter key support
+  cedulaInput.addEventListener("keypress", (e) => {
+    if (e.key === 'Enter') buscar();
+  });
+
+  setLoading(false);
+})();

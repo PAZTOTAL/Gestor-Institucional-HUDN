@@ -79,6 +79,7 @@ INSTALLED_APPS = [
     'horas_extras',
     'frecuenciafetal',
     'obstetriciaunificador',
+    'certificados_laborales',
 ]
 
 MIDDLEWARE = [

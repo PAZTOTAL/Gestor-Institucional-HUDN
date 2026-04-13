@@ -10,7 +10,7 @@ class DashboardModule(models.Model):
     )
 
     name = models.CharField(max_length=100, verbose_name="Nombre del Módulo")
-    slug = models.SlugField(max_length=100, unique=True, verbose_name="Slug (Identificador para permisos)")
+    slug = models.SlugField(max_length=100, verbose_name="Slug (Identificador para permisos)")
     description = models.TextField(verbose_name="Descripción Corta")
     url = models.CharField(max_length=255, verbose_name="URL o Ruta (ej: /parto/)")
     category = models.CharField(max_length=20, choices=CATEGORIES, default='asistencial', verbose_name="Categoría")
