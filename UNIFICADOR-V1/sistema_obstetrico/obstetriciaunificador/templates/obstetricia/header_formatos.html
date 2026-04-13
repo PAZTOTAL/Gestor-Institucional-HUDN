@@ -1,0 +1,79 @@
+{% load static %}
+<style>
+/* Forzar visual del encabezado institucional */
+.header-formatos-institucionales {
+    background: #0f172a !important; /* mismo color del sidebar */
+    box-shadow: none !important;
+    border-bottom: 1px solid #1e293b !important;
+}
+.header-formatos-institucionales::before {
+    content: none !important;
+}
+.header-neonatos-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 12px;
+    border: 1px solid rgba(148, 163, 184, 0.35);
+    border-radius: 999px;
+    background: rgba(15, 23, 42, 0.35);
+    color: #e2e8f0;
+    font-size: 0.86rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+.header-neonatos-badge .emoji {
+    font-size: 1rem;
+}
+
+/* Botón Integrado de Regreso a Módulos */
+.btn-back-modules {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 14px;
+    background: linear-gradient(135deg, #475569 0%, #1e293b 100%);
+    color: white !important;
+    text-decoration: none !important;
+    border-radius: 10px;
+    font-weight: 700;
+    font-size: 0.8rem;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    cursor: pointer;
+    font-family: inherit;
+}
+.btn-back-modules:hover {
+    transform: translateY(-2px);
+    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+    box-shadow: 0 8px 12px -3px rgba(0, 0, 0, 0.2);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+.btn-back-modules svg {
+    width: 16px;
+    height: 16px;
+    transition: transform 0.3s ease;
+}
+.btn-back-modules:hover svg {
+    transform: translateX(-3px);
+}
+</style>
+{% comment %}Encabezado institucional unificado para formatos (sin logos){% endcomment %}
+<header class="header-formatos-institucionales">
+    <div class="header-formatos-centro">
+        <div class="header-neonatos-badge">
+            <span class="emoji">👶</span>
+            <span class="emoji">🍼</span>
+            <span>Cuidado Neonatal</span>
+            <span class="emoji">🫶</span>
+        </div>
+    </div>
+    <div class="header-formatos-logo-right" style="display: flex; flex-direction: column; align-items: flex-end; gap: 8px;">
+        <a href="/atencion/sala-de-partos/{% if documento %}?num_identificacion={{ documento|urlencode }}{% elif atencion and atencion.paciente %}?num_identificacion={{ atencion.paciente|urlencode }}{% endif %}" class="btn-back-modules" title="Volver a los Módulos">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-layout-grid"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></svg>
+            REGRESA A LOS MÓDULOS
+        </a>
+    </div>
+</header>
