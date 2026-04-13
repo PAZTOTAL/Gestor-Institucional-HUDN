@@ -1,0 +1,4218 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="csrf-token" content="{{ csrf_token }}">
+  <title>FRSPA-007 · Control Fetocardia y Postparto</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'obstetriciaunificador/css/sidebar.css' %}">
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
+  <script src="{% static 'obstetriciaunificador/js/paciente_unificado_cache.js' %}"></script>
+  <style>
+    :root {
+      --primary-color: #2563eb;
+      --primary-hover: #1e40af;
+      --primary-dark: #1e40af;
+      --primary-light: #3b82f6;
+      --secondary-color: #64748b;
+      --secondary-dark: #475569;
+      --success-color: #10b981;
+      --success-dark: #059669;
+      --danger-color: #ef4444;
+      --danger-dark: #dc2626;
+      --warning-color: #f59e0b;
+      --warning-dark: #d97706;
+      --bg-color: #f8fafc;
+      --card-bg: #ffffff;
+      --text-primary: #0f172a;
+      --text-secondary: #64748b;
+      --border-color: #e2e8f0;
+      --border-light: #f1f5f9;
+      --accent-teal: #a78bfa;
+      --gradient-bg-start: #667eea;
+      --gradient-bg-end: #764ba2;
+      --header-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #667eea 100%);
+      --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+      --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+      --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+      --radius: 0.5rem;
+      --radius-lg: 0.75rem;
+      --transition: 0.2s ease;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html {
+      background: linear-gradient(135deg, var(--gradient-bg-start) 0%, var(--gradient-bg-end) 100%) !important;
+      min-height: 100%;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Inter', sans-serif !important;
+      background: linear-gradient(135deg, var(--gradient-bg-start) 0%, var(--gradient-bg-end) 100%) !important;
+      color: var(--text-primary) !important;
+      line-height: 1.6;
+      min-height: 100vh !important;
+    }
+
+    .page-with-sidebars {
+      display: flex;
+      min-height: 100vh;
+      width: 100%;
+    }
+
+    .sidebar-decor {
+      flex: 0 0 16px;
+      min-width: 16px;
+      background: linear-gradient(180deg,
+          #667eea 0%,
+          #764ba2 20%,
+          #667eea 50%,
+          #764ba2 80%,
+          #667eea 100%);
+      position: relative;
+      box-shadow: inset 0 0 80px rgba(255, 255, 255, 0.15),
+        inset 3px 0 0 rgba(255, 255, 255, 0.4),
+        inset -3px 0 0 rgba(0, 0, 0, 0.15),
+        0 0 35px rgba(14, 116, 144, 0.25);
+    }
+
+    .sidebar-decor::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: repeating-linear-gradient(135deg,
+          transparent,
+          transparent 6px,
+          rgba(255, 255, 255, 0.12) 6px,
+          rgba(255, 255, 255, 0.12) 8px);
+      pointer-events: none;
+    }
+
+    .sidebar-decor::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(90deg, rgba(255, 255, 255, 0.15) 0%, transparent 30%, transparent 70%, rgba(255, 255, 255, 0.15) 100%);
+      pointer-events: none;
+    }
+
+    .sidebar-decor .decor-dots {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      background-image: radial-gradient(circle at 50% 8%, rgba(255, 255, 255, 0.35) 4px, transparent 4px),
+        radial-gradient(circle at 50% 25%, rgba(255, 255, 255, 0.2) 3px, transparent 3px),
+        radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.35) 4px, transparent 4px),
+        radial-gradient(circle at 50% 75%, rgba(255, 255, 255, 0.2) 3px, transparent 3px),
+        radial-gradient(circle at 50% 92%, rgba(255, 255, 255, 0.35) 4px, transparent 4px);
+      background-size: 100% 25%;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .main-center {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      min-width: 0;
+    }
+
+    .main-wrapper {
+      width: 100%;
+      max-width: 1360px;
+      margin: 0;
+      padding: 2rem;
+      border-left: 1px solid rgba(8, 145, 178, 0.3);
+      border-right: 1px solid rgba(8, 145, 178, 0.3);
+      background: var(--card-bg);
+      box-shadow: 0 0 25px rgba(0, 0, 0, 0.08);
+      min-height: 100vh;
+    }
+
+    .site-header {
+      background: var(--header-gradient);
+      color: white;
+      padding: 0.4rem 1.15rem;
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+      margin: -2rem -2rem 1rem -2rem;
+      border-bottom: 3px solid #a78bfa;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+      overflow: hidden;
+    }
+
+    .site-header::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: linear-gradient(120deg,
+          transparent 25%,
+          rgba(255, 255, 255, 0.18) 45%,
+          rgba(255, 255, 255, 0.25) 50%,
+          rgba(255, 255, 255, 0.18) 55%,
+          transparent 75%);
+      transform: rotate(-12deg);
+      pointer-events: none;
+    }
+
+    .site-header::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: radial-gradient(ellipse 80% 50% at 50% 0%,
+          rgba(255, 255, 255, 0.15) 0%,
+          transparent 60%);
+      pointer-events: none;
+    }
+
+    .site-header>* {
+      position: relative;
+      z-index: 1;
+    }
+
+    .header-logo-left {
+      flex-shrink: 0;
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(248, 250, 252, 0.9) 100%);
+      padding: 0.3rem 0.6rem;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.75);
+      box-shadow: 0 3px 10px rgba(15, 23, 42, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(2px);
+      transition: transform 0.25s ease, box-shadow 0.25s ease, filter 0.25s ease;
+      filter: saturate(1.05) contrast(1.04);
+    }
+
+    .header-logo-left img {
+      height: 44px;
+      width: auto;
+      object-fit: contain;
+      display: block;
+    }
+
+    .header-center {
+      flex: 1;
+      min-width: 120px;
+      text-align: center;
+    }
+
+    .header-title {
+      font-size: 1.45rem;
+      font-weight: 700;
+      color: #fff;
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+      letter-spacing: 0.01em;
+      margin: 0 0 2px 0;
+    }
+    .header-subtitle {
+      margin: 0;
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: rgba(255,255,255,0.95);
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    .header-logo-right {
+      flex-shrink: 0;
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(248, 250, 252, 0.9) 100%);
+      padding: 0.3rem 0.6rem;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.75);
+      box-shadow: 0 3px 10px rgba(15, 23, 42, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(2px);
+      transition: transform 0.25s ease, box-shadow 0.25s ease, filter 0.25s ease;
+      filter: saturate(1.05) contrast(1.04);
+    }
+
+    .header-logo-right img {
+      height: 44px;
+      width: auto;
+      max-width: 140px;
+      object-fit: contain;
+      display: block;
+    }
+    .header-logo-left:hover,
+    .header-logo-right:hover {
+      transform: translateY(-2px) scale(1.02);
+      box-shadow: 0 8px 18px rgba(15, 23, 42, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.95);
+      filter: saturate(1.1) contrast(1.07);
+    }
+
+    /* Replica visual consistente con partos/meows (forzada) */
+    .site-header.meows-header-replica {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #667eea 100%) !important;
+      color: #fff !important;
+      padding: 0.4rem 1.15rem !important;
+      display: grid !important;
+      grid-template-columns: 120px 1fr 120px !important;
+      align-items: center !important;
+      gap: 12px !important;
+      border-bottom: none !important;
+      border-radius: 12px !important;
+      margin: -1.5rem auto 1rem auto !important;
+      width: calc(100% - 16px) !important;
+      max-width: 1360px !important;
+      position: relative !important;
+      top: auto !important;
+      overflow: visible !important;
+      box-shadow: 0 4px 14px rgba(102, 126, 234, 0.35) !important;
+    }
+    .site-header.meows-header-replica::before,
+    .site-header.meows-header-replica::after {
+      content: none !important;
+    }
+    .site-header.meows-header-replica .header-logo-left,
+    .site-header.meows-header-replica .header-logo-right {
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(248, 250, 252, 0.9) 100%) !important;
+      border: 1px solid rgba(255, 255, 255, 0.75) !important;
+      border-radius: 12px !important;
+      box-shadow: 0 3px 10px rgba(15, 23, 42, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.85) !important;
+      backdrop-filter: blur(2px);
+      padding: 0.3rem 0.6rem !important;
+      justify-self: center !important;
+    }
+    .site-header.meows-header-replica .header-center { text-align: center !important; }
+    .site-header.meows-header-replica .meows-header-logo {
+      height: 52px !important;
+      max-width: 96px !important;
+      width: auto !important;
+      object-fit: contain !important;
+      display: block !important;
+    }
+    .site-header.meows-header-replica .header-title {
+      color: #fff !important;
+    }
+
+    .registros-bar {
+      background: linear-gradient(180deg, #fafbfc 0%, #f8fafc 100%);
+      padding: 12px 24px;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+      flex-wrap: wrap;
+      margin: 0 -2rem 1rem -2rem;
+      padding: 1rem 2rem;
+    }
+
+    .registros-bar .form-control {
+      max-width: 280px;
+      border: 2px solid var(--border-color);
+    }
+
+    .registros-list {
+      flex: 1 1 100%;
+      min-width: 100%;
+      max-height: 200px;
+      overflow-y: auto;
+      margin-top: 8px;
+      padding: 8px;
+      background: #fff;
+      border: 2px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-md);
+    }
+
+    .registros-list:empty {
+      display: none;
+    }
+
+    .tabs-nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      background: linear-gradient(180deg, #f1f5f9 0%, #e2e8f0 100%);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 12px 16px;
+      margin: 4rem -2rem 1.5rem -2rem;
+      overflow-x: auto;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6), 0 2px 8px rgba(0, 0, 0, 0.06);
+    }
+
+    .tab-btn {
+      padding: 12px 18px;
+      border: 2px solid var(--border-color);
+      background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+      color: var(--secondary-dark);
+      cursor: pointer;
+      font-size: 0.9rem;
+      font-weight: 600;
+      border-radius: var(--radius);
+      transition: all 0.25s ease;
+      white-space: nowrap;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+    }
+
+    .tab-btn:hover {
+      color: #667eea;
+      border-color: #667eea;
+      background: linear-gradient(180deg, #ffffff 0%, #ecfeff 100%);
+      box-shadow: 0 4px 12px rgba(14, 116, 144, 0.2);
+      transform: translateY(-2px);
+    }
+
+    .tab-btn:active {
+      transform: translateY(0);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+    }
+
+    .tab-btn.active {
+      color: #fff;
+      border-color: #667eea;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #667eea 100%);
+      box-shadow: 0 4px 14px rgba(14, 116, 144, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    }
+
+    .tab-btn.active:hover {
+      background: linear-gradient(135deg, #5f56d8 0%, #6c4f9d 50%, #5f56d8 100%);
+      box-shadow: 0 6px 18px rgba(14, 116, 144, 0.45);
+    }
+
+    .tab-btn:focus-visible {
+      outline: 2px solid #667eea;
+      outline-offset: 2px;
+    }
+
+    .tab-icon {
+      width: 18px;
+      height: 18px;
+      flex-shrink: 0;
+      stroke-width: 2.5;
+    }
+
+    .tab-btn svg.tab-icon,
+    .tab-btn .tab-icon {
+      width: 18px;
+      height: 18px;
+    }
+
+    .main-content {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 24px 0;
+    }
+
+    .tab-panel {
+      display: none;
+    }
+
+    .tab-panel.active {
+      display: block;
+    }
+
+    .card {
+      background: linear-gradient(180deg, #ffffff 0%, #fafdfe 50%, #f0f9fb 100%);
+      border-radius: 12px;
+      padding: 1.5rem 2rem;
+      margin-bottom: 1.75rem;
+      box-shadow: 0 4px 16px rgba(14, 116, 144, 0.08), 0 1px 4px rgba(0, 0, 0, 0.04), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+      border: 2px solid rgba(14, 116, 144, 0.15);
+      border-left: 5px solid #667eea;
+      transition: all 0.3s ease;
+      position: relative;
+    }
+
+    .card:hover {
+      box-shadow: 0 8px 28px rgba(14, 116, 144, 0.12), 0 4px 12px rgba(0, 0, 0, 0.06);
+      border-color: rgba(14, 116, 144, 0.25);
+      transform: translateY(-2px);
+    }
+
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.9), transparent);
+      border-radius: 12px 12px 0 0;
+      pointer-events: none;
+    }
+
+    .card-title {
+      font-size: 1.12rem;
+      font-weight: 700;
+      color: #0c6b7d;
+      padding: 0.5rem 0 1rem 0;
+      margin: 0 0 1.25rem 0;
+      border-bottom: 2px solid rgba(14, 116, 144, 0.2);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      letter-spacing: 0.03em;
+      text-shadow: 0 1px 0 rgba(255, 255, 255, 0.8);
+      background: linear-gradient(135deg, rgba(14, 116, 144, 0.07) 0%, transparent 60%);
+      margin-left: -0.25rem;
+      margin-right: -0.25rem;
+      padding-left: 0.25rem;
+      padding-right: 0.25rem;
+      padding-top: 0.35rem;
+      border-radius: 8px 8px 0 0;
+    }
+
+    .card-title .dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: linear-gradient(145deg, #667eea 0%, #764ba2 50%, #667eea 100%);
+      box-shadow: 0 2px 6px rgba(14, 116, 144, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+      flex-shrink: 0;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 1rem;
+    }
+
+    .form-grid.cols-2 {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    .form-grid.cols-3 {
+      grid-template-columns: repeat(3, 1fr);
+    }
+
+    .form-grid.cols-4 {
+      grid-template-columns: repeat(4, 1fr);
+    }
+
+    .span-2 {
+      grid-column: span 2;
+    }
+
+    .span-3 {
+      grid-column: span 3;
+    }
+
+    .span-full {
+      grid-column: 1 / -1;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+      margin-bottom: 0;
+    }
+
+    .form-label {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .form-control {
+      width: 100%;
+      padding: 0.65rem 0.85rem;
+      border: 2px solid var(--border-color);
+      border-radius: var(--radius);
+      font-size: 0.95rem;
+      background: #fff;
+      color: var(--text-primary);
+      transition: border-color var(--transition), box-shadow var(--transition);
+    }
+
+    .form-control:focus {
+      outline: none;
+      border-color: #667eea;
+      box-shadow: 0 0 0 4px rgba(14, 116, 144, 0.15);
+    }
+
+    .form-control::placeholder {
+      color: var(--text-secondary);
+      opacity: 0.7;
+    }
+
+    select.form-control option {
+      background: #fff;
+      color: var(--text-primary);
+    }
+
+    textarea.form-control {
+      resize: vertical;
+      min-height: 80px;
+    }
+
+    .radio-group,
+    .check-group {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      align-items: center;
+      padding: 8px 0;
+    }
+
+    .radio-label,
+    .check-label {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      color: var(--text-primary);
+    }
+
+    .radio-label input,
+    .check-label input {
+      accent-color: #667eea;
+      width: 16px;
+      height: 16px;
+    }
+
+    .fc-table-wrap {
+      overflow-x: auto;
+      margin-top: 1rem;
+    }
+
+    .fc-table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      font-size: 0.9rem;
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+
+    .fc-table th {
+      background: linear-gradient(180deg, #f1f5f9 0%, #e2e8f0 100%);
+      color: var(--text-primary);
+      font-weight: 700;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      padding: 0.75rem 1rem;
+      border-bottom: 2px solid var(--border-color);
+    }
+
+    .fc-table td {
+      padding: 0.6rem 1rem;
+      border-bottom: 1px solid var(--border-color);
+      vertical-align: middle;
+    }
+
+    .fc-table tr:hover td {
+      background: #f8fafc;
+    }
+
+    .fc-table .form-control {
+      padding: 0.5rem 0.75rem;
+      font-size: 0.85rem;
+    }
+
+    .btn-add-row {
+      margin-top: 12px;
+      background: linear-gradient(135deg, #ccfbf1, #99f6e4);
+      border: 2px solid rgba(14, 116, 144, 0.4);
+      color: #0c6b7d;
+      padding: 0.5rem 1rem;
+      border-radius: var(--radius);
+      cursor: pointer;
+      font-size: 0.875rem;
+      font-weight: 600;
+      transition: all var(--transition);
+    }
+
+    .btn-add-row:hover {
+      background: linear-gradient(135deg, #c7d2fe, #a78bfa);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 14px rgba(14, 116, 144, 0.25);
+    }
+
+    .btn-remove-row {
+      background: none;
+      border: none;
+      color: var(--danger-color);
+      cursor: pointer;
+      font-size: 1.25rem;
+      padding: 2px 6px;
+    }
+
+    .pp-quick-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      margin-bottom: 20px;
+      padding: 18px 20px;
+      background: linear-gradient(180deg, #f8fcfd 0%, #ecfeff 50%, #e0f7fa 100%);
+      border: 2px solid rgba(14, 116, 144, 0.2);
+      border-radius: var(--radius-lg);
+      box-shadow: 0 2px 8px rgba(14, 116, 144, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.8);
+    }
+
+    .pp-quick-actions::before {
+      content: 'Acciones rápidas';
+      display: block;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #667eea;
+      margin-bottom: 4px;
+      padding-bottom: 8px;
+      border-bottom: 2px solid rgba(14, 116, 144, 0.2);
+    }
+
+    .pp-quick-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      padding: 8px 0;
+    }
+
+    .pp-quick-row:not(:last-child) {
+      border-bottom: 1px dashed rgba(14, 116, 144, 0.15);
+      padding-bottom: 14px;
+    }
+
+    .pp-quick-row label {
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .pp-quick-actions .form-control {
+      border-color: rgba(14, 116, 144, 0.35);
+      background: #fff;
+    }
+
+    .pp-quick-actions .form-control:focus {
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(14, 116, 144, 0.15);
+    }
+
+    .pp-hora-input {
+      width: 120px !important;
+      display: inline-block !important;
+    }
+
+    .btn-pp-quick {
+      padding: 0.5rem 1rem;
+      font-size: 0.82rem;
+      font-weight: 600;
+      border: 2px solid transparent;
+      border-radius: 8px;
+      cursor: pointer;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      transition: all 0.2s ease;
+      box-shadow: 0 2px 6px rgba(14, 116, 144, 0.25);
+    }
+
+    .btn-pp-quick:hover {
+      background: linear-gradient(135deg, #5f56d8 0%, #6c4f9d 100%);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(14, 116, 144, 0.35);
+    }
+
+    .btn-pp-quick:active {
+      transform: translateY(0);
+    }
+
+    .btn-pp-quick:focus-visible {
+      outline: 2px solid #667eea;
+      outline-offset: 2px;
+    }
+
+    .btn-pp-secondary {
+      background: linear-gradient(135deg, #64748b 0%, #475569 100%);
+      box-shadow: 0 2px 4px rgba(71, 85, 105, 0.2);
+    }
+
+    .btn-pp-secondary:hover {
+      background: linear-gradient(135deg, #475569 0%, #334155 100%);
+      box-shadow: 0 4px 10px rgba(71, 85, 105, 0.3);
+    }
+
+    .pp-table-wrap {
+      overflow-x: auto;
+    }
+
+    .pp-table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      font-size: 0.8rem;
+      min-width: 900px;
+      border-radius: var(--radius);
+    }
+
+    .pp-table th {
+      background: linear-gradient(180deg, #f1f5f9 0%, #e2e8f0 100%);
+      color: var(--text-primary);
+      font-weight: 700;
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      padding: 0.6rem;
+      text-align: center;
+      border-bottom: 2px solid var(--border-color);
+    }
+
+    .pp-table th.row-label {
+      text-align: left;
+      min-width: 130px;
+    }
+
+    .pp-table td {
+      border-bottom: 1px solid var(--border-color);
+      padding: 4px;
+    }
+
+    .pp-table td input,
+    .pp-table td select {
+      background: #fff;
+      border: 2px solid var(--border-color);
+      color: var(--text-primary);
+      padding: 0.4rem 0.5rem;
+      font-size: 0.8rem;
+      width: 100%;
+      text-align: center;
+      border-radius: 4px;
+    }
+
+    .pp-table td input:focus,
+    .pp-table td select:focus {
+      outline: none;
+      border-color: var(--primary-color);
+      box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);
+    }
+
+    .pp-table .rowlabel-cell {
+      background: #f8fafc;
+      color: var(--text-secondary);
+      font-size: 0.72rem;
+      padding: 0.5rem 0.75rem;
+      font-weight: 600;
+    }
+
+    .pp-table td input[data-pp-saved="1"],
+    .pp-table td select[data-pp-saved="1"],
+    .pp-table td input.pp-input:disabled,
+    .pp-table td select.pp-input:disabled {
+      background: #f1f5f9;
+      color: var(--text-secondary);
+      cursor: not-allowed;
+      border-color: #e2e8f0;
+    }
+
+    .huella-container {
+      display: flex;
+      gap: 28px;
+      flex-wrap: wrap;
+      align-items: flex-start;
+    }
+
+    .huella-upload-section {
+      width: 100%;
+      max-width: 720px;
+    }
+
+    .huella-section-label {
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      color: #667eea;
+      margin-bottom: 10px;
+      text-transform: uppercase;
+    }
+
+    .huella-upload-area {
+      min-height: 160px;
+      padding: 36px 32px;
+      border-radius: 14px;
+      border: 2px dashed rgba(14, 116, 144, 0.35);
+      background: linear-gradient(165deg, #f0fdfa 0%, #ecfeff 40%, #f0f9fb 100%);
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.25s ease;
+    }
+
+    .huella-upload-area:hover {
+      border-color: #667eea;
+      background: linear-gradient(165deg, #ccfbf1 0%, #cffafe 50%, #e0f2fe 100%);
+      box-shadow: 0 8px 24px rgba(14, 116, 144, 0.12);
+    }
+
+    .huella-upload-area:focus-within {
+      outline: 2px solid #667eea;
+      outline-offset: 2px;
+    }
+
+    .huella-upload-icon-wrap {
+      width: 64px;
+      height: 64px;
+      margin: 0 auto 16px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 14px rgba(14, 116, 144, 0.35);
+    }
+
+    .huella-upload-icon-wrap svg {
+      width: 32px;
+      height: 32px;
+      color: #fff;
+    }
+
+    .huella-upload-title {
+      font-size: 1rem;
+      font-weight: 600;
+      color: #0c4a6e;
+      margin-bottom: 6px;
+    }
+
+    .huella-upload-sub {
+      font-size: 0.82rem;
+      color: #64748b;
+      line-height: 1.45;
+    }
+
+    .btn {
+      padding: 0.6rem 1.25rem;
+      border-radius: var(--radius);
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all var(--transition);
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      border: none;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #667eea 100%);
+      color: #fff;
+      box-shadow: 0 2px 10px rgba(14, 116, 144, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(14, 116, 144, 0.4);
+    }
+
+    .btn-secondary {
+      border: 2px solid #64748b;
+      color: #475569;
+      background: linear-gradient(180deg, #fff 0%, #f8fafc 100%);
+    }
+
+    .btn-secondary:hover {
+      background: linear-gradient(135deg, #64748b 0%, #475569 100%);
+      color: #fff;
+      border-color: #475569;
+      transform: translateY(-1px);
+    }
+
+    .btn-danger {
+      background: linear-gradient(135deg, var(--danger-color) 0%, var(--danger-dark) 100%);
+      color: #fff;
+    }
+
+    .btn-danger:hover {
+      transform: translateY(-1px);
+    }
+
+    .btn-success {
+      background: linear-gradient(135deg, var(--success-color) 0%, var(--success-dark) 100%);
+      color: #fff;
+    }
+
+    .btn-success:hover {
+      transform: translateY(-1px);
+    }
+
+    .btn-large {
+      padding: 0.75rem 1.75rem;
+      font-size: 1rem;
+    }
+
+    .btn-sm {
+      padding: 0.35rem 0.75rem;
+      font-size: 0.875rem;
+    }
+
+    .huella-preview-wrap {
+      margin-top: 24px;
+      padding: 20px;
+      border-radius: 14px;
+      background: linear-gradient(180deg, #ffffff 0%, #f8fcfd 100%);
+      border: 1px solid rgba(14, 116, 144, 0.18);
+      box-shadow: 0 4px 20px rgba(14, 116, 144, 0.08);
+    }
+
+    .huella-preview-label {
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      color: #667eea;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .huella-preview-label .badge-applied {
+      font-size: 0.65rem;
+      padding: 3px 8px;
+      border-radius: 999px;
+      background: linear-gradient(135deg, #6c4f9d 0%, #667eea 100%);
+      color: #fff;
+      font-weight: 600;
+    }
+
+    .huella-preview {
+      border-radius: 12px;
+      background: #fff;
+      padding: 12px;
+      max-width: 400px;
+      /* Reduced from 680px */
+      width: 100%;
+      box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.06);
+      border: 1px solid #e2e8f0;
+      margin: 0 auto;
+    }
+
+    .huella-cropper-container {
+      height: 300px;
+      /* Reduced from 400px */
+      overflow: hidden;
+      border-radius: 10px;
+    }
+
+    #huella-preview-wrap.huella-applied .huella-cropper-container {
+      height: auto;
+      min-height: 140px;
+    }
+
+    .huella-cropper-container img {
+      max-width: 100%;
+      display: block;
+      border-radius: 8px;
+    }
+
+    .huella-preview:not(.huella-cropper-container) img {
+      width: 100%;
+      max-width: 620px;
+      min-width: 280px;
+      height: auto;
+      border-radius: 8px;
+      display: block;
+    }
+
+    .huella-actions {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      align-items: center;
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid #e2e8f0;
+    }
+
+    .huella-actions .form-control {
+      border-radius: 8px;
+    }
+
+    .huella-actions label {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #334155;
+    }
+
+    .huella-desc {
+      color: #475569;
+      font-size: 0.9rem;
+      line-height: 1.5;
+      margin-bottom: 24px;
+    }
+
+    .huella-desc strong {
+      color: #667eea;
+    }
+
+    .huella-preview-hint {
+      font-size: 0.8rem;
+      color: #64748b;
+      margin-bottom: 10px;
+      line-height: 1.4;
+    }
+
+    #huella-preview-wrap.huella-applied .huella-preview-hint {
+      display: none;
+    }
+
+    #huella-preview-wrap.huella-applied #huella-badge-applied {
+      display: inline-flex;
+    }
+
+    .file-upload-area {
+      border: 2px dashed var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 30px;
+      text-align: center;
+      cursor: pointer;
+      transition: all var(--transition);
+      background: #f8fafc;
+    }
+
+    .file-upload-area:hover {
+      border-color: var(--primary-color);
+      background: rgba(37, 99, 235, 0.04);
+    }
+
+    .file-upload-area input {
+      display: none;
+    }
+
+    .upload-icon {
+      font-size: 2.5rem;
+      margin-bottom: 10px;
+    }
+
+    .upload-text {
+      color: var(--text-secondary);
+      font-size: 0.88rem;
+    }
+
+    .site-footer {
+      margin: 1rem -2rem 0 -2rem;
+      padding: 0.45rem 1.5rem;
+      text-align: center;
+      background: var(--header-gradient);
+      color: rgba(255, 255, 255, 0.95);
+      font-size: 0.82rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      border-top: 3px solid var(--accent-teal);
+      box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.08);
+    }
+
+    .toast-container {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .toast {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      padding: 14px 20px;
+      border-radius: var(--radius-lg);
+      font-size: 0.88rem;
+      max-width: 320px;
+      animation: slideIn 0.3s ease;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      box-shadow: var(--shadow-lg);
+    }
+
+    .toast.success {
+      border-color: rgba(16, 185, 129, 0.4);
+      background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+    }
+
+    .toast.error {
+      border-color: rgba(239, 68, 68, 0.4);
+      background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+    }
+
+    @keyframes slideIn {
+      from {
+        transform: translateX(100px);
+        opacity: 0;
+      }
+
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
+
+    .gluco-row {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .gluco-row .form-control {
+      max-width: 160px;
+    }
+
+    .status-tag {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-size: 0.72rem;
+      font-weight: 600;
+    }
+
+    .status-ok {
+      background: rgba(16, 185, 129, 0.15);
+      color: var(--success-dark);
+    }
+
+    .status-warn {
+      background: rgba(245, 158, 11, 0.15);
+      color: var(--warning-dark);
+    }
+
+    .submit-bar {
+      padding: 24px 0 12px;
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      gap: 14px;
+      margin-top: 1.75rem;
+      border-top: 2px solid rgba(14, 116, 144, 0.12);
+      padding-top: 1.5rem;
+    }
+
+    .spinner {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(37, 99, 235, 0.3);
+      border-top-color: var(--primary-color);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    .apgar-item {
+      position: relative;
+    }
+
+    .apgar-box {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .apgar-score {
+      width: 52px;
+      height: 52px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.35rem;
+      font-weight: 800;
+      transition: all 0.35s ease;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+      flex-shrink: 0;
+    }
+
+    .apgar-0-3 {
+      background: linear-gradient(135deg, rgba(239, 68, 68, 0.2), rgba(220, 38, 38, 0.15));
+      color: var(--danger-color);
+      border: 2px solid rgba(239, 68, 68, 0.5);
+      box-shadow: 0 2px 12px rgba(239, 68, 68, 0.2);
+    }
+
+    .apgar-0-3.pulse {
+      animation: apgar-pulse-danger 1.5s ease-in-out infinite;
+    }
+
+    .apgar-4-6 {
+      background: linear-gradient(135deg, rgba(245, 158, 11, 0.2), rgba(217, 119, 6, 0.15));
+      color: var(--warning-color);
+      border: 2px solid rgba(245, 158, 11, 0.5);
+      box-shadow: 0 2px 12px rgba(245, 158, 11, 0.2);
+    }
+
+    .apgar-4-6.pulse {
+      animation: apgar-pulse-warning 2s ease-in-out infinite;
+    }
+
+    .apgar-7-10 {
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(5, 150, 105, 0.15));
+      color: var(--success-color);
+      border: 2px solid rgba(16, 185, 129, 0.4);
+      box-shadow: 0 2px 12px rgba(16, 185, 129, 0.15);
+    }
+
+    @keyframes apgar-pulse-danger {
+
+      0%,
+      100% {
+        box-shadow: 0 2px 12px rgba(239, 68, 68, 0.2);
+      }
+
+      50% {
+        box-shadow: 0 0 20px rgba(239, 68, 68, 0.4);
+      }
+    }
+
+    @keyframes apgar-pulse-warning {
+
+      0%,
+      100% {
+        box-shadow: 0 2px 12px rgba(245, 158, 11, 0.2);
+      }
+
+      50% {
+        box-shadow: 0 0 18px rgba(245, 158, 11, 0.35);
+      }
+    }
+
+    .apgar-alert {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 8px;
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      opacity: 0;
+      max-height: 0;
+      overflow: hidden;
+      transition: all 0.3s ease;
+    }
+
+    .apgar-alert.show {
+      opacity: 1;
+      max-height: 60px;
+    }
+
+    .apgar-alert.critical {
+      background: linear-gradient(90deg, rgba(239, 68, 68, 0.15), rgba(239, 68, 68, 0.08));
+      color: var(--danger-color);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+    }
+
+    .apgar-alert.moderate {
+      background: linear-gradient(90deg, rgba(245, 158, 11, 0.15), rgba(245, 158, 11, 0.08));
+      color: var(--warning-dark);
+      border: 1px solid rgba(245, 158, 11, 0.3);
+    }
+
+    .apgar-alert.normal {
+      background: linear-gradient(90deg, rgba(16, 185, 129, 0.12), rgba(16, 185, 129, 0.06));
+      color: var(--success-dark);
+      border: 1px solid rgba(16, 185, 129, 0.25);
+    }
+
+    .apgar-alert-icon {
+      font-size: 1rem;
+      flex-shrink: 0;
+    }
+
+    .apgar-card-banner {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 16px;
+      margin-bottom: 16px;
+      border-radius: 10px;
+      font-size: 0.88rem;
+      font-weight: 600;
+      opacity: 0;
+      max-height: 0;
+      overflow: hidden;
+      transition: all 0.35s ease;
+    }
+
+    .apgar-card-banner.show {
+      opacity: 1;
+      max-height: 80px;
+    }
+
+    .apgar-card-banner.critical {
+      background: linear-gradient(90deg, rgba(239, 68, 68, 0.18), rgba(239, 68, 68, 0.08));
+      color: var(--danger-color);
+      border: 1px solid rgba(239, 68, 68, 0.35);
+    }
+
+    .apgar-card-banner.moderate {
+      background: linear-gradient(90deg, rgba(245, 158, 11, 0.18), rgba(245, 158, 11, 0.08));
+      color: var(--warning-dark);
+      border: 1px solid rgba(245, 158, 11, 0.35);
+    }
+
+    .fc-alert {
+      padding: 8px 14px;
+      border-radius: var(--radius);
+      font-size: 0.82rem;
+      margin-top: 8px;
+      display: none;
+      font-weight: 500;
+    }
+
+    .fc-alert.show {
+      display: block;
+    }
+
+    .fc-alert.normal {
+      background: rgba(16, 185, 129, 0.1);
+      color: var(--success-dark);
+      border: 1px solid rgba(16, 185, 129, 0.2);
+    }
+
+    .fc-alert.bradycardia {
+      background: rgba(239, 68, 68, 0.1);
+      color: var(--danger-color);
+      border: 1px solid rgba(239, 68, 68, 0.2);
+    }
+
+    .fc-alert.tachycardia {
+      background: rgba(245, 158, 11, 0.1);
+      color: var(--warning-color);
+      border: 1px solid rgba(245, 158, 11, 0.2);
+    }
+
+    .fc-row-readonly td {
+      background: #f1f5f9;
+      color: var(--text-secondary);
+    }
+
+    .fc-row-readonly:hover td {
+      background: #e2e8f0;
+    }
+
+    .fc-lock {
+      font-size: 0.9rem;
+      opacity: 0.8;
+    }
+
+    .registro-item {
+      padding: 8px 12px;
+      border-radius: var(--radius);
+      cursor: pointer;
+      font-size: 0.85rem;
+      border: 1px solid transparent;
+      transition: all var(--transition);
+    }
+
+    .registro-item:hover {
+      background: rgba(37, 99, 235, 0.08);
+      border-color: var(--primary-color);
+    }
+
+    .sala-partos-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.8rem;
+    }
+
+    .sala-partos-table th {
+      background: #667eea;
+      color: #fff;
+      padding: 8px 10px;
+      text-align: left;
+    }
+
+    .sala-partos-table td {
+      padding: 6px 10px;
+      border-bottom: 1px solid #e2e8f0;
+    }
+
+    .sala-partos-table tr:hover {
+      background: #f0f9ff;
+    }
+
+    .sala-partos-table .btn-load-sala {
+      padding: 4px 10px;
+      font-size: 0.78rem;
+    }
+
+    .preview-modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 2000;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .preview-modal-overlay.show {
+      display: flex;
+    }
+
+    .preview-modal {
+      background: #fff;
+      border-radius: var(--radius-lg);
+      max-width: 720px;
+      width: 100%;
+      max-height: 90vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);
+    }
+
+    .preview-modal-header {
+      padding: 1rem 1.5rem;
+      background: var(--header-gradient);
+      color: white;
+      font-weight: 700;
+      font-size: 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .preview-modal-close:hover {
+      opacity: 0.9;
+      cursor: pointer;
+    }
+
+    .preview-modal-body {
+      padding: 1.25rem 1.5rem;
+      overflow-y: auto;
+      flex: 1;
+      font-size: 0.85rem;
+    }
+
+    .preview-section {
+      margin-bottom: 1rem;
+      padding: 0.75rem 1rem;
+      background: #f8fafc;
+      border-radius: var(--radius);
+      border-left: 4px solid var(--primary-color);
+    }
+
+    .preview-section-title {
+      font-weight: 700;
+      color: var(--primary-color);
+      margin-bottom: 0.5rem;
+      font-size: 0.9rem;
+    }
+
+    .preview-row {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 0.25rem;
+    }
+
+    .preview-label {
+      font-weight: 600;
+      color: var(--text-secondary);
+      min-width: 140px;
+    }
+
+    .preview-value {
+      color: var(--text-primary);
+    }
+
+    .preview-modal-footer {
+      padding: 1rem 1.5rem;
+      border-top: 1px solid var(--border-color);
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+    }
+
+    .preview-loading {
+      text-align: center;
+      padding: 2rem;
+      color: var(--text-secondary);
+    }
+
+    .preview-inline-wrap {
+      margin-top: 4rem;
+      margin-bottom: 0;
+      margin-left: -1rem;
+      margin-right: -1rem;
+      padding: 8px 1rem 0 1rem;
+      background: linear-gradient(180deg, #f0f9ff 0%, transparent 100%);
+      border-bottom: 2px solid rgba(37, 99, 235, 0.2);
+    }
+
+    .preview-inline-card {
+      border: 2px solid var(--primary-color);
+      margin: 0 0 1.5rem 0;
+      max-width: none;
+    }
+
+    .preview-inline-header {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      padding: 1rem 1.5rem;
+      background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+      border-bottom: 2px solid var(--primary-color);
+      border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    }
+
+    .preview-inline-title {
+      font-weight: 700;
+      font-size: 1rem;
+      color: var(--primary-color);
+    }
+
+    .preview-inline-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .preview-inline-body {
+      padding: 1rem 0.5rem;
+      max-height: 70vh;
+      overflow-y: auto;
+      overflow-x: auto;
+      font-size: 0.8rem;
+      background: #fff;
+    }
+
+    .doc-preview {
+      width: 100%;
+      max-width: 1100px;
+      margin: 0 auto;
+      font-family: Helvetica, Arial, sans-serif;
+      padding: 20px 24px;
+      background: #fff;
+      border: 1px solid #cbd5e1;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
+
+    .doc-preview table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 8px;
+      font-size: 0.78rem;
+      table-layout: fixed;
+    }
+
+    .doc-preview .doc-pp-table {
+      table-layout: auto;
+      min-width: 700px;
+    }
+
+    .doc-preview th,
+    .doc-preview td {
+      border: 1px solid #475569;
+      padding: 4px 6px;
+    }
+
+    .doc-preview .doc-header {
+      background: #667eea;
+      color: #fff;
+      font-weight: 700;
+      text-align: center;
+    }
+
+    .doc-preview .doc-subheader {
+      background: #0c4a6e;
+      color: #fff;
+      font-weight: 700;
+    }
+
+    .doc-preview .doc-label {
+      background: #f1f5f9;
+      font-weight: 700;
+    }
+
+    .doc-preview .doc-rn-huella {
+      display: flex;
+      gap: 0;
+      margin-bottom: 8px;
+      align-items: stretch;
+    }
+
+    .doc-preview .doc-rn-col {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .doc-preview .doc-huella-col {
+      width: 280px;
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      margin-left: 0;
+    }
+
+    .doc-preview .doc-huella-col .doc-header {
+      flex-shrink: 0;
+      padding: 6px 8px;
+      text-align: center;
+      border: 1px solid #475569;
+    }
+
+    .doc-preview .doc-huella-box {
+      flex: 1;
+      min-height: 200px;
+      padding: 10px 12px;
+      border: 1px solid #475569;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #f8fafc;
+      overflow: hidden;
+      box-sizing: border-box;
+    }
+
+    .doc-preview .doc-huella-box img {
+      max-width: 100%;
+      max-height: 100%;
+      width: auto;
+      height: auto;
+      object-fit: contain;
+      object-position: center;
+      display: block;
+      margin: 0 auto;
+    }
+
+    @media (max-width: 768px) {
+      .main-wrapper {
+        padding: 1rem;
+        border-left-width: 6px;
+        border-right-width: 6px;
+      }
+
+      .site-header {
+        margin: -1rem -1rem 0.75rem -1rem;
+        flex-direction: row;
+        padding: 0.4rem 0.75rem;
+        gap: 0.5rem;
+      }
+
+      .header-logo-left,
+      .header-logo-right {
+        padding: 0.25rem 0.5rem;
+      }
+
+      .header-logo-left img,
+      .header-logo-right img {
+        height: 40px;
+      }
+
+      .header-logo-right img {
+        max-width: 100px;
+      }
+
+      .header-title {
+        font-size: 1rem;
+      }
+
+      .header-center {
+        order: 2;
+      }
+
+      .header-logo-left {
+        order: 1;
+      }
+
+      .header-logo-right {
+        order: 3;
+      }
+
+      .registros-bar,
+      .tabs-nav {
+        margin: 0 -1rem 1rem -1rem;
+        padding: 10px;
+      }
+
+      .form-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .form-grid.cols-4 {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .span-2,
+      .span-3 {
+        grid-column: span 1;
+      }
+
+      .main-content {
+        padding: 16px 0;
+      }
+
+      .sidebar-decor {
+      flex: 0 0 12px;
+      min-width: 12px;
+      }
+
+      .pp-quick-actions {
+        padding: 14px 16px;
+      }
+
+      .pp-quick-row {
+        justify-content: flex-start;
+        gap: 10px;
+      }
+
+      .preview-inline-wrap {
+        margin-left: 0;
+        margin-right: 0;
+        padding-left: 0;
+        padding-right: 0;
+      }
+
+      .doc-preview {
+        max-width: 100%;
+        padding: 16px 12px;
+      }
+    }
+
+    .signature-pad-card {
+      padding: 0;
+      border: 1px solid var(--border-color);
+      border-radius: 14px;
+      background: #fff;
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
+
+    .signature-wrapper {
+      position: relative;
+      width: 100%;
+      height: 180px;
+      /* Slightly reduced */
+      background-color: #f8fafc;
+      border: 2px dashed #cbd5e1;
+      border-radius: 10px;
+      margin: 8px 0;
+      touch-action: none;
+    }
+
+    #signature-canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+      cursor: crosshair;
+    }
+
+    .signature-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: auto;
+      padding-top: 10px;
+      border-top: 1px solid #f1f5f9;
+    }
+
+    .signature-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      background: #f1f5f9;
+      color: #64748b;
+      margin-top: 8px;
+    }
+
+    .signature-badge.signed {
+      background: #dcfce7;
+      color: #166534;
+    }
+  </style>
+</head>
+
+<body>
+
+  {% include 'obstetricia/header_formatos.html' %}
+
+  <div class="page-with-sidebars">
+    {% include 'obstetricia/sidebar.html' with is_panel=False atencion_id=atencion_id documento=documento current_module='fetal' %}
+    <aside class="sidebar-decor">
+
+      <span class="decor-dots"></span>
+    </aside>
+    <div class="main-center">
+      <div class="main-wrapper">
+        <header class="site-header meows-header-replica">
+          <div class="header-logo-left">
+            <img src="{% static 'img/logo_hospital.png' %}" alt="Hospital Universitario Departamental de Nariño E.S.E." class="meows-header-logo">
+          </div>
+          <div class="header-center">
+            <h1 class="header-title">MONITOREO FETAL ANTES Y DESPUES DEL EXPULSIVO</h1>
+            <h2 class="header-subtitle">Hospital Universitario Departamental</h2>
+          </div>
+          <div class="header-logo-right">
+            <img src="{% static 'img/logo_acreditacion.png' %}" alt="Acreditación en Salud" class="meows-header-logo">
+          </div>
+        </header>
+
+        <div id="preview-modal-overlay" class="preview-modal-overlay"
+          onclick="if(event.target===this) cerrarVistaPrevia()">
+          <div class="preview-modal">
+            <div class="preview-modal-header">
+              <span id="preview-modal-title">Vista previa del registro</span>
+              <span class="preview-modal-close" onclick="cerrarVistaPrevia()" title="Cerrar">&times;</span>
+            </div>
+            <div class="preview-modal-body" id="preview-modal-body"></div>
+            <div class="preview-modal-footer">
+              <button type="button" class="btn btn-secondary btn-sm" onclick="cerrarVistaPrevia()">Cerrar</button>
+              <button type="button" class="btn btn-primary btn-sm" id="preview-btn-cargar"
+                onclick="cargarDesdePreview()">Cargar en formulario</button>
+            </div>
+          </div>
+        </div>
+
+        <div id="preview-inline-wrap" class="preview-inline-wrap" style="display:none">
+          <div class="card preview-inline-card">
+            <div class="preview-inline-header">
+              <span class="preview-inline-title" id="preview-inline-title">Vista previa del registro</span>
+              <div class="preview-inline-actions">
+                <button type="button" class="btn btn-primary btn-sm" onclick="cargarDesdePreviewInline()">Cargar en
+                  formulario</button>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="cerrarPreviewInline()">Cerrar vista
+                  previa</button>
+              </div>
+            </div>
+            <div id="preview-inline-body" class="preview-inline-body"></div>
+          </div>
+        </div>
+
+        <div id="sala-partos-preview-wrap" class="preview-inline-wrap" style="display:none">
+          <div class="card preview-inline-card">
+            <div class="preview-inline-header">
+              <span class="preview-inline-title">Pacientes en Sala de Partos</span>
+              <div class="preview-inline-actions">
+                <input type="text" id="sala-partos-filter" class="form-control"
+                  placeholder="Filtrar por nombre o documento..."
+                  style="max-width:220px;padding:0.35rem 0.6rem;font-size:0.85rem"
+                  onkeypress="if(event.key==='Enter') buscarSalaPartos()">
+                <button type="button" class="btn btn-primary btn-sm" onclick="buscarSalaPartos()">Actualizar</button>
+                <button type="button" class="btn btn-secondary btn-sm"
+                  onclick="cerrarSalaPartosPreview()">Cerrar</button>
+              </div>
+            </div>
+            <div id="sala-partos-preview-body" class="preview-inline-body"></div>
+          </div>
+        </div>
+
+        <nav class="tabs-nav">
+          <button class="tab-btn active" onclick="switchTab('paciente')" id="tab-paciente"><i data-lucide="user"
+              class="tab-icon"></i> Paciente</button>
+          <button class="tab-btn" onclick="switchTab('fetocardia')" id="tab-fetocardia"><i data-lucide="heart-pulse"
+              class="tab-icon"></i> Fetocardia Expulsivo</button>
+          <button class="tab-btn" onclick="switchTab('recien-nacido')" id="tab-recien-nacido"><i data-lucide="baby"
+              class="tab-icon"></i> Recién Nacido</button>
+          <button class="tab-btn" onclick="switchTab('postparto')" id="tab-postparto"><i data-lucide="stethoscope"
+              class="tab-icon"></i> Control Postparto</button>
+          <button class="tab-btn" onclick="switchTab('huella')" id="tab-huella"><i data-lucide="footprints"
+              class="tab-icon"></i> Huella del Pie</button>
+        </nav>
+
+        <div class="registros-bar">
+          <input type="text" id="buscar-input" class="form-control"
+            placeholder="Buscar por nombre o identificación (documento)..." style="max-width:280px">
+          <button class="btn btn-secondary btn-sm" onclick="buscarRegistros()">
+            <i data-lucide="search" style="width:14px;height:14px"></i> Buscar paciente
+          </button>
+          <button class="btn btn-secondary btn-sm" onclick="buscarSalaPartos()"
+            title="Pacientes en Sala de Partos (DGEMPRES03)">
+            <i data-lucide="bed-double" style="width:14px;height:14px"></i> Sala de Partos
+          </button>
+          <button class="btn btn-primary btn-sm" onclick="nuevoRegistro()">
+            <i data-lucide="plus-circle" style="width:14px;height:14px"></i> Nuevo registro
+          </button>
+          <div id="registros-resultados" class="registros-list"></div>
+        </div>
+
+        <main class="main-content">
+
+          <section class="tab-panel active" id="panel-paciente">
+            <div id="panel-paciente-form">
+              <p style="margin:0 0 14px 0;padding:12px 14px;background:#f1f5f9;border-radius:10px;color:#334155;font-size:0.9rem;">
+                Los datos de la paciente (nombre, identificación, edad gestacional, gestas, acompañante) se cargan desde la <strong>consulta unificada</strong> (panel de atención o barra lateral). Los campos siguen presentes de forma oculta para el guardado.
+              </p>
+              <div class="fetal-paciente-campos-ocultos" style="position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden;" aria-hidden="true">
+              <div class="card">
+                <div class="card-title"><span class="dot"></span> Datos de la Paciente</div>
+                <div class="form-grid">
+                  <div class="form-group span-2">
+                    <label class="form-label">Nombre completo de la paciente *</label>
+                    <input type="text" id="nombre_paciente" class="form-control" placeholder="Apellido, Nombre">
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">N° Identificación *</label>
+                    <input type="text" id="identificacion" class="form-control" placeholder="CC / TI / PP"
+                      oninput="document.getElementById('paciente_id').value = this.value.replace(/\D/g, '')">
+                    <input type="hidden" id="paciente_id">
+                    <input type="hidden" id="formulario_id">
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Edad Gestacional (semanas) *</label>
+                    <input type="number" id="edad_gestacional" class="form-control" min="20" max="45"
+                      placeholder="ej. 39">
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Gestas *</label>
+                    <input type="number" id="gestas" class="form-control" min="1" max="20" placeholder="ej. 2"
+                      value="1">
+                  </div>
+                  <div class="form-group span-2">
+                    <label class="form-label">Nombre del acompañante en el parto</label>
+                    <input type="text" id="nombre_acompanante" class="form-control"
+                      placeholder="Nombre del acompañante">
+                  </div>
+                </div>
+              </div>
+              </div>
+              <div class="card">
+                <div class="card-title"><span class="dot"></span> Características del Parto</div>
+                <div class="form-grid cols-3">
+                  <div class="form-group">
+                    <label class="form-label">Tipo de parto</label>
+                    <select id="tipo_parto" class="form-control">
+                      <option value="">— Seleccionar —</option>
+                      <option value="VAGINAL">Vaginal</option>
+                      <option value="INSTRUMENTADO">Instrumentado</option>
+                      <option value="CESAREA">Cesárea</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Episiotomía</label>
+                    <div class="radio-group" style="padding-top:10px">
+                      <label class="radio-label"><input type="radio" name="episiotomia" value="true"> Sí</label>
+                      <label class="radio-label"><input type="radio" name="episiotomia" value="false" checked>
+                        No</label>
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Alumbramiento</label>
+                    <select id="tipo_alumbramiento" class="form-control">
+                      <option value="">— Seleccionar —</option>
+                      <option value="ESPONTANEO">Espontáneo</option>
+                      <option value="DIRIGIDO">Dirigido</option>
+                      <option value="MANUAL">Manual</option>
+                    </select>
+                  </div>
+                  <div class="form-group span-2">
+                    <label class="form-label">Parto atendido por</label>
+                    <input type="text" id="parto_atendido_por" class="form-control"
+                      placeholder="Nombre del profesional">
+                  </div>
+                </div>
+              </div>
+              <div class="submit-bar">
+                <button class="btn btn-primary" onclick="submitForm()">💾 Guardar</button>
+                <button class="btn btn-secondary" onclick="descargarPDF()"><i data-lucide="file-down"
+                    style="width:16px;height:16px;vertical-align:middle"></i> Descargar PDF</button>
+                <button class="btn btn-secondary" onclick="switchTab('fetocardia')">Siguiente →</button>
+              </div>
+            </div>
+          </section>
+
+          <section class="tab-panel" id="panel-fetocardia">
+            <div class="card">
+              <div class="card-title"><span class="dot"></span> Control de Fetocardia Durante el Expulsivo</div>
+              <div class="fc-table-wrap">
+                <table class="fc-table">
+                  <thead>
+                    <tr>
+                      <th>#</th>
+                      <th>Fecha</th>
+                      <th>Hora</th>
+                      <th>Fetocardia (lpm)</th>
+                      <th>Interpretación</th>
+                      <th>Responsable</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody id="fetocardia-tbody"></tbody>
+                </table>
+              </div>
+              <button class="btn-add-row" onclick="addFetocardiaRow()">+ Agregar registro</button>
+            </div>
+            <div class="submit-bar">
+              <button class="btn btn-secondary" onclick="switchTab('paciente')">← Anterior</button>
+              <button class="btn btn-primary" onclick="submitForm()">💾 Guardar</button>
+              <button class="btn btn-secondary" onclick="descargarPDF()"><i data-lucide="file-down"
+                  style="width:16px;height:16px;vertical-align:middle"></i> Descargar PDF</button>
+              <button class="btn btn-secondary" onclick="switchTab('recien-nacido')">Siguiente →</button>
+            </div>
+          </section>
+
+          <section class="tab-panel" id="panel-recien-nacido">
+            <div class="card">
+              <div class="card-title"><span class="dot"></span> Datos del Recién Nacido</div>
+              <div class="form-grid">
+                <div class="form-group">
+                  <label class="form-label">Hora de nacimiento *</label>
+                  <input type="time" id="hora_nacimiento" class="form-control">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Pasa a UCI Neonatal</label>
+                  <div class="radio-group" style="padding-top:10px">
+                    <label class="radio-label"><input type="radio" name="uci_neonatal" value="true"
+                        onchange="toggleUCICausa()"> Sí</label>
+                    <label class="radio-label"><input type="radio" name="uci_neonatal" value="false" checked
+                        onchange="toggleUCICausa()"> No</label>
+                  </div>
+                </div>
+                <div class="form-group span-2" id="causa-uci-group" style="display:none">
+                  <label class="form-label">Causa ingreso UCI</label>
+                  <input type="text" id="causa_uci" class="form-control" placeholder="Causa">
+                </div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-title"><span class="dot"></span> Antropometría</div>
+              <div class="form-grid cols-4">
+                <div class="form-group">
+                  <label class="form-label">Género</label>
+                  <select id="genero" class="form-control">
+                    <option value="M">Masculino</option>
+                    <option value="F">Femenino</option>
+                    <option value="I">Indeterminado</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Peso (g) *</label>
+                  <input type="number" id="peso" class="form-control" min="300" max="7000" placeholder="ej. 3200">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Talla (cm) *</label>
+                  <input type="number" id="talla" class="form-control" min="20" max="70" step="0.1"
+                    placeholder="ej. 50">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Per. Cefálico (cm)</label>
+                  <input type="number" id="pc" class="form-control" step="0.1" placeholder="ej. 34">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Per. Torácico (cm)</label>
+                  <input type="number" id="pt" class="form-control" step="0.1" placeholder="ej. 32">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Per. Abdominal (cm)</label>
+                  <input type="number" id="p_abd" class="form-control" step="0.1" placeholder="ej. 30">
+                </div>
+              </div>
+            </div>
+            <div class="card" id="apgar-card">
+              <div class="card-title"><span class="dot"></span> APGAR & Laboratorio</div>
+              <div class="apgar-card-banner" id="apgar-card-banner"></div>
+              <div class="form-grid">
+                <div class="form-group apgar-item">
+                  <label class="form-label">APGAR 1 min *</label>
+                  <div class="apgar-box">
+                    <input type="number" id="apgar_1min" class="form-control" min="0" max="10" placeholder="0-10"
+                      oninput="updateApgarDisplay('apgar_1min','apgar-display-1','apgar-alert-1')">
+                    <div class="apgar-score apgar-7-10" id="apgar-display-1">—</div>
+                  </div>
+                  <div class="apgar-alert" id="apgar-alert-1"></div>
+                </div>
+                <div class="form-group apgar-item">
+                  <label class="form-label">APGAR 5 min *</label>
+                  <div class="apgar-box">
+                    <input type="number" id="apgar_5min" class="form-control" min="0" max="10" placeholder="0-10"
+                      oninput="updateApgarDisplay('apgar_5min','apgar-display-5','apgar-alert-5')">
+                    <div class="apgar-score apgar-7-10" id="apgar-display-5">—</div>
+                  </div>
+                  <div class="apgar-alert" id="apgar-alert-5"></div>
+                </div>
+                <div class="form-group apgar-item">
+                  <label class="form-label">APGAR 10 min</label>
+                  <div class="apgar-box">
+                    <input type="number" id="apgar_10min" class="form-control" min="0" max="10" placeholder="0-10"
+                      oninput="updateApgarDisplay('apgar_10min','apgar-display-10','apgar-alert-10')">
+                    <div class="apgar-score apgar-7-10" id="apgar-display-10">—</div>
+                  </div>
+                  <div class="apgar-alert" id="apgar-alert-10"></div>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">TSH</label>
+                  <input type="number" id="tsh" class="form-control" step="0.01" placeholder="mUI/L">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Hemoclasificación</label>
+                  <select id="hemoclasificacion" class="form-control">
+                    <option value="">—</option>
+                    <option value="A+">A+</option>
+                    <option value="A-">A-</option>
+                    <option value="B+">B+</option>
+                    <option value="B-">B-</option>
+                    <option value="AB+">AB+</option>
+                    <option value="AB-">AB-</option>
+                    <option value="O+">O+</option>
+                    <option value="O-">O-</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Vacunas</label>
+                  <div class="check-group">
+                    <label class="check-label"><input type="checkbox" id="vacuna_hb"> HB</label>
+                    <label class="check-label"><input type="checkbox" id="vacuna_bcg"> BCG</label>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-title"><span class="dot"></span> Líquido Amniótico & Lavado</div>
+              <div class="form-grid">
+                <div class="form-group span-full">
+                  <label class="form-label">Características del líquido amniótico</label>
+                  <textarea id="caracteristicas_liquido" class="form-control" placeholder="Descripción..."></textarea>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Lavado gástrico</label>
+                  <div class="radio-group">
+                    <label class="radio-label"><input type="radio" name="lavado_gastrico" value="true"> Sí</label>
+                    <label class="radio-label"><input type="radio" name="lavado_gastrico" value="false" checked>
+                      No</label>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Elimina</label>
+                  <div class="radio-group">
+                    <label class="radio-label"><input type="radio" name="elimina" value="true"> Sí</label>
+                    <label class="radio-label"><input type="radio" name="elimina" value="false" checked> No</label>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Meconio</label>
+                  <div class="radio-group">
+                    <label class="radio-label"><input type="radio" name="meconio" value="true"> Sí</label>
+                    <label class="radio-label"><input type="radio" name="meconio" value="false" checked> No</label>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-title"><span class="dot"></span> Oximetría</div>
+              <div class="form-grid cols-2">
+                <div class="form-group">
+                  <label class="form-label">Al Nacimiento — Preductal (%)</label>
+                  <input type="number" id="oximetria_nac_pre" class="form-control" min="0" max="100" placeholder="%">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Al Nacimiento — Posductal (%)</label>
+                  <input type="number" id="oximetria_nac_pos" class="form-control" min="0" max="100" placeholder="%">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">A las 12h — Preductal (%)</label>
+                  <input type="number" id="oximetria_12h_pre" class="form-control" min="0" max="100" placeholder="%">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">A las 12h — Posductal (%)</label>
+                  <input type="number" id="oximetria_12h_pos" class="form-control" min="0" max="100" placeholder="%">
+                </div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-title"><span class="dot"></span> Tensión Arterial del Neonato (12h)</div>
+              <div class="form-grid cols-4">
+                <div class="form-group">
+                  <label class="form-label">MSD</label>
+                  <input type="text" id="ta_msd" class="form-control" placeholder="mmHg">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">MSI</label>
+                  <input type="text" id="ta_msi" class="form-control" placeholder="mmHg">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">MID</label>
+                  <input type="text" id="ta_mid" class="form-control" placeholder="mmHg">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">MIIZ</label>
+                  <input type="text" id="ta_miiz" class="form-control" placeholder="mmHg">
+                </div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-title"><span class="dot"></span> Glucometrías</div>
+              <div id="glucometrias-container"></div>
+              <button class="btn-add-row" onclick="addGlucometria()">+ Agregar glucometría</button>
+            </div>
+            <div class="card">
+              <div class="card-title"><span class="dot"></span> Atención</div>
+              <div class="form-grid">
+                <div class="form-group span-2">
+                  <label class="form-label">Neonato atendido por</label>
+                  <input type="text" id="neonato_atendido_por" class="form-control"
+                    placeholder="Nombre del profesional">
+                </div>
+                <div class="form-group span-full">
+                  <label class="form-label">¿Valorado por pediatra antes del egreso?</label>
+                  <div class="radio-group">
+                    <label class="radio-label"><input type="radio" name="valorado_pediatra" value="true"> Sí</label>
+                    <label class="radio-label"><input type="radio" name="valorado_pediatra" value="false" checked>
+                      No</label>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="submit-bar">
+              <button class="btn btn-secondary" onclick="switchTab('fetocardia')">← Anterior</button>
+              <button class="btn btn-primary" onclick="submitForm()">💾 Guardar</button>
+              <button class="btn btn-secondary" onclick="descargarPDF()"><i data-lucide="file-down"
+                  style="width:16px;height:16px;vertical-align:middle"></i> Descargar PDF</button>
+              <button class="btn btn-secondary" onclick="switchTab('postparto')">Siguiente →</button>
+            </div>
+          </section>
+
+          <section class="tab-panel" id="panel-postparto">
+            <div class="card">
+              <div class="card-title"><span class="dot"></span> Control Postparto Inmediato</div>
+              <p style="color:var(--text-secondary);font-size:0.82rem;margin-bottom:12px;">Minutos desde expulsión:
+                15·30·45·60·75·90·105·120·150·180·240·300·360</p>
+              <div class="pp-quick-actions">
+                <div class="pp-quick-row">
+                  <label>Hora de inicio (expulsión):</label>
+                  <input type="time" id="pp-hora-inicio" class="form-control pp-hora-input">
+                  <button type="button" class="btn-pp-quick" onclick="ppCalcularHoras()"
+                    title="Calcular horas de control según intervalos">Calcular horas</button>
+                  <button type="button" class="btn-pp-quick" onclick="ppUsarHoraNacimiento()"
+                    title="Usar hora de nacimiento del RN">Usar hora RN</button>
+                </div>
+                <div class="pp-quick-row">
+                  <button type="button" class="btn-pp-quick btn-pp-secondary" onclick="ppFechaHoy()">Fecha hoy</button>
+                  <button type="button" class="btn-pp-quick btn-pp-secondary" onclick="ppPropagarFecha()">Propagar
+                    fecha</button>
+                  <button type="button" class="btn-pp-quick btn-pp-secondary" onclick="ppPropagarResponsable()">Propagar
+                    responsable</button>
+                </div>
+              </div>
+              <div class="pp-table-wrap">
+                <table class="pp-table" id="pp-table">
+                  <thead>
+                    <tr>
+                      <th class="row-label">Parámetro</th>
+                      <th>15'</th>
+                      <th>30'</th>
+                      <th>45'</th>
+                      <th>60'</th>
+                      <th>75'</th>
+                      <th>90'</th>
+                      <th>105'</th>
+                      <th>120'</th>
+                      <th>150'</th>
+                      <th>180'</th>
+                      <th>240'</th>
+                      <th>300'</th>
+                      <th>360'</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td class="rowlabel-cell">FECHA</td>
+                      <td><input type="date" class="pp-input" data-param="fecha" data-col="0"></td>
+                      <td><input type="date" class="pp-input" data-param="fecha" data-col="1"></td>
+                      <td><input type="date" class="pp-input" data-param="fecha" data-col="2"></td>
+                      <td><input type="date" class="pp-input" data-param="fecha" data-col="3"></td>
+                      <td><input type="date" class="pp-input" data-param="fecha" data-col="4"></td>
+                      <td><input type="date" class="pp-input" data-param="fecha" data-col="5"></td>
+                      <td><input type="date" class="pp-input" data-param="fecha" data-col="6"></td>
+                      <td><input type="date" class="pp-input" data-param="fecha" data-col="7"></td>
+                      <td><input type="date" class="pp-input" data-param="fecha" data-col="8"></td>
+                      <td><input type="date" class="pp-input" data-param="fecha" data-col="9"></td>
+                      <td><input type="date" class="pp-input" data-param="fecha" data-col="10"></td>
+                      <td><input type="date" class="pp-input" data-param="fecha" data-col="11"></td>
+                      <td><input type="date" class="pp-input" data-param="fecha" data-col="12"></td>
+                    </tr>
+                    <tr>
+                      <td class="rowlabel-cell">HORA</td>
+                      <td><input type="time" class="pp-input" data-param="hora" data-col="0"></td>
+                      <td><input type="time" class="pp-input" data-param="hora" data-col="1"></td>
+                      <td><input type="time" class="pp-input" data-param="hora" data-col="2"></td>
+                      <td><input type="time" class="pp-input" data-param="hora" data-col="3"></td>
+                      <td><input type="time" class="pp-input" data-param="hora" data-col="4"></td>
+                      <td><input type="time" class="pp-input" data-param="hora" data-col="5"></td>
+                      <td><input type="time" class="pp-input" data-param="hora" data-col="6"></td>
+                      <td><input type="time" class="pp-input" data-param="hora" data-col="7"></td>
+                      <td><input type="time" class="pp-input" data-param="hora" data-col="8"></td>
+                      <td><input type="time" class="pp-input" data-param="hora" data-col="9"></td>
+                      <td><input type="time" class="pp-input" data-param="hora" data-col="10"></td>
+                      <td><input type="time" class="pp-input" data-param="hora" data-col="11"></td>
+                      <td><input type="time" class="pp-input" data-param="hora" data-col="12"></td>
+                    </tr>
+                    <tr>
+                      <td class="rowlabel-cell">T/A</td>
+                      <td><input type="text" class="pp-input" placeholder="120/80" data-param="ta" data-col="0"></td>
+                      <td><input type="text" class="pp-input" placeholder="120/80" data-param="ta" data-col="1"></td>
+                      <td><input type="text" class="pp-input" placeholder="120/80" data-param="ta" data-col="2"></td>
+                      <td><input type="text" class="pp-input" placeholder="120/80" data-param="ta" data-col="3"></td>
+                      <td><input type="text" class="pp-input" placeholder="120/80" data-param="ta" data-col="4"></td>
+                      <td><input type="text" class="pp-input" placeholder="120/80" data-param="ta" data-col="5"></td>
+                      <td><input type="text" class="pp-input" placeholder="120/80" data-param="ta" data-col="6"></td>
+                      <td><input type="text" class="pp-input" placeholder="120/80" data-param="ta" data-col="7"></td>
+                      <td><input type="text" class="pp-input" placeholder="120/80" data-param="ta" data-col="8"></td>
+                      <td><input type="text" class="pp-input" placeholder="120/80" data-param="ta" data-col="9"></td>
+                      <td><input type="text" class="pp-input" placeholder="120/80" data-param="ta" data-col="10"></td>
+                      <td><input type="text" class="pp-input" placeholder="120/80" data-param="ta" data-col="11"></td>
+                      <td><input type="text" class="pp-input" placeholder="120/80" data-param="ta" data-col="12"></td>
+                    </tr>
+                    <tr>
+                      <td class="rowlabel-cell">TEMPERATURA (°C)</td>
+                      <td><input type="number" class="pp-input" step="0.1" placeholder="37.0" data-param="temp"
+                          data-col="0"></td>
+                      <td><input type="number" class="pp-input" step="0.1" placeholder="37.0" data-param="temp"
+                          data-col="1"></td>
+                      <td><input type="number" class="pp-input" step="0.1" placeholder="37.0" data-param="temp"
+                          data-col="2"></td>
+                      <td><input type="number" class="pp-input" step="0.1" placeholder="37.0" data-param="temp"
+                          data-col="3"></td>
+                      <td><input type="number" class="pp-input" step="0.1" placeholder="37.0" data-param="temp"
+                          data-col="4"></td>
+                      <td><input type="number" class="pp-input" step="0.1" placeholder="37.0" data-param="temp"
+                          data-col="5"></td>
+                      <td><input type="number" class="pp-input" step="0.1" placeholder="37.0" data-param="temp"
+                          data-col="6"></td>
+                      <td><input type="number" class="pp-input" step="0.1" placeholder="37.0" data-param="temp"
+                          data-col="7"></td>
+                      <td><input type="number" class="pp-input" step="0.1" placeholder="37.0" data-param="temp"
+                          data-col="8"></td>
+                      <td><input type="number" class="pp-input" step="0.1" placeholder="37.0" data-param="temp"
+                          data-col="9"></td>
+                      <td><input type="number" class="pp-input" step="0.1" placeholder="37.0" data-param="temp"
+                          data-col="10"></td>
+                      <td><input type="number" class="pp-input" step="0.1" placeholder="37.0" data-param="temp"
+                          data-col="11"></td>
+                      <td><input type="number" class="pp-input" step="0.1" placeholder="37.0" data-param="temp"
+                          data-col="12"></td>
+                    </tr>
+                    <tr>
+                      <td class="rowlabel-cell">PULSO (lpm)</td>
+                      <td><input type="number" class="pp-input" placeholder="72" data-param="pulso" data-col="0"></td>
+                      <td><input type="number" class="pp-input" placeholder="72" data-param="pulso" data-col="1"></td>
+                      <td><input type="number" class="pp-input" placeholder="72" data-param="pulso" data-col="2"></td>
+                      <td><input type="number" class="pp-input" placeholder="72" data-param="pulso" data-col="3"></td>
+                      <td><input type="number" class="pp-input" placeholder="72" data-param="pulso" data-col="4"></td>
+                      <td><input type="number" class="pp-input" placeholder="72" data-param="pulso" data-col="5"></td>
+                      <td><input type="number" class="pp-input" placeholder="72" data-param="pulso" data-col="6"></td>
+                      <td><input type="number" class="pp-input" placeholder="72" data-param="pulso" data-col="7"></td>
+                      <td><input type="number" class="pp-input" placeholder="72" data-param="pulso" data-col="8"></td>
+                      <td><input type="number" class="pp-input" placeholder="72" data-param="pulso" data-col="9"></td>
+                      <td><input type="number" class="pp-input" placeholder="72" data-param="pulso" data-col="10"></td>
+                      <td><input type="number" class="pp-input" placeholder="72" data-param="pulso" data-col="11"></td>
+                      <td><input type="number" class="pp-input" placeholder="72" data-param="pulso" data-col="12"></td>
+                    </tr>
+                    <tr>
+                      <td class="rowlabel-cell">RESPIRACIÓN (rpm)</td>
+                      <td><input type="number" class="pp-input" placeholder="18" data-param="resp" data-col="0"></td>
+                      <td><input type="number" class="pp-input" placeholder="18" data-param="resp" data-col="1"></td>
+                      <td><input type="number" class="pp-input" placeholder="18" data-param="resp" data-col="2"></td>
+                      <td><input type="number" class="pp-input" placeholder="18" data-param="resp" data-col="3"></td>
+                      <td><input type="number" class="pp-input" placeholder="18" data-param="resp" data-col="4"></td>
+                      <td><input type="number" class="pp-input" placeholder="18" data-param="resp" data-col="5"></td>
+                      <td><input type="number" class="pp-input" placeholder="18" data-param="resp" data-col="6"></td>
+                      <td><input type="number" class="pp-input" placeholder="18" data-param="resp" data-col="7"></td>
+                      <td><input type="number" class="pp-input" placeholder="18" data-param="resp" data-col="8"></td>
+                      <td><input type="number" class="pp-input" placeholder="18" data-param="resp" data-col="9"></td>
+                      <td><input type="number" class="pp-input" placeholder="18" data-param="resp" data-col="10"></td>
+                      <td><input type="number" class="pp-input" placeholder="18" data-param="resp" data-col="11"></td>
+                      <td><input type="number" class="pp-input" placeholder="18" data-param="resp" data-col="12"></td>
+                    </tr>
+                    <tr>
+                      <td class="rowlabel-cell">CUANTIFICACIÓN GRAVIMÉTRICA VAGINAL (g)</td>
+                      <td><input type="number" class="pp-input" min="0" step="1" placeholder="0" data-param="cgv" data-col="0"></td>
+                      <td><input type="number" class="pp-input" min="0" step="1" placeholder="0" data-param="cgv" data-col="1"></td>
+                      <td><input type="number" class="pp-input" min="0" step="1" placeholder="0" data-param="cgv" data-col="2"></td>
+                      <td><input type="number" class="pp-input" min="0" step="1" placeholder="0" data-param="cgv" data-col="3"></td>
+                      <td><input type="number" class="pp-input" min="0" step="1" placeholder="0" data-param="cgv" data-col="4"></td>
+                      <td><input type="number" class="pp-input" min="0" step="1" placeholder="0" data-param="cgv" data-col="5"></td>
+                      <td><input type="number" class="pp-input" min="0" step="1" placeholder="0" data-param="cgv" data-col="6"></td>
+                      <td><input type="number" class="pp-input" min="0" step="1" placeholder="0" data-param="cgv" data-col="7"></td>
+                      <td><input type="number" class="pp-input" min="0" step="1" placeholder="0" data-param="cgv" data-col="8"></td>
+                      <td><input type="number" class="pp-input" min="0" step="1" placeholder="0" data-param="cgv" data-col="9"></td>
+                      <td><input type="number" class="pp-input" min="0" step="1" placeholder="0" data-param="cgv" data-col="10"></td>
+                      <td><input type="number" class="pp-input" min="0" step="1" placeholder="0" data-param="cgv" data-col="11"></td>
+                      <td><input type="number" class="pp-input" min="0" step="1" placeholder="0" data-param="cgv" data-col="12"></td>
+                    </tr>
+                    <tr>
+                      <td class="rowlabel-cell">INVOLUCIÓN UTERINA</td>
+                      <td><select class="pp-input" data-param="invol" data-col="0">
+                          <option value="">-</option>
+                          <option value="1CM_UMBILICAL">1 cm umbilical</option>
+                          <option value="2CM_UMBILICAL">2 cm umbilical</option>
+                        </select></td>
+                      <td><select class="pp-input" data-param="invol" data-col="1">
+                          <option value="">-</option>
+                          <option value="1CM_UMBILICAL">1 cm umbilical</option>
+                          <option value="2CM_UMBILICAL">2 cm umbilical</option>
+                        </select></td>
+                      <td><select class="pp-input" data-param="invol" data-col="2">
+                          <option value="">-</option>
+                          <option value="1CM_UMBILICAL">1 cm umbilical</option>
+                          <option value="2CM_UMBILICAL">2 cm umbilical</option>
+                        </select></td>
+                      <td><select class="pp-input" data-param="invol" data-col="3">
+                          <option value="">-</option>
+                          <option value="1CM_UMBILICAL">1 cm umbilical</option>
+                          <option value="2CM_UMBILICAL">2 cm umbilical</option>
+                        </select></td>
+                      <td><select class="pp-input" data-param="invol" data-col="4">
+                          <option value="">-</option>
+                          <option value="1CM_UMBILICAL">1 cm umbilical</option>
+                          <option value="2CM_UMBILICAL">2 cm umbilical</option>
+                        </select></td>
+                      <td><select class="pp-input" data-param="invol" data-col="5">
+                          <option value="">-</option>
+                          <option value="1CM_UMBILICAL">1 cm umbilical</option>
+                          <option value="2CM_UMBILICAL">2 cm umbilical</option>
+                        </select></td>
+                      <td><select class="pp-input" data-param="invol" data-col="6">
+                          <option value="">-</option>
+                          <option value="1CM_UMBILICAL">1 cm umbilical</option>
+                          <option value="2CM_UMBILICAL">2 cm umbilical</option>
+                        </select></td>
+                      <td><select class="pp-input" data-param="invol" data-col="7">
+                          <option value="">-</option>
+                          <option value="1CM_UMBILICAL">1 cm umbilical</option>
+                          <option value="2CM_UMBILICAL">2 cm umbilical</option>
+                        </select></td>
+                      <td><select class="pp-input" data-param="invol" data-col="8">
+                          <option value="">-</option>
+                          <option value="1CM_UMBILICAL">1 cm umbilical</option>
+                          <option value="2CM_UMBILICAL">2 cm umbilical</option>
+                        </select></td>
+                      <td><select class="pp-input" data-param="invol" data-col="9">
+                          <option value="">-</option>
+                          <option value="1CM_UMBILICAL">1 cm umbilical</option>
+                          <option value="2CM_UMBILICAL">2 cm umbilical</option>
+                        </select></td>
+                      <td><select class="pp-input" data-param="invol" data-col="10">
+                          <option value="">-</option>
+                          <option value="1CM_UMBILICAL">1 cm umbilical</option>
+                          <option value="2CM_UMBILICAL">2 cm umbilical</option>
+                        </select></td>
+                      <td><select class="pp-input" data-param="invol" data-col="11">
+                          <option value="">-</option>
+                          <option value="1CM_UMBILICAL">1 cm umbilical</option>
+                          <option value="2CM_UMBILICAL">2 cm umbilical</option>
+                        </select></td>
+                      <td><select class="pp-input" data-param="invol" data-col="12">
+                          <option value="">-</option>
+                          <option value="1CM_UMBILICAL">1 cm umbilical</option>
+                          <option value="2CM_UMBILICAL">2 cm umbilical</option>
+                        </select></td>
+                    </tr>
+                    <tr>
+                      <td class="rowlabel-cell">RESPONSABLE</td>
+                      <td><input type="text" class="pp-input" data-param="responsable" data-col="0"></td>
+                      <td><input type="text" class="pp-input" data-param="responsable" data-col="1"></td>
+                      <td><input type="text" class="pp-input" data-param="responsable" data-col="2"></td>
+                      <td><input type="text" class="pp-input" data-param="responsable" data-col="3"></td>
+                      <td><input type="text" class="pp-input" data-param="responsable" data-col="4"></td>
+                      <td><input type="text" class="pp-input" data-param="responsable" data-col="5"></td>
+                      <td><input type="text" class="pp-input" data-param="responsable" data-col="6"></td>
+                      <td><input type="text" class="pp-input" data-param="responsable" data-col="7"></td>
+                      <td><input type="text" class="pp-input" data-param="responsable" data-col="8"></td>
+                      <td><input type="text" class="pp-input" data-param="responsable" data-col="9"></td>
+                      <td><input type="text" class="pp-input" data-param="responsable" data-col="10"></td>
+                      <td><input type="text" class="pp-input" data-param="responsable" data-col="11"></td>
+                      <td><input type="text" class="pp-input" data-param="responsable" data-col="12"></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <div class="submit-bar">
+              <button class="btn btn-secondary" onclick="switchTab('recien-nacido')">← Anterior</button>
+              <button class="btn btn-primary" onclick="submitForm()">💾 Guardar</button>
+              <button class="btn btn-secondary" onclick="descargarPDF()"><i data-lucide="file-down"
+                  style="width:16px;height:16px;vertical-align:middle"></i> Descargar PDF</button>
+              <button class="btn btn-secondary" onclick="switchTab('huella')">Siguiente →</button>
+            </div>
+          </section>
+
+          <section class="tab-panel" id="panel-huella">
+            <div class="card card-huella">
+              <div class="card-title"><span class="dot"></span> Huella del Pie del Recién Nacido y Firma del Responsable</div>
+              <p class="huella-desc">Huella: fotografía <strong>JPG o PNG</strong> del pie con tinta (capturar o subir, máx. 5 MB). Firma: del profesional responsable.</p>
+              <div class="huella-container" style="display: flex; flex-wrap: wrap; gap: 24px;">
+                <!-- Column 1: Baby Footprint -->
+                <div class="huella-upload-section"
+                  style="flex: 1; min-width: 340px; border: 1px solid var(--border-color); border-radius: 14px; padding: 20px; background: #fff; box-shadow: var(--shadow-sm); display: flex; flex-direction: column;">
+                  <p class="huella-section-label"
+                    style="display: flex; align-items: center; gap: 8px; margin-bottom: 15px;">
+                    <i data-lucide="baby" style="width:16px;height:16px"></i> 1. Huella del Recién Nacido
+                  </p>
+
+                  <div id="huella-capture-area">
+                    <div class="file-upload-area huella-upload-area"
+                      onclick="document.getElementById('huella-file').click()"
+                      style="min-height: 150px; padding: 25px; border: 2px dashed #cbd5e1; background: #f8fafc;">
+                      <input type="file" id="huella-file" accept="image/jpeg,image/jpg,image/png" capture="environment"
+                        onchange="loadHuellaFile(event)">
+                      <div class="huella-upload-icon-wrap"
+                        style="width: 56px; height: 56px; margin-bottom: 12px; background: var(--header-gradient);">
+                        <i data-lucide="camera" style="width:28px;height:28px;color: #fff;"></i>
+                      </div>
+                      <p class="huella-upload-title" style="font-size: 1rem; color: #1e293b;">Capturar o Subir Foto</p>
+                      <p style="font-size: 0.75rem; color: #64748b; margin-top: 4px;">Toque aquí para abrir la cámara
+                      </p>
+                    </div>
+                  </div>
+
+                  <div id="huella-preview-wrap" class="huella-preview-wrap"
+                    style="display:none; margin-top: 0; padding: 10px; border: 1px solid #e2e8f0; background: #fff; box-shadow: none;">
+                    <p class="huella-preview-label"
+                      style="margin-bottom: 8px; font-size: 0.72rem; color: var(--primary-color); font-weight: 700;">
+                      <i data-lucide="eye" style="width:12px;height:12px"></i> Vista Previa de Huella
+                    </p>
+                    <div class="huella-preview huella-cropper-container" style="height: 180px; margin-bottom: 12px;">
+                      <img id="huella-preview-img" src="" alt="Huella">
+                    </div>
+                    <div class="huella-actions"
+                      style="margin-top: 0; padding-top: 10px; gap: 6px; justify-content: center;">
+                      <select id="huella-scale" class="form-control"
+                        style="width:auto; padding:0.35rem 0.6rem; font-size:0.75rem">
+                        <option value="0.25">25%</option>
+                        <option value="0.5">50%</option>
+                        <option value="0.75">75%</option>
+                        <option value="1" selected>100%</option>
+                      </select>
+                      <button type="button" class="btn btn-primary btn-sm" onclick="aplicarAjusteHuella()">
+                        <i data-lucide="check-circle" style="width:14px;height:14px"></i> Aplicar
+                      </button>
+                      <button type="button" class="btn btn-danger btn-sm" onclick="removeHuellaFile()">
+                        <i data-lucide="x" style="width:14px;height:14px"></i>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Column 2: Firma del Responsable -->
+                <div class="huella-signature-section" style="flex: 1; min-width: 340px;">
+                  <!-- State A: Signature Pad (Input) -->
+                  <div id="signature-pad-container" class="signature-pad-card" style="padding: 20px;">
+                    <p class="huella-section-label"
+                      style="display: flex; align-items: center; gap: 8px; margin-bottom: 15px;">
+                      <i data-lucide="pen-tool" style="width:16px;height:16px"></i> 2. Firma del responsable
+                    </p>
+
+                    <div class="signature-wrapper">
+                      <canvas id="signature-canvas"></canvas>
+                    </div>
+
+                    <div style="margin: 10px 0;">
+                      <input type="text" id="signature-name" class="form-control"
+                        placeholder="Nombre completo del responsable"
+                        style="width: 100%; padding: 0.5rem 0.75rem; font-size: 0.85rem;">
+                    </div>
+
+                    <div id="signature-signed-status" class="signature-badge" style="margin-bottom: 10px;">
+                      <i data-lucide="info" style="width:12px;height:12px"></i> Sin firmar
+                    </div>
+
+                    <div class="signature-actions">
+                      <button type="button" class="btn btn-secondary btn-sm" onclick="clearSignature()"
+                        style="flex:1; justify-content: center;">
+                        <i data-lucide="eraser" style="width:14px;height:14px"></i> Limpiar
+                      </button>
+                      <button type="button" class="btn btn-primary btn-sm" id="btn-save-signature"
+                        onclick="saveSignatureDigital()" style="flex:2; justify-content: center;">
+                        <i data-lucide="save" style="width:14px;height:14px"></i> Guardar Firma
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- State B: Saved Signature Display -->
+                  <div id="huella-signature-container"
+                    style="display:none; height: 100%; padding: 20px; border: 1px solid var(--border-color); border-radius: 14px; background: #fff; box-shadow: var(--shadow-sm); flex-direction: column;">
+                    <p class="huella-section-label"
+                      style="margin-bottom: 15px; display: flex; align-items: center; gap: 8px;">
+                      <i data-lucide="check-square" style="width:16px;height:16px"></i> 2. Firma del responsable registrada
+                    </p>
+                    <div
+                      style="background: #f0fdf4; border: 2px solid #bcf0da; border-radius: 12px; padding: 20px; text-align: center; flex: 1; display: flex; flex-direction: column; justify-content: center; position: relative;">
+                      <button type="button" onclick="resetSignatureView()" title="Firmar de nuevo"
+                        style="position: absolute; top: 10px; right: 10px; background: #fff; border: 1px solid #ddd; border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #64748b;">
+                        <i data-lucide="rotate-ccw" style="width:16px;height:16px"></i>
+                      </button>
+                      <img id="huella-signature-img" src="" alt="Firma"
+                        style="max-width: 100%; max-height: 120px; display: block; margin: 0 auto 15px; filter: contrast(1.2);">
+                      <div id="huella-signature-name"
+                        style="font-weight: 700; color: #065f46; font-size: 1rem; border-top: 1px solid #bcf0da; padding-top: 10px;">
+                      </div>
+                      <div id="huella-signature-date"
+                        style="font-size: 0.7rem; color: #047857; margin-top: 4px; font-style: italic;"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="submit-bar">
+                <button type="button" class="btn btn-secondary" onclick="switchTab('postparto')">← Anterior</button>
+                <button type="button" class="btn btn-primary btn-large" id="submit-btn">Guardar
+                  Registro Completo</button>
+                <button type="button" class="btn btn-secondary btn-large" onclick="descargarPDF()" id="btn-pdf">
+                  <i data-lucide="file-down" style="width:18px;height:18px;vertical-align:middle"></i> Descargar PDF
+                </button>
+              </div>
+          </section>
+
+        </main>
+
+        <footer class="site-footer">
+          HOSPITAL UNIVERSITARIO DEPARTAMENTAL DE NARIÑO
+        </footer>
+
+        <div class="toast-container" id="toast-container"></div>
+
+        <script>
+          // API base URL: SIEMPRE ruta absoluta /fetal/api/ para evitar 404 en registros/
+          const API_BASE = (window.location.origin || '') + '/fetal/api';
+          // Biometría: solo firma del responsable + foto huella del pie del bebé (huella dactilar eliminada)
+
+          function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+              const cookies = document.cookie.split(';');
+              for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                  cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                  break;
+                }
+              }
+            }
+            return cookieValue;
+          }
+
+          function getHeaders() {
+            const headers = { 'Content-Type': 'application/json' };
+            const csrf = getCookie('csrftoken');
+            if (csrf) headers['X-CSRFToken'] = csrf;
+            return headers;
+          }
+
+          function fixMojibakeText(text) {
+            const value = (text || '').toString();
+            if (!value) return '';
+            // Solo intentar corrección cuando hay patrones típicos de texto mal decodificado.
+            if (!/[ÃÂÄËÏÖÜÝß]/.test(value)) return value;
+            try {
+              const repaired = decodeURIComponent(escape(value));
+              return repaired || value;
+            } catch (e) {
+              return value;
+            }
+          }
+
+          let savedRegistroId = null;
+          let fcRowCount = 0;
+          let glucoCount = 0;
+          let huellaFileBase64 = null;
+
+          function switchTab(name) {
+            document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById('panel-' + name).classList.add('active');
+            document.getElementById('tab-' + name).classList.add('active');
+            window.scrollTo(0, 0);
+            if (name === 'huella') {
+              if (huellaFileBase64) {
+                const img = document.getElementById('huella-preview-img');
+                const wrap = document.getElementById('huella-preview-wrap');
+                if (img && wrap) { img.src = huellaFileBase64; wrap.style.display = 'block'; wrap.classList.add('huella-applied'); }
+              }
+              if (typeof lucide !== 'undefined') setTimeout(() => lucide.createIcons(), 80);
+              // Fix for Signature Pad sizing when hidden
+              setTimeout(() => { if (typeof resizeSignatureCanvas === 'function') resizeSignatureCanvas(); }, 150);
+            }
+          }
+
+          function getFechaHoraActual() {
+            const now = new Date();
+            const fecha = now.toISOString().split('T')[0];
+            const hora = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
+            return { fecha, hora };
+          }
+
+          function addFetocardiaRow() {
+            const tbody = document.getElementById('fetocardia-tbody');
+            const idx = fcRowCount++;
+            const { fecha, hora } = getFechaHoraActual();
+            const tr = document.createElement('tr');
+            tr.id = 'fc-row-' + idx;
+            tr.setAttribute('data-fc-new', '1');
+            tr.innerHTML = `
+    <td style="color:var(--text-secondary);font-size:0.78rem;text-align:center">${tbody.querySelectorAll('tr').length + 1}</td>
+    <td><input type="date" class="form-control" id="fc-fecha-${idx}" value="${fecha}"></td>
+    <td><input type="time" class="form-control" id="fc-hora-${idx}" value="${hora}"></td>
+    <td><input type="number" class="form-control" id="fc-bpm-${idx}" min="50" max="250" placeholder="lpm" oninput="checkFetocardiaAlert(${idx})"></td>
+    <td><span class="fc-alert" id="fc-alert-${idx}"></span></td>
+    <td><input type="text" class="form-control" id="fc-resp-${idx}" placeholder="Profesional"></td>
+    <td><button class="btn-remove-row" onclick="document.getElementById('fc-row-${idx}').remove()">×</button></td>
+  `;
+            tbody.appendChild(tr);
+            // Botón para actualizar fecha/hora al momento actual
+            const inpFecha = document.getElementById('fc-fecha-' + idx);
+            const inpHora = document.getElementById('fc-hora-' + idx);
+            if (inpFecha && inpHora) {
+              const updateNow = () => { const n = getFechaHoraActual(); inpFecha.value = n.fecha; inpHora.value = n.hora; };
+              inpFecha.title = inpHora.title = 'Clic para actualizar a hora actual';
+              inpFecha.addEventListener('dblclick', updateNow);
+              inpHora.addEventListener('dblclick', updateNow);
+            }
+          }
+
+          function addFetocardiaRowReadOnly(fc) {
+            const tbody = document.getElementById('fetocardia-tbody');
+            const n = tbody.querySelectorAll('tr').length + 1;
+            const d = fc.fecha ? fc.fecha.split('T')[0] : '—';
+            const hora = fc.hora ? (fc.hora.length > 5 ? fc.hora.substring(0, 5) : fc.hora) : '—';
+            const bpm = fc.fetocardia != null ? fc.fetocardia : '—';
+            let interp = '';
+            if (fc.fetocardia != null) {
+              if (fc.fetocardia < 110) interp = '⚠ Bradicardia (<110 lpm)';
+              else if (fc.fetocardia > 160) interp = '⚠ Taquicardia (>160 lpm)';
+              else interp = '✓ Normal';
+            }
+            const tr = document.createElement('tr');
+            tr.className = 'fc-row-readonly';
+            tr.setAttribute('data-fc-id', fc.id);
+            tr.innerHTML = `
+    <td style="color:var(--text-secondary);font-size:0.78rem;text-align:center">${n}</td>
+    <td>${d}</td>
+    <td>${hora}</td>
+    <td>${bpm}</td>
+    <td><span class="fc-alert ${interp.includes('Bradicardia') ? 'bradycardia' : interp.includes('Taquicardia') ? 'tachycardia' : 'normal'} show">${interp}</span></td>
+    <td>${fc.responsable || '—'}</td>
+    <td><span class="fc-lock" title="Registro guardado, no editable">🔒</span></td>
+  `;
+            tbody.appendChild(tr);
+          }
+
+          function removeFetocardiaRow(idx) {
+            const row = document.getElementById('fc-row-' + idx);
+            if (row) row.remove();
+          }
+
+          function checkFetocardiaAlert(idx) {
+            const el = document.getElementById('fc-bpm-' + idx);
+            if (!el) return;
+            const bpm = parseInt(el.value);
+            const alert = document.getElementById('fc-alert-' + idx);
+            if (!alert) return;
+            if (!bpm) { alert.className = 'fc-alert'; alert.textContent = ''; return; }
+            if (bpm < 110) {
+              alert.className = 'fc-alert bradycardia show';
+              alert.textContent = '⚠ Bradicardia (<110 lpm)';
+            } else if (bpm > 160) {
+              alert.className = 'fc-alert tachycardia show';
+              alert.textContent = '⚠ Taquicardia (>160 lpm)';
+            } else {
+              alert.className = 'fc-alert normal show';
+              alert.textContent = '✓ Normal';
+            }
+          }
+
+          function updateApgarDisplay(inputId, displayId, alertId) {
+            const val = parseInt(document.getElementById(inputId).value);
+            const el = document.getElementById(displayId);
+            const alertEl = document.getElementById(alertId);
+            el.textContent = isNaN(val) ? '—' : val;
+            el.className = 'apgar-score';
+            if (alertEl) {
+              alertEl.className = 'apgar-alert';
+              alertEl.innerHTML = '';
+              alertEl.classList.remove('show', 'critical', 'moderate', 'normal');
+              el.classList.remove('pulse');
+            }
+            if (!isNaN(val)) {
+              if (val <= 3) {
+                el.classList.add('apgar-0-3', 'pulse');
+                if (alertEl) {
+                  alertEl.classList.add('show', 'critical');
+                  alertEl.innerHTML = '<span class="apgar-alert-icon">⚠️</span> Crítico — Requiere reanimación inmediata';
+                }
+              } else if (val <= 6) {
+                el.classList.add('apgar-4-6', 'pulse');
+                if (alertEl) {
+                  alertEl.classList.add('show', 'moderate');
+                  alertEl.innerHTML = '<span class="apgar-alert-icon">⚡</span> Moderado — Vigilar evolución';
+                }
+              } else {
+                el.classList.add('apgar-7-10');
+                if (alertEl) {
+                  alertEl.classList.add('show', 'normal');
+                  alertEl.innerHTML = '<span class="apgar-alert-icon">✓</span> Normal';
+                }
+              }
+            } else {
+              el.classList.add('apgar-7-10');
+              if (alertEl) alertEl.classList.remove('show');
+            }
+            updateApgarCardBanner();
+          }
+          function updateApgarCardBanner() {
+            const v1 = parseInt(document.getElementById('apgar_1min').value);
+            const v5 = parseInt(document.getElementById('apgar_5min').value);
+            const v10 = parseInt(document.getElementById('apgar_10min').value);
+            const vals = [v1, v5, v10].filter(v => !isNaN(v));
+            const hasCritical = vals.some(v => v <= 3);
+            const hasModerate = vals.some(v => v >= 4 && v <= 6);
+            const banner = document.getElementById('apgar-card-banner');
+            banner.className = 'apgar-card-banner';
+            banner.innerHTML = '';
+            if (hasCritical) {
+              banner.classList.add('show', 'critical');
+              banner.innerHTML = '<span style="font-size:1.2rem">🚨</span> <span>APGAR crítico detectado. Verificar necesidad de reanimación neonatal.</span>';
+            } else if (hasModerate) {
+              banner.classList.add('show', 'moderate');
+              banner.innerHTML = '<span style="font-size:1.2rem">⚡</span> <span>APGAR moderado. Monitorear evolución del recién nacido.</span>';
+            }
+          }
+
+          function toggleUCICausa() {
+            const val = document.querySelector('input[name="uci_neonatal"]:checked').value;
+            document.getElementById('causa-uci-group').style.display = val === 'true' ? 'grid' : 'none';
+          }
+
+          function addGlucometria() {
+            const container = document.getElementById('glucometrias-container');
+            const idx = glucoCount++;
+            const div = document.createElement('div');
+            div.className = 'gluco-row';
+            div.id = 'gluco-row-' + idx;
+            div.innerHTML = `
+    <div class="form-group">
+      <label class="form-label">Hora</label>
+      <input type="time" class="form-control" id="gluco-hora-${idx}">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Resultado (mg/dL)</label>
+      <input type="number" class="form-control" id="gluco-res-${idx}" min="0" max="999" placeholder="mg/dL">
+    </div>
+    <button class="btn btn-danger" style="margin-top:18px" onclick="document.getElementById('gluco-row-${idx}').remove()">×</button>
+  `;
+            container.appendChild(div);
+          }
+
+          let huellaCropper = null;
+
+          function loadHuellaFile(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            if (huellaCropper) {
+              huellaCropper.destroy();
+              huellaCropper = null;
+            }
+            const reader = new FileReader();
+            reader.onload = ev => {
+              const dataUrl = ev.target.result;
+              huellaFileBase64 = dataUrl;
+              const wrap = document.getElementById('huella-preview-wrap');
+              const img = document.getElementById('huella-preview-img');
+              const captureArea = document.getElementById('huella-capture-area');
+              if (captureArea) captureArea.style.display = 'none';
+              wrap.classList.remove('huella-applied');
+              img.src = dataUrl;
+              wrap.style.display = 'block';
+              setTimeout(() => { if (typeof lucide !== 'undefined') lucide.createIcons(); }, 100);
+              img.onload = () => {
+                if (huellaCropper) huellaCropper.destroy();
+                huellaCropper = new Cropper(img, {
+                  aspectRatio: NaN,
+                  viewMode: 1,
+                  dragMode: 'move',
+                  autoCropArea: 0.9,
+                  restore: false,
+                  guides: true,
+                  center: true,
+                  highlight: true,
+                  cropBoxMovable: true,
+                  cropBoxResizable: true
+                });
+              };
+            };
+            reader.readAsDataURL(file);
+          }
+
+          function aplicarAjusteHuella() {
+            if (!huellaCropper) return;
+            const scale = parseFloat(document.getElementById('huella-scale')?.value || '1');
+            const data = huellaCropper.getData();
+            const w = Math.max(100, Math.round(data.width * scale));
+            const h = Math.max(100, Math.round(data.height * scale));
+            const canvas = huellaCropper.getCroppedCanvas({
+              width: w,
+              height: h,
+              imageSmoothingEnabled: true,
+              imageSmoothingQuality: 'high'
+            });
+            if (!canvas) return;
+            huellaFileBase64 = canvas.toDataURL('image/jpeg', 0.9);
+            huellaCropper.destroy();
+            huellaCropper = null;
+            document.getElementById('huella-preview-img').src = huellaFileBase64;
+            const captureArea = document.getElementById('huella-capture-area');
+            if (captureArea) captureArea.style.display = 'none';
+            document.getElementById('huella-preview-wrap').classList.add('huella-applied');
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+          }
+
+          function removeHuellaFile() {
+            if (huellaCropper) {
+              huellaCropper.destroy();
+              huellaCropper = null;
+            }
+            huellaFileBase64 = null;
+            document.getElementById('huella-file').value = '';
+            document.getElementById('huella-preview-wrap').style.display = 'none';
+            document.getElementById('huella-preview-wrap').classList.remove('huella-applied');
+            const captureArea = document.getElementById('huella-capture-area');
+            if (captureArea) captureArea.style.display = 'flex';
+          }
+
+          /** Muestra en el panel Huella del pie una imagen ya guardada (base64). Usado al cargar un registro. */
+          function mostrarHuellaEnPlantilla(b64) {
+            if (!b64 || typeof b64 !== 'string') return;
+            const dataUrl = b64.indexOf('data:') === 0 ? b64 : ('data:image/jpeg;base64,' + b64.trim());
+            if (huellaCropper) {
+              huellaCropper.destroy();
+              huellaCropper = null;
+            }
+            huellaFileBase64 = dataUrl;
+            const wrap = document.getElementById('huella-preview-wrap');
+            const img = document.getElementById('huella-preview-img');
+            if (!wrap || !img) return;
+            img.src = dataUrl;
+            const captureArea = document.getElementById('huella-capture-area');
+            if (captureArea) captureArea.style.display = 'none';
+            wrap.classList.add('huella-applied');
+            wrap.style.display = 'block';
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+          }
+
+          function getHuellaBase64() {
+            return huellaFileBase64 || null;
+          }
+
+          function getRadio(name) {
+            const el = document.querySelector(`input[name="${name}"]:checked`);
+            return el ? el.value === 'true' : false;
+          }
+
+          function buildFetocardiaData() {
+            const rows = [];
+            const tbody = document.getElementById('fetocardia-tbody');
+            if (!tbody) return rows;
+            tbody.querySelectorAll('tr[data-fc-new="1"]').forEach(tr => {
+              const idMatch = tr.id && tr.id.match(/^fc-row-(\d+)$/);
+              if (!idMatch) return;
+              const i = parseInt(idMatch[1], 10);
+              const fecha = document.getElementById('fc-fecha-' + i)?.value;
+              const hora = document.getElementById('fc-hora-' + i)?.value;
+              const bpm = document.getElementById('fc-bpm-' + i)?.value;
+              const resp = document.getElementById('fc-resp-' + i)?.value;
+              if (fecha && hora && bpm) {
+                rows.push({ fecha, hora, fetocardia: parseInt(bpm), responsable: resp || '' });
+              }
+            });
+            return rows;
+          }
+
+          function buildGlucometriaData() {
+            const items = [];
+            for (let i = 0; i < glucoCount; i++) {
+              const row = document.getElementById('gluco-row-' + i);
+              if (!row) continue;
+              const hora = document.getElementById('gluco-hora-' + i)?.value;
+              const res = document.getElementById('gluco-res-' + i)?.value;
+              if (hora && res) items.push({ hora, resultado: parseFloat(res) });
+            }
+            return items;
+          }
+
+          // Minutos acumulados desde inicio para cada columna (15, 30, 45, 60, 75, 90, 105, 120, 150, 180, 240, 300, 360)
+          const PP_MINUTOS = [15, 30, 45, 60, 75, 90, 105, 120, 150, 180, 240, 300, 360];
+
+          function addMinutesToTime(timeStr, minutes) {
+            if (!timeStr) return '';
+            const [h, m] = timeStr.split(':').map(Number);
+            const total = h * 60 + m + minutes;
+            const nh = Math.floor(total / 60) % 24;
+            const nm = total % 60;
+            return `${String(nh).padStart(2, '0')}:${String(nm).padStart(2, '0')}`;
+          }
+
+          function ppCalcularHoras() {
+            const horaInicio = document.getElementById('pp-hora-inicio')?.value;
+            if (!horaInicio) {
+              showToast('Ingrese la hora de inicio antes de calcular.', 'error');
+              return;
+            }
+            PP_MINUTOS.forEach((min, col) => {
+              const el = document.querySelector(`.pp-input[data-param="hora"][data-col="${col}"]`);
+              if (el && el.getAttribute('data-pp-saved') !== '1') el.value = addMinutesToTime(horaInicio, min);
+            });
+            showToast('Horas calculadas en columnas editables.', 'success');
+          }
+
+          function ppUsarHoraNacimiento() {
+            const hora = document.getElementById('hora_nacimiento')?.value;
+            if (!hora) {
+              showToast('Complete la hora de nacimiento en la pestaña Recién Nacido.', 'error');
+              return;
+            }
+            document.getElementById('pp-hora-inicio').value = hora;
+            ppCalcularHoras();
+          }
+
+          function ppFechaHoy() {
+            const hoy = new Date().toISOString().slice(0, 10);
+            for (let col = 0; col < 13; col++) {
+              const el = document.querySelector(`.pp-input[data-param="fecha"][data-col="${col}"]`);
+              if (el && el.getAttribute('data-pp-saved') !== '1') el.value = hoy;
+            }
+            showToast('Fecha de hoy aplicada a columnas editables.', 'success');
+          }
+
+          function ppPropagarFecha() {
+            const primera = document.querySelector(`.pp-input[data-param="fecha"][data-col="0"]`)?.value;
+            if (!primera) {
+              showToast('Ingrese la fecha en la primera columna.', 'error');
+              return;
+            }
+            for (let col = 1; col < 13; col++) {
+              const el = document.querySelector(`.pp-input[data-param="fecha"][data-col="${col}"]`);
+              if (el && el.getAttribute('data-pp-saved') !== '1') el.value = primera;
+            }
+            showToast('Fecha propagada a columnas editables.', 'success');
+          }
+
+          function ppPropagarResponsable() {
+            let responsable = '';
+            for (let col = 0; col < 13; col++) {
+              const el = document.querySelector(`.pp-input[data-param="responsable"][data-col="${col}"]`);
+              if (el?.value && el.getAttribute('data-pp-saved') !== '1') { responsable = el.value; break; }
+            }
+            if (!responsable) {
+              for (let col = 0; col < 13; col++) {
+                const el = document.querySelector(`.pp-input[data-param="responsable"][data-col="${col}"]`);
+                if (el?.value) { responsable = el.value; break; }
+              }
+            }
+            if (!responsable) {
+              showToast('Ingrese el responsable en al menos una columna.', 'error');
+              return;
+            }
+            for (let col = 0; col < 13; col++) {
+              const el = document.querySelector(`.pp-input[data-param="responsable"][data-col="${col}"]`);
+              if (el && el.getAttribute('data-pp-saved') !== '1') el.value = responsable;
+            }
+            showToast('Responsable propagado a columnas editables.', 'success');
+          }
+
+          function buildPostpartoData() {
+            const data = [];
+            for (let col = 0; col < 13; col++) {
+              const firstInput = document.querySelector(`.pp-input[data-param="fecha"][data-col="${col}"]`);
+              if (savedRegistroId && firstInput?.getAttribute('data-pp-saved') === '1') continue;
+              const getVal = (param) => {
+                const el = document.querySelector(`.pp-input[data-param="${param}"][data-col="${col}"]`);
+                return el ? el.value : '';
+              };
+              const fecha = getVal('fecha');
+              const hora = getVal('hora');
+              if (!fecha && !hora) continue;
+              const sangrado = getVal('sangrado');
+              data.push({
+                minuto_control: PP_MINUTOS[col],
+                fecha: fecha || null,
+                hora: hora || null,
+                tension_arterial: getVal('ta') || null,
+                temperatura: getVal('temp') ? parseFloat(getVal('temp')) : null,
+                pulso: getVal('pulso') ? parseInt(getVal('pulso')) : null,
+                respiracion: getVal('resp') ? parseInt(getVal('resp')) : null,
+                sangrado_vaginal: sangrado || null,
+                cuantificacion_gravimetrica_vaginal: getVal('cgv') ? parseInt(getVal('cgv')) : null,
+                involucion_uterina: getVal('invol') || null,
+                responsable: getVal('responsable') || null,
+              });
+            }
+            return data;
+          }
+
+          function buildPayload() {
+            const val = id => document.getElementById(id)?.value;
+            const num = id => val(id) ? parseFloat(val(id)) : null;
+            const int = id => val(id) ? parseInt(val(id)) : null;
+
+            const params = new URLSearchParams(window.location.search);
+
+            return {
+              atencion: params.get("atencion"),
+              nombre_paciente: val('nombre_paciente'),
+              identificacion: val('identificacion'),
+              edad_gestacional: int('edad_gestacional'),
+              gestas: int('gestas') || 1,
+              nombre_acompanante: val('nombre_acompanante') || null,
+              tipo_parto: val('tipo_parto') || null,
+              episiotomia: getRadio('episiotomia'),
+              tipo_alumbramiento: val('tipo_alumbramiento') || null,
+              parto_atendido_por: val('parto_atendido_por') || null,
+              controles_fetocardia: buildFetocardiaData(),
+              control_recien_nacido: {
+                hora_nacimiento: val('hora_nacimiento') || null,
+                pasa_uci_neonatal: getRadio('uci_neonatal'),
+                causa_uci: val('causa_uci') || null,
+                genero: val('genero') || 'M',
+                peso: num('peso'),
+                talla: num('talla'),
+                pc: num('pc'),
+                pt: num('pt'),
+                p_abd: num('p_abd'),
+                apgar_1min: int('apgar_1min'),
+                apgar_5min: int('apgar_5min'),
+                apgar_10min: int('apgar_10min'),
+                tsh: num('tsh'),
+                hemoclasificacion: val('hemoclasificacion') || null,
+                vacuna_hb: document.getElementById('vacuna_hb').checked,
+                vacuna_bcg: document.getElementById('vacuna_bcg').checked,
+                caracteristicas_liquido_amniotico: val('caracteristicas_liquido') || null,
+                lavado_gastrico: getRadio('lavado_gastrico'),
+                lavado_elimina: getRadio('elimina'),
+                meconio: getRadio('meconio'),
+                oximetria_nacimiento_preductal: int('oximetria_nac_pre'),
+                oximetria_nacimiento_posductal: int('oximetria_nac_pos'),
+                oximetria_12h_preductal: int('oximetria_12h_pre'),
+                oximetria_12h_posductal: int('oximetria_12h_pos'),
+                ta_msd: val('ta_msd') || null,
+                ta_msi: val('ta_msi') || null,
+                ta_mid: val('ta_mid') || null,
+                ta_miiz: val('ta_miiz') || null,
+                neonato_atendido_por: val('neonato_atendido_por') || null,
+                valorado_pediatra: getRadio('valorado_pediatra'),
+                glucometrias: buildGlucometriaData(),
+              },
+              controles_postparto: buildPostpartoData(),
+              // Firma Profesional DGH
+              profesional_nombre: val('profesional_nombre') || null,
+              profesional_identificacion: val('profesional_identificacion_hidden') || null,
+              profesional_tarjeta_pro: val('profesional_tarjeta_pro') || null,
+              firma_profesional_base64: val('firma_profesional_base64') || null,
+            };
+          }
+
+          async function loadMiFirmaDGH() {
+            if (savedRegistroId) return; // No cargar automáticamente en edición
+            if (!document.getElementById('profesional-firma-placeholder')) return; // Sección removida
+            const placeholder = document.getElementById('profesional-firma-placeholder');
+            try {
+              const res = await fetch(`${API_BASE}/registros/mi-firma/`, { credentials: 'same-origin' });
+              const data = await res.json().catch(() => ({}));
+              if (res.ok && data.firma_b64) {
+                document.getElementById('profesional-firma-img').src = data.firma_b64;
+                document.getElementById('profesional-firma-img').style.display = 'block';
+                document.getElementById('profesional-firma-placeholder').style.display = 'none';
+                document.getElementById('profesional-nombre-label').innerText = data.nombre || '—';
+                document.getElementById('profesional-id-label').innerText = data.identificacion || '—';
+                document.getElementById('profesional-tp-label').innerText = data.tarjeta_pro || '—';
+
+                document.getElementById('profesional_nombre').value = data.nombre || '';
+                document.getElementById('profesional_identificacion_hidden').value = data.identificacion || '';
+                document.getElementById('profesional_tarjeta_pro').value = data.tarjeta_pro || '';
+                document.getElementById('firma_profesional_base64').value = data.firma_b64;
+
+                const atendidoInput = document.getElementById('parto_atendido_por');
+                if (atendidoInput && !atendidoInput.value) atendidoInput.value = data.nombre || '';
+                
+                const sigNameInput = document.getElementById('signature-name');
+                if (sigNameInput && !sigNameInput.value) sigNameInput.value = data.nombre || '';
+              } else {
+                if (placeholder) placeholder.innerText = (data.message || 'Sin firma en DGH');
+              }
+            } catch (err) {
+              if (placeholder) placeholder.innerText = 'Sin firma en DGH';
+            }
+          }
+
+          function validate(payload) {
+            if (!payload.nombre_paciente) return 'El nombre de la paciente es requerido.';
+            if (!payload.identificacion) return 'La identificación es requerida.';
+            if (!payload.edad_gestacional) return 'La edad gestacional es requerida.';
+            const rn = payload.control_recien_nacido;
+            if (!rn.hora_nacimiento) return 'La hora de nacimiento es requerida.';
+            if (!rn.peso) return 'El peso del recién nacido es requerido.';
+            if (!rn.talla) return 'La talla del recién nacido es requerida.';
+            if (rn.apgar_1min === null || rn.apgar_1min === undefined) return 'El APGAR 1 minuto es requerido.';
+            if (rn.apgar_5min === null || rn.apgar_5min === undefined) return 'El APGAR 5 minutos es requerido.';
+            return null;
+          }
+
+          window.submitForm = async function() {
+            const payload = buildPayload();
+            
+            const error = validate(payload);
+            if (error) { 
+              showToast(error, 'error'); 
+              return; 
+            }
+
+            const btn = document.getElementById('submit-btn');
+            btn.innerHTML = '<span class="spinner"></span> Guardando...';
+            btn.disabled = true;
+
+            try {
+              const isUpdate = !!savedRegistroId;
+              const url = isUpdate ? `${API_BASE}/registros/${savedRegistroId}/` : `${API_BASE}/registros/`;
+              const method = isUpdate ? 'PUT' : 'POST';
+              if (isUpdate) delete payload.controles_fetocardia;
+              if (isUpdate) delete payload.controles_postparto;
+
+              const res = await fetch(url, {
+                method,
+                headers: getHeaders(),
+                body: JSON.stringify(payload),
+              });
+
+              if (!res.ok) {
+                const text = await res.text();
+                let errMsg = '';
+                try {
+                  const errData = JSON.parse(text);
+                  let raw = errData.detail || errData.error || errData.message || errData.msg;
+                  if (raw != null) {
+                    errMsg = (typeof raw === 'string') ? raw : (Array.isArray(raw) ? raw[0] : JSON.stringify(raw));
+                  }
+                  if (!errMsg && typeof errData === 'object') {
+                    const keys = Object.keys(errData);
+                    const parts = [];
+                    for (const k of keys) {
+                      const v = errData[k];
+                      if (Array.isArray(v)) parts.push((k + ': ' + (v[0] || v.join(', '))));
+                      else if (typeof v === 'string') parts.push(k + ': ' + v);
+                    }
+                    errMsg = parts.length ? parts.join('; ') : JSON.stringify(errData);
+                  }
+                } catch (_) {
+                  errMsg = text && text.length < 200 ? text : '';
+                }
+                if (!errMsg) errMsg = `Error ${res.status}: ${res.statusText || 'Error del servidor'}`;
+                if (res.status === 404) {
+                  console.error('POST 404 a:', url);
+                  errMsg = 'Ruta no encontrada (404). URL: ' + url;
+                }
+                throw new Error(String(errMsg));
+              }
+
+              const data = await res.json();
+              savedRegistroId = data.id;
+
+              if (isUpdate) {
+                const newFc = buildFetocardiaData();
+                for (const fc of newFc) {
+                  const resFc = await fetch(`${API_BASE}/registros/${savedRegistroId}/fetocardia/`, {
+                    method: 'POST',
+                    headers: getHeaders(),
+                    body: JSON.stringify(fc),
+                  });
+                  if (!resFc.ok) showToast('Algunos registros de fetocardia nuevos no se pudieron guardar.', 'error');
+                }
+                const newPp = buildPostpartoData();
+                for (const cp of newPp) {
+                  const resPp = await fetch(`${API_BASE}/registros/${savedRegistroId}/postparto/`, {
+                    method: 'POST',
+                    headers: getHeaders(),
+                    body: JSON.stringify(cp),
+                  });
+                  if (resPp.ok) {
+                    const colIdx = PP_MINUTOS.indexOf(cp.minuto_control);
+                    if (colIdx !== -1) document.querySelectorAll(`.pp-input[data-col="${colIdx}"]`).forEach(el => {
+                      el.setAttribute('data-pp-saved', '1');
+                      el.disabled = true;
+                    });
+                  } else showToast('Algunos controles postparto nuevos no se pudieron guardar.', 'error');
+                }
+              }
+
+              const huellaB64 = getHuellaBase64();
+              if (huellaB64 && savedRegistroId) {
+                const resH = await fetch(`${API_BASE}/registros/${savedRegistroId}/huella-pie/`, {
+                  method: 'POST',
+                  headers: getHeaders(),
+                  body: JSON.stringify({ huella_base64: huellaB64 }),
+                });
+                if (!resH.ok) showToast('Registro guardado pero la huella no pudo subirse.', 'error');
+              }
+
+              showToast('✅ Registro guardado correctamente (ID: ' + savedRegistroId.substring(0, 8) + '...)', 'success');
+              btn.innerHTML = '✅ Guardado';
+              btn.style.color = 'var(--success-color)';
+
+              return true;
+            } catch (err) {
+              let msg = 'Error desconocido al guardar. Revise la consola (F12).';
+              if (err && err.message) {
+                const m = String(err.message).trim();
+                if (m && m !== '{}' && m !== '[object Object]') msg = m;
+              }
+              console.error('submitForm error:', err);
+              showToast('❌ ' + msg, 'error');
+              btn.innerHTML = '💾 Guardar Registro Completo';
+              btn.disabled = false;
+            }
+          }
+
+          function llenarDatosPaciente(r) {
+            const np = document.getElementById('nombre_paciente');
+            const id = document.getElementById('identificacion');
+            const eg = document.getElementById('edad_gestacional');
+            const gest = document.getElementById('gestas');
+            const nac = document.getElementById('nombre_acompanante');
+            if (np) np.value = (r.nombre_paciente != null && r.nombre_paciente !== '') ? String(r.nombre_paciente) : '';
+            if (id) id.value = (r.identificacion != null && r.identificacion !== '') ? String(r.identificacion) : '';
+            if (eg) eg.value = (r.edad_gestacional != null && r.edad_gestacional !== '') ? String(r.edad_gestacional) : '';
+            if (gest) gest.value = (r.gestas != null && r.gestas !== '') ? String(r.gestas) : '1';
+            if (nac) nac.value = (r.nombre_acompanante != null && r.nombre_acompanante !== '') ? String(r.nombre_acompanante) : '';
+            // signature-name should remain as the profesional name from DGH
+          }
+
+          let previewRegistroId = null;
+
+          function cerrarVistaPrevia() {
+            document.getElementById('preview-modal-overlay').classList.remove('show');
+            previewRegistroId = null;
+          }
+
+          function cerrarPreviewInline() {
+            const wrap = document.getElementById('preview-inline-wrap');
+            if (wrap) {
+              wrap.style.display = 'none';
+              wrap.classList.remove('preview-inline-visible');
+            }
+            previewRegistroId = null;
+            document.getElementById('registros-resultados').innerHTML = '';
+          }
+
+          async function cargarDesdePreview() {
+            if (!previewRegistroId) return;
+            cerrarVistaPrevia();
+            document.getElementById('registros-resultados').innerHTML = '';
+            try {
+              await cargarRegistro(previewRegistroId);
+              switchTab('paciente');
+              document.getElementById('panel-paciente')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              showToast('Registro cargado en el formulario.', 'success');
+            } catch (err) {
+              showToast('Error al cargar: ' + err.message, 'error');
+            }
+          }
+
+          async function cargarDesdePreviewInline() {
+            if (!previewRegistroId) return;
+            const id = previewRegistroId;
+            cerrarPreviewInline();
+            try {
+              await cargarRegistro(id);
+              switchTab('paciente');
+              document.getElementById('panel-paciente')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              showToast('Registro cargado en el formulario.', 'success');
+            } catch (err) {
+              showToast('Error al cargar: ' + err.message, 'error');
+            }
+          }
+
+          function _v(val) { return (val != null && val !== '') ? String(val) : '—'; }
+          function _vtime(val) { if (!val) return '—'; const s = String(val); return s.length > 5 ? s.slice(0, 5) : s; }
+          const PARTO_LABELS = { VAGINAL: 'Vaginal', INSTRUMENTADO: 'Instrumentado', CESAREA: 'Cesárea' };
+          const ALUMB_LABELS = { ESPONTANEO: 'Espontáneo', DIRIGIDO: 'Dirigido', MANUAL: 'Manual' };
+          const GENERO_LABELS = { M: 'Masculino', F: 'Femenino', I: 'Indeterminado' };
+          const SANGRADO_LABELS = { NORMAL: 'N', ABUNDANTE: 'A' };
+
+          async function mostrarVistaPrevia(registroId) {
+            const wrap = document.getElementById('preview-inline-wrap');
+            const body = document.getElementById('preview-inline-body');
+            const title = document.getElementById('preview-inline-title');
+
+            if (!wrap || !body) {
+              showToast('Error: elementos de vista previa no encontrados.', 'error');
+              return;
+            }
+
+            document.getElementById('registros-resultados').innerHTML = '';
+            previewRegistroId = registroId;
+
+            wrap.style.display = 'block';
+            wrap.classList.add('preview-inline-visible');
+            body.innerHTML = '<div class="preview-loading">Cargando datos...</div>';
+            wrap.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+            try {
+              const res = await fetch(`${API_BASE}/registros/${registroId}/`, {
+                headers: getHeaders(),
+                credentials: 'same-origin'
+              });
+              if (!res.ok) throw new Error('No se pudo cargar');
+              const d = await res.json();
+
+              title.textContent = `Vista previa FRSPA-007: ${_v(d.nombre_paciente)} — ${_v(d.identificacion)}`;
+
+              let html = '<div class="doc-preview">';
+              html += '<div style="text-align:center;padding-bottom:12px;border-bottom:2px solid #667eea;margin-bottom:12px">';
+              html += '<strong style="font-size:0.95rem">HOSPITAL UNIVERSITARIO DEPARTAMENTAL DE NARIÑO</strong><br>';
+              html += '<span style="font-size:0.7rem;color:#64748b">SALA RECIÉN NACIDOS · Control Fetocardia Expulsivo · Posparto Inmediato · Recién Nacido</span><br>';
+              html += '<span style="font-size:0.65rem;color:#667eea;font-weight:700">FRSPA-007 V01</span>';
+              html += '</div>';
+
+              html += '<table><tr><td colspan="4" class="doc-header">DATOS DE LA PACIENTE</td></tr>';
+              html += `<tr><td class="doc-label" style="width:22%">Nombre completo:</td><td style="width:28%">${_v(d.nombre_paciente)}</td><td class="doc-label" style="width:22%">N° Identificación:</td><td style="width:28%">${_v(d.identificacion)}</td></tr>`;
+              html += `<tr><td class="doc-label">Edad Gestacional:</td><td>${_v(d.edad_gestacional)} sem</td><td class="doc-label">Gestas:</td><td>${_v(d.gestas)}</td></tr>`;
+              html += `<tr><td class="doc-label">Acompañante:</td><td colspan="3">${_v(d.nombre_acompanante)}</td></tr></table>`;
+
+              const tipoP = d.tipo_parto ? (PARTO_LABELS[d.tipo_parto] || d.tipo_parto) : '—';
+              const tipoA = d.tipo_alumbramiento ? (ALUMB_LABELS[d.tipo_alumbramiento] || d.tipo_alumbramiento) : '—';
+              html += '<table><tr><td colspan="4" class="doc-header">CARACTERÍSTICAS DEL PARTO</td></tr>';
+              html += `<tr><td class="doc-label" style="width:22%">Tipo parto:</td><td style="width:28%">${tipoP}</td><td class="doc-label" style="width:22%">Episiotomía:</td><td style="width:28%">${d.episiotomia ? 'Sí' : 'No'}</td></tr>`;
+              html += `<tr><td class="doc-label">Alumbramiento:</td><td>${tipoA}</td><td class="doc-label">Atendido por:</td><td>${_v(d.parto_atendido_por)}</td></tr></table>`;
+
+              html += '<table><tr><td colspan="5" class="doc-header">CONTROL DE FETOCARDIA DURANTE EL EXPULSIVO</td></tr>';
+              html += '<tr class="doc-subheader"><th>#</th><th>Fecha</th><th>Hora</th><th>Fetocardia (lpm)</th><th>Responsable</th></tr>';
+              if (d.controles_fetocardia && d.controles_fetocardia.length > 0) {
+                d.controles_fetocardia.forEach((fc, i) => {
+                  const fd = fc.fecha ? fc.fecha.split('T')[0] : '';
+                  html += `<tr><td style="text-align:center">${i + 1}</td><td>${_v(fd)}</td><td>${_vtime(fc.hora)}</td><td>${_v(fc.fetocardia)}</td><td>${_v(fc.responsable)}</td></tr>`;
+                });
+              } else {
+                html += '<tr><td colspan="5" style="text-align:center">Sin registros</td></tr>';
+              }
+              html += '</table>';
+
+              if (d.control_recien_nacido) {
+                const rn = d.control_recien_nacido;
+                const gen = rn.genero ? (GENERO_LABELS[rn.genero] || rn.genero) : '—';
+                const vacs = (rn.vacuna_hb ? 'Sí' : 'No') + '/' + (rn.vacuna_bcg ? 'Sí' : 'No');
+                html += '<div class="doc-rn-huella">';
+                html += '<div class="doc-rn-col">';
+                html += '<table><tr><td colspan="6" class="doc-header">DATOS DEL RECIÉN NACIDO</td></tr>';
+                html += `<tr><td class="doc-label">Hora nacimiento:</td><td>${_vtime(rn.hora_nacimiento)}</td><td class="doc-label">UCI:</td><td>${rn.pasa_uci_neonatal ? 'Sí' : 'No'}</td><td class="doc-label">Causa UCI:</td><td>${_v(rn.causa_uci)}</td></tr>`;
+                html += `<tr><td class="doc-label">Género:</td><td>${gen}</td><td class="doc-label">Peso (g):</td><td>${_v(rn.peso)}</td><td class="doc-label">Talla (cm):</td><td>${_v(rn.talla)}</td></tr>`;
+                html += `<tr><td class="doc-label">PC:</td><td>${_v(rn.pc)}</td><td class="doc-label">PT:</td><td>${_v(rn.pt)}</td><td class="doc-label">P.Abd:</td><td>${_v(rn.p_abd)}</td></tr>`;
+                html += `<tr><td class="doc-label">APGAR 1 min:</td><td>${_v(rn.apgar_1min)}</td><td class="doc-label">APGAR 5 min:</td><td>${_v(rn.apgar_5min)}</td><td class="doc-label">APGAR 10 min:</td><td>${_v(rn.apgar_10min)}</td></tr>`;
+                html += `<tr><td class="doc-label">TSH:</td><td>${_v(rn.tsh)}</td><td class="doc-label">Hemoclasif.:</td><td>${_v(rn.hemoclasificacion)}</td><td class="doc-label">Vacunas:</td><td>${vacs}</td></tr>`;
+                html += `<tr><td class="doc-label">Líquido amniótico:</td><td colspan="5">${_v(rn.caracteristicas_liquido_amniotico)}</td></tr>`;
+                html += `<tr><td class="doc-label">Lavado gástrico:</td><td>${rn.lavado_gastrico ? 'Sí' : 'No'}</td><td class="doc-label">Elimina:</td><td>${rn.lavado_elimina ? 'Sí' : 'No'}</td><td class="doc-label">Meconio:</td><td>${rn.meconio ? 'Sí' : 'No'}</td></tr>`;
+                html += '</table>';
+                if (rn.glucometrias && rn.glucometrias.length > 0) {
+                  html += '<table style="margin-top:4px"><tr class="doc-subheader"><th>Hora</th><th>Resultado (mg/dL)</th></tr>';
+                  rn.glucometrias.forEach(g => { html += `<tr><td>${_vtime(g.hora)}</td><td>${_v(g.resultado)}</td></tr>`; });
+                  html += '</table>';
+                }
+                html += '</div>';
+                html += '<div class="doc-huella-col">';
+                html += '<div class="doc-header">HUELLA DEL PIE</div>';
+                html += '<div class="doc-huella-box">';
+                if (rn.huella_pie_base64) {
+                  const b64 = rn.huella_pie_base64.includes(',') ? rn.huella_pie_base64.split(',')[1] : rn.huella_pie_base64;
+                  html += `<img src="data:image/png;base64,${b64}" alt="Huella">`;
+                } else { html += '—'; }
+                html += '</div></div></div>';
+              } else {
+                html += '<table><tr><td class="doc-header">DATOS DEL RECIÉN NACIDO</td></tr><tr><td style="text-align:center">Sin datos de recién nacido</td></tr></table>';
+              }
+
+              html += '<table class="doc-pp-table"><tr><td colspan="9" class="doc-header">CONTROL POSTPARTO INMEDIATO</td></tr>';
+              html += '<tr class="doc-subheader"><th>Min</th><th>Fecha</th><th>Hora</th><th>T/A</th><th>Temp</th><th>Pulso</th><th>Resp</th><th>Invol.</th><th>Responsable</th></tr>';
+              if (d.controles_postparto && d.controles_postparto.length > 0) {
+                d.controles_postparto.forEach(pp => {
+                  const fd = pp.fecha ? pp.fecha.split('T')[0] : '';
+                  html += `<tr><td>${_v(pp.minuto_control)}</td><td>${_v(fd)}</td><td>${_vtime(pp.hora)}</td><td>${_v(pp.tension_arterial)}</td><td>${_v(pp.temperatura)}</td><td>${_v(pp.pulso)}</td><td>${_v(pp.respiracion)}</td><td>${_v(pp.involucion_uterina)}</td><td>${_v(pp.responsable)}</td></tr>`;
+                });
+              } else {
+                html += '<tr><td colspan="9" style="text-align:center">Sin registros</td></tr>';
+              }
+              html += '</table>';
+
+              if (d.firma_paciente || d.huella_biometrica) {
+                html += '<div style="margin-top:20px; border-top: 1px solid #ccc; padding-top: 10px; display: flex; gap: 20px; flex-wrap: wrap;">';
+
+                if (d.firma_paciente) {
+                  html += '<div style="flex: 1; min-width: 200px;">';
+                  html += `<img src="${d.firma_paciente}" style="max-width: 200px; max-height: 80px; display: block; margin-bottom: 5px; border: 1px solid #eee; background: white;" alt="Firma" onerror="this.style.display='none'; if(!this.parentNode.querySelector('.err-firma')){this.insertAdjacentHTML('afterend','<p class=\'err-firma\' style=\'color:red;font-size:0.7rem\'>Error al cargar imagen de firma</p>')}">`;
+                  let responsableFirma = fixMojibakeText((d.nombre_firma_paciente || '').trim());
+                  const profesionalFirma = fixMojibakeText((d.profesional_nombre || '').trim());
+                  responsableFirma = responsableFirma || profesionalFirma || '—';
+                  html += `<div style="font-weight: bold; border-top: 1px solid black; padding-top: 2px; font-size: 0.85rem;">FIRMA DEL RESPONSABLE: ${responsableFirma}</div>`;
+                  const dateF = d.fecha_hora_firma ? new Date(d.fecha_hora_firma).toLocaleString() : '';
+                  html += `<div style="font-size: 0.75rem; color: #666;">Firmado el: ${dateF}</div>`;
+                  html += '</div>';
+                }
+
+                if (d.huella_biometrica) {
+                  html += '<div style="flex: 0 0 100px; text-align: center;">';
+                  html += `<img src="${d.huella_biometrica}" style="width: 80px; height: auto; border: 1px solid #eee; padding: 2px; background: white; border-radius: 4px;" alt="Huella Biométrica" onerror="this.style.display='none'; if(!this.parentNode.querySelector('.err-huella')){this.insertAdjacentHTML('afterend','<p class=\'err-huella\' style=\'color:red;font-size:0.65rem\'>Error huella</p>')}">`;
+                  html += `<div style="font-size: 0.65rem; color: #64748b; margin-top: 4px; font-weight: 700;">HUELLA BIOMÉTRICA</div>`;
+                  html += '</div>';
+                }
+
+                html += '</div>';
+              }
+
+              html += '</div>';
+              body.innerHTML = html || '<div class="preview-loading">Sin datos adicionales</div>';
+            } catch (err) {
+              body.innerHTML = `<div class="preview-loading" style="color:var(--danger-color)">Error: ${err.message}</div>`;
+              previewRegistroId = null;
+              showToast('Error al cargar vista previa: ' + err.message, 'error');
+            }
+          }
+
+          async function seleccionarPacienteDesdeBusqueda(r) {
+            document.getElementById('registros-resultados').innerHTML = '';
+            await mostrarVistaPrevia(r.id);
+          }
+
+          async function buscarRegistros() {
+            const q = document.getElementById('buscar-input').value.trim();
+            if (!q) return;
+            try {
+              const res = await fetch(`${API_BASE}/registros/buscar/?q=${encodeURIComponent(q)}`, { headers: getHeaders() });
+              const data = await res.json();
+              const div = document.getElementById('registros-resultados');
+              div.innerHTML = '';
+              if (data.length === 0) {
+                div.innerHTML = '<span style="color:var(--text-secondary);font-size:0.85rem">Sin resultados</span>';
+              } else {
+                if (data.length === 1) {
+                  seleccionarPacienteDesdeBusqueda(data[0]);
+                  return;
+                }
+                data.forEach(r => {
+                  const item = document.createElement('div');
+                  item.className = 'registro-item';
+                  const signedBy = r.nombre_firma_paciente ? ` — 🖋️ Firmado por Responsable` : '';
+                  item.textContent = `${r.nombre_paciente || '-'} — ${r.identificacion || '-'} (${r.tipo_parto || '-'})${signedBy}`;
+                  item.onclick = () => seleccionarPacienteDesdeBusqueda(r);
+                  div.appendChild(item);
+                });
+              }
+            } catch (err) {
+              showToast('Error al buscar: ' + err.message, 'error');
+            }
+          }
+
+          async function buscarSalaPartos() {
+            const wrap = document.getElementById('sala-partos-preview-wrap');
+            const body = document.getElementById('sala-partos-preview-body');
+            const filterInput = document.getElementById('sala-partos-filter');
+            const q = (filterInput && filterInput.value) ? filterInput.value.trim() : '';
+            wrap.style.display = 'block';
+            wrap.classList.add('preview-inline-visible');
+            body.innerHTML = '<div class="preview-loading">Consultando Sala de Partos...</div>';
+            wrap.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            try {
+              const url = `${API_BASE}/registros/sala-partos/${q ? '?q=' + encodeURIComponent(q) : ''}`;
+              const res = await fetch(url, { headers: getHeaders() });
+              let data;
+              try {
+                data = await res.json();
+              } catch (_) {
+                body.innerHTML = '<div class="preview-loading" style="color:var(--danger-color)">Respuesta no válida del servidor</div>';
+                return;
+              }
+              if (!res.ok) {
+                const msg = data.error || data.detail || '';
+                const es503 = res.status === 503;
+                const textoAmigable = es503 || /login failed|actualizada|no está disponible/i.test(msg)
+                  ? 'La base de datos de consulta (DGEMPRES03) no está disponible. Puede estar en actualización. Intente más tarde.'
+                  : (msg || 'Error al conectar con DGEMPRES03');
+                body.innerHTML = `<div class="preview-loading" style="color:var(--danger-color)">${textoAmigable}</div>`;
+                return;
+              }
+              if (!Array.isArray(data)) {
+                body.innerHTML = '<div class="preview-loading" style="color:var(--danger-color)">Formato de respuesta inesperado</div>';
+                return;
+              }
+              if (data.length === 0) {
+                body.innerHTML = '<div class="preview-loading">Sin pacientes en Sala de Partos con los criterios actuales.<br><small>Compruebe la conexión a DGEMPRES03 o pruebe otro filtro.</small></div>';
+                return;
+              }
+              let html = '<table class="sala-partos-table"><thead><tr>';
+              html += '<th>Nombre</th><th>Identificación</th><th>Cama</th><th>Ingreso</th><th>F. Ingreso</th><th>Aseguradora</th><th>Edad gest.</th><th>Gestas</th><th></th></tr></thead><tbody>';
+              data.forEach(r => {
+                // Formatear fecha si existe
+                let fIngreso = '—';
+                if (r.fecha_ingreso) {
+                  try {
+                    const d = new Date(r.fecha_ingreso);
+                    fIngreso = d.toLocaleString('es-CO', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+                  } catch (e) { fIngreso = r.fecha_ingreso; }
+                }
+
+                html += '<tr>';
+                html += `<td>${(r.nombre_paciente || '').trim() || '—'}</td>`;
+                html += `<td>${(r.identificacion || '').trim() || '—'}</td>`;
+                html += `<td>${r.numero_cama != null ? r.numero_cama : '—'}</td>`;
+                html += `<td>${r.numero_ingreso != null ? r.numero_ingreso : '—'}</td>`;
+                html += `<td>${fIngreso}</td>`;
+                html += `<td>${(r.aseguradora || '').toString().trim() || '—'}</td>`;
+                html += `<td>${r.edad_gestacional != null ? r.edad_gestacional + ' sem' : '—'}</td>`;
+                html += `<td>${r.gestas != null ? r.gestas : '—'}</td>`;
+                html += '<td><button type="button" class="btn btn-primary btn-sm btn-load-sala" onclick="cargarPacienteDesdeSalaPartos(JSON.parse(this.getAttribute(\'data-paciente\')))">Cargar en formulario</button></td>';
+                html += '</tr>';
+              });
+              html += '</tbody></table>';
+              body.innerHTML = html;
+              data.forEach((r, i) => {
+                const btn = body.querySelectorAll('.btn-load-sala')[i];
+                if (btn) btn.setAttribute('data-paciente', JSON.stringify(r));
+              });
+            } catch (err) {
+              body.innerHTML = `<div class="preview-loading" style="color:var(--danger-color)">Error: ${err.message}</div>`;
+              showToast('Error al consultar Sala de Partos: ' + err.message, 'error');
+            }
+          }
+
+          function cerrarSalaPartosPreview() {
+            const wrap = document.getElementById('sala-partos-preview-wrap');
+            if (wrap) {
+              wrap.style.display = 'none';
+              wrap.classList.remove('preview-inline-visible');
+            }
+            document.getElementById('sala-partos-preview-body').innerHTML = '';
+          }
+
+          function cargarPacienteDesdeSalaPartos(r) {
+            llenarDatosPaciente(r);
+            cerrarSalaPartosPreview();
+            cerrarPreviewInline();
+            previewRegistroId = null;
+            savedRegistroId = null;
+            document.getElementById('registros-resultados').innerHTML = '';
+            switchTab('paciente');
+            showToast('Datos de Sala de Partos cargados. Complete el resto y guarde.', 'success');
+          }
+
+          async function cargarRegistro(id) {
+            try {
+              const res = await fetch(`${API_BASE}/registros/${id}/`, { headers: getHeaders() });
+              if (!res.ok) throw new Error('No se pudo cargar');
+              const data = await res.json();
+              document.getElementById('nombre_paciente').value = (data.nombre_paciente != null && data.nombre_paciente !== '') ? String(data.nombre_paciente) : '';
+              document.getElementById('identificacion').value = (data.identificacion != null && data.identificacion !== '') ? String(data.identificacion) : '';
+              document.getElementById('edad_gestacional').value = (data.edad_gestacional != null && data.edad_gestacional !== '') ? String(data.edad_gestacional) : '';
+              document.getElementById('gestas').value = (data.gestas != null && data.gestas !== '') ? String(data.gestas) : '1';
+              document.getElementById('nombre_acompanante').value = (data.nombre_acompanante != null && data.nombre_acompanante !== '') ? String(data.nombre_acompanante) : '';
+              document.getElementById('tipo_parto').value = data.tipo_parto || '';
+              document.querySelector(`input[name="episiotomia"][value="${!!data.episiotomia}"]`)?.click();
+              document.getElementById('tipo_alumbramiento').value = data.tipo_alumbramiento || '';
+              document.getElementById('parto_atendido_por').value = data.parto_atendido_por || '';
+
+              const pName = (data.nombre_paciente != null && data.nombre_paciente !== '') ? String(data.nombre_paciente) : '';
+              savedRegistroId = data.id;
+
+              // Actualizar campos para polling y Android
+              const idRaw = (data.identificacion != null && data.identificacion !== '') ? String(data.identificacion) : '';
+              document.getElementById('paciente_id').value = idRaw.replace(/\D/g, '');
+              document.getElementById('formulario_id').value = data.id;
+
+              if (data.firma_paciente) {
+                updateSignatureStatus(true);
+              } else {
+                updateSignatureStatus(false);
+              }
+
+              document.getElementById('fetocardia-tbody').innerHTML = '';
+              fcRowCount = 0;
+              if (data.controles_fetocardia && data.controles_fetocardia.length > 0) {
+                data.controles_fetocardia.forEach(fc => addFetocardiaRowReadOnly(fc));
+              } else {
+                addFetocardiaRow();
+              }
+
+              if (data.control_recien_nacido) {
+                const rn = data.control_recien_nacido;
+                document.getElementById('hora_nacimiento').value = rn.hora_nacimiento || '';
+                document.querySelector(`input[name="uci_neonatal"][value="${!!rn.pasa_uci_neonatal}"]`)?.click();
+                document.getElementById('causa_uci').value = rn.causa_uci || '';
+                toggleUCICausa();
+                document.getElementById('genero').value = rn.genero || 'M';
+                document.getElementById('peso').value = rn.peso || '';
+                document.getElementById('talla').value = rn.talla || '';
+                document.getElementById('pc').value = rn.pc || '';
+                document.getElementById('pt').value = rn.pt || '';
+                document.getElementById('p_abd').value = rn.p_abd || '';
+                document.getElementById('apgar_1min').value = rn.apgar_1min ?? '';
+                document.getElementById('apgar_5min').value = rn.apgar_5min ?? '';
+                document.getElementById('apgar_10min').value = rn.apgar_10min ?? '';
+                updateApgarDisplay('apgar_1min', 'apgar-display-1', 'apgar-alert-1');
+                updateApgarDisplay('apgar_5min', 'apgar-display-5', 'apgar-alert-5');
+                updateApgarDisplay('apgar_10min', 'apgar-display-10', 'apgar-alert-10');
+                document.getElementById('tsh').value = rn.tsh || '';
+                document.getElementById('hemoclasificacion').value = rn.hemoclasificacion || '';
+                document.getElementById('vacuna_hb').checked = !!rn.vacuna_hb;
+                document.getElementById('vacuna_bcg').checked = !!rn.vacuna_bcg;
+                document.getElementById('caracteristicas_liquido').value = rn.caracteristicas_liquido_amniotico || '';
+                document.querySelector(`input[name="lavado_gastrico"][value="${!!rn.lavado_gastrico}"]`)?.click();
+                document.querySelector(`input[name="elimina"][value="${!!rn.lavado_elimina}"]`)?.click();
+                document.querySelector(`input[name="meconio"][value="${!!rn.meconio}"]`)?.click();
+                document.getElementById('oximetria_nac_pre').value = rn.oximetria_nacimiento_preductal ?? '';
+                document.getElementById('oximetria_nac_pos').value = rn.oximetria_nacimiento_posductal ?? '';
+                document.getElementById('oximetria_12h_pre').value = rn.oximetria_12h_preductal ?? '';
+                document.getElementById('oximetria_12h_pos').value = rn.oximetria_12h_posductal ?? '';
+                document.getElementById('ta_msd').value = rn.ta_msd || '';
+                document.getElementById('ta_msi').value = rn.ta_msi || '';
+                document.getElementById('ta_mid').value = rn.ta_mid || '';
+                document.getElementById('ta_miiz').value = rn.ta_miiz || '';
+                document.getElementById('neonato_atendido_por').value = rn.neonato_atendido_por || '';
+                document.querySelector(`input[name="valorado_pediatra"][value="${!!rn.valorado_pediatra}"]`)?.click();
+
+                document.getElementById('glucometrias-container').innerHTML = '';
+                glucoCount = 0;
+                if (rn.glucometrias && rn.glucometrias.length > 0) {
+                  rn.glucometrias.forEach(g => {
+                    addGlucometria();
+                    const idx = glucoCount - 1;
+                    document.getElementById('gluco-hora-' + idx).value = g.hora || '';
+                    document.getElementById('gluco-res-' + idx).value = g.resultado || '';
+                  });
+                } else {
+                  addGlucometria();
+                }
+                if (rn.huella_pie_base64) {
+                  document.getElementById('huella-capture-area').style.display = 'none';
+                  mostrarHuellaEnPlantilla(rn.huella_pie_base64);
+                } else {
+                  document.getElementById('huella-capture-area').style.display = 'block';
+                  removeHuellaFile();
+                }
+
+                // Sincronizar firma en pestaña de huella
+                const sigPad = document.getElementById('signature-pad-container');
+                const sigDisplay = document.getElementById('huella-signature-container');
+                const sigImg = document.getElementById('huella-signature-img');
+                const sigName = document.getElementById('huella-signature-name');
+                const sigDate = document.getElementById('huella-signature-date');
+
+                if (data.firma_paciente) {
+                  sigPad.style.display = 'none';
+                  sigDisplay.style.display = 'flex';
+                  sigImg.src = data.firma_paciente;
+                  
+                  let displaySigName = fixMojibakeText((data.nombre_firma_paciente || '').trim());
+                  const displayProfName = fixMojibakeText((data.profesional_nombre || '').trim());
+                  displaySigName = displaySigName || displayProfName || '—';
+                  
+                  sigName.textContent = displaySigName;
+                  sigDate.textContent = data.fecha_hora_firma ? 'Firmado el: ' + new Date(data.fecha_hora_firma).toLocaleString() : '';
+                } else {
+                  sigPad.style.display = 'flex';
+                  sigDisplay.style.display = 'none';
+                }
+              } else {
+                removeHuellaFile();
+                document.getElementById('signature-pad-container').style.display = 'flex';
+                document.getElementById('huella-signature-container').style.display = 'none';
+              }
+
+              // Datos del Profesional (DGH)
+              if (data.firma_profesional_base64) {
+                document.getElementById('profesional-firma-img').src = data.firma_profesional_base64;
+                document.getElementById('profesional-firma-img').style.display = 'block';
+                document.getElementById('profesional-firma-placeholder').style.display = 'none';
+                document.getElementById('profesional-nombre-label').innerText = data.profesional_nombre || '—';
+                document.getElementById('profesional-id-label').innerText = data.profesional_identificacion || '—';
+                document.getElementById('profesional-tp-label').innerText = data.profesional_tarjeta_pro || '—';
+
+                // Set hidden fields
+                document.getElementById('profesional_nombre').value = data.profesional_nombre || '';
+                document.getElementById('profesional_identificacion_hidden').value = data.profesional_identificacion || '';
+                document.getElementById('profesional_tarjeta_pro').value = data.profesional_tarjeta_pro || '';
+                document.getElementById('firma_profesional_base64').value = data.firma_profesional_base64 || '';
+              } else {
+                // Si es un registro previo sin firma guardada, intentar cargar la del usuario actual
+                loadMiFirmaDGH();
+              }
+
+              if (savedRegistroId && data.control_recien_nacido) {
+                try {
+                  const resH = await fetch(`${API_BASE}/registros/${savedRegistroId}/huella-pie/`, { headers: getHeaders() });
+                  if (resH.ok) {
+                    const json = await resH.json();
+                    if (json.huella_base64) mostrarHuellaEnPlantilla(json.huella_base64);
+                  }
+                } catch (_) { }
+              }
+
+              if (data.controles_postparto && data.controles_postparto.length > 0) {
+                document.querySelectorAll('.pp-input').forEach(el => { el.removeAttribute('data-pp-saved'); el.disabled = false; });
+                data.controles_postparto.forEach((cp) => {
+                  const colIdx = PP_MINUTOS.indexOf(cp.minuto_control);
+                  if (colIdx === -1) return;
+                  const setVal = (param, val) => {
+                    const el = document.querySelector(`.pp-input[data-param="${param}"][data-col="${colIdx}"]`);
+                    if (el) el.value = val || '';
+                  };
+                  const fd = cp.fecha ? cp.fecha.split('T')[0] : '';
+                  const ho = cp.hora ? (String(cp.hora).length > 5 ? String(cp.hora).substring(0, 5) : cp.hora) : '';
+                  setVal('fecha', fd);
+                  setVal('hora', ho);
+                  setVal('ta', cp.tension_arterial);
+                  setVal('temp', cp.temperatura);
+                  setVal('pulso', cp.pulso);
+                  setVal('resp', cp.respiracion);
+                  setVal('sangrado', cp.sangrado_vaginal);
+                  setVal('cgv', cp.cuantificacion_gravimetrica_vaginal);
+                  setVal('invol', cp.involucion_uterina);
+                  setVal('responsable', cp.responsable);
+                  document.querySelectorAll(`.pp-input[data-col="${colIdx}"]`).forEach(el => {
+                    el.setAttribute('data-pp-saved', '1');
+                    el.disabled = true;
+                  });
+                });
+              }
+
+              switchTab('paciente');
+              showToast('Registro cargado. Puede editar y guardar (actualizar).', 'success');
+            } catch (err) {
+              showToast('Error al cargar: ' + err.message, 'error');
+            }
+          }
+
+          async function descargarPDF() {
+            if (!savedRegistroId) {
+              showToast('Debe guardar el registro antes de descargar el PDF.', 'error');
+              return;
+            }
+            const url = `${API_BASE}/registros/${savedRegistroId}/pdf/?t=${Date.now()}`;
+            try {
+              const res = await fetch(url, { credentials: 'same-origin', headers: getHeaders() });
+              if (!res.ok) {
+                const err = await res.json().catch(() => ({}));
+                showToast(err.error || 'Error al generar el PDF. Intente de nuevo.', 'error');
+                return;
+              }
+              const blob = await res.blob();
+              const disposition = res.headers.get('Content-Disposition');
+              let filename = 'FRSPA-007.pdf';
+              if (disposition) {
+                const m = disposition.match(/filename="?([^";\n]+)"?/);
+                if (m) filename = m[1].trim();
+              }
+              const a = document.createElement('a');
+              a.href = URL.createObjectURL(blob);
+              a.download = filename;
+              document.body.appendChild(a);
+              a.click();
+              document.body.removeChild(a);
+              URL.revokeObjectURL(a.href);
+              showToast('PDF descargado correctamente.', 'success');
+            } catch (err) {
+              showToast('Error al descargar el PDF: ' + (err.message || 'revise la conexión'), 'error');
+            }
+          }
+
+          function nuevoRegistro() {
+            savedRegistroId = null;
+            previewRegistroId = null;
+            cerrarPreviewInline();
+            document.getElementById('nombre_paciente').value = '';
+            document.getElementById('identificacion').value = '';
+            document.getElementById('edad_gestacional').value = '';
+            document.getElementById('gestas').value = 1;
+            document.getElementById('nombre_acompanante').value = '';
+            document.getElementById('tipo_parto').value = '';
+            document.querySelector('input[name="episiotomia"][value="false"]')?.click();
+            document.getElementById('tipo_alumbramiento').value = '';
+            document.getElementById('parto_atendido_por').value = '';
+            document.getElementById('fetocardia-tbody').innerHTML = '';
+            fcRowCount = 0;
+            addFetocardiaRow();
+            document.getElementById('glucometrias-container').innerHTML = '';
+            glucoCount = 0;
+            addGlucometria();
+            document.getElementById('submit-btn').innerHTML = '💾 Guardar Registro Completo';
+            document.getElementById('submit-btn').disabled = false;
+            document.getElementById('submit-btn').style.background = '';
+            document.getElementById('submit-btn').style.color = '';
+            removeHuellaFile();
+            document.querySelectorAll('.pp-input').forEach(el => { el.value = ''; el.removeAttribute('data-pp-saved'); el.disabled = false; });
+            const ppHora = document.getElementById('pp-hora-inicio');
+            if (ppHora) ppHora.value = '';
+
+            // Cargar firma del profesional actual
+            loadMiFirmaDGH();
+
+            showToast('Formulario listo para nuevo registro', 'success');
+          }
+
+          function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.textContent = message;
+            container.appendChild(toast);
+            setTimeout(() => {
+              toast.style.opacity = '0';
+              toast.style.transform = 'translateX(60px)';
+              toast.style.transition = 'all 0.3s';
+              setTimeout(() => toast.remove(), 300);
+            }, 4000);
+          }
+
+          document.addEventListener('DOMContentLoaded', () => {
+            // No synchronizing signature-name with patient name automatically
+            // to allow recording the professional responsable name instead.
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+
+            // Conexión del botón de guardar
+            const btn = document.getElementById("submit-btn");
+            if (btn) {
+              btn.addEventListener("click", function() {
+                if (typeof submitForm === 'function') {
+                  submitForm();
+                }
+              });
+            }
+
+            // Seguridad: Forzar recarga si se accede por el historial (Atrás/Adelante)
+            window.addEventListener('pageshow', function (event) {
+              if (event.persisted || (window.performance && window.performance.navigation.type === 2)) {
+                window.location.reload();
+              }
+            });
+
+            addFetocardiaRow();
+            addGlucometria();
+            const buscarInput = document.getElementById('buscar-input');
+            if (buscarInput) buscarInput.addEventListener('keypress', e => { if (e.key === 'Enter') buscarRegistros(); });
+            document.addEventListener('keydown', e => {
+              if (e.key === 'Escape') {
+                if (document.getElementById('preview-modal-overlay').classList.contains('show')) cerrarVistaPrevia();
+                else if (document.getElementById('preview-inline-wrap').classList.contains('preview-inline-visible')) cerrarPreviewInline();
+              }
+            });
+
+            // Signature Pad Logic
+            initSignaturePad();
+
+            // Cargar firma del profesional responsable (DGH)
+            loadMiFirmaDGH();
+
+            // Si viene doc desde atención: caché unificada o API
+            const docFromUrl = "{{ documento|default:''|escapejs }}".trim();
+            if (docFromUrl) {
+              const idEl = document.getElementById('identificacion');
+              const pidEl = document.getElementById('paciente_id');
+              if (idEl) idEl.value = docFromUrl;
+              if (pidEl) pidEl.value = docFromUrl.replace(/\D/g, '');
+              function aplicarFetalDesdeUnificado(data) {
+                if (!data || !data.ok || !data.encontrado) return;
+                const np = document.getElementById('nombre_paciente');
+                const eg = document.getElementById('edad_gestacional');
+                const gest = document.getElementById('gestas');
+                const nac = document.getElementById('nombre_acompanante');
+                const pap = document.getElementById('parto_atendido_por');
+                const nom = (data.nombre_paciente || data.nombre_completo || '').trim();
+                if (np && nom) np.value = nom;
+                if (eg && data.edad_gestacional != null && data.edad_gestacional !== '') eg.value = String(data.edad_gestacional);
+                if (gest) {
+                  if (data.gestas != null && data.gestas !== '') gest.value = String(data.gestas);
+                  else if (!gest.value) gest.value = '1';
+                }
+                if (nac && data.nombre_acompanante) nac.value = String(data.nombre_acompanante).trim();
+                if (pap && data.responsable && !pap.value) pap.value = String(data.responsable).trim();
+              }
+              if (window.ObstetriciaPacienteUnificado) {
+                window.ObstetriciaPacienteUnificado.ensure(docFromUrl).then(aplicarFetalDesdeUnificado);
+              } else {
+                fetch(`${window.location.origin}/atencion/api/datos-paciente-unificado/?doc=${encodeURIComponent(docFromUrl)}`)
+                  .then(r => r.json())
+                  .then(aplicarFetalDesdeUnificado)
+                  .catch(() => {});
+              }
+            }
+          });
+
+          // Signature Pad Implementation
+          let signaturePad = null;
+
+          function initSignaturePad() {
+            const canvas = document.getElementById('signature-canvas');
+            if (!canvas) return;
+
+            signaturePad = new SignaturePad(canvas, {
+              backgroundColor: 'rgb(255, 255, 255)',
+              penColor: 'rgb(0, 0, 0)'
+            });
+
+            signaturePad.onEnd = function () {
+              updateSignatureStatus(true);
+            };
+
+            // Attempt initial resize
+            resizeSignatureCanvas();
+            window.addEventListener("resize", resizeSignatureCanvas);
+          }
+
+          function resizeSignatureCanvas() {
+            const canvas = document.getElementById('signature-canvas');
+            if (!canvas || !signaturePad) return;
+
+            const ratio = Math.max(window.devicePixelRatio || 1, 1);
+            const w = canvas.offsetWidth;
+            const h = canvas.offsetHeight;
+
+            // Only resize if visible and size changed
+            if (w > 0 && h > 0) {
+              if (canvas.width !== w * ratio || canvas.height !== h * ratio) {
+                canvas.width = w * ratio;
+                canvas.height = h * ratio;
+                canvas.getContext("2d").scale(ratio, ratio);
+                signaturePad.clear();
+                updateSignatureStatus(false);
+              }
+            }
+          }
+
+          function updateSignatureStatus(isSigned) {
+            const badge = document.getElementById('signature-signed-status');
+            const nameInput = document.getElementById('signature-name');
+            if (!badge) return;
+            if (isSigned) {
+              const name = nameInput ? nameInput.value.trim() : '';
+              badge.innerHTML = `<i data-lucide="check-circle-2" style="width:14px;height:14px"></i> Firma lista ${name ? 'por ' + name : ''}`;
+              badge.classList.add('signed');
+            } else {
+              badge.innerHTML = '<i data-lucide="info" style="width:14px;height:14px"></i> Sin firmar';
+              badge.classList.remove('signed');
+            }
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+          }
+
+          function clearSignature() {
+            if (signaturePad) {
+              signaturePad.clear();
+              updateSignatureStatus(false);
+            }
+          }
+
+          function resetSignatureView() {
+            document.getElementById('signature-pad-container').style.display = 'flex';
+            document.getElementById('huella-signature-container').style.display = 'none';
+            clearSignature();
+          }
+
+          async function saveSignatureDigital() {
+            if (!savedRegistroId) {
+              showToast('Debe guardar el registro completo primero antes de subir la firma.', 'error');
+              return;
+            }
+            if (!signaturePad || signaturePad.isEmpty()) {
+              showToast('Por favor, realice la firma antes de guardar.', 'error');
+              return;
+            }
+
+            const name = document.getElementById('signature-name').value.trim();
+            if (!name) {
+              showToast('Por favor, ingrese el nombre del responsable.', 'error');
+              return;
+            }
+
+            const btn = document.getElementById('btn-save-signature');
+            const originalHtml = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner"></span> Guardando...';
+
+            try {
+              const signatureB64 = signaturePad.toDataURL();
+              const res = await fetch(`${API_BASE}/guardar-firma/`, {
+                method: 'POST',
+                headers: getHeaders(),
+                body: JSON.stringify({
+                  registro_id: savedRegistroId,
+                  firma: signatureB64,
+                  nombre_responsable: name
+                })
+              });
+
+              if (!res.ok) {
+                const data = await res.json();
+                throw new Error(data.error || 'Error al guardar la firma.');
+              }
+
+              showToast('✅ Firma guardada correctamente.', 'success');
+              btn.innerHTML = '✅ Firma Guardada';
+              btn.classList.add('btn-success');
+
+              // Actualizar vista en pestaña de huella inmediatamente
+              const sigPad = document.getElementById('signature-pad-container');
+              const sigDisplay = document.getElementById('huella-signature-container');
+              if (sigDisplay) {
+                sigPad.style.display = 'none';
+                sigDisplay.style.display = 'flex';
+                const sigImg = document.getElementById('huella-signature-img');
+                if (sigImg) sigImg.src = signatureB64;
+                const sigName = document.getElementById('huella-signature-name');
+                if (sigName) sigName.textContent = fixMojibakeText(name);
+                const sigDate = document.getElementById('huella-signature-date');
+                if (sigDate) sigDate.textContent = 'Firmado el: ' + new Date().toLocaleString();
+              }
+
+              // Automatización: Generar PDF firmado
+              setTimeout(() => {
+                showToast('Generando PDF firmado...', 'info');
+                descargarPDF();
+              }, 1000);
+
+            } catch (err) {
+              console.error(err);
+              showToast('❌ ' + err.message, 'error');
+              btn.innerHTML = originalHtml;
+              btn.disabled = false;
+            }
+          }
+          window.submitform = window.submitForm; // Alias para evitar errores de mayúsculas
+        </script>
+      </div>
+    </div>
+    <aside class="sidebar-decor"><span class="decor-dots"></span></aside>
+  </div>
+</body>
+
+</html>
