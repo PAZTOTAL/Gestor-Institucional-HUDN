@@ -1,0 +1,142 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}DEFENJUR | Sistema Legal{% endblock %}</title>
+    <link rel="icon" href="{% url 'favicon' %}" type="image/svg+xml" sizes="any">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/premium.css' %}">
+    <link rel="stylesheet" href="{% static 'css/hudn.css' %}">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    {% block extra_css %}{% endblock %}
+</head>
+<body class="hudn-app">
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-logo">
+            <i data-lucide="shield" style="width:22px;height:22px;color:#fff;"></i>
+            DEFENJUR
+        </div>
+
+        <div class="sidebar-user" style="margin-bottom:1rem;padding:0 0.25rem;">
+            <div class="sidebar-user-avatar">{{ user.get_full_name|default:user.username|slice:":1"|upper }}</div>
+            <div style="min-width:0;">
+                <div style="font-weight:700;font-size:0.85rem;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+                    {{ user.get_full_name|default:user.username|upper }}
+                </div>
+                <div style="font-size:0.7rem;color:#adb5bd;text-transform:lowercase;">{{ user.rol|default:"usuario" }}</div>
+            </div>
+        </div>
+
+        <nav>
+            <a href="{% url 'home' %}" class="nav-item {% if request.resolver_match.url_name == 'home' %}active{% endif %}">
+                <i data-lucide="home"></i> Home
+            </a>
+
+            <details class="nav-group" open>
+                <summary><i data-lucide="folder-open"></i> Procesos</summary>
+                <div class="nav-group-body">
+                    <a href="{% url 'tutelas' %}" class="nav-sub {% if 'tutela' in request.resolver_match.url_name %}active{% endif %}">Acciones de Tutela</a>
+                    <a href="{% url 'peticiones' %}" class="nav-sub {% if 'peticion' in request.resolver_match.url_name %}active{% endif %}">Derechos de Petición</a>
+                    <a href="{% url 'pagos' %}" class="nav-sub {% if 'pago' in request.resolver_match.url_name %}active{% endif %}">Pagos Sentencias Judiciales</a>
+                    <a href="{% url 'peritajes' %}" class="nav-sub {% if 'peritaje' in request.resolver_match.url_name %}active{% endif %}">Peritajes</a>
+                    <a href="{% url 'sancionatorios' %}" class="nav-sub {% if 'sancionatorio' in request.resolver_match.url_name %}active{% endif %}">Procs. Adm. Sancionatorios</a>
+
+                    <details class="nav-group" style="margin-left:0;" {% if 'extrajudicial' in request.resolver_match.url_name %}open{% endif %}>
+                        <summary style="padding-left:2.25rem;font-size:0.8rem;font-weight:500;">Procesos Extrajudiciales</summary>
+                        <div class="nav-group-body" style="padding-left:0.5rem;">
+                            <a href="{% url 'extrajudiciales_conciliados' %}" class="nav-sub {% if request.resolver_match.url_name == 'extrajudiciales_conciliados' %}active{% endif %}">Conciliados</a>
+                            <a href="{% url 'extrajudiciales_no_conciliados' %}" class="nav-sub {% if request.resolver_match.url_name == 'extrajudiciales_no_conciliados' %}active{% endif %}">No conciliados</a>
+                            <a href="{% url 'extrajudiciales' %}" class="nav-sub {% if request.resolver_match.url_name == 'extrajudiciales' %}active{% endif %}">Todos</a>
+                        </div>
+                    </details>
+
+                    <details class="nav-group" style="margin-left:0;" {% if 'proceso_activ' in request.resolver_match.url_name or 'proceso_pasiv' in request.resolver_match.url_name or 'proceso_terminado' in request.resolver_match.url_name %}open{% endif %}>
+                        <summary style="padding-left:2.25rem;font-size:0.8rem;font-weight:500;">Procesos Judiciales</summary>
+                        <div class="nav-group-body" style="padding-left:0.5rem;">
+                            <a href="{% url 'procesos_activos' %}" class="nav-sub {% if 'proceso_activ' in request.resolver_match.url_name %}active{% endif %}">Por Activa</a>
+                            <a href="{% url 'procesos_pasivos' %}" class="nav-sub {% if 'proceso_pasiv' in request.resolver_match.url_name %}active{% endif %}">Por Pasiva</a>
+                            <a href="{% url 'procesos_terminados' %}" class="nav-sub {% if 'proceso_terminado' in request.resolver_match.url_name %}active{% endif %}">Procesos Terminados</a>
+                        </div>
+                    </details>
+
+                    <a href="{% url 'requerimientos' %}" class="nav-sub {% if 'requerimiento' in request.resolver_match.url_name %}active{% endif %}">Req. Entes de Control</a>
+                </div>
+            </details>
+
+            {% if user.is_superuser or user.rol|default:''|lower == 'administrador' %}
+            <a href="{% url 'reportes' %}" class="nav-item {% if request.resolver_match.url_name == 'reportes' %}active{% endif %}">
+                <i data-lucide="bar-chart-3"></i> Reportes
+            </a>
+            <a href="{% url 'usuarios' %}" class="nav-item {% if request.resolver_match.url_name == 'usuarios' %}active{% endif %}">
+                <i data-lucide="users"></i> Usuarios
+            </a>
+            {% endif %}
+
+            <a href="{% url 'ayuda' %}" class="nav-item {% if request.resolver_match.url_name == 'ayuda' %}active{% endif %}">
+                <i data-lucide="book-open"></i> Ayuda
+            </a>
+
+            <form action="{% url 'logout' %}" method="post" style="margin:0;">
+                {% csrf_token %}
+                <button type="submit" class="btn-sidebar-logout">
+                    <i data-lucide="log-out" style="width:18px;"></i> Salir
+                </button>
+            </form>
+        </nav>
+    </aside>
+
+    <main class="main-content">
+        <div class="hudn-topbar">
+            <div style="display:flex;align-items:center;gap:0.75rem;">
+                <button type="button" id="btnSidebar" aria-label="Menú" style="border:none;background:#f8f9fa;padding:0.5rem;border-radius:6px;cursor:pointer;">
+                    <i data-lucide="menu" style="width:20px;color:#495057;"></i>
+                </button>
+                <nav class="hudn-breadcrumb">{% block breadcrumb %}<strong>Home</strong>{% endblock %}</nav>
+            </div>
+            <span style="font-size:0.8rem;color:#6c757d;">DEFENJUR</span>
+        </div>
+
+        <header style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
+            <h1 class="text-gradient" style="margin:0;">{% block header_title %}Panel Principal{% endblock %}</h1>
+            {% block header_actions %}{% endblock %}
+        </header>
+
+        {% if messages %}
+            {% for message in messages %}
+                <div class="card animate-fade" role="alert" style="border-left: 4px solid {% if 'error' in message.tags %}#f43f5e{% elif 'success' in message.tags %}#10b981{% elif 'warning' in message.tags %}#f59e0b{% else %}#6366f1{% endif %}; margin-bottom: 1rem;">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        {% block content %}{% endblock %}
+    </main>
+
+    <dialog id="premiumModal" class="premium-modal">
+        <div class="modal-header">
+            <h3 id="modalTitle" style="margin: 0; font-size: 1.25rem;">Edición</h3>
+            <button class="modal-close" onclick="document.getElementById('premiumModal').close()"><i data-lucide="x"></i></button>
+        </div>
+        <div class="modal-body" id="modalBody"></div>
+    </dialog>
+
+    <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+    <script>
+        lucide.createIcons();
+        document.getElementById('btnSidebar')?.addEventListener('click', function() {
+            document.getElementById('sidebar').classList.toggle('hudn-sidebar-open');
+        });
+        document.body.addEventListener('htmx:configRequest', (event) => {
+            const csrfToken = document.cookie.split('; ').find(row => row.startsWith('csrftoken='))?.split('=')[1];
+            if (csrfToken) event.detail.headers['X-CSRFToken'] = csrfToken;
+        });
+        document.body.addEventListener('htmx:afterSwap', function() { lucide.createIcons(); });
+    </script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>
