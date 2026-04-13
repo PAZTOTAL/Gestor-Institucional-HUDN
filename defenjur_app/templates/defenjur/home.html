@@ -1,23 +1,23 @@
 {% extends 'defenjur/base.html' %}
 
-{% block title %}Home | DEFENJUR{% endblock %}
-{% block breadcrumb %}<strong>Home</strong>{% endblock %}
+{% block title %}Inicio | DEFENJUR{% endblock %}
+{% block breadcrumb %}<strong>Inicio</strong>{% endblock %}
 {% block header_title %}Sistema de Defensa Judicial{% endblock %}
 
 {% block legal_content %}
-<p style="text-align:center;color:#495057;font-size:1.05rem;margin:0 0 1.5rem;line-height:1.5;">
+<p style="text-align:center;color:#94a3b8;font-size:1.05rem;margin:0 0 1.5rem;line-height:1.5;">
     Bienvenido al Sistema de Defensa Judicial del Hospital Universitario Departamental de Nariño. <strong>DEFENJUR</strong>
 </p>
 
 <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:1.25rem;margin-bottom:1.25rem;">
-    <div class="card" style="margin:0;">
-        <div style="background:#dc3545;color:#fff;padding:0.5rem 1rem;font-weight:600;border-radius:8px 8px 0 0;margin:-1.5rem -1.5rem 1rem -1.5rem;">Procesos Judiciales</div>
+    <div class="card animate-fade" style="margin:0;">
+        <div style="background:var(--accent);color:#fff;padding:0.5rem 1rem;font-weight:600;border-radius:8px 8px 0 0;margin:-1.5rem -1.5rem 1rem -1.5rem;">Procesos Judiciales</div>
         <div style="height:260px;position:relative;">
             <canvas id="chartDonut"></canvas>
         </div>
     </div>
-    <div class="card" style="margin:0;">
-        <div style="background:#198754;color:#fff;padding:0.5rem 1rem;font-weight:600;border-radius:8px 8px 0 0;margin:-1.5rem -1.5rem 1rem -1.5rem;">Estadísticas (activa vs pasiva por mes)</div>
+    <div class="card animate-fade" style="margin:0;">
+        <div style="background:#10b981;color:#fff;padding:0.5rem 1rem;font-weight:600;border-radius:8px 8px 0 0;margin:-1.5rem -1.5rem 1rem -1.5rem;">Estadísticas (activa vs pasiva por mes)</div>
         <div style="height:260px;position:relative;">
             <canvas id="chartBar"></canvas>
         </div>
@@ -25,26 +25,26 @@
 </div>
 
 <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:1rem;">
-    <a href="{% url 'defenjur:procesos_pasivos' %}" class="card" style="margin:0;text-decoration:none;background:linear-gradient(135deg,#17a2b8,#138496);color:#fff;border:none;">
+    <a href="{% url 'defenjur:procesos_pasivos' %}" class="card animate-fade" style="margin:0;text-decoration:none;background:var(--secondary-gradient);color:#fff;border:none;">
         <div style="font-size:2rem;font-weight:800;">{{ count_procesos_pasiva }}</div>
         <div style="opacity:0.95;">Procesos Judiciales (pasiva)</div>
         <div style="margin-top:0.75rem;font-size:0.9rem;text-decoration:underline;">Ver detalle</div>
     </a>
-    <a href="{% url 'defenjur:procesos_activos' %}" class="card" style="margin:0;text-decoration:none;background:linear-gradient(135deg,#28a745,#1e7e34);color:#fff;border:none;">
+    <a href="{% url 'defenjur:procesos_activos' %}" class="card animate-fade" style="margin:0;text-decoration:none;background:var(--primary-gradient);color:#fff;border:none;">
         <div style="font-size:2rem;font-weight:800;">{{ count_procesos_activa }}</div>
         <div style="opacity:0.95;">Procesos Judiciales (activa)</div>
         <div style="margin-top:0.75rem;font-size:0.9rem;text-decoration:underline;">Ver detalle</div>
     </a>
-    <a href="{% url 'defenjur:procesos_terminados' %}" class="card" style="margin:0;text-decoration:none;background:linear-gradient(135deg,#ffc107,#e0a800);color:#212529;border:none;">
+    <a href="{% url 'defenjur:procesos_terminados' %}" class="card animate-fade" style="margin:0;text-decoration:none;background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;border:none;">
         <div style="font-size:2rem;font-weight:800;">{{ count_terminados }}</div>
         <div>Procesos Judiciales terminados</div>
         <div style="margin-top:0.75rem;font-size:0.9rem;text-decoration:underline;">Ver detalle</div>
     </a>
 </div>
 
-<footer style="margin-top:2rem;padding-top:1rem;border-top:1px solid #dee2e6;display:flex;justify-content:space-between;flex-wrap:wrap;gap:0.5rem;font-size:0.8rem;color:#6c757d;">
+<footer style="margin-top:2rem;padding-top:1rem;border-top:1px solid var(--glass-border);display:flex;justify-content:space-between;flex-wrap:wrap;gap:0.5rem;font-size:0.8rem;color:var(--text-muted);">
     <span>Copyright © 2026 Hospital Universitario Departamental de Nariño E.S.E.</span>
-    <span>Versión 1.0.0</span>
+    <span>Versión 1.0.0 · Módulo Integrado</span>
 </footer>
 {% endblock %}
 
@@ -61,22 +61,12 @@
         type: 'doughnut',
         data: {
             labels: d.labels,
-            datasets: [{ data: d.data, backgroundColor: ['#6c757d','#fd7e14','#6f42c1','#0d6efd','#20c997','#0dcaf0','#6610f2','#198754','#dc3545'] }]
+            datasets: [{ data: d.data, backgroundColor: ['#6366f1','#a855f7','#ec4899','#f43f5e','#f59e0b','#10b981','#3b82f6','#06b6d4','#8b5cf6'] }]
         },
         options: {
             maintainAspectRatio: false,
             plugins: {
-                legend: { position: 'right', labels: { boxWidth: 10, font: { size: 10 } } },
-                tooltip: {
-                    callbacks: {
-                        label: function(ctx) {
-                            const n = Number(ctx.raw) || 0;
-                            const sum = ctx.dataset.data.reduce(function(a, b) { return a + (Number(b) || 0); }, 0);
-                            const pct = sum ? ((n / sum) * 100).toFixed(1) : '0.0';
-                            return ' ' + n + ' registro(s) · ' + pct + '% del total';
-                        }
-                    }
-                }
+                legend: { position: 'right', labels: { boxWidth: 10, font: { size: 10, family: 'Inter' }, color: '#94a3b8' } },
             }
         }
     });
@@ -85,14 +75,17 @@
         data: {
             labels: b.labels,
             datasets: [
-                { label: 'Procesos jurídicos (pasiva)', data: b.pasiva, backgroundColor: 'rgba(108,117,125,0.75)' },
-                { label: 'Procesos jurídicos (activa)', data: b.activa, backgroundColor: 'rgba(13,110,253,0.85)' }
+                { label: 'Procesos jurídicos (pasiva)', data: b.pasiva, backgroundColor: 'rgba(59,130,246,0.6)' },
+                { label: 'Procesos jurídicos (activa)', data: b.activa, backgroundColor: 'rgba(99,102,241,0.8)' }
             ]
         },
         options: {
             maintainAspectRatio: false,
-            scales: { x: { stacked: false }, y: { beginAtZero: true, ticks: { precision: 0 } } },
-            plugins: { legend: { position: 'top' } }
+            scales: { 
+                x: { ticks: { color: '#94a3b8' }, grid: { display: false } }, 
+                y: { beginAtZero: true, ticks: { precision: 0, color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.05)' } } 
+            },
+            plugins: { legend: { position: 'top', labels: { color: '#94a3b8' } } }
         }
     });
 })();

@@ -6,7 +6,7 @@
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem;flex-wrap:wrap;gap:1rem;">
         {% include 'defenjur/includes/search_bar.html' with placeholder="Buscar N° proceso, fecha pago, despacho, medio, demandante…" %}
         <div style="display:flex;gap:1rem;align-items:center;flex-wrap:wrap;">
-            <span style="color:#6c757d;font-size:0.9rem;">{% if is_paginated %}Total {{ paginator.count }} · {% endif %}Pág. {{ page_obj.number|default:1 }}</span>
+            <span style="color:var(--text-muted);font-size:0.9rem;">{% if is_paginated %}Total {{ paginator.count }} · {% endif %}Pág. {{ page_obj.number|default:1 }}</span>
             {% include 'defenjur/includes/export_excel_btn.html' with modulo='pagos' %}
             <a href="{% url 'defenjur:pago_crear' %}" class="btn-premium" style="text-decoration:none;display:inline-flex;align-items:center;gap:6px;background:linear-gradient(135deg,#10b981,#059669);">
                 <i data-lucide="plus" style="width:16px;"></i> Nuevo Pago
@@ -59,7 +59,7 @@
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="8" style="padding:2rem;text-align:center;color:#6c757d;">No hay pagos de sentencias registrados.</td>
+                    <td colspan="8" style="padding:2rem;text-align:center;color:var(--text-muted);">No hay pagos de sentencias registrados.</td>
                 </tr>
                 {% endfor %}
             </tbody>

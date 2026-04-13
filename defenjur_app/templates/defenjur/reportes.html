@@ -1,11 +1,11 @@
 {% extends 'defenjur/base.html' %}
 
 {% block title %}Reportes | DEFENJUR{% endblock %}
-{% block breadcrumb %}<span style="color:#6c757d;">Home</span> / <strong>Reportes</strong>{% endblock %}
+{% block breadcrumb %}<span style="color:var(--text-muted);">Home</span> / <strong>Reportes</strong>{% endblock %}
 {% block header_title %}Reportes e indicadores{% endblock %}
 
 {% block legal_content %}
-<p style="color:#495057;margin:0 0 1.25rem;">Consolidado de cargas por tipo de proceso y tendencia mensual de procesos judiciales activa y pasiva (año {{ chart_year }}).</p>
+<p style="color:var(--text-main);margin:0 0 1.25rem;">Consolidado de cargas por tipo de proceso y tendencia mensual de procesos judiciales activa y pasiva (año {{ chart_year }}).</p>
 
 <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1rem;margin-bottom:1.5rem;">
     <div class="card" style="margin:0;"><strong>Tutelas</strong><div style="font-size:1.75rem;font-weight:800;">{{ count_tutelas }}</div></div>

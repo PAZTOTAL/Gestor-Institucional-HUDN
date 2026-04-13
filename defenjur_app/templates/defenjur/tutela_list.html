@@ -1,11 +1,11 @@
 {% extends 'defenjur/base.html' %}
 
 {% block title %}Acciones de Tutela | DEFENJUR{% endblock %}
-{% block breadcrumb %}<a href="{% url 'defenjur:home' %}" style="color:#6c757d;text-decoration:none;">Home</a> / <strong>Acciones de Tutela</strong>{% endblock %}
+{% block breadcrumb %}<a href="{% url 'defenjur:home' %}" style="color:var(--text-muted);text-decoration:none;">Home</a> / <strong>Acciones de Tutela</strong>{% endblock %}
 {% block header_title %}Acciones de Tutela{% endblock %}
 
 {% block header_actions %}
-<div style="font-weight:600;color:#495057;">Total registros: {{ paginator.count }}</div>
+<div style="font-weight:600;color:var(--text-main);">Total registros: {{ paginator.count }}</div>
 {% endblock %}
 
 {% block legal_content %}
@@ -21,22 +21,22 @@
         <summary class="btn-premium" style="cursor:pointer;display:inline-flex;align-items:center;gap:6px;background:#0d6efd;width:auto;list-style:none;">
             <i data-lucide="calendar" style="width:18px;"></i> Consultar por fechas
         </summary>
-        <form method="get" style="margin-top:0.75rem;padding:1rem;background:#f8f9fa;border-radius:8px;border:1px solid #dee2e6;">
+        <form method="get" style="margin-top:0.75rem;padding:1rem;background:rgba(15, 23, 42, 0.5);border-radius:8px;border:1px solid #dee2e6;">
             <div style="display:flex;flex-wrap:wrap;gap:1rem;align-items:flex-end;">
                 <div>
-                    <label style="display:block;font-size:0.75rem;color:#6c757d;margin-bottom:0.25rem;">Mes (1–12)</label>
+                    <label style="display:block;font-size:0.75rem;color:var(--text-muted);margin-bottom:0.25rem;">Mes (1–12)</label>
                     <input type="number" name="mes" value="{{ mes }}" class="premium-input" placeholder="2" min="1" max="12" style="width:80px;">
                 </div>
                 <div>
-                    <label style="display:block;font-size:0.75rem;color:#6c757d;margin-bottom:0.25rem;">Año</label>
+                    <label style="display:block;font-size:0.75rem;color:var(--text-muted);margin-bottom:0.25rem;">Año</label>
                     <input type="number" name="anio" value="{{ anio }}" class="premium-input" placeholder="2026" min="1990" max="2100" style="width:100px;">
                 </div>
                 <div>
-                    <label style="display:block;font-size:0.75rem;color:#6c757d;margin-bottom:0.25rem;">Desde (dd/mm/aaaa)</label>
+                    <label style="display:block;font-size:0.75rem;color:var(--text-muted);margin-bottom:0.25rem;">Desde (dd/mm/aaaa)</label>
                     <input type="text" name="fecha_desde" value="{{ fecha_desde }}" class="premium-input" placeholder="dd/mm/aaaa" style="width:140px;">
                 </div>
                 <div>
-                    <label style="display:block;font-size:0.75rem;color:#6c757d;margin-bottom:0.25rem;">Hasta</label>
+                    <label style="display:block;font-size:0.75rem;color:var(--text-muted);margin-bottom:0.25rem;">Hasta</label>
                     <input type="text" name="fecha_hasta" value="{{ fecha_hasta }}" class="premium-input" placeholder="dd/mm/aaaa" style="width:140px;">
                 </div>
                 <input type="hidden" name="q" value="{{ search_query }}">
@@ -48,7 +48,7 @@
 
     <form method="get" style="display:flex;flex-wrap:wrap;gap:1rem;justify-content:space-between;align-items:center;margin-bottom:1rem;">
         <div style="display:flex;align-items:center;gap:0.5rem;">
-            <label style="font-size:0.875rem;color:#495057;">Mostrar</label>
+            <label style="font-size:0.875rem;color:var(--text-main);">Mostrar</label>
             <select name="per_page" class="premium-input" style="width:auto;padding:0.4rem 0.6rem;" onchange="this.form.submit()">
                 <option value="5" {% if per_page_sel == "5" %}selected{% endif %}>5</option>
                 <option value="10" {% if per_page_sel == "10" %}selected{% endif %}>10</option>
@@ -56,10 +56,10 @@
                 <option value="50" {% if per_page_sel == "50" %}selected{% endif %}>50</option>
                 <option value="100" {% if per_page_sel == "100" %}selected{% endif %}>100</option>
             </select>
-            <span style="font-size:0.875rem;color:#495057;">registros</span>
+            <span style="font-size:0.875rem;color:var(--text-main);">registros</span>
         </div>
         <div style="display:flex;gap:0.5rem;align-items:center;">
-            <label style="font-size:0.875rem;color:#495057;">Buscar:</label>
+            <label style="font-size:0.875rem;color:var(--text-main);">Buscar:</label>
             <input type="search" name="q" value="{{ search_query }}" class="premium-input" style="width:220px;" placeholder="Texto…">
             <input type="hidden" name="fecha_desde" value="{{ fecha_desde }}">
             <input type="hidden" name="fecha_hasta" value="{{ fecha_hasta }}">
@@ -112,7 +112,7 @@
                             <summary style="cursor:pointer;list-style-position:outside;color:#0d6efd;font-weight:500;">
                                 {{ tutela.observaciones|truncatechars:52 }}
                             </summary>
-                            <div style="white-space:pre-wrap;margin-top:0.5rem;padding:0.5rem 0.65rem;background:#f8f9fa;border-radius:6px;border:1px solid #e9ecef;max-height:240px;overflow-y:auto;">{{ tutela.observaciones }}</div>
+                            <div style="white-space:pre-wrap;margin-top:0.5rem;padding:0.5rem 0.65rem;background:rgba(15, 23, 42, 0.5);border-radius:6px;border:1px solid #e9ecef;max-height:240px;overflow-y:auto;">{{ tutela.observaciones }}</div>
                         </details>
                         {% else %}
                         <span style="color:#adb5bd;">—</span>
@@ -140,7 +140,7 @@
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="11" style="padding:2rem;text-align:center;color:#6c757d;">No hay registros.</td>
+                    <td colspan="11" style="padding:2rem;text-align:center;color:var(--text-muted);">No hay registros.</td>
                 </tr>
                 {% endfor %}
             </tbody>

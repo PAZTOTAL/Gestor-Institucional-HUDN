@@ -1,6 +1,6 @@
 {% extends 'defenjur/base.html' %}
 {% block title %}Procesos Extrajudiciales | DEFENJUR{% endblock %}
-{% block breadcrumb %}<a href="{% url 'defenjur:home' %}" style="color:#6c757d;text-decoration:none;">Home</a> / <strong>Extrajudiciales</strong>{% endblock %}
+{% block breadcrumb %}<a href="{% url 'defenjur:home' %}" style="color:var(--text-muted);text-decoration:none;">Home</a> / <strong>Extrajudiciales</strong>{% endblock %}
 {% block header_title %}Procesos Extrajudiciales{% if extrajudicial_filtro == 'conciliados' %} — Conciliados{% elif extrajudicial_filtro == 'no_conciliados' %} — No conciliados{% endif %}{% endblock %}
 
 {% block legal_content %}

@@ -19,8 +19,8 @@ class DashboardModule(models.Model):
     is_active = models.BooleanField(default=True, verbose_name="Activo")
 
     class Meta:
-        verbose_name = "Módulo de DashBOard"
-        verbose_name_plural = "Módulos de DashBOard"
+        verbose_name = "Módulo de Inicio"
+        verbose_name_plural = "Módulos de Inicio"
         ordering = ['order', 'name']
 
     def __str__(self):

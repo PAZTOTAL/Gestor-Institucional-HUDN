@@ -1,13 +1,13 @@
 {% extends 'defenjur/base.html' %}
 
 {% block title %}Usuarios | DEFENJUR{% endblock %}
-{% block breadcrumb %}<a href="{% url 'defenjur:home' %}" style="color:#6c757d;text-decoration:none;">Home</a> / <strong>Usuarios</strong>{% endblock %}
+{% block breadcrumb %}<a href="{% url 'defenjur:home' %}" style="color:var(--text-muted);text-decoration:none;">Home</a> / <strong>Usuarios</strong>{% endblock %}
 {% block header_title %}Usuarios del sistema{% endblock %}
 
 {% block legal_content %}
 <div class="card animate-fade">
     <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.75rem;margin-bottom:1rem;">
-        <p style="color:#6c757d;margin:0;font-size:0.9rem;">Equivalente a <code>users.js</code> del backend Node: alta, edición y baja de cuentas.</p>
+        <p style="color:var(--text-muted);margin:0;font-size:0.9rem;">Equivalente a <code>users.js</code> del backend Node: alta, edición y baja de cuentas.</p>
         <div style="display:flex;gap:0.75rem;flex-wrap:wrap;align-items:center;">
             {% include 'defenjur/includes/export_excel_btn.html' with modulo='usuarios' %}
             <a href="{% url 'usuario_crear' %}" class="btn-premium" style="text-decoration:none;">+ Nuevo usuario</a>
@@ -46,7 +46,7 @@
                     </td>
                 </tr>
                 {% empty %}
-                <tr><td colspan="7" style="text-align:center;padding:2rem;color:#6c757d;">No hay usuarios.</td></tr>
+                <tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--text-muted);">No hay usuarios.</td></tr>
                 {% endfor %}
             </tbody>
         </table>
