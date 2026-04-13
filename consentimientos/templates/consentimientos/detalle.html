@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="es">
+{% load consentimiento_extras %}
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ documento.titulo }} - AlexaTotal</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --bg: #f1f5f9;
+            --card-bg: #ffffff;
+            --text: #1e293b;
+            --text-light: #64748b;
+            --success: #10b981;
+            --error: #ef4444;
+            --border: #e2e8f0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        .container {
+            flex: 1;
+            padding: 1.5rem;
+            max-width: 600px;
+            margin: 0 auto;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .header-back {
+            display: flex;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            text-decoration: none;
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        .header-back span {
+            margin-right: 0.5rem;
+        }
+
+        .document-card {
+            background: white;
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+            overflow: hidden;
+            border: 1px solid var(--border);
+        }
+
+        .document-header {
+            background: #f8fafc;
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .document-header h1 {
+            margin: 0;
+            font-size: 1.25rem;
+            font-weight: 700;
+        }
+
+        .document-header p {
+            margin: 0.5rem 0 0;
+            color: var(--text-light);
+            font-size: 0.875rem;
+        }
+
+        .document-body {
+            padding: 1.5rem;
+            line-height: 1.6;
+            font-size: 1rem;
+            max-height: 50vh;
+            overflow-y: auto;
+            background: #fff;
+        }
+
+        .document-footer {
+            padding: 1.5rem;
+            background: #f8fafc;
+            border-top: 1px solid var(--border);
+            text-align: center;
+        }
+
+        .btn {
+            display: inline-block;
+            width: 100%;
+            padding: 1rem;
+            border-radius: 0.75rem;
+            font-weight: 700;
+            font-size: 1rem;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-bottom: 0.75rem;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:active {
+            transform: scale(0.98);
+            background: var(--primary-dark);
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 2px solid var(--primary);
+            color: var(--primary);
+        }
+
+        .status-msg {
+            padding: 1rem;
+            border-radius: 0.75rem;
+            margin-top: 1rem;
+            display: none;
+            font-weight: 600;
+        }
+
+        .status-success {
+            background: #d1fae5;
+            color: #065f46;
+            display: block;
+        }
+
+        .status-error {
+            background: #fee2e2;
+            color: #991b1b;
+            display: block;
+        }
+
+        .status-info {
+            background: #e0f2fe;
+            color: #0369a1;
+            display: block;
+        }
+
+        .spinner {
+            display: none;
+            width: 1.5rem;
+            height: 1.5rem;
+            border: 3px solid rgba(255, 255, 255, .3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .loading .spinner { display: block; }
+        .loading span { display: none; }
+
+        @keyframes bounceIn {
+            0% { transform: scale(0.8); opacity: 0; }
+            60% { transform: scale(1.1); opacity: 1; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        /* Signature Pad Styles */
+        .signature-container {
+            margin-top: 2rem;
+            background: #ffffff;
+            border-radius: 1rem;
+            border: 2px solid var(--border);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .signature-header {
+            padding: 0.75rem;
+            background: var(--primary);
+            color: white;
+            font-weight: 600;
+            font-size: 0.9rem;
+            text-align: center;
+        }
+
+        .canvas-wrapper {
+            position: relative;
+            width: 100%;
+            height: 250px;
+            background: #f8fafc;
+            /* Dot pattern background */
+            background-image: radial-gradient(#cbd5e1 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+
+        #signature-pad {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            cursor: crosshair;
+            touch-action: none; /* Previene scroll en celular al dibujar */
+        }
+        
+        .signature-actions {
+            display: flex;
+            gap: 1rem;
+            padding: 1rem;
+            background: #f1f5f9;
+            border-top: 1px solid var(--border);
+        }
+
+        .signature-actions .btn {
+            margin-bottom: 0;
+            padding: 0.75rem;
+        }
+
+        .signature-image-container {
+            margin-top: 2rem;
+            padding: 1.5rem;
+            background: white;
+            border: 2px solid var(--success);
+            border-radius: 1rem;
+            text-align: center;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+            text-align: left;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+            font-size: 0.875rem;
+            color: var(--text-light);
+            text-transform: capitalize;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            border: 1px solid var(--border);
+            font-family: inherit;
+            font-size: 1rem;
+            box-sizing: border-box;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        }
+
+        .signed-data-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            background: #e0f2fe;
+            color: #0369a1;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-top: 0.5rem;
+        }
+
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <a href="{% url 'consentimientos_v2:lista' %}" class="header-back">
+            <span>←</span> Volver a la lista
+        </a>
+
+        <div class="document-card">
+            <!-- Cabecera Institucional HUDN Estilo Tabla Rígida (Fidelidad 1:1) -->
+            <table style="width: 100%; border-collapse: collapse; border: 2px solid #000; margin-bottom: 2rem; background: white; font-family: Arial, sans-serif; font-size: 9px; color: #000; table-layout: fixed;">
+                <tr>
+                    <!-- Col 1: Logo Hospital -->
+                    <td rowspan="4" style="width: 15%; border: 1px solid #000; text-align: center; padding: 5px; vertical-align: middle;">
+                        <img src="/static/img/logo_hospital.png" style="width: 100%; max-height: 55px; object-fit: contain;">
+                    </td>
+                    <!-- Col 2: Nombre del Consentimiento -->
+                    <td rowspan="4" style="width: 35%; border: 1px solid #000; text-align: center; font-weight: bold; font-size: 11px; padding: 10px; text-transform: uppercase; vertical-align: middle;">
+                        {{ documento.titulo }}
+                    </td>
+                    <!-- Col 3: Etiquetas Calidad -->
+                    <td style="width: 15%; border: 1px solid #000; padding: 2px; font-weight: bold; background: #f9fafb;">CÓDIGO:</td>
+                    <!-- Col 4: Valores Calidad -->
+                    <td style="width: 25%; border: 1px solid #000; padding: 2px; font-weight: bold;">{{ documento.codigo_formato|default:"S/C" }}</td>
+                    <!-- Col 5: Logo Acreditación -->
+                    <td rowspan="4" style="width: 10%; border: 1px solid #000; text-align: center; padding: 5px; vertical-align: middle;">
+                        <img src="/static/img/logo_acreditacion.png" style="width: 100%; max-height: 55px; object-fit: contain;">
+                    </td>
+                </tr>
+                <tr>
+                    <td style="border: 1px solid #000; padding: 2px; font-weight: bold; background: #f9fafb;">FECHA ELAB:</td>
+                    <td style="border: 1px solid #000; padding: 2px;">{{ documento.fecha_elaboracion|default:"13/03/2020" }}</td>
+                </tr>
+                <tr>
+                    <td style="border: 1px solid #000; padding: 2px; font-weight: bold; background: #f9fafb;">FECHA ACT:</td>
+                    <td style="border: 1px solid #000; padding: 2px;">{{ documento.fecha_actualizacion|default:"06/11/2020" }}</td>
+                </tr>
+                <tr>
+                    <td style="border: 1px solid #000; padding: 2px; font-weight: bold; background: #f9fafb;">VERSIÓN / HOJA:</td>
+                    <td style="border: 1px solid #000; padding: 2px;">{{ documento.version|default:"01" }} / HOJA 1 DE 1</td>
+                </tr>
+            </table>
+
+            <div class="document-body">
+                {% if is_signed %}
+                    <div style="font-size: 1.1rem; font-weight: 500; margin-bottom: 1rem;">
+                        {{ documento.contenido|safe }}
+                    </div>
+                {% else %}
+                    <div style="font-size: 1.1rem; font-weight: 500; margin-bottom: 1.5rem; padding: 1rem; background: #fffbeb; border-radius: 0.5rem; border: 1px solid #fef3c7;">
+                        <i class="fas fa-info-circle" style="color: #d97706;"></i> Complete los siguientes datos antes de firmar:
+                    </div>
+                    
+                    <form id="consent-form">
+                        {% for field in placeholders %}
+                        <div class="form-group">
+                            <label for="field_{{ field }}">{{ field|replace_underscore:" " }}</label>
+                            <input type="text" id="field_{{ field }}" name="{{ field }}" class="form-control" required placeholder="Ingrese {{ field }}">
+                        </div>
+                        {% endfor %}
+                    </form>
+                {% endif %}
+
+                {% if is_signed %}
+                <!-- Muestra la firma guardada -->
+                    <div style="color: var(--success); font-weight: bold; font-size: 1.1rem;">
+                        <i class="fas fa-check-circle"></i> Documento Firmado Exitosamente
+                    </div>
+                    <div style="display: flex; gap: 10px; margin-top: 10px; justify-content: center;">
+                        <div style="flex: 1; border: 1px solid var(--border); padding: 5px;">
+                            <img src="{{ firma.firma_data }}" style="width: 100%; border-bottom: 1px solid #eee;">
+                            <div style="font-size: 0.7rem;">Paciente</div>
+                        </div>
+                        {% if firma.firma_medico_data %}
+                        <div style="flex: 1; border: 1px solid var(--border); padding: 5px;">
+                            <img src="{{ firma.firma_medico_data }}" style="width: 100%; border-bottom: 1px solid #eee;">
+                            <div style="font-size: 0.7rem;">Médico / Responsable</div>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% if firma.datos_formulario != "{}" %}
+                    <div style="margin-top: 1rem; text-align: left; background: #f8fafc; padding: 1rem; border-radius: 0.5rem; border: 1px solid var(--border);">
+                       <strong>Datos registrados:</strong><br>
+                       <div id="display-signed-data" style="font-size: 0.9rem; color: var(--text-light); margin-top: 0.5rem;"></div>
+                    </div>
+                    <script>
+                        try {
+                            const data = JSON.parse('{{ firma.datos_formulario|escapejs }}');
+                            const container = document.getElementById('display-signed-data');
+                            for (const [key, value] of Object.entries(data)) {
+                                container.innerHTML += `<div><span style="text-transform: capitalize;">${key.replace(/_/g, ' ')}</span>: <b>${value}</b></div>`;
+                            }
+                        } catch(e) { console.error(e); }
+                    </script>
+                    {% endif %}
+                    <div style="font-size: 0.85rem; color: var(--text-light); margin-top: 0.5rem;">
+                        Fecha de Firma: {{ firma.timestamp|date:"d/m/Y H:i" }}
+                    </div>
+                </div>
+                {% else %}
+                <!-- Zona de Firmas -->
+                <div style="display: flex; gap: 1rem; flex-direction: column; margin-top: 2rem;">
+                    <div class="signature-container">
+                        <div class="signature-header">✍️ FIRMA DEL PACIENTE</div>
+                        <div class="canvas-wrapper"><canvas id="signature-pad-paciente"></canvas></div>
+                        <div class="signature-actions">
+                            <button id="btn-clear-paciente" type="button" class="btn btn-outline" style="flex: 1;">Limpiar</button>
+                        </div>
+                    </div>
+                    
+                    <div class="signature-container">
+                        <div class="signature-header">✍️ FIRMA DEL MÉDICO / RESPONSABLE</div>
+                        <div class="canvas-wrapper"><canvas id="signature-pad-medico"></canvas></div>
+                        <div class="signature-actions">
+                            <button id="btn-clear-medico" type="button" class="btn btn-outline" style="flex: 1;">Limpiar</button>
+                        </div>
+                    </div>
+
+                    <div id="witness-section" class="signature-container" style="display: none;">
+                        <div class="signature-header">✍️ FIRMA DEL TESTIGO (CASO DE RECHAZO)</div>
+                        <div class="canvas-wrapper"><canvas id="signature-pad-testigo"></canvas></div>
+                        <div class="signature-actions">
+                            <button id="btn-clear-testigo" type="button" class="btn btn-outline" style="flex: 1;">Limpiar</button>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="document-footer">
+                {% if is_signed %}
+                <div style="display: flex; gap: 10px; flex-direction: column;">
+                    <a href="{% url 'consentimientos_v2:descargar_pdf' firma.pk %}" class="btn btn-outline" style="text-decoration: none;">
+                        <i class="fas fa-file-pdf"></i> DESCARGAR PDF FIRMADO
+                    </a>
+                    <button id="btn-final-accept" class="btn btn-primary" onclick="window.location.href='{% url 'consentimientos_v2:lista' %}'">
+                        VOLVER AL MENÚ
+                    </button>
+                </div>
+                {% else %}
+                <button id="btn-save-signature" class="btn btn-primary">
+                    <span>Guardar Firma</span>
+                    <div class="spinner"></div>
+                </button>
+                {% endif %}
+                <div id="status" class="status-msg"></div>
+            </div>
+        </div>
+    </div>
+
+    {{ is_signed|json_script:"is-signed-data" }}
+
+    <script>
+        const statusDiv = document.getElementById('status');
+        const showStatus = (msg, type) => {
+            if (!statusDiv) return;
+            statusDiv.textContent = msg;
+            statusDiv.className = `status-msg status-${type}`;
+        };
+
+        const IS_SIGNED = JSON.parse(document.getElementById('is-signed-data').textContent);
+
+        if (!IS_SIGNED) {
+            // Variables de trazabilidad
+            let tracingData = {
+                ingreso_id: localStorage.getItem('selected_patient_ingreso_id'),
+                paciente_oid: null,
+                folio: null,
+                historia_clinica: localStorage.getItem('selected_patient_documento')
+            };
+
+            const selectedIngresoId = localStorage.getItem('selected_patient_ingreso_id');
+            if (selectedIngresoId) {
+                const container = document.querySelector('.container');
+                const banner = document.createElement('div');
+                banner.className = 'status-msg status-info animate-in slide-in-from-top duration-500';
+                banner.style.marginBottom = '1.5rem';
+                banner.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <i class="fas fa-magic"></i>
+                            <div>
+                                <div style="font-weight: 800; font-size: 0.7rem; text-transform: uppercase;">Modo Auto-llenado</div>
+                                <div style="font-size: 0.9rem;">Cargando datos para: <b>${localStorage.getItem('selected_patient_name')}</b></div>
+                            </div>
+                        </div>
+                        <div style="display: flex; gap: 8px;">
+                            <button onclick="openPatientModal()" class="px-3 py-1 bg-white/50 rounded-lg text-xs font-black hover:bg-white transition-all">
+                                <i class="fas fa-exchange-alt"></i> CAMBIAR
+                            </button>
+                            <button onclick="localStorage.removeItem('selected_patient_ingreso_id'); location.reload();" style="background: none; border: none; color: inherit; cursor: pointer; opacity: 0.7 hover:opacity: 1;">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+                container.insertBefore(banner, document.querySelector('.document-card'));
+
+                fetch(`/consentimientos-v2/api/paciente-data/${selectedIngresoId}/`)
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.error) throw new Error(data.error);
+                        tracingData.paciente_oid = data.paciente_id;
+                        tracingData.folio = data.folio;
+                        tracingData.historia_clinica = data.identificacion;
+
+                        for (const [key, value] of Object.entries(data)) {
+                            const inputs = document.querySelectorAll(`input[name="${key}"], input[id="field_${key}"]`);
+                            inputs.forEach(input => {
+                                input.value = value;
+                                input.style.background = '#f0f9ff';
+                                input.style.borderColor = '#7dd3fc';
+                            });
+                        }
+                    })
+                    .catch(e => console.error("Error auto-filling:", e));
+            } else {
+                const header = document.querySelector('.header-back');
+                const btnChoice = document.createElement('button');
+                btnChoice.className = 'btn btn-outline';
+                btnChoice.style.margin = '1rem 0';
+                btnChoice.style.fontSize = '0.75rem';
+                btnChoice.style.padding = '0.5rem';
+                btnChoice.innerHTML = '<i class="fas fa-users"></i> Elegir Paciente Activo';
+                btnChoice.onclick = openPatientModal;
+                header.parentNode.insertBefore(btnChoice, header.nextSibling);
+            }
+
+            // Gestión de Modal de Pacientes
+            let allPatients = [];
+            window.allPatients = allPatients;
+            window.openPatientModal = function() {
+                let modal = document.getElementById('patient-modal-detail');
+                if (!modal) { createModal(); modal = document.getElementById('patient-modal-detail'); }
+                modal.classList.remove('hidden'); loadPatientsDetail();
+            };
+            window.closePatientModal = function() { document.getElementById('patient-modal-detail').classList.add('hidden'); };
+            function createModal() {
+                const modalHTML = `
+                <div id="patient-modal-detail" class="fixed inset-0 z-[100] hidden">
+                    <div class="absolute inset-0 bg-gray-900/60 backdrop-blur-sm" onclick="closePatientModal()"></div>
+                    <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg p-4">
+                        <div class="bg-white rounded-3xl shadow-2xl overflow-hidden border border-white/20">
+                            <div class="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+                                <h3 class="text-xl font-black text-gray-800 uppercase italic">Pacientes Activos</h3>
+                                <button onclick="closePatientModal()"><i class="fas fa-times text-gray-400"></i></button>
+                            </div>
+                            <div class="p-4">
+                                <input type="text" id="search-patient-detail" placeholder="Buscar..." class="w-full px-4 py-3 rounded-xl bg-gray-100 border-none mb-4 text-sm">
+                                <div id="patient-list-detail" class="overflow-y-auto max-h-[350px] space-y-2"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>`;
+                document.body.insertAdjacentHTML('beforeend', modalHTML);
+                document.getElementById('search-patient-detail').addEventListener('input', (e) => {
+                    const text = e.target.value.toLowerCase();
+                    const filtered = window.allPatients.filter(p => p.nombre.toLowerCase().includes(text) || p.documento.includes(text));
+                    renderPatientsDetail(filtered);
+                });
+            }
+            async function loadPatientsDetail() {
+                const list = document.getElementById('patient-list-detail');
+                list.innerHTML = '<div class="text-center py-4"><i class="fas fa-spinner fa-spin text-primary"></i></div>';
+                try {
+                    const res = await fetch('{% url "consentimientos_v2:api_pacientes_activos" %}');
+                    const data = await res.json(); window.allPatients = data.results; renderPatientsDetail(data.results);
+                } catch (e) { list.innerHTML = 'Error'; }
+            }
+            function renderPatientsDetail(patients) {
+                const list = document.getElementById('patient-list-detail'); list.innerHTML = '';
+                patients.forEach(p => {
+                    const item = document.createElement('div');
+                    item.className = 'p-3 rounded-xl bg-gray-50 hover:bg-primary/5 border border-gray-100 cursor-pointer transition-all';
+                    item.onclick = () => {
+                        localStorage.setItem('selected_patient_ingreso_id', p.ingreso_id);
+                        localStorage.setItem('selected_patient_name', p.nombre);
+                        localStorage.setItem('selected_patient_documento', p.documento);
+                        location.reload();
+                    };
+                    item.innerHTML = `<div class="font-black text-xs text-gray-800 uppercase">${p.nombre}</div><div class="flex justify-between text-[10px] text-gray-500 font-bold"><span>ID: ${p.documento}</span><span class="text-primary italic">Cama ${p.cama}</span></div>`;
+                    list.appendChild(item);
+                });
+            }
+
+            // Signature Pads
+            function initPad(canvasId, clearBtnId) {
+                const canvas = document.getElementById(canvasId);
+                const ctx = canvas.getContext('2d');
+                const wrapper = canvas.parentElement;
+                let isDrawing = false; let hasSignature = false;
+                function resize() {
+                    const rect = wrapper.getBoundingClientRect();
+                    canvas.width = rect.width; canvas.height = rect.height;
+                    ctx.lineWidth = 3; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.strokeStyle = '#0f172a';
+                }
+                window.addEventListener('resize', resize); resize();
+                function getPos(e) {
+                    const rect = canvas.getBoundingClientRect();
+                    let cx = e.clientX || (e.touches ? e.touches[0].clientX : 0);
+                    let cy = e.clientY || (e.touches ? e.touches[0].clientY : 0);
+                    return { x: cx - rect.left, y: cy - rect.top };
+                }
+                const start = (e) => { isDrawing = true; hasSignature = true; const p = getPos(e); ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(p.x, p.y); ctx.stroke(); e.preventDefault(); };
+                const move = (e) => { if(!isDrawing) return; const p = getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); e.preventDefault(); };
+                const end = () => { if(isDrawing) { ctx.closePath(); isDrawing = false; } };
+                canvas.addEventListener('mousedown', start); canvas.addEventListener('mousemove', move); window.addEventListener('mouseup', end);
+                canvas.addEventListener('touchstart', start, {passive: false}); canvas.addEventListener('touchmove', move, {passive: false}); canvas.addEventListener('touchend', end);
+                document.getElementById(clearBtnId).addEventListener('click', () => { ctx.clearRect(0, 0, canvas.width, canvas.height); hasSignature = false; });
+                return { getBase64: () => canvas.toDataURL('image/png'), hasSignature: () => hasSignature };
+            }
+
+            const padPaciente = initPad('signature-pad-paciente', 'btn-clear-paciente');
+            const hasOfficialSignature = {{ has_official_signature|yesno:"true,false" }};
+            let padMedico = null;
+            if (!hasOfficialSignature) {
+                padMedico = initPad('signature-pad-medico', 'btn-clear-medico');
+            } else {
+                const containerMedico = document.getElementById('signature-pad-medico').closest('.signature-container');
+                containerMedico.style.borderColor = 'var(--success)';
+                const wrapper = containerMedico.querySelector('.canvas-wrapper');
+                wrapper.innerHTML = `
+                    <div style="height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 2rem; text-align: center;">
+                        <img src="{{ official_signature }}" style="max-height: 120px; margin-bottom: 1rem; filter: grayscale(1);">
+                        <div style="color: var(--success); font-weight: 800; font-size: 0.8rem; text-transform: uppercase;"><i class="fas fa-check-double"></i> Firma Oficial Registrada</div>
+                        <div style="font-size: 0.7rem; color: var(--text-light); margin-top: 0.5rem;">Su firma se estampará automáticamente al guardar.</div>
+                    </div>`;
+                containerMedico.querySelector('.signature-actions').style.display = 'none';
+            }
+            const padTestigo = initPad('signature-pad-testigo', 'btn-clear-testigo');
+
+            // Mostrar testigo si es el doc de anestesia o hay secciones de rechazo
+            if (document.body.innerText.includes('RECHAZO')) {
+                document.getElementById('witness-section').style.display = 'block';
+                window.dispatchEvent(new Event('resize'));
+            }
+
+            const btnSave = document.getElementById('btn-save-signature');
+            btnSave.addEventListener('click', async () => {
+                if (!padPaciente.hasSignature()) { showStatus('Por favor, firme como paciente.', 'error'); return; }
+                const formData = {}; document.querySelectorAll('#consent-form .form-control').forEach(i => formData[i.name] = i.value.trim());
+                btnSave.classList.add('loading'); showStatus('Guardando...', 'info');
+                try {
+                    const response = await fetch('{% url "consentimientos_v2:guardar_firma" documento.pk %}', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}' },
+                        body: JSON.stringify({ 
+                            firma_base64: padPaciente.getBase64(),
+                            firma_medico_base64: padMedico ? (padMedico.hasSignature() ? padMedico.getBase64() : null) : null,
+                            firma_testigo_base64: padTestigo.hasSignature() ? padTestigo.getBase64() : null,
+                            datos_formulario: formData,
+                            ingreso_id: tracingData.ingreso_id, paciente_oid: tracingData.paciente_oid, folio: tracingData.folio, historia_clinica: tracingData.historia_clinica
+                        })
+                    });
+                    const result = await response.json();
+                    if (response.ok && result.status === 'ok') {
+                        showStatus('¡Éxito!', 'success'); setTimeout(() => { window.location.href = '{% url "consentimientos_v2:lista" %}'; }, 1000);
+                    } else { throw new Error(result.message || 'Error'); }
+                } catch (err) { showStatus('Error: ' + err.message, 'error'); } finally { btnSave.classList.remove('loading'); }
+            });
+        }
+    </script>
+</body>
+
+</html>

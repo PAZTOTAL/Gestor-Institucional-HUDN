@@ -1,0 +1,45 @@
+{% extends 'core/base.html' %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="flex justify-between items-center mb-12">
+        <h1 class="text-4xl font-black text-gray-800 tracking-tight">
+            <i class="fas fa-money-bill-wave mr-4 text-green-600"></i>Gestión Presupuestal
+        </h1>
+        <a href="{% url 'home' %}" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded transition duration-300">
+            <i class="fas fa-arrow-left mr-2"></i>Volver al Panel
+        </a>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+        
+        <!-- Tarjeta CDP -->
+        <a href="{% url 'presupuesto_cdp_list' %}" class="glass-card p-8 group hover:border-blue-500 transition-all duration-300 flex flex-col items-center text-center">
+            <div class="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mb-6 text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-all">
+                <i class="fas fa-file-invoice-dollar text-3xl"></i>
+            </div>
+            <h3 class="text-2xl font-bold mb-3 text-gray-800 group-hover:text-blue-600">Consulta CDP</h3>
+            <p class="text-gray-500">Certificados de Disponibilidad Presupuestal</p>
+        </a>
+
+        <!-- Tarjeta RP -->
+        <a href="{% url 'presupuesto_rp_list' %}" class="glass-card p-8 group hover:border-green-500 transition-all duration-300 flex flex-col items-center text-center">
+             <div class="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mb-6 text-green-600 group-hover:bg-green-600 group-hover:text-white transition-all">
+                <i class="fas fa-file-contract text-3xl"></i>
+            </div>
+            <h3 class="text-2xl font-bold mb-3 text-gray-800 group-hover:text-green-600">Consulta RP</h3>
+            <p class="text-gray-500">Registros Presupuestales</p>
+        </a>
+
+        <!-- Tarjeta Obligaciones -->
+        <a href="{% url 'presupuesto_obligacion_list' %}" class="glass-card p-8 group hover:border-purple-500 transition-all duration-300 flex flex-col items-center text-center">
+             <div class="w-20 h-20 bg-purple-100 rounded-full flex items-center justify-center mb-6 text-purple-600 group-hover:bg-purple-600 group-hover:text-white transition-all">
+               <i class="fas fa-hand-holding-usd text-3xl"></i>
+            </div>
+            <h3 class="text-2xl font-bold mb-3 text-gray-800 group-hover:text-purple-600">Consulta Obligaciones</h3>
+            <p class="text-gray-500">Obligaciones y Pagos</p>
+        </a>
+
+    </div>
+</div>
+{% endblock %}

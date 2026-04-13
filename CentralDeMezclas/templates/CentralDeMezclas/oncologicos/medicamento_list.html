@@ -1,0 +1,175 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Medicamentos Oncológicos Alta Complejidad | Central de Mezclas{% endblock %}
+
+{% block content %}
+<div class="space-y-6 animate-in fade-in duration-500">
+    <!-- Header -->
+    <div class="bg-white rounded-3xl p-8 border border-gray-100 shadow-xl shadow-gray-200/20 flex flex-col md:flex-row justify-between items-center gap-4">
+        <div>
+            <div class="flex items-center gap-2 mb-2">
+                <a href="{% url 'mezclas:main' %}" class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-100 text-slate-500 text-[10px] font-black uppercase tracking-widest mb-4 hover:bg-slate-200 transition-all shadow-sm border border-slate-200">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+                    Regresar al Menú Principal
+                </a>
+            </div>
+            <h1 class="text-3xl font-black text-gray-900 uppercase">Base de Datos FRFAR-126</h1>
+            <p class="text-gray-500 font-medium">Maestro técnico de medicamentos oncológicos de alta complejidad.</p>
+        </div>
+        <div class="flex gap-3">
+            <a href="{% url 'mezclas:oncologicos_nuevo' %}" class="px-6 py-3 bg-red-600 text-white rounded-2xl font-black flex items-center gap-2 hover:scale-105 transition-all shadow-lg shadow-red-600/25">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+                NUEVO
+            </a>
+            <a href="{% url 'mezclas:oncologicos_export_xls' %}" class="px-6 py-3 bg-green-600 text-white rounded-2xl font-black flex items-center gap-2 hover:scale-105 transition-all shadow-lg shadow-green-600/25">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
+                EXPORTAR XLS
+            </a>
+        </div>
+    </div>
+
+    <!-- Stats Banner -->
+    <div class="grid grid-cols-3 gap-4">
+        <div class="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm flex items-center gap-4">
+            <div class="w-12 h-12 bg-red-50 rounded-2xl flex items-center justify-center text-red-600 font-black text-xl">{{ total }}</div>
+            <div>
+                <div class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Total Medicamentos</div>
+                <div class="font-black text-gray-900 text-lg">FRFAR-126</div>
+            </div>
+        </div>
+        <div class="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm flex items-center gap-4">
+            <div class="w-12 h-12 bg-orange-50 rounded-2xl flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ea580c" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/></svg>
+            </div>
+            <div>
+                <div class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Alta Complejidad</div>
+                <div class="font-black text-gray-900 text-lg">Oncológicos</div>
+            </div>
+        </div>
+        <div class="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm flex items-center gap-4">
+            <div class="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" x2="4" y1="22" y2="15"/></svg>
+            </div>
+            <div>
+                <div class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Código Normalización</div>
+                <div class="font-black text-gray-900 text-lg">FRFAR-126</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search Bar -->
+    <div class="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm">
+        <div class="relative">
+            <svg xmlns="http://www.w3.org/2000/svg" class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+            <input type="text" id="searchInput" placeholder="Buscar medicamento..." class="w-full pl-12 pr-4 py-3 rounded-xl border border-gray-100 bg-gray-50 text-sm focus:outline-none focus:ring-2 focus:ring-red-300 font-medium">
+        </div>
+    </div>
+
+    <!-- Main Table -->
+    <div class="bg-white rounded-3xl border border-gray-100 shadow-2xl overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse" id="oncoTable">
+                <thead>
+                    <tr class="bg-red-50/60 border-b border-red-100">
+                        <th class="px-4 py-4 text-[10px] font-black text-red-400 uppercase tracking-widest">Cód.</th>
+                        <th class="px-4 py-4 text-[10px] font-black text-red-400 uppercase tracking-widest">Medicamento</th>
+                        <th class="px-4 py-4 text-[10px] font-black text-red-400 uppercase tracking-widest">Concentración</th>
+                        <th class="px-4 py-4 text-[10px] font-black text-red-400 uppercase tracking-widest">Forma Farmacéutica</th>
+                        <th class="px-4 py-4 text-[10px] font-black text-red-400 uppercase tracking-widest">Vol. Reconst.</th>
+                        <th class="px-4 py-4 text-[10px] font-black text-red-400 uppercase tracking-widest">Solución Reconst.</th>
+                        <th class="px-4 py-4 text-[10px] font-black text-red-400 uppercase tracking-widest">Vía</th>
+                        <th class="px-4 py-4 text-[10px] font-black text-red-400 uppercase tracking-widest">Vol. Final</th>
+                        <th class="px-4 py-4 text-[10px] font-black text-red-400 uppercase tracking-widest">Vehículo</th>
+                        <th class="px-4 py-4 text-[10px] font-black text-red-400 uppercase tracking-widest">Almacenamiento</th>
+                        <th class="px-4 py-4 text-[10px] font-black text-red-400 uppercase tracking-widest">Expiración</th>
+                        <th class="px-4 py-4 text-[10px] font-black text-red-400 uppercase tracking-widest">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-50" id="oncoTableBody">
+                    {% for med in medicamentos %}
+                    <tr class="hover:bg-red-50/20 transition-colors group" data-search="{{ med.medicamento|lower }} {{ med.producto|lower }} {{ med.concentracion|lower }}">
+                        <td class="px-4 py-3 font-black text-red-500 text-sm">{{ med.cod }}</td>
+                        <td class="px-4 py-3">
+                            <div class="flex flex-col">
+                                <span class="font-bold text-gray-900 uppercase text-sm leading-tight">{{ med.medicamento }}</span>
+                                {% if med.producto != med.medicamento %}
+                                    <span class="text-[10px] font-bold text-gray-400">{{ med.producto }}</span>
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td class="px-4 py-3 text-sm font-bold text-gray-700">{{ med.concentracion }}</td>
+                        <td class="px-4 py-3 text-xs text-gray-600">{{ med.forma_farmaceutica }}</td>
+                        <td class="px-4 py-3 text-sm text-gray-700">
+                            {% if med.volumen_reconstitucion %}
+                                <span class="font-bold">{{ med.volumen_reconstitucion }} mL</span>
+                                {% if med.solucion_reconstitucion and med.solucion_reconstitucion != '- - -' %}
+                                    <br><span class="text-[10px] text-blue-500">{{ med.solucion_reconstitucion }}</span>
+                                {% endif %}
+                            {% else %}
+                                <span class="text-gray-300">—</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-4 py-3 text-xs text-gray-600">
+                            {% if med.cod_dil and med.cod_dil != '- - -' %}{{ med.cod_dil }}{% else %}—{% endif %}
+                        </td>
+                        <td class="px-4 py-3">
+                            <span class="px-2 py-1 rounded-lg text-xs font-black
+                                {% if med.administracion == 'IV' %}bg-blue-50 text-blue-600
+                                {% elif med.administracion == 'SC' %}bg-green-50 text-green-600
+                                {% elif med.administracion == 'IM' %}bg-orange-50 text-orange-600
+                                {% elif med.administracion == 'ITV' %}bg-purple-50 text-purple-600
+                                {% else %}bg-gray-50 text-gray-600{% endif %}">
+                                {{ med.administracion }}
+                            </span>
+                        </td>
+                        <td class="px-4 py-3 text-sm font-bold text-gray-700">
+                            {% if med.vol_final %}{{ med.vol_final }} mL{% else %}—{% endif %}
+                        </td>
+                        <td class="px-4 py-3 text-xs text-gray-600">{{ med.vehiculo|default:"—" }}</td>
+                        <td class="px-4 py-3">
+                            <span class="text-xs font-bold text-gray-700">{{ med.almacenamiento|default:"—" }}</span>
+                            {% if med.proteccion_luz and med.proteccion_luz != '- - -' %}
+                                <br><span class="text-[10px] text-amber-500 font-bold">{{ med.proteccion_luz }}</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-4 py-3 text-xs font-bold text-gray-600">{{ med.fecha_expiracion|default:"—" }}</td>
+                        <td class="px-4 py-3">
+                            <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <a href="{% url 'mezclas:oncologicos_editar' med.pk %}" class="p-2 text-indigo-400 hover:bg-indigo-50 rounded-lg transition-all" title="Editar">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
+                                </a>
+                                <a href="{% url 'mezclas:oncologicos_eliminar' med.pk %}" class="p-2 text-red-300 hover:bg-red-50 hover:text-red-500 rounded-lg transition-all" title="Eliminar">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="12" class="px-6 py-12 text-center">
+                            <div class="flex flex-col items-center">
+                                <div class="w-16 h-16 bg-red-50 rounded-2xl flex items-center justify-center text-red-300 mb-4">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/></svg>
+                                </div>
+                                <h3 class="font-black text-gray-400 uppercase tracking-widest text-sm">No hay medicamentos oncológicos registrados</h3>
+                                <p class="text-xs text-gray-400 mt-1">Haga clic en "NUEVO" o importe desde Excel para comenzar.</p>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('searchInput').addEventListener('input', function() {
+    const q = this.value.toLowerCase();
+    document.querySelectorAll('#oncoTableBody tr[data-search]').forEach(row => {
+        row.style.display = row.dataset.search.includes(q) ? '' : 'none';
+    });
+});
+</script>
+{% endblock %}

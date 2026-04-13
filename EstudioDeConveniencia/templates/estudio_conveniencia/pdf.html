@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Estudio de Conveniencia</title>
+    <style>
+        @page {
+            size: letter;
+            margin: 2cm;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 11pt;
+            line-height: 1.5;
+        }
+        h1, h2, h3 {
+            text-align: center;
+            font-weight: bold;
+            margin-top: 15px;
+            margin-bottom: 10px;
+            font-size: 14pt;
+        }
+        h2 { font-size: 12pt; text-align: left; }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 15px;
+        }
+        th, td {
+            border: 1px solid black;
+            padding: 8px;
+            text-align: left;
+            vertical-align: top;
+        }
+        th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
+        .text-red {
+            color: black; /* El usuario veía datos en rojo como plantilla, aquí se mostrarán normales */
+            font-weight: bold;
+        }
+        .section-title {
+            background-color: #e0e0e0;
+            padding: 5px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>ESTUDIO DE CONVENIENCIA</h1>
+
+    <table>
+        <tr>
+            <td colspan="2" class="section-title">1. COMPONENTE TÉCNICO</td>
+        </tr>
+        <tr>
+            <th>PROCESO-ÁREA-SERVICIO</th>
+            <td class="text-red">{{ estudio.Area|default:"No definido" }} - {{ estudio.Dependencia|default:"No definido" }}</td>
+        </tr>
+        <tr>
+            <th>OBJETO CONTRACTUAL</th>
+            <td class="text-red">{{ estudio.objetoContractual|default:"No definido" }}</td>
+        </tr>
+        <tr>
+            <th>DESCRIPCIÓN DE LA NECESIDAD</th>
+            <td class="text-red">{{ estudio.descripcion|default:"No definido" }}</td>
+        </tr>
+    </table>
+
+    <p>Diligencie el siguiente cuadro conforme a la resolución...</p>
+    <table>
+        <tr>
+            <th>CLASE DE SERVICIO PRESTADO</th>
+            <th>CÓDIGO</th>
+            <th>VALOR HORA</th>
+            <th>VALOR TOTAL CONTRATO</th>
+        </tr>
+        <tr>
+            <td class="text-red">{{ estudio.claseServicio|default:"No definido" }}</td>
+            <td class="text-red">-</td>
+            <td class="text-red">-</td>
+            <td class="text-red">${{ estudio.VALORTOTALCONTRATO|default:"0" }}</td>
+        </tr>
+    </table>
+
+    <h2>2. CONDICIONES PARA LA CONTRATACIÓN</h2>
+    <p><b>2.1 Clasificación UNSPSC:</b> <span class="text-red">{{ condiciones.PAA_UNSPS|default:"No definido" }}</span></p>
+    <p><b>2.2 Plazo para la Ejecución:</b></p>
+    <ul>
+        <li><b>FECHA DE INICIO:</b> <span class="text-red">{{ condiciones.FECHADEINICIO|date:"d/m/Y"|default:"No definido" }}</span></li>
+        <li><b>FECHA DE TERMINACIÓN:</b> <span class="text-red">{{ condiciones.FECHADETERMINACION|date:"d/m/Y"|default:"No definido" }}</span></li>
+    </ul>
+    <p><b>2.3 Lugar de Ejecución:</b> <span class="text-red">{{ condiciones.LUGARDEEJECUCION|default:"No definido" }}</span></p>
+
+    <h3>2.4 Obligaciones del Contratista:</h3>
+    <h4>2.4.1 OBLIGACIONES GENERALES:</h4>
+    <ul>
+        {% for obs in obligaciones_generales %}
+        <li class="text-red">{{ obs.Obligacion }}</li>
+        {% empty %}
+        <li class="text-red">No definido</li>
+        {% endfor %}
+    </ul>
+
+    <h4>2.4.2 OBLIGACIONES ESPECÍFICAS:</h4>
+    <ul>
+        {% for obs in obligaciones_especificas %}
+        <li class="text-red">{{ obs.Obligacion }}</li>
+        {% empty %}
+        <li class="text-red">No definido</li>
+        {% endfor %}
+    </ul>
+
+    <h2>3. ASPECTOS LEGALES, DE IDONEIDAD, EXPERIENCIA Y VALOR ESTIMADO DEL CONTRATO</h2>
+    <h3>3.1 Aspectos Legales:</h3>
+    <ul>
+        {% for asp in aspectos_legales %}
+        <li class="text-red">{{ asp.aspectolegal }}</li>
+        {% empty %}
+        <li class="text-red">No definido</li>
+        {% endfor %}
+    </ul>
+
+    <h3>3.2 Aspectos de Idoneidad Experiencia:</h3>
+    <p><b>IDONEIDAD:</b></p>
+    <ul>
+        {% for asp in aspectos_idoneidad %}
+        <li class="text-red">{{ asp.idoneidad }}</li>
+        {% empty %}
+        <li class="text-red">No definido</li>
+        {% endfor %}
+    </ul>
+
+    <p><b>EXPERIENCIA:</b></p>
+    <ul>
+        {% for asp in aspectos_experiencia %}
+        <li class="text-red">{{ asp.experiencia }}</li>
+        {% empty %}
+        <li class="text-red">No definido</li>
+        {% endfor %}
+    </ul>
+
+    <h3>3.3 Valor Total del Contrato y forma de pago:</h3>
+    <ul>
+        {% for pago in formas_pago %}
+        <li class="text-red">{{ pago.formadepago }}</li>
+        {% empty %}
+        <li class="text-red">No definido</li>
+        {% endfor %}
+    </ul>
+
+    <h2>4. COMPONENTE JURÍDICO</h2>
+    <h3>4.2 GARANTÍAS</h3>
+    {% if garantia and garantia.tiene_garantias %}
+    <p class="text-red">SI SE EXIGEN GARANTÍAS</p>
+    <ul>
+        {% for det in garantia.detalles.all %}
+        <li class="text-red">{{ det.garantia }}</li>
+        {% endfor %}
+    </ul>
+    {% else %}
+    <p class="text-red">NO SE EXIGEN GARANTÍAS</p>
+    {% endif %}
+
+    <br/><br/>
+    <table>
+        <tr>
+            <td colspan="2" class="section-title text-center">VIABILIDAD Y APROBACIÓN</td>
+        </tr>
+        <tr>
+            <th>DEPENDENCIA SOLICITANTE</th>
+            <td class="text-red">{{ dependencia.Dependencia|default:"-" }}</td>
+        </tr>
+        <tr>
+            <th>VIABILIDAD SUBGERENCIA</th>
+            <td class="text-red">{{ viabilidad.Subgerencia|default:"-" }}</td>
+        </tr>
+        <tr>
+            <th>FECHA SOLICITUD</th>
+            <td class="text-red">{{ dependencia.fecha|date:"d/m/Y"|default:"-" }}</td>
+        </tr>
+        <tr>
+            <th>APROBACIÓN GERENCIA</th>
+            <td class="text-red">{% if aceptacion and aceptacion.aceptagerencia %}APROBADO{% else %}PENDIENTE{% endif %}</td>
+        </tr>
+    </table>
+
+</body>
+</html>

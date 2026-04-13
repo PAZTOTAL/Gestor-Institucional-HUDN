@@ -1,0 +1,123 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Catálogo Medicamentos Neonatos | Central de Mezclas{% endblock %}
+
+{% block content %}
+<div class="space-y-6 animate-in fade-in duration-500">
+    <!-- Header -->
+    <div class="bg-white rounded-3xl p-8 border border-gray-100 shadow-xl shadow-gray-200/20 flex flex-col md:flex-row justify-between items-center gap-4">
+        <div>
+            <div class="flex items-center gap-2 mb-2">
+                <a href="{% url 'mezclas:neonatos_panel' %}" class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-100 text-slate-500 text-[10px] font-black uppercase tracking-widest mb-4 hover:bg-slate-200 transition-all shadow-sm border border-slate-200">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+                    Regresar al Panel Neonatos
+                </a>
+            </div>
+            <h1 class="text-3xl font-black text-gray-900 uppercase">Base de Datos NEOHUDN1</h1>
+            <p class="text-gray-500 font-medium">Catálogo maestro de medicamentos para el módulo de Neonatos.</p>
+        </div>
+        <div class="flex gap-3">
+            <a href="{% url 'mezclas:neonatos_med_nuevo' %}" class="px-6 py-3 bg-cyan-600 text-white rounded-2xl font-black flex items-center gap-2 hover:scale-105 transition-all shadow-lg shadow-cyan-600/25">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+                NUEVO MEDICAMENTO
+            </a>
+        </div>
+    </div>
+
+    <!-- Search Bar -->
+    <div class="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm">
+        <div class="relative">
+            <svg xmlns="http://www.w3.org/2000/svg" class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+            <input type="text" id="searchInput" placeholder="Buscar por nombre, código o producto..." class="w-full pl-12 pr-4 py-3 rounded-xl border border-gray-100 bg-gray-50 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-300 font-medium">
+        </div>
+    </div>
+
+    <!-- Main Table -->
+    <div class="bg-white rounded-3xl border border-gray-100 shadow-2xl overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse" id="neoTable">
+                <thead>
+                    <tr class="bg-cyan-50/60 border-b border-cyan-100">
+                        <th class="px-4 py-4 text-[10px] font-black text-cyan-500 uppercase tracking-widest">Cód.</th>
+                        <th class="px-4 py-4 text-[10px] font-black text-cyan-500 uppercase tracking-widest">Medicamento</th>
+                        <th class="px-4 py-4 text-[10px] font-black text-cyan-500 uppercase tracking-widest">Concentración</th>
+                        <th class="px-4 py-4 text-[10px] font-black text-cyan-500 uppercase tracking-widest">Forma</th>
+                        <th class="px-4 py-4 text-[10px] font-black text-cyan-500 uppercase tracking-widest">Reconstitución</th>
+                        <th class="px-4 py-4 text-[10px] font-black text-cyan-500 uppercase tracking-widest">Vía</th>
+                        <th class="px-4 py-4 text-[10px] font-black text-cyan-500 uppercase tracking-widest">Vol. Final</th>
+                        <th class="px-4 py-4 text-[10px] font-black text-cyan-500 uppercase tracking-widest">Vehículo</th>
+                        <th class="px-4 py-4 text-[10px] font-black text-cyan-500 uppercase tracking-widest">Almacenamiento</th>
+                        <th class="px-4 py-4 text-[10px] font-black text-cyan-500 uppercase tracking-widest">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-50" id="neoTableBody">
+                    {% for med in medicamentos %}
+                    <tr class="hover:bg-cyan-50/20 transition-colors group" data-search="{{ med.medicamento|lower }} {{ med.producto|lower }} {{ med.cod }}">
+                        <td class="px-4 py-3 font-black text-cyan-500 text-sm">{{ med.cod|default:"—" }}</td>
+                        <td class="px-4 py-3">
+                            <div class="flex flex-col">
+                                <span class="font-bold text-gray-900 uppercase text-sm leading-tight">{{ med.medicamento }}</span>
+                                <span class="text-[10px] font-bold text-gray-400">{{ med.producto }}</span>
+                            </div>
+                        </td>
+                        <td class="px-4 py-3 text-sm font-bold text-gray-700">{{ med.concentracion }}</td>
+                        <td class="px-4 py-3 text-xs text-gray-600">{{ med.forma_farmaceutica }}</td>
+                        <td class="px-4 py-3 text-[11px] text-gray-700">
+                            {% if med.volumen_reconstitucion %}
+                                <span class="font-bold">{{ med.volumen_reconstitucion }}</span>
+                                <br><span class="text-blue-500">{{ med.solucion_reconstitucion }}</span>
+                            {% else %}
+                                <span class="text-gray-300">—</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-4 py-3">
+                            <span class="px-2 py-1 rounded-lg text-xs font-black bg-cyan-50 text-cyan-600">
+                                {{ med.administracion|default:"—" }}
+                            </span>
+                        </td>
+                        <td class="px-4 py-3 text-sm font-bold text-gray-700">
+                            {{ med.vol_final|default:"—" }}
+                        </td>
+                        <td class="px-4 py-3 text-xs text-gray-600">{{ med.vehiculo|default:"—" }}</td>
+                        <td class="px-4 py-3">
+                            <div class="flex flex-col">
+                                <span class="text-[11px] font-bold text-gray-700">{{ med.almacenamiento|default:"—" }}</span>
+                                {% if med.proteccion_luz %}
+                                    <span class="text-[9px] text-amber-500 font-black uppercase">{{ med.proteccion_luz }}</span>
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td class="px-4 py-3">
+                            <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <a href="{% url 'mezclas:neonatos_med_editar' med.pk %}" class="p-2 text-indigo-400 hover:bg-indigo-50 rounded-lg transition-all" title="Editar">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
+                                </a>
+                                <a href="{% url 'mezclas:neonatos_med_eliminar' med.pk %}" class="p-2 text-red-300 hover:bg-red-50 hover:text-red-500 rounded-lg transition-all" title="Eliminar">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="10" class="px-6 py-12 text-center">
+                            <p class="text-gray-400 font-medium">No hay medicamentos en el catálogo de Neonatos.</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('searchInput').addEventListener('input', function() {
+    const q = this.value.toLowerCase();
+    document.querySelectorAll('#neoTableBody tr[data-search]').forEach(row => {
+        row.style.display = row.dataset.search.includes(q) ? '' : 'none';
+    });
+});
+</script>
+{% endblock %}

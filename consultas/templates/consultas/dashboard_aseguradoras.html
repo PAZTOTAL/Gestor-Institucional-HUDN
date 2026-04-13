@@ -1,0 +1,207 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block extra_css %}
+<style>
+    :root {
+        --ase-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        --glass-white: rgba(255, 255, 255, 0.85);
+    }
+
+    .base-container {
+        padding: 2.5rem;
+        background: #f8f9fc;
+        min-height: 100vh;
+    }
+
+    .dashboard-header {
+        background: var(--ase-gradient);
+        padding: 3rem;
+        border-radius: 24px;
+        color: white;
+        margin-bottom: 3rem;
+        box-shadow: 0 10px 30px rgba(118, 75, 162, 0.2);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .dashboard-header::after {
+        content: "";
+        position: absolute;
+        top: -50%;
+        right: -10%;
+        width: 400px;
+        height: 400px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 50%;
+    }
+
+    .stats-table-card {
+        background: white;
+        border-radius: 20px;
+        border: none;
+        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.05);
+        overflow: hidden;
+    }
+
+    .table thead th {
+        background: #f8fafc;
+        text-transform: uppercase;
+        font-size: 0.75rem;
+        letter-spacing: 1px;
+        color: #64748b;
+        padding: 1.25rem;
+        border-bottom: 2px solid #e2e8f0;
+    }
+
+    .table td {
+        padding: 1.25rem;
+        vertical-align: middle;
+        font-weight: 500;
+        color: #1e293b;
+    }
+
+    .ase-row:hover {
+        background-color: #f1f5f9;
+        cursor: pointer;
+    }
+
+    .badge-period {
+        padding: 0.5rem 1rem;
+        border-radius: 10px;
+        font-weight: 600;
+    }
+
+    .bg-day {
+        background: #e0f2fe;
+        color: #0369a1;
+    }
+
+    .bg-week {
+        background: #f0f9ff;
+        color: #0284c7;
+    }
+
+    .bg-month {
+        background: #f5f3ff;
+        color: #7c3aed;
+    }
+
+    .bg-year {
+        background: #fae8ff;
+        color: #c026d3;
+    }
+
+    .search-box {
+        background: white;
+        border-radius: 15px;
+        padding: 1rem 1.5rem;
+        border: 2px solid #e2e8f0;
+        width: 100%;
+        max-width: 400px;
+        transition: all 0.3s ease;
+    }
+
+    .search-box:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+        outline: none;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="base-container">
+    <div class="dashboard-header">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h1 class="display-4 fw-black mb-0">Gestión de Aseguradoras</h1>
+                <p class="lead opacity-75 mb-0">Consolidado de pacientes atendidos por periodo de tiempo.</p>
+            </div>
+            <div class="col-md-4 text-end">
+                <div class="bg-white bg-opacity-25 p-3 rounded-4 d-inline-block">
+                    <h5 class="mb-0 fw-bold">{{ today|date:"d M Y" }}</h5>
+                    <small>Cierre parcial</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div class="position-relative w-100" style="max-width: 400px;">
+            <i class="bi bi-search position-absolute top-50 start-0 translate-middle-y ms-3 text-muted"></i>
+            <input type="text" id="aseFilter" class="search-box ps-5" placeholder="Buscar aseguradora...">
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{% url 'consultas:produccion_medico' %}" class="btn btn-info rounded-pill px-4 py-2 fw-bold text-white">
+                <i class="bi bi-activity me-2"></i>Producción Médica
+            </a>
+            <button class="btn btn-dark rounded-pill px-4 py-2 fw-bold" onclick="window.print()">
+                <i class="bi bi-printer me-2"></i>Imprimir Reporte
+            </button>
+        </div>
+    </div>
+
+    <div class="card stats-table-card">
+        <div class="table-responsive">
+            <table class="table mb-0" id="statsTable">
+                <thead>
+                    <tr>
+                        <th>Código</th>
+                        <th>Aseguradora / Pagador</th>
+                        <th class="text-center">Hoy</th>
+                        <th class="text-center">Esta Semana</th>
+                        <th class="text-center">Este Mes</th>
+                        <th class="text-center">Este Año</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in stats %}
+                    <tr class="ase-row">
+                        <td class="text-muted">#{{ item.codigo|default:"---" }}</td>
+                        <td>
+                            <div class="fw-bold fs-5">{{ item.nombre }}</div>
+                        </td>
+                        <td class="text-center">
+                            <span class="badge-period bg-day">{{ item.dia }}</span>
+                        </td>
+                        <td class="text-center">
+                            <span class="badge-period bg-week">{{ item.sem }}</span>
+                        </td>
+                        <td class="text-center">
+                            <span class="badge-period bg-month">{{ item.mes }}</span>
+                        </td>
+                        <td class="text-center">
+                            <span class="badge-period bg-year text-dark">{{ item.ano }}</span>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center py-5 text-muted">No se encontraron registros de atención para
+                            el periodo actual.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+    document.getElementById('aseFilter').addEventListener('keyup', function () {
+        let value = this.value.toLowerCase();
+        let rows = document.querySelectorAll('#statsTable tbody tr');
+
+        rows.forEach(row => {
+            let text = row.querySelector('.fw-bold').innerText.toLowerCase();
+            if (text.includes(value)) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    });
+</script>
+{% endblock %}
+{% endblock %}

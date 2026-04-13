@@ -1,0 +1,79 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Alistamiento y Conciliación Oncológico FRFAR-162{% endblock %}
+
+{% block content %}
+<div class="space-y-6 animate-in fade-in duration-500">
+    <!-- Header -->
+    <div class="bg-white rounded-3xl p-8 border border-gray-100 shadow-xl flex flex-col md:flex-row justify-between items-center gap-4">
+        <div>
+            <div class="flex items-center gap-2 mb-2">
+                <a href="{% url 'mezclas:onco_panel' %}" class="p-2 rounded-xl bg-gray-50 text-gray-400 hover:bg-gray-100 transition-all">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg>
+                </a>
+                <span class="text-xs font-black text-green-500 uppercase tracking-widest">FRFAR-162</span>
+            </div>
+            <h1 class="text-3xl font-black text-gray-900 uppercase">Alistamiento y Conciliación</h1>
+            <p class="text-gray-500 font-medium">Medicamentos, dispositivos médicos e insumos oncológicos.</p>
+        </div>
+        <a href="{% url 'mezclas:onco_alistamiento_crear' %}" class="px-6 py-3 bg-green-600 text-white rounded-2xl font-black flex items-center gap-2 hover:scale-105 transition-all shadow-lg shadow-green-600/25">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+            NUEVO ALISTAMIENTO
+        </a>
+    </div>
+
+    <!-- Lista -->
+    <div class="bg-white rounded-3xl border border-gray-100 shadow-2xl overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="bg-green-50/60 border-b border-green-100">
+                        <th class="px-6 py-4 text-[10px] font-black text-green-500 uppercase tracking-widest">No. Orden</th>
+                        <th class="px-6 py-4 text-[10px] font-black text-green-500 uppercase tracking-widest">Fecha</th>
+                        <th class="px-6 py-4 text-[10px] font-black text-green-500 uppercase tracking-widest">Área</th>
+                        <th class="px-6 py-4 text-[10px] font-black text-green-500 uppercase tracking-widest">Ítems</th>
+                        <th class="px-6 py-4 text-[10px] font-black text-green-500 uppercase tracking-widest">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-50">
+                    {% for alist in alistamientos %}
+                    <tr class="hover:bg-green-50/20 transition-colors group">
+                        <td class="px-6 py-4 font-black text-green-600">{{ alist.numero_orden|default:"—" }}</td>
+                        <td class="px-6 py-4 text-sm text-gray-700">{{ alist.fecha }}</td>
+                        <td class="px-6 py-4">
+                            <span class="px-2 py-1 rounded bg-green-50 text-green-600 text-xs font-black">{{ alist.area }}</span>
+                        </td>
+                        <td class="px-6 py-4">
+                            <span class="px-3 py-1 rounded-full bg-green-50 text-green-600 text-xs font-black">{{ alist.items.count }}</span>
+                        </td>
+                        <td class="px-6 py-4">
+                            <div class="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <a href="{% url 'mezclas:onco_alistamiento_detalle' alist.pk %}" class="p-2 text-green-500 hover:bg-green-50 rounded-lg" title="Ver">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/></svg>
+                                </a>
+                                <a href="{% url 'mezclas:onco_alistamiento_eliminar' alist.pk %}" class="p-2 text-red-300 hover:bg-red-50 hover:text-red-500 rounded-lg" title="Eliminar">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/></svg>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="px-6 py-12 text-center">
+                            <div class="flex flex-col items-center">
+                                <div class="w-16 h-16 bg-green-50 rounded-2xl flex items-center justify-center text-green-300 mb-4">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 6h13"/><path d="M8 12h13"/><path d="M8 18h13"/></svg>
+                                </div>
+                                <h3 class="font-black text-gray-400 uppercase text-sm">Sin alistamientos registrados</h3>
+                                <p class="text-xs text-gray-400 mt-1">Haga clic en "NUEVO ALISTAMIENTO" para comenzar.</p>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

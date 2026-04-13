@@ -1,0 +1,76 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto py-12 px-4 text-black">
+    <!-- Breadcrumb -->
+    <nav class="flex mb-8 text-sm font-bold text-slate-500 animate-in fade-in duration-500">
+        <a href="{% url 'horas_extras:dashboard' %}" class="hover:text-blue-600">Talento Humano</a>
+        <span class="mx-2 text-slate-300">/</span>
+        <a href="{% url 'horas_extras:informes_dashboard' %}" class="hover:text-blue-600">Informes</a>
+        <span class="mx-2 text-slate-300">/</span>
+        <a href="{% url 'horas_extras:reporte_personal_area' %}" class="hover:text-blue-600">Personal por Área</a>
+        <span class="mx-2 text-slate-300">/</span>
+        <span class="text-slate-900">{{ area_name }}</span>
+    </nav>
+
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-12 gap-6 animate-in fade-in slide-in-from-top-4 duration-700">
+        <div>
+            <div class="flex items-center gap-3 mb-2">
+                <span class="px-3 py-1 bg-blue-600 text-white text-xs font-black rounded-lg uppercase tracking-widest">{{ area_code }}</span>
+                <h1 class="text-4xl font-black text-slate-900 tracking-tight">{{ area_name }}</h1>
+            </div>
+            <p class="text-lg text-slate-600">Listado detallado del personal activo {% if filtro == 'temporal' %}en <b>PLANTA TEMPORAL</b>{% endif %} asignado a esta unidad.</p>
+        </div>
+        <div class="bg-white px-6 py-4 rounded-3xl border border-slate-200 shadow-sm flex items-center gap-4">
+            <div class="w-10 h-10 bg-blue-50 rounded-full flex items-center justify-center text-blue-600">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+            </div>
+            <div>
+                <div class="text-xs font-black text-slate-400 uppercase tracking-widest">Colaboradores</div>
+                <div class="font-bold text-slate-900">{{ funcionarios|length }}</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Table Section -->
+    <div class="bg-white rounded-[2.5rem] border border-slate-200 shadow-2xl overflow-hidden animate-in fade-in slide-in-from-bottom-8 duration-1000">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="bg-slate-50 text-slate-400 text-xs font-black uppercase tracking-widest">
+                        <th class="px-8 py-5">Documento</th>
+                        <th class="px-8 py-5">Nombre Completo</th>
+                        <th class="px-8 py-5">Fecha Ingreso</th>
+                        <th class="px-8 py-5">Vinculación</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    {% for f in funcionarios %}
+                    <tr class="hover:bg-blue-50/30 transition-colors">
+                        <td class="px-8 py-6 font-bold text-slate-500">{{ f.documento }}</td>
+                        <td class="px-8 py-6 font-black text-slate-900 uppercase">{{ f.nombre }}</td>
+                        <td class="px-8 py-6 text-slate-600 font-medium">{{ f.fecha_ingreso|date:"d/m/Y"|default:"-" }}</td>
+                        <td class="px-8 py-6">
+                            <span class="inline-flex items-center px-4 py-1 rounded-full text-xs font-black bg-emerald-100 text-emerald-700">
+                                {{ f.vinculacion|default:"PLANTA" }}
+                            </span>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="4" class="px-8 py-20 text-center text-slate-400 italic">No se encontraron funcionarios en esta área.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="mt-8 flex justify-end">
+        <a href="{% if filtro == 'temporal' %}{% url 'horas_extras:reporte_personal_temporal' %}{% else %}{% url 'horas_extras:reporte_personal_area' %}{% endif %}" class="px-8 py-3 bg-slate-900 text-white font-black rounded-2xl hover:bg-black transition-all shadow-xl shadow-slate-200">
+            Cerrar Detalle
+        </a>
+    </div>
+</div>
+{% endblock %}

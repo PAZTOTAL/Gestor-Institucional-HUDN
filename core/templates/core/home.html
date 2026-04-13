@@ -1,0 +1,336 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Panel de Control - Hospital Management{% endblock %}
+
+{% block content %}
+
+<div id="selection-screen" class="max-w-6xl mx-auto py-8">
+    <div class="text-center mb-10">
+        <h1 class="text-4xl md:text-5xl font-black mb-4 tracking-tight text-blue-950 leading-tight">
+            Hospital Universitario Departamental de Nariño - ESE
+        </h1>
+        <div class="inline-flex items-center gap-3 px-6 py-2 bg-blue-100/50 rounded-full border border-blue-200">
+            <p class="text-slate-700 text-lg md:text-xl font-bold">
+                Pruebas y mejoras - <span class="text-blue-700 underline decoration-2">APA 2026</span> - DANIEL ops
+            </p>
+        </div>
+    </div>
+
+    <div id="main-cards-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <!-- Tarjeta Selección Asistencial -->
+        <div onclick="showSection('asistencial')" id="card-asistencial"
+            class="glass-card p-6 cursor-pointer hover:border-blue-500 group transition-all duration-300">
+            <div class="flex flex-col items-center text-center">
+                <div
+                    class="w-16 h-16 bg-blue-100 rounded-2xl flex items-center justify-center mb-4 text-blue-500 group-hover:bg-blue-500 group-hover:text-white transition-all">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                        <line x1="16" y1="13" x2="8" y2="13"></line>
+                        <line x1="16" y1="17" x2="8" y2="17"></line>
+                        <polyline points="10 9 9 9 8 9"></polyline>
+                    </svg>
+                </div>
+                <h2 class="text-2xl font-bold mb-2">Asistencial</h2>
+                <p class="text-dim text-lg">Admisiones, Historias Clínicas, Cirugías y atención directa.</p>
+            </div>
+        </div>
+
+        <!-- Tarjeta Selección Administrativo -->
+        <div onclick="showSection('administrativo')" id="card-administrativo"
+            class="glass-card p-6 cursor-pointer hover:border-green-500 group transition-all duration-300">
+            <div class="flex flex-col items-center text-center">
+                <div
+                    class="w-16 h-16 bg-green-100 rounded-2xl flex items-center justify-center mb-4 text-green-500 group-hover:bg-green-500 group-hover:text-white transition-all">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
+                        <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+                    </svg>
+                </div>
+                <h2 class="text-2xl font-bold mb-2">Administrativo</h2>
+                <p class="text-dim text-lg">Contabilidad, Nómina, Inventarios y gestión interna.</p>
+            </div>
+        </div>
+
+        {% if consultas %}
+        <!-- Tarjeta Selección Consultas -->
+        <div onclick="showSection('consultas')" id="card-consultas"
+            class="glass-card p-6 cursor-pointer hover:border-purple-500 group transition-all duration-300">
+            <div class="flex flex-col items-center text-center">
+                <div
+                    class="w-16 h-16 bg-purple-100 rounded-2xl flex items-center justify-center mb-4 text-purple-500 group-hover:bg-purple-500 group-hover:text-white transition-all">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                        <path d="M12 7v5l3 3"></path>
+                    </svg>
+                </div>
+                <h2 class="text-2xl font-bold mb-2">Consultas</h2>
+                <p class="text-dim text-lg">Reportes e Indicadores.</p>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Tarjeta Selección Varios -->
+        <div onclick="showSection('varios')" id="card-varios"
+            class="glass-card p-6 cursor-pointer hover:border-orange-500 group transition-all duration-300">
+            <div class="flex flex-col items-center text-center">
+                <div
+                    class="w-16 h-16 bg-orange-100 rounded-2xl flex items-center justify-center mb-4 text-orange-500 group-hover:bg-orange-500 group-hover:text-white transition-all">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 2L2 7l10 5 10-5-10-5z M2 17l10 5 10-5 M2 12l10 5 10-5"></path>
+                    </svg>
+                </div>
+                <h2 class="text-2xl font-bold mb-2">Varios</h2>
+                <p class="text-dim text-lg">Bases Generales y Otros.</p>
+            </div>
+        </div>
+
+        <!-- Tarjeta Selección Configuración -->
+        <div onclick="showSection('config')" id="card-config"
+            class="glass-card p-6 cursor-pointer hover:border-slate-800 group transition-all duration-300">
+            <div class="flex flex-col items-center text-center">
+                <div
+                    class="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center mb-4 text-slate-600 group-hover:bg-slate-800 group-hover:text-white transition-all">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="3"></circle>
+                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                    </svg>
+                </div>
+                <h2 class="text-2xl font-bold mb-2">Configuración</h2>
+                <p class="text-dim text-lg">Usuarios y Seguridad.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Panel Visual (Contenedor de Módulos) -->
+<div id="visual-panel" class="max-w-6xl mx-auto pb-12">
+    <!-- Sección Asistencial -->
+    <div id="section-asistencial" class="hidden animate-in fade-in slide-in-from-top-2 duration-300">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+
+        {% for module in nav_asistenciales %}
+        {% if permisos_apps_global == 'ALL' or module.slug in permisos_apps_global %}
+        <a href="{{ module.url }}" class="glass-card module-card p-5 flex flex-col items-center text-center">
+            <div class="module-icon mb-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="{{ module.icon|default:'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z M14 2 14 8 20 8 M16 13H8 M16 17H8 M10 9H9H8' }}"></path>
+                </svg>
+            </div>
+            <h3 class="text-lg font-bold mb-1 text-black">{{ module.name }}</h3>
+            <p class="text-blue-900 text-sm font-medium">{{ module.description }}</p>
+        </a>
+        {% endif %}
+        {% endfor %}
+    </div>
+</div>
+
+    <!-- Sección Administrativa -->
+    <div id="section-administrativo" class="hidden animate-in fade-in slide-in-from-top-2 duration-300">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {% for module in nav_administrativos %}
+        {% if permisos_apps_global == 'ALL' or module.slug in permisos_apps_global %}
+        <a href="{{ module.url }}" class="glass-card module-card p-5 flex flex-col items-center text-center">
+            <div class="module-icon admin-icon mb-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
+                    <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+                </svg>
+            </div>
+            <h3 class="text-lg font-bold mb-1 text-black">{{ module.name }}</h3>
+            <p class="text-blue-900 text-sm font-medium">{{ module.description }}</p>
+        </a>
+        {% endif %}
+        {% endfor %}
+    </div>
+</div>
+
+    <!-- Sección Consultas -->
+    <div id="section-consultas" class="hidden animate-in fade-in slide-in-from-top-2 duration-300">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mt-4">
+        <!-- Administrativas -->
+        <div class="glass-card p-6">
+            <div class="flex items-center gap-4 mb-5">
+                <div class="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center text-green-600">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+                    </svg>
+                </div>
+                <h3 class="text-xl font-black text-black">Administrativas</h3>
+            </div>
+            <div class="space-y-4">
+                {% for report in admin_reports %}
+                <a href="{{ report.url }}"
+                    class="flex items-center justify-between p-4 bg-white hover:bg-green-50 border-2 border-green-100 rounded-xl transition-all group">
+                    <div>
+                        <div class="font-bold text-black">{{ report.name }}</div>
+                        <div class="text-sm text-gray-500">{{ report.description }}</div>
+                    </div>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                        class="text-green-400 group-hover:translate-x-1 transition-transform">
+                        <path d="m9 18 6-6-6-6" />
+                    </svg>
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Asistenciales -->
+        <div class="glass-card p-6">
+            <div class="flex items-center gap-4 mb-5">
+                <div class="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center text-blue-600">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
+                    </svg>
+                </div>
+                <h3 class="text-xl font-black text-black">Asistenciales</h3>
+            </div>
+            <div class="space-y-4">
+                {% for report in salud_reports %}
+                <a href="{{ report.url }}"
+                    class="flex items-center justify-between p-4 bg-white hover:bg-blue-50 border-2 border-blue-100 rounded-xl transition-all group">
+                    <div>
+                        <div class="font-bold text-black">{{ report.name }}</div>
+                        <div class="text-sm text-gray-500">{{ report.description }}</div>
+                    </div>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                        class="text-blue-400 group-hover:translate-x-1 transition-transform">
+                        <path d="m9 18 6-6-6-6" />
+                    </svg>
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+        </div>
+    </div>
+
+    <!-- Sección Varios -->
+    <div id="section-varios" class="hidden animate-in fade-in slide-in-from-top-2 duration-300">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {% for module in nav_varios %}
+            {% if permisos_apps_global == 'ALL' or module.slug in permisos_apps_global %}
+            <a href="{{ module.url }}" class="glass-card module-card p-5 flex flex-col items-center text-center">
+                <div class="module-icon vari-icon mb-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="{{ module.icon|default:'M12 2L2 7l10 5 10-5-10-5z M2 17l10 5 10-5 M2 12l10 5 10-5' }}"></path>
+                    </svg>
+                </div>
+                <h3 class="text-lg font-bold mb-1 text-black">{{ module.name }}</h3>
+                <p class="text-blue-900 text-sm font-medium">{{ module.description }}</p>
+            </a>
+            {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Sección Configuración -->
+    <div id="section-config" class="hidden animate-in fade-in slide-in-from-top-2 duration-300">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <a href="{% url 'gestion_usuarios' %}" class="glass-card module-card p-5 flex flex-col items-center text-center">
+                <div class="module-icon mb-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                </div>
+                <h3 class="text-lg font-bold mb-1 text-black">Usuarios y Permisos</h3>
+                <p class="text-blue-900 text-sm font-medium">Administrar roles y accesos.</p>
+            </a>
+
+            <!-- Opción Apariencia -->
+            <a href="{% url 'config_perfil' %}" class="glass-card module-card p-5 flex flex-col items-center text-center">
+                <div class="module-icon mb-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"></path>
+                    </svg>
+                </div>
+                <h3 class="text-lg font-bold mb-1 text-black">Apariencia</h3>
+                <p class="text-blue-900 text-sm font-medium">Personalizar colores del sistema.</p>
+            </a>
+        </div>
+    </div>
+</div>
+
+<script>
+    function showSection(section) {
+        // Hide main cards grid
+        const mainCards = document.getElementById('main-cards-grid');
+        if (mainCards) {
+            mainCards.classList.add('hidden');
+        }
+
+        // Hide all detail sections
+        document.getElementById('section-asistencial').classList.add('hidden');
+        document.getElementById('section-administrativo').classList.add('hidden');
+        document.getElementById('section-consultas').classList.add('hidden');
+        document.getElementById('section-varios').classList.add('hidden');
+        document.getElementById('section-config').classList.add('hidden');
+
+        // Show the requested section in the visual panel
+        const target = document.getElementById('section-' + section);
+        if (target) {
+            target.classList.remove('hidden');
+        }
+
+        // Update active state in bottom nav
+        document.querySelectorAll('.quick-nav-item').forEach(el => el.classList.remove('active'));
+        const navItem = document.getElementById('nav-' + section);
+        if (navItem) navItem.classList.add('active');
+        
+        document.querySelectorAll('.glass-card').forEach(el => {
+            el.classList.remove('ring-4', 'ring-blue-600', 'ring-offset-4', 'scale-105', 'bg-blue-50/50');
+        });
+        
+        const card = document.getElementById('card-' + section);
+        if (card) {
+            card.classList.add('ring-4', 'ring-blue-600', 'ring-offset-4', 'scale-105', 'bg-blue-50/50');
+        }
+    }
+
+    function showSelection() {
+        // Show main cards grid
+        const mainCards = document.getElementById('main-cards-grid');
+        if (mainCards) {
+            mainCards.classList.remove('hidden');
+        }
+
+        // Reset everything
+        document.getElementById('section-asistencial').classList.add('hidden');
+        document.getElementById('section-administrativo').classList.add('hidden');
+        document.getElementById('section-consultas').classList.add('hidden');
+        document.getElementById('section-varios').classList.add('hidden');
+        document.getElementById('section-config').classList.add('hidden');
+        
+        document.querySelectorAll('.glass-card').forEach(el => {
+            el.classList.remove('ring-4', 'ring-blue-600', 'ring-offset-4', 'scale-105', 'bg-blue-50/50');
+        });
+    }
+
+    document.addEventListener("DOMContentLoaded", function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const section = urlParams.get('section');
+        if (section) {
+            // Wait slightly so the CSS animations format properly
+            setTimeout(() => {
+                showSection(section);
+                // Scroll specifically to the card section or leave as is
+                const container = document.getElementById('visual-panel');
+                if (container) {
+                    container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+                // Optional: clean up the URL
+                window.history.replaceState({}, document.title, window.location.pathname);
+            }, 100);
+        }
+    });
+</script>
+{% endblock %}

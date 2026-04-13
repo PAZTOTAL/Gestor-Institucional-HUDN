@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+{% load static %}
+{% load currency_filters %}
+
+<head>
+    <style>
+        @page {
+            size: letter;
+            margin: 2cm;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #1e3c72;
+        }
+
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        .table th,
+        .table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+
+        .table th {
+            background-color: #f2f2f2;
+        }
+
+        .footer {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            text-align: center;
+            font-size: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="header">
+        <h1>REPORTE ADMINISTRATIVO</h1>
+        <p>Hospital Management System</p>
+    </div>
+
+    <h3>Resumen de Facturación</h3>
+    <p>Periodo: {{ sd|date:"d/m/Y" }} - {{ ed|date:"d/m/Y" }}</p>
+
+    <table class="table">
+        <tr>
+            <th>Indicador</th>
+            <th>Valor</th>
+        </tr>
+        <tr>
+            <td>Total Facturado</td>
+            <td>${{ total_facturado|currency }}</td>
+        </tr>
+        <tr>
+            <td>Facturas Generadas</td>
+            <td>{{ conteo_facturas }}</td>
+        </tr>
+        <tr>
+            <td>Registros RIPS</td>
+            <td>{{ rips_count }}</td>
+        </tr>
+    </table>
+
+    <div class="footer">
+        Generado el: {% now "d/m/Y H:i" %}
+    </div>
+</body>
+
+</html>

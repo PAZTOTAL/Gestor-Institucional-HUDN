@@ -1,0 +1,264 @@
+{% extends 'core/base.html' %}
+
+{% block title %}{{ model_name }} - Detalles{% endblock %}
+
+{% block scripts %}
+<script>
+    document.getElementById('limitOrderSelect').addEventListener('change', function() {
+        const parts = this.value.split('&');
+        const limit = parts[0].split('=')[1];
+        const order = parts[1].split('=')[1];
+        
+        document.getElementById('limitInput').value = limit;
+        document.getElementById('orderInput').value = order;
+        
+        // Auto-submit opcional si quieres que sea inmediato
+        // document.getElementById('filterForm').submit();
+    });
+</script>
+{% endblock %}
+
+{% block content %}
+<div class="mb-8">
+    <div class="flex items-center gap-2 mb-4 text-sm text-black font-medium">
+        <a href="{% url 'home' %}" class="hover:text-blue-700 transition-colors">Panel de Control</a>
+        <span>/</span>
+        <a href="{% url 'module_detail' module_slug %}" class="hover:text-blue-700 transition-colors">{{
+            module_slug|title }}</a>
+
+        <span>/</span>
+        <span class="text-blue-800 font-bold">{{ model_name }}</span>
+    </div>
+
+    <div class="flex justify-between items-end">
+        <div>
+            <h1 class="text-3xl font-bold mb-2">{{ model_name }}</h1>
+            <p class="font-mono text-primary">{{ model_slug }}</p>
+        </div>
+        <div class="flex gap-4 items-center">
+            <span class="text-muted text-sm">Mostrando {{ page_obj.start_index }}-{{ page_obj.end_index }} de {{
+                page_obj.paginator.count }} registros</span>
+
+            <!-- Excel Actions -->
+            <div class="flex gap-2">
+                <a href="{% url 'table_template' module_slug model_slug %}"
+                    class="px-3 py-2 rounded-lg bg-green-100 hover:bg-green-200 text-green-800 text-sm font-bold transition-colors flex items-center gap-2"
+                    title="Descargar Plantilla">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="7 10 12 15 17 10"></polyline>
+                        <line x1="12" y1="15" x2="12" y2="3"></line>
+                    </svg>
+                    Plantilla
+                </a>
+
+                <button onclick="document.getElementById('import-section').classList.toggle('hidden')"
+                    class="px-3 py-2 rounded-lg bg-indigo-100 hover:bg-indigo-200 text-indigo-800 text-sm font-bold transition-colors flex items-center gap-2"
+                    title="Importar Excel">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="17 8 12 3 7 8"></polyline>
+                        <line x1="12" y1="3" x2="12" y2="15"></line>
+                    </svg>
+                    Importar
+                </button>
+            </div>
+
+            {% if can_edit %}
+            <a href="{% url 'table_create' module_slug model_slug %}"
+                class="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 transition-colors text-white text-sm font-black shadow-lg shadow-blue-500/30 flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="12" y1="5" x2="12" y2="19" />
+                    <line x1="5" y1="12" x2="19" y2="12" />
+                </svg>
+                {{ create_label }}
+            </a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Buscador y Filtros HUDN -->
+<div class="bg-white p-6 rounded-2xl shadow-sm border border-blue-100 mb-8 animate-in fade-in slide-in-from-top-4 duration-500">
+    <form method="get" id="filterForm" class="flex flex-wrap gap-4 items-end">
+        <!-- Buscador -->
+        <div class="relative flex-1 min-w-[300px]">
+            <label class="block text-xs font-black text-blue-800 mb-1 uppercase tracking-wider">Buscar registros</label>
+            <div class="relative">
+                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <svg class="h-5 w-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                </div>
+                <input type="text" name="q" value="{{ query|default:'' }}" placeholder="Palabra clave o ID..." 
+                    class="block w-full pl-10 pr-3 py-2.5 border-2 border-blue-100 rounded-xl text-sm focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all">
+            </div>
+        </div>
+
+        <!-- Selector Inteligente HUDN -->
+        <div class="w-48">
+            <label class="block text-xs font-black text-blue-800 mb-1 uppercase tracking-wider">Ver registros</label>
+            <select id="limitOrderSelect" class="w-full p-2.5 border-2 border-blue-100 rounded-xl text-sm bg-white focus:border-blue-500 transition-all font-bold">
+                <option value="limit=&order=asc" {% if not current_limit and current_order == 'asc' %}selected{% endif %}>Todos (Paginado)</option>
+                <option value="limit=1&order=asc" {% if current_limit == '1' and current_order == 'asc' %}selected{% endif %}>El Primero</option>
+                <option value="limit=1&order=desc" {% if current_limit == '1' and current_order == 'desc' %}selected{% endif %}>El Último</option>
+                <option value="limit=5&order=asc" {% if current_limit == '5' and current_order == 'asc' %}selected{% endif %}>Los 5 Primeros</option>
+                <option value="limit=5&order=desc" {% if current_limit == '5' and current_order == 'desc' %}selected{% endif %}>Los 5 Últimos</option>
+                <option value="limit=10&order=asc" {% if current_limit == '10' and current_order == 'asc' %}selected{% endif %}>Los 10 Primeros</option>
+                <option value="limit=10&order=desc" {% if current_limit == '10' and current_order == 'desc' %}selected{% endif %}>Los 10 Últimos</option>
+            </select>
+            <input type="hidden" name="limit" id="limitInput" value="{{ current_limit|default:'' }}">
+            <input type="hidden" name="order" id="orderInput" value="{{ current_order|default:'asc' }}">
+        </div>
+
+        <div class="flex gap-2">
+            <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-xl font-black shadow-lg shadow-blue-500/30 transition-all flex items-center gap-2 uppercase text-xs">
+                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+                BUSCAR
+            </button>
+            
+            {% if query or current_limit %}
+            <a href="." class="bg-gray-100 hover:bg-gray-200 text-gray-600 px-4 py-2.5 rounded-xl font-bold transition-all text-xs flex items-center uppercase text-center justify-center">
+                Limpiar
+            </a>
+            {% endif %}
+        </div>
+    </form>
+</div>
+
+<!-- Import Section (Hidden by default) -->
+<div id="import-section"
+    class="hidden mb-6 p-6 bg-indigo-50 border-2 border-indigo-200 rounded-2xl animate-fade-in-down">
+    <h3 class="font-bold text-lg text-indigo-900 mb-4 flex items-center gap-2">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+            <line x1="12" y1="18" x2="12" y2="12"></line>
+            <line x1="9" y1="15" x2="15" y2="15"></line>
+        </svg>
+        Importar desde Excel
+    </h3>
+    <form action="{% url 'table_import' module_slug model_slug %}" method="post" enctype="multipart/form-data"
+        class="flex gap-4 items-end">
+        {% csrf_token %}
+        <div class="flex-1">
+            <label class="block text-sm font-bold text-indigo-800 mb-1">Archivo Excel (.xlsx)</label>
+            <input type="file" name="file" accept=".xlsx" required
+                class="w-full p-2 bg-white border-2 border-indigo-200 rounded-lg text-sm text-indigo-900 focus:outline-none focus:border-indigo-500">
+        </div>
+
+        <div class="flex items-center gap-2 mb-3">
+            <input type="checkbox" name="preview" value="1" id="preview-chk" class="w-4 h-4 text-indigo-600 rounded">
+            <label for="preview-chk" class="text-sm font-medium text-indigo-800 cursor-pointer select-none">Solo Vista
+                Previa (Simular)</label>
+        </div>
+
+        <button type="submit"
+            class="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg shadow-lg shadow-indigo-500/30 transition-colors">
+            Subir
+        </button>
+    </form>
+</div>
+
+<div class="glass-card overflow-hidden">
+    <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse">
+            <thead>
+                <tr class="border-b-2 border-blue-400 bg-blue-100">
+                    <th class="p-4 font-bold text-black border-r border-blue-300">Acciones</th>
+                    {% for field in fields %}
+                    <th class="p-4 font-bold text-black border-r border-blue-300">{{ field|title }}</th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in rows %}
+                <tr class="border-b border-blue-200 hover:bg-blue-50 transition-colors group">
+                    <td class="p-4 whitespace-nowrap flex gap-2">
+                        {% if module_slug == 'EstudioDeConveniencia' and model_slug|lower == 'opscomponentetecnico' %}
+                        <a href="{% url 'estudio_conveniencia:generar_pdf' row.pk %}" target="_blank"
+                            class="text-green-600 hover:text-green-800 transition-colors p-1" title="Descargar PDF">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                <polyline points="14 2 14 8 20 8"></polyline>
+                                <line x1="16" y1="13" x2="8" y2="13"></line>
+                                <line x1="16" y1="17" x2="8" y2="17"></line>
+                                <polyline points="10 9 9 9 8 9"></polyline>
+                            </svg>
+                        </a>
+                        {% endif %}
+                        {% if can_edit %}
+                        <a href="{% url 'table_update' module_slug model_slug row.pk %}"
+                            class="text-blue-600 hover:text-blue-800 transition-colors p-1" title="Editar">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round">
+                                <path d="M12 20h9" />
+                                <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+                            </svg>
+                        </a>
+                        {% endif %}
+
+                        {% if can_delete %}
+                        <a href="{% url 'table_delete' module_slug model_slug row.pk %}"
+                            class="text-red-600 hover:text-red-800 transition-colors p-1" title="Borrar">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round">
+                                <polyline points="3 6 5 6 21 6" />
+                                <path
+                                    d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                                <line x1="10" y1="11" x2="10" y2="17" />
+                                <line x1="14" y1="11" x2="14" y2="17" />
+                            </svg>
+                        </a>
+                        {% endif %}
+                    </td>
+                    {% for cell in row.values %}
+                    <td class="p-4 whitespace-nowrap text-sm text-black border-r border-blue-100 last:border-r-0">
+                        {{ cell }}
+                    </td>
+                    {% endfor %}
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="{{ fields|length|add:1 }}" class="p-8 text-center text-muted">
+                        No hay registros en esta tabla.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    {% if is_paginated %}
+    <div class="p-4 border-t border-white/10 flex justify-center gap-2">
+        {% if page_obj.has_previous %}
+        <a href="?page=1&q={{ query|default:'' }}&limit={{ current_limit|default:'' }}&order={{ current_order|default:'asc' }}" class="px-3 py-1 rounded bg-white/5 hover:bg-white/10 transition-colors">&laquo; Primero</a>
+        <a href="?page={{ page_obj.previous_page_number }}&q={{ query|default:'' }}&limit={{ current_limit|default:'' }}&order={{ current_order|default:'asc' }}"
+            class="px-3 py-1 rounded bg-white/5 hover:bg-white/10 transition-colors">Anterior</a>
+        {% endif %}
+
+        <span class="px-3 py-1 text-muted">
+            Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+        </span>
+
+        {% if page_obj.has_next %}
+        <a href="?page={{ page_obj.next_page_number }}&q={{ query|default:'' }}&limit={{ current_limit|default:'' }}&order={{ current_order|default:'asc' }}"
+            class="px-3 py-1 rounded bg-white/5 hover:bg-white/10 transition-colors">Siguiente</a>
+        <a href="?page={{ page_obj.paginator.num_pages }}&q={{ query|default:'' }}&limit={{ current_limit|default:'' }}&order={{ current_order|default:'asc' }}"
+            class="px-3 py-1 rounded bg-white/5 hover:bg-white/10 transition-colors">Último &raquo;</a>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

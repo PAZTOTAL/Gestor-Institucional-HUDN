@@ -1,0 +1,50 @@
+{% extends 'core/base.html' %}
+{% block title %}Nueva Orden Unidosis | Central de Mezclas{% endblock %}
+{% block content %}
+<div class="max-w-4xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-700">
+    <div class="bg-white rounded-[2.5rem] shadow-2xl shadow-teal-500/10 border border-gray-100 overflow-hidden">
+        <div class="bg-teal-600 p-8 text-white relative overflow-hidden">
+            <div class="relative z-10">
+                <h1 class="text-3xl font-black tracking-tight">Registro Unidosis</h1>
+                <p class="text-teal-100 font-medium">Orden de Producción (MAGHUDN1)</p>
+            </div>
+        </div>
+        
+        <form method="post" class="p-8 space-y-6">
+            {% csrf_token %}
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {% for field in form %}
+                <div class="space-y-2">
+                    <label class="text-[10px] font-black uppercase tracking-widest text-gray-500 ml-1">{{ field.label }}</label>
+                    {{ field }}
+                </div>
+                {% endfor %}
+            </div>
+            
+            <div class="pt-6 flex gap-4">
+                <button type="submit" class="flex-1 bg-teal-600 text-white font-black py-4 rounded-2xl hover:bg-teal-700 transition-all shadow-lg shadow-teal-200 uppercase tracking-widest text-xs">Guardar Orden</button>
+                <a href="{% url 'mezclas:unidosis_prod_list' %}" class="px-8 bg-gray-100 text-gray-500 font-black py-4 rounded-2xl hover:bg-gray-200 transition-all uppercase tracking-widest text-xs">Cancelar</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+    input, select, textarea {
+        width: 100%;
+        padding: 0.875rem 1.25rem;
+        background-color: #f9fafb;
+        border: 1px solid #e5e7eb;
+        border-radius: 1rem;
+        font-weight: 600;
+        font-size: 0.875rem;
+        transition: all 0.2s;
+    }
+    input:focus, select:focus, textarea:focus {
+        outline: none;
+        background-color: white;
+        border-color: #0d9488;
+        box-shadow: 0 0 0 4px rgba(13, 148, 136, 0.1);
+    }
+</style>
+{% endblock %}

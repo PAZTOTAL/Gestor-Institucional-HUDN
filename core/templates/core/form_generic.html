@@ -1,0 +1,210 @@
+{% extends 'core/base.html' %}
+
+{% block title %}{{ action }} {{ model_name }}{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <div class="mb-8">
+        <a href="{% url 'table_detail' module_slug model_slug %}"
+            class="flex items-center text-black font-bold hover:text-blue-700 transition-colors mb-4">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2">
+                <path d="M19 12H5" />
+                <path d="M12 19l-7-7 7-7" />
+            </svg>
+            Volver a {{ model_name }}
+        </a>
+        <h1 class="text-3xl font-bold mb-2 text-black">{{ action }} {{ model_name }}</h1>
+        <p class="text-lg text-blue-900 font-medium">Complete el formulario a continuación</p>
+
+        <!-- Excel Import Option -->
+        {% if action == 'Crear' %}
+        <div class="mt-4">
+            <button onclick="document.getElementById('import-section').classList.toggle('hidden')"
+                class="text-sm font-bold text-indigo-700 hover:text-indigo-900 flex items-center gap-1 transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="17 8 12 3 7 8"></polyline>
+                    <line x1="12" y1="3" x2="12" y2="15"></line>
+                </svg>
+                ¿Prefieres cargar un Excel?
+            </button>
+
+            <div id="import-section" class="hidden mt-4 p-4 bg-indigo-50 border border-indigo-200 rounded-xl">
+                <form action="{% url 'table_import' module_slug model_slug %}" method="post"
+                    enctype="multipart/form-data" class="flex gap-4 items-end">
+                    {% csrf_token %}
+                    <div class="flex-1">
+                        <label class="block text-xs font-bold text-indigo-800 mb-1">Archivo Excel (.xlsx)</label>
+                        <input type="file" name="file" accept=".xlsx" required
+                            class="w-full text-sm p-2 bg-white border border-indigo-200 rounded-lg">
+                    </div>
+                    <div class="flex items-center gap-2 mb-2">
+                        <input type="checkbox" name="preview" value="1" id="preview-chk-form"
+                            class="w-4 h-4 text-indigo-600 rounded">
+                        <label for="preview-chk-form"
+                            class="text-xs font-bold text-indigo-700 cursor-pointer">Simular</label>
+                    </div>
+                    <button type="submit"
+                        class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold rounded-lg shadow-md transition-colors">
+                        Subir
+                    </button>
+                    <a href="{% url 'table_template' module_slug model_slug %}"
+                        class="px-4 py-2 bg-green-100 hover:bg-green-200 text-green-800 text-sm font-bold rounded-lg transition-colors">
+                        Plantilla
+                    </a>
+                </form>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="glass-card p-6 bg-white border-2 border-blue-400 shadow-xl rounded-2xl">
+        <form method="post">
+            {% csrf_token %}
+
+            <!-- Dense 3-Column Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-x-4 gap-y-4">
+                {% for field in form %}
+                <div class="form-group group transition-all duration-200 hover:bg-gray-50 p-2 rounded-lg -mx-2">
+                    <div class="flex justify-between items-center mb-1">
+                        <label
+                            class="block text-xs uppercase tracking-wider font-black text-black group-hover:text-blue-700 transition-colors">
+                            {{ field.label }}
+                            {% if field.field.required %}<span class="text-red-600 ml-1 font-bold">*</span>{% endif %}
+                        </label>
+
+                        {# Quick Add Button for ForeignKeys #}
+                        {% if field.field.widget.attrs.data_add_url %}
+                        <a href="{{ field.field.widget.attrs.data_add_url }}" target="_blank"
+                            class="text-xs font-bold text-green-600 hover:text-green-800 bg-green-100 hover:bg-green-200 px-2 py-0.5 rounded transition-colors flex items-center gap-1"
+                            title="Crear nuevo {{ field.field.widget.attrs.data_related_name }}">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"
+                                stroke-linejoin="round">
+                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                            </svg>
+                            Nuevo
+                        </a>
+                        {% endif %}
+                    </div>
+
+                    <div class="relative">
+                        {# Widgets rendered by views.py with pastel colors #}
+                        {{ field }}
+                    </div>
+
+                    {% if field.help_text %}
+                    <p class="mt-1 text-xs text-blue-900 font-medium italic">{{ field.help_text }}</p>
+                    {% endif %}
+
+                    {% if field.errors %}
+                    <div class="mt-1 text-red-400 text-sm animate-pulse">
+                        {{ field.errors }}
+                    </div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+
+            <div class="flex justify-end gap-4 pt-4 border-t-2 border-blue-200">
+                <a href="{% url 'table_detail' module_slug model_slug %}"
+                    class="px-6 py-2 rounded-lg bg-blue-100 hover:bg-blue-200 border-2 border-blue-300 transition-colors text-black font-bold">Cancelar</a>
+                <button type="submit"
+                    class="px-6 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 transition-colors text-white font-black shadow-lg shadow-blue-500/30">
+                    Guardar
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    console.log("Template loaded: form_generic.html");
+    document.addEventListener('DOMContentLoaded', function () {
+        const modelSlug = "{{ model_slug }}";
+        console.log("Current Model Slug:", modelSlug);
+
+        // Check case-insensitive to be safe
+        if (modelSlug && modelSlug.toLowerCase() === 'documentodeidentidad') {
+            const numeroInput = document.getElementById('id_numeroDocumento');
+            console.log("Number Input found:", numeroInput);
+
+            if (numeroInput) {
+                // Visual indicator for debugging (remove later)
+                numeroInput.style.borderColor = "red";
+
+                const handleLookup = function () {
+                    const docNum = this.value;
+                    if (!docNum) return;
+
+                    console.log("Looking up document:", docNum);
+
+                    fetch(`/api/lookup-tercero/?doc=${encodeURIComponent(docNum)}`)
+                        .then(response => {
+                            if (!response.ok) throw new Error('Network response was not ok');
+                            return response.json();
+                        })
+                        .then(data => {
+                            console.log("Lookup result:", data);
+                            if (data.found) {
+                                // Populate fields
+                                const fields = {
+                                    'id_primerNombre': data.primerNombre,
+                                    'id_segundoNombre': data.segundoNombre,
+                                    'id_primerApellido': data.primerApellido,
+                                    'id_segundoApellido': data.segundoApellido
+                                };
+
+                                for (const [id, value] of Object.entries(fields)) {
+                                    const input = document.getElementById(id);
+                                    if (input) {
+                                        input.value = value || '';
+                                        // Trigger change event for any listeners
+                                        input.dispatchEvent(new Event('change'));
+                                    }
+                                }
+
+                                if (data.tipoDocId) {
+                                    const typeSelect = document.getElementById('id_tipoDocumento');
+                                    if (typeSelect) {
+                                        console.log("Trying to set Type ID:", data.tipoDocId);
+                                        // Attempt to match by text content if value doesn't match
+                                        let foundOption = false;
+
+                                        // Case 1: Value match
+                                        for (let i = 0; i < typeSelect.options.length; i++) {
+                                            if (typeSelect.options[i].value == data.tipoDocId) {
+                                                typeSelect.selectedIndex = i;
+                                                foundOption = true;
+                                                break;
+                                            }
+                                        }
+
+                                        // Case 2: If no value match, maybe legacy code mapping?
+                                        // We can't guess, but we can log.
+                                        if (!foundOption) {
+                                            console.warn("Could not match Tipo Documento ID " + data.tipoDocId + " to select options.");
+                                        }
+                                    }
+                                }
+                            } else {
+                                console.log("Document not found in Gentercer.");
+                            }
+                        })
+                        .catch(err => console.error('Lookup failed', err));
+                };
+
+                numeroInput.addEventListener('blur', handleLookup);
+                // Also trigger on change if user hits enter or something
+                numeroInput.addEventListener('change', handleLookup);
+            }
+        }
+    });
+</script>
+{% endblock %}

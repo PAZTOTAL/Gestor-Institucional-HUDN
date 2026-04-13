@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <style>
+        @page {
+            size: letter landscape;
+            margin: 0.8cm;
+        }
+        body {
+            font-family: Helvetica, Arial, sans-serif;
+            font-size: 7.5pt;
+            color: #333;
+        }
+        .header {
+            text-align: center;
+            border-bottom: 2pt solid #1a365d;
+            margin-bottom: 8pt;
+            padding-bottom: 4pt;
+        }
+        .header h1 {
+            font-size: 13pt;
+            margin: 0;
+            color: #1a365d;
+        }
+        .header p {
+            margin: 1pt 0;
+            font-weight: bold;
+            color: #4a5568;
+            font-size: 9pt;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 5pt;
+        }
+        th, td {
+            border: 0.4pt solid #cbd5e0;
+            padding: 3pt;
+            text-align: center;
+        }
+        th {
+            background-color: #f7fafc;
+            font-weight: bold;
+            text-transform: uppercase;
+            font-size: 6.5pt;
+            color: #2d3748;
+        }
+        .text-left { text-align: left; }
+        .font-black { font-weight: bold; }
+        .footer {
+            position: fixed;
+            bottom: -20pt;
+            width: 100%;
+            text-align: right;
+            font-size: 7pt;
+            color: #718096;
+            border-top: 0.4pt solid #cbd5e0;
+            padding-top: 3pt;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>HOSPITAL UNIVERSITARIO DE NARIÑO</h1>
+        <p>CENTRAL DE MEZCLAS Y REEMPAQUE</p>
+        <p>MATRIZ DE CONTROL OPERATIVO - FORMATO {{ formato }}</p>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th width="8%">Lote Int.</th>
+                <th width="15%" class="text-left">Medicamento</th>
+                <th width="8%">Conc.</th>
+                <th width="10%">Forma</th>
+                <th width="10%">Laboratorio</th>
+                <th width="7%">Lote Fab.</th>
+                <th width="7%">Venc.</th>
+                <th width="10%">Reg. INVIMA</th>
+                <th width="5%">Cant.</th>
+                <th width="8%">Temp.</th>
+                <th width="4%">Foto.</th>
+                <th width="5%">Sema.</th>
+                <th width="5%">Estado</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for orden in ordenes %}
+            <tr>
+                <td class="font-black">{{ orden.lote_interno }}</td>
+                <td class="text-left"><b>{{ orden.medicamento.nombre }}</b></td>
+                <td>{{ orden.medicamento.concentracion }}</td>
+                <td>{{ orden.medicamento.convencion.forma_farmaceutica|default:"-" }}</td>
+                <td>{{ orden.laboratorio|default:"-" }}</td>
+                <td>{{ orden.lote_fabricante }}</td>
+                <td>{{ orden.fecha_vencimiento|date:"M-y"|upper }}</td>
+                <td>{{ orden.registro_invima|default:"-" }}</td>
+                <td class="font-black">{{ orden.cantidad_a_reempacar }}</td>
+                <td style="font-size: 6pt;">{{ orden.medicamento.condiciones_almacenamiento }}</td>
+                <td>{{ orden.medicamento.fotosensibilidad }}</td>
+                <td style="padding: 0;">
+                    {% if orden.medicamento.alerta %}
+                        {% if orden.medicamento.alerta.codigo == '1' %}
+                            <div style="background-color: #FFFFFF; color: #000; border: 0.1pt solid #ccc; font-weight: bold;">{{ orden.medicamento.alerta.codigo }}</div>
+                        {% else %}
+                            <div style="background-color: {{ orden.medicamento.alerta.color }}; color: white; font-weight: bold;">{{ orden.medicamento.alerta.codigo }}</div>
+                        {% endif %}
+                    {% else %}
+                        {{ orden.semaforizacion|default:"-" }}
+                    {% endif %}
+                </td>
+                <td>{{ orden.get_estado_display }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="footer">
+        Generado el: {{ fecha }} | Página <pdf:pagenumber> de <pdf:pagecount>
+    </div>
+</body>
+</html>

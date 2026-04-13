@@ -1,0 +1,388 @@
+{% extends "core/base.html" %}
+{% load static %}
+{% load currency_filters %}
+
+{% block extra_css %}
+<style>
+    :root {
+        --admin-primary: #1a237e;
+        --admin-secondary: #0d47a1;
+        --white: #ffffff;
+        --bg-light: #f4f7fe;
+    }
+
+    body {
+        background-color: var(--bg-light);
+    }
+
+    .main-wrapper {
+        padding: 2rem;
+    }
+
+    .glass-header {
+        background: linear-gradient(135deg, var(--admin-primary) 0%, var(--admin-secondary) 100%);
+        border-radius: 20px;
+        padding: 2.5rem;
+        color: white;
+        margin-bottom: 2rem;
+        box-shadow: 0 10px 25px rgba(26, 35, 126, 0.2);
+    }
+
+    .metric-card {
+        background: white;
+        border: none;
+        border-radius: 20px;
+        padding: 1.5rem;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+        transition: all 0.3s ease;
+        height: 100%;
+    }
+
+    .metric-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+    }
+
+    .icon-box {
+        width: 60px;
+        height: 60px;
+        border-radius: 15px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        margin-bottom: 1rem;
+    }
+
+    .bg-soft-blue {
+        background: #e8eaf6;
+        color: #3f51b5;
+    }
+
+    .bg-soft-green {
+        background: #e8f5e9;
+        color: #4caf50;
+    }
+
+    .bg-soft-orange {
+        background: #fff3e0;
+        color: #ff9800;
+    }
+
+    .filter-card {
+        background: white;
+        border-radius: 20px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        border: 1px solid rgba(0, 0, 0, 0.05);
+    }
+
+    .table-container {
+        background: white;
+        border-radius: 20px;
+        padding: 1.5rem;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+    }
+
+    .custom-table thead th {
+        background: white;
+        color: #adb5bd;
+        text-transform: uppercase;
+        font-size: 0.7rem;
+        font-weight: 700;
+        letter-spacing: 1px;
+        border-bottom: 1px solid #f1f3f9;
+        padding: 1rem;
+    }
+
+    .custom-table tbody td {
+        padding: 1rem;
+        vertical-align: middle;
+        border-bottom: 1px solid #f1f3f9;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="main-wrapper">
+    <div class="glass-header d-flex justify-content-between align-items-center">
+        <div>
+            <h1 class="fw-black mb-1">
+                {% if view_type == 'rips' %}Consolidado RIPS{% else %}Análisis Administrativo Global{% endif %}
+            </h1>
+            <p class="mb-0 opacity-75">
+                Plantilla unificada para solicitudes de informes estratégicos y operativos.
+            </p>
+        </div>
+        <div>
+            <button type="button" class="btn btn-success rounded-pill px-3 fw-bold shadow-sm me-2" data-bs-toggle="modal" data-bs-target="#ripsModal">
+                <i class="bi bi-file-earmark-zip-fill me-2"></i>Generar RIPS
+            </button>
+                <i class="bi bi-book-half me-2"></i>Manual RIPS
+            </a>
+            <a href="{% url 'consultas:produccion_medico' %}" 
+                class="btn btn-info rounded-pill px-3 fw-bold shadow-sm me-2 text-white">
+                <i class="bi bi-activity me-2"></i>Producción Médica
+            </a>
+            <a href="{% url 'consultas:exportar_pdf' %}?tipo=admin"
+                class="btn btn-light rounded-pill px-4 fw-bold shadow-sm">
+                <i class="bi bi-printer-fill me-2"></i>Generar Informe
+            </a>
+        </div>
+    </div>
+
+    <!-- Plantilla Global de Solicitud de Informe -->
+    <div class="filter-card shadow-sm border-0">
+        <form id="filter-form" method="get" class="row g-4 align-items-end">
+            <!-- Selector de Vista (Ventas vs RIPS) -->
+            <input type="hidden" name="view" value="{{ view_type }}">
+
+            <div class="col-md-3">
+                <label class="form-label fw-bold small text-muted text-uppercase tracking-wider">Periodo de
+                    Tiempo</label>
+                <div class="d-flex gap-1 bg-light p-1 rounded-3">
+                    <button type="button" onclick="setFilter('diario')"
+                        class="btn btn-sm flex-fill rounded-2 {% if filter_type == 'diario' %}btn-primary shadow-sm{% else %}btn-light text-muted{% endif %}">Día</button>
+                    <button type="button" onclick="setFilter('mes')"
+                        class="btn btn-sm flex-fill rounded-2 {% if filter_type == 'mes' %}btn-primary shadow-sm{% else %}btn-light text-muted{% endif %}">Mes</button>
+                    <button type="button" onclick="setFilter('anual')"
+                        class="btn btn-sm flex-fill rounded-2 {% if filter_type == 'anual' %}btn-primary shadow-sm{% else %}btn-light text-muted{% endif %}">Año</button>
+                    <button type="button" onclick="setFilter('rango')"
+                        class="btn btn-sm flex-fill rounded-2 {% if filter_type == 'rango' %}btn-primary shadow-sm{% else %}btn-light text-muted{% endif %}">Ra.</button>
+                </div>
+                <input type="hidden" name="filter" id="period-filter" value="{{ filter_type }}">
+            </div>
+
+            <div class="col-md-3">
+                <label class="form-label fw-bold small text-muted text-uppercase tracking-wider">Agrupar Informe
+                    Por</label>
+                <select name="group_by" class="form-select border-0 bg-light rounded-3 fw-bold">
+                    <option value="global" {% if group_by == 'global' %}selected{% endif %}>🌍 Consolidado Global</option>
+                    <option value="aseguradora" {% if group_by == 'aseguradora' %}selected{% endif %}>🏢 Por Aseguradora
+                    </option>
+                    <option value="paciente" {% if group_by == 'paciente' %}selected{% endif %}>👤 Por Paciente</option>
+                    <option value="factura" {% if group_by == 'factura' %}selected{% endif %}>📄 Por Factura Individual
+                    </option>
+                </select>
+            </div>
+
+            <div class="col-md-4">
+                <div class="row g-2">
+                    <div class="col-6">
+                        <label class="form-label fw-bold small text-muted text-uppercase tracking-wider">Desde</label>
+                        <input type="date" name="start_date" id="sd_input"
+                            class="form-control border-0 bg-light rounded-3" value="{{ sd|date:'Y-m-d' }}">
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label fw-bold small text-muted text-uppercase tracking-wider">Hasta</label>
+                        <input type="date" name="end_date" id="ed_input"
+                            class="form-control border-0 bg-light rounded-3" value="{{ ed|date:'Y-m-d' }}">
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100 rounded-3 py-2 fw-black shadow text-uppercase">
+                    Consultar
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Metricas Resumen -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-4">
+            <div class="metric-card border-start border-primary border-5">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div class="icon-box bg-soft-blue mb-0">
+                        <i class="bi bi-cash-coin"></i>
+                    </div>
+                </div>
+                <h6 class="text-muted fw-bold small mb-1">FACTURACIÓN BRUTA</h6>
+                <h2 class="fw-black mb-0 text-primary">${{ total_facturado|currency }}</h2>
+                <p class="text-muted small mt-2 mb-0">Sincronizado con base contable</p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="metric-card border-start border-success border-5">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div class="icon-box bg-soft-green mb-0">
+                        <i class="bi bi-file-earmark-text"></i>
+                    </div>
+                </div>
+                <h6 class="text-muted fw-bold small mb-1">DOCS. GENERADOS</h6>
+                <h2 class="fw-black mb-0 text-success">{{ conteo_facturas }}</h2>
+                <p class="text-muted small mt-2 mb-0">Último periodo solicitado</p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="metric-card border-start border-warning border-5">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div class="icon-box bg-soft-orange mb-0">
+                        <i class="bi bi-hdd-network"></i>
+                    </div>
+                </div>
+                <h6 class="text-muted fw-bold small mb-1">REGISTROS RIPS</h6>
+                <h2 class="fw-black mb-0 text-warning">{{ rips_count }}</h2>
+                <p class="text-muted small mt-2 mb-0">Archivos planos proyectados</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabla Dinámica de Resultados -->
+    <div class="table-container shadow-sm border-0">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h5 class="fw-black mb-0 text-uppercase">
+                Resultados: {% if group_by == 'aseguradora' %}Agrupado por Aseguradora
+                {% elif group_by == 'paciente' %}Listado por Paciente
+                {% elif group_by == 'factura' %}Detalle de Facturas
+                {% else %}Consolidado Global Sugerido{% endif %}
+            </h5>
+            <div class="badge bg-light text-muted px-3 py-2 rounded-pill font-monospace">
+                Total Registros: {{ facturas_detalle|length|default:1 }}
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table custom-table">
+                <thead>
+                    <tr class="bg-light">
+                        {% if group_by == 'aseguradora' %}
+                        <th width="15%">CÓDIGO</th>
+                        <th>NOMBRE DE ASEGURADORA</th>
+                        <th class="text-center">CANT. FACTURAS</th>
+                        <th class="text-end">TOTAL FACTURADO</th>
+                        {% elif group_by == 'paciente' %}
+                        <th>PACIENTE</th>
+                        <th width="20%">DOCUMENTO</th>
+                        <th class="text-center">ATENCIONES</th>
+                        <th class="text-end">TOTAL CARGADO</th>
+                        {% elif group_by == 'factura' %}
+                        <th width="12%">FECHA</th>
+                        <th>PACIENTE / ASEGURADORA</th>
+                        <th class="text-center">ESTADO</th>
+                        <th class="text-end">IMPORTE NETO</th>
+                        {% else %}
+                        <th>RESUMEN DEL PERIODO</th>
+                        <th class="text-center">MÉTRICA</th>
+                        <th class="text-end">VALOR CONSOLIDADO</th>
+                        {% endif %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in facturas_detalle %}
+                    <tr>
+                        {% if group_by == 'aseguradora' %}
+                        <td class="fw-bold text-muted">{{ item.gendetcon__gdecodigo }}</td>
+                        <td class="fw-bold">{{ item.gendetcon__gdenombre }}</td>
+                        <td class="text-center"><span class="badge bg-light text-dark rounded-pill">{{ item.cantidad }}</span></td>
+                        <td class="text-end fw-black text-primary">${{ item.total|currency }}</td>
+                        {% elif group_by == 'paciente' %}
+                        <td>
+                            <div class="fw-bold">{{ item.adningreso__genpacien__pacprinom }} {{ item.adningreso__genpacien__pacpriape }}</div>
+                            <div class="text-xs text-muted">Registro Único Hospitalario</div>
+                        </td>
+                        <td class="text-muted font-monospace">{{ item.adningreso__genpacien__pactipdoc }} {{ item.adningreso__genpacien__pacnumdoc }}</td>
+                        <td class="text-center">{{ item.cantidad }}</td>
+                        <td class="text-end fw-black text-primary">${{ item.total|currency }}</td>
+                        {% elif group_by == 'factura' %}
+                        <td class="text-muted small">{{ item.sfafecfac|date:"d/m/Y H:i" }}</td>
+                        <td>
+                            <div class="fw-bold">{{ item.adningreso.genpacien.pacprinom }} {{ item.adningreso.genpacien.pacpriape }}</div>
+                            <div class="text-xs text-muted">{{ item.gendetcon.gdenombre|default:"Particular" }}</div>
+                        </td>
+                        <td class="text-center">
+                            <span
+                                class="badge bg-soft-green text-success border border-success-subtle px-3">Emitida</span>
+                        </td>
+                        <td class="text-end fw-black text-primary">${{ item.sfatotfac|currency }}</td>
+                        {% endif %}
+                    </tr>
+                    {% empty %}
+                    {% if group_by == 'global' %}
+                    <tr>
+                        <td>
+                            <div class="fw-bold">Consolidado Total del Periodo</div>
+                            <div class="text-xs text-muted">Desde {{ sd|date:"d/m/Y" }} hasta {{ ed|date:"d/m/Y" }}
+                            </div>
+                        </td>
+                        <td class="text-center">Total {{ conteo_facturas }} Docs.</td>
+                        <td class="text-end fw-black text-primary">${{ total_facturado|currency }}</td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="4" class="text-center py-5 text-muted fst-italic">No se encontraron registros para
+                            los filtros seleccionados.</td>
+                    </tr>
+                    {% endif %}
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    function setFilter(type) {
+        console.log('setFilter called with type:', type);
+        
+        const form = document.getElementById('filter-form');
+        const periodFilter = document.getElementById('period-filter');
+        
+        // Set the filter type
+        periodFilter.value = type;
+        console.log('Filter set to:', periodFilter.value);
+        
+        // The view input already exists in the HTML, no need to create it
+        // Just verify it's there
+        const viewInput = form.querySelector('input[name="view"]');
+        console.log('View input value:', viewInput ? viewInput.value : 'NOT FOUND');
+        
+        // Auto-submit for quick filters (not for range)
+        if (type !== 'rango') {
+            console.log('Submitting form...');
+            form.submit();
+        } else {
+            console.log('Range selected, waiting for user to set dates and click Consultar');
+        }
+    }
+</script>
+
+<!-- Modal Generar RIPS -->
+<div class="modal fade" id="ripsModal" tabindex="-1" aria-labelledby="ripsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header bg-success text-white rounded-top-4">
+                <h5 class="modal-title fw-bold" id="ripsModalLabel">
+                    <i class="bi bi-file-earmark-zip-fill me-2"></i>Generar Archivos RIPS
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{% url 'consultas:generar_rips' %}" method="post">
+                {% csrf_token %}
+                <div class="modal-body p-4">
+                    <div class="alert alert-light border shadow-sm mb-4">
+                        <i class="bi bi-info-circle text-success me-2"></i>
+                        Seleccione el rango de fechas para generar los archivos planos (CT, AF, US, etc.).
+                    </div>
+                    <div class="mb-3">
+                        <label for="fecha_inicio" class="form-label fw-bold opacity-75">Fecha Inicial</label>
+                        <input type="date" class="form-control rounded-pill shadow-sm" id="fecha_inicio" name="fecha_inicio" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="fecha_fin" class="form-label fw-bold opacity-75">Fecha Final</label>
+                        <input type="date" class="form-control rounded-pill shadow-sm" id="fecha_fin" name="fecha_fin" required>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 p-4 pt-0">
+                    <button type="button" class="btn btn-light rounded-pill px-4 fw-bold" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-success rounded-pill px-4 fw-bold shadow-sm">
+                        <i class="bi bi-download me-2"></i>Generar y Descargar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

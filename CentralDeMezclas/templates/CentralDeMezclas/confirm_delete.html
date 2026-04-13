@@ -1,0 +1,38 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Confirmar Eliminación | Gestor Institucional Digital  HUDN{% endblock %}
+
+{% block content %}
+<div class="max-w-md mx-auto animate-in fade-in slide-in-from-bottom-8 duration-700">
+    <div class="bg-white rounded-3xl border border-gray-100 shadow-2xl overflow-hidden text-center">
+        <div class="p-8 bg-red-50 text-red-600 flex flex-col items-center gap-4">
+            <div class="w-20 h-20 rounded-full bg-red-100 flex items-center justify-center border-4 border-white shadow-lg">
+                <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+            </div>
+            <h2 class="text-2xl font-black tracking-tight">¿Confirmar Eliminación?</h2>
+        </div>
+        
+        <div class="p-8 space-y-6">
+            <p class="text-gray-500 font-medium leading-relaxed">
+                Estás a punto de eliminar permanentemente: <br>
+                <strong class="text-gray-900 text-lg block mt-2">{{ object }}</strong>
+            </p>
+            
+            <div class="bg-yellow-50 p-4 rounded-xl border border-yellow-100 text-yellow-800 text-xs font-bold uppercase tracking-tight">
+                ADVERTENCIA: Esta acción no se puede deshacer.
+            </div>
+
+            <form method="post" class="flex flex-col gap-3">
+                {% csrf_token %}
+                <button type="submit" class="w-full py-4 rounded-2xl bg-red-600 text-white font-black shadow-xl shadow-red-500/30 hover:scale-[1.02] active:scale-95 transition-all">
+                    SÍ, ELIMINAR REGISTRO
+                </button>
+                <a href="{{ request.META.HTTP_REFERER|default:'/' }}" class="w-full py-4 rounded-2xl bg-gray-100 text-gray-500 font-black hover:bg-gray-200 transition-all">
+                    CANCELAR
+                </a>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

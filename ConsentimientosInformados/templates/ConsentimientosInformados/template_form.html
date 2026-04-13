@@ -1,0 +1,74 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Plantilla de Consentimiento | HUDN{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto space-y-8 animate-in fade-in duration-700">
+    <!-- Header -->
+    <div class="flex items-center justify-between mb-8">
+        <div>
+            <h1 class="text-3xl font-black text-gray-900">Configurar <span class="text-primary">Plantilla</span></h1>
+            <p class="text-gray-500 font-medium">Defina la estructura y el contenido legal del nuevo formato.</p>
+        </div>
+    </div>
+
+    <form method="post" class="bg-white rounded-3xl p-8 shadow-2xl border border-gray-100 space-y-6">
+        {% csrf_token %}
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="space-y-2">
+                <label for="{{ form.nombre.id_for_label }}" class="text-xs font-black text-gray-400 uppercase tracking-widest">Nombre del Formato</label>
+                {{ form.nombre }}
+            </div>
+            <div class="flex items-center gap-4 pt-6">
+                {{ form.activo }}
+                <label for="{{ form.activo.id_for_label }}" class="text-sm font-bold text-gray-700">Plantilla Activa</label>
+            </div>
+        </div>
+
+        <div class="space-y-2">
+            <label for="{{ form.descripcion.id_for_label }}" class="text-xs font-black text-gray-400 uppercase tracking-widest">Descripción Interna</label>
+            {{ form.descripcion }}
+        </div>
+
+        <div class="space-y-2">
+            <label for="{{ form.contenido_html.id_for_label }}" class="text-xs font-black text-gray-400 uppercase tracking-widest">Contenido del Documento (HTML/Texto)</label>
+            {{ form.contenido_html }}
+            <p class="text-[10px] text-gray-400 font-medium italic">Puede usar etiquetas HTML básicas para dar formato al contenido que leerá el paciente.</p>
+        </div>
+
+        <div class="flex justify-end gap-4 pt-6 border-t border-gray-100">
+            <a href="{% url 'consentimientos:list' %}" class="px-6 py-3 rounded-xl bg-gray-100 text-gray-500 font-black hover:bg-gray-200 transition-all">Cancelar</a>
+            <button type="submit" class="px-8 py-3 rounded-xl bg-primary text-white font-black shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all">
+                Guardar Plantilla
+            </button>
+        </div>
+    </form>
+</div>
+
+<style>
+    input[type="text"], textarea {
+        width: 100%;
+        padding: 0.75rem 1rem;
+        border-radius: 1rem;
+        background-color: #f8fafc;
+        border: 2px solid #f1f5f9;
+        font-weight: 700;
+        transition: all 0.3s;
+    }
+    input[type="text"]:focus, textarea:focus {
+        background-color: white;
+        border-color: var(--theme-primary);
+        outline: none;
+        box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
+    }
+    textarea { height: 300px; }
+    input[type="checkbox"] {
+        width: 1.5rem;
+        height: 1.5rem;
+        border-radius: 0.5rem;
+        color: var(--theme-primary);
+    }
+</style>
+{% endblock %}

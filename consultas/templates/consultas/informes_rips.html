@@ -1,0 +1,477 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block title %}Manual Técnico RIPS | Hospital Management{% endblock %}
+
+{% block extra_css %}
+<style>
+    :root {
+        --rips-primary: #2c3e50;
+        --rips-secondary: #34495e;
+        --rips-accent: #3498db;
+    }
+
+    .rips-header {
+        background: linear-gradient(135deg, var(--rips-primary) 0%, var(--rips-secondary) 100%);
+        border-radius: 20px;
+        padding: 2.5rem;
+        color: white;
+        margin-bottom: 2rem;
+        box-shadow: 0 10px 25px rgba(44, 62, 80, 0.2);
+    }
+
+    .nav-pills .nav-link {
+        color: var(--rips-secondary);
+        font-weight: 600;
+        border-radius: 50px;
+        padding: 0.8rem 1.5rem;
+        margin-right: 0.5rem;
+        margin-bottom: 0.5rem;
+        transition: all 0.3s ease;
+    }
+
+    .nav-pills .nav-link.active {
+        background-color: var(--rips-accent);
+        color: white;
+        box-shadow: 0 4px 10px rgba(52, 152, 219, 0.3);
+    }
+
+    .table-container {
+        background: white;
+        border-radius: 20px;
+        padding: 2rem;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    }
+
+    .rips-table thead th {
+        background-color: #f8f9fa;
+        color: var(--rips-primary);
+        font-weight: 700;
+        text-transform: uppercase;
+        font-size: 0.85rem;
+        letter-spacing: 0.5px;
+        border-bottom: 2px solid #e9ecef;
+    }
+
+    .rips-table tbody tr:hover {
+        background-color: #f1f8ff;
+    }
+
+    .code-badge {
+        font-family: 'Courier New', monospace;
+        background-color: #eef2f7;
+        color: #2c3e50;
+        padding: 0.2rem 0.5rem;
+        border-radius: 4px;
+        font-weight: 700;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-4">
+    <!-- Header -->
+    <div class="rips-header d-flex justify-content-between align-items-center">
+        <div>
+            <h1 class="fw-black mb-1">Manual Técnico RIPS</h1>
+            <p class="mb-0 opacity-75">
+                Especificaciones técnicas para la estructura de archivos planos (Resolución 3374).
+            </p>
+        </div>
+        <div>
+            <a href="{% url 'consultas:dashboard_admin' %}" class="btn btn-light rounded-pill px-4 fw-bold shadow-sm">
+                <i class="bi bi-arrow-left me-2"></i>Volver al Dashboard
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-3 mb-4">
+            <div class="card border-0 shadow-sm rounded-4 p-3 sticky-top" style="top: 2rem;">
+                <h5 class="fw-bold mb-3 px-3 mt-2">Archivos Disponibles</h5>
+                <div class="nav flex-column nav-pills" id="v-pills-tab" role="tablist" aria-orientation="vertical">
+                    <button class="nav-link active text-start" id="v-pills-ct-tab" data-bs-toggle="pill" data-bs-target="#v-pills-ct" type="button" role="tab">
+                        <i class="bi bi-file-earmark-code me-2"></i>CT - Archivo de Control
+                    </button>
+                    <button class="nav-link text-start" id="v-pills-af-tab" data-bs-toggle="pill" data-bs-target="#v-pills-af" type="button" role="tab">
+                        <i class="bi bi-receipt me-2"></i>AF - Transacción de Servicios
+                    </button>
+                    <button class="nav-link text-start" id="v-pills-us-tab" data-bs-toggle="pill" data-bs-target="#v-pills-us" type="button" role="tab">
+                        <i class="bi bi-people me-2"></i>US - Usuarios
+                    </button>
+                    <button class="nav-link text-start" id="v-pills-ad-tab" data-bs-toggle="pill" data-bs-target="#v-pills-ad" type="button" role="tab">
+                        <i class="bi bi-collection me-2"></i>AD - Descripción Agrupada
+                    </button>
+                    <button class="nav-link text-start" id="v-pills-ac-tab" data-bs-toggle="pill" data-bs-target="#v-pills-ac" type="button" role="tab">
+                        <i class="bi bi-journal-medical me-2"></i>AC - Consultas
+                    </button>
+                    <button class="nav-link text-start" id="v-pills-ap-tab" data-bs-toggle="pill" data-bs-target="#v-pills-ap" type="button" role="tab">
+                        <i class="bi bi-tools me-2"></i>AP - Procedimientos
+                    </button>
+                    <button class="nav-link text-start" id="v-pills-au-tab" data-bs-toggle="pill" data-bs-target="#v-pills-au" type="button" role="tab">
+                        <i class="bi bi-hospital me-2"></i>AU - Urgencias
+                    </button>
+                    <button class="nav-link text-start" id="v-pills-ah-tab" data-bs-toggle="pill" data-bs-target="#v-pills-ah" type="button" role="tab">
+                        <i class="bi bi-building me-2"></i>AH - Hospitalización
+                    </button>
+                    <button class="nav-link text-start" id="v-pills-an-tab" data-bs-toggle="pill" data-bs-target="#v-pills-an" type="button" role="tab">
+                        <i class="bi bi-person-plus me-2"></i>AN - Recién Nacidos
+                    </button>
+                    <button class="nav-link text-start" id="v-pills-am-tab" data-bs-toggle="pill" data-bs-target="#v-pills-am" type="button" role="tab">
+                        <i class="bi bi-capsule me-2"></i>AM - Medicamentos
+                    </button>
+                    <button class="nav-link text-start" id="v-pills-at-tab" data-bs-toggle="pill" data-bs-target="#v-pills-at" type="button" role="tab">
+                        <i class="bi bi-basket me-2"></i>AT - Otros Servicios
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-9">
+            <div class="tab-content" id="v-pills-tabContent">
+                
+                <!-- CT - Archivo de Control -->
+                <div class="tab-pane fade show active" id="v-pills-ct" role="tabpanel">
+                    <div class="table-container">
+                        <h3 class="fw-bold mb-4 text-primary">Archivo de Control (CT)</h3>
+                        <table class="table table-hover rips-table">
+                            <thead>
+                                <tr>
+                                    <th>Dato</th>
+                                    <th>Longitud</th>
+                                    <th>Tipo</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr><td>Código del prestador de servicios de salud</td><td>10</td><td>Alfanumérico</td></tr>
+                                <tr><td>Fecha de remisión</td><td>10</td><td>Fecha (dd/mm/aaaa)</td></tr>
+                                <tr><td>Código del archivo</td><td>8</td><td>Alfanumérico</td></tr>
+                                <tr><td>Total de registros</td><td>10</td><td>Numérico</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- AF - Transacción -->
+                <div class="tab-pane fade" id="v-pills-af" role="tabpanel">
+                    <div class="table-container">
+                        <h3 class="fw-bold mb-4 text-primary">Transacción de Servicios (AF)</h3>
+                        <table class="table table-hover rips-table">
+                            <thead>
+                                <tr>
+                                    <th>Dato</th>
+                                    <th>Longitud</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr><td>Código del prestador de servicios de salud</td><td>10</td></tr>
+                                <tr><td>Razón social o apellidos y nombre del prestador</td><td>60</td></tr>
+                                <tr><td>Tipo de identificación</td><td>2</td></tr>
+                                <tr><td>Número de identificación</td><td>20</td></tr>
+                                <tr><td>Número de la factura</td><td>20</td></tr>
+                                <tr><td>Fecha de expedición de la factura</td><td>10</td></tr>
+                                <tr><td>Fecha de inicio</td><td>10</td></tr>
+                                <tr><td>Fecha final</td><td>10</td></tr>
+                                <tr><td>Código entidad administradora</td><td>6</td></tr>
+                                <tr><td>Nombre entidad administradora</td><td>30</td></tr>
+                                <tr><td>Número del contrato</td><td>15</td></tr>
+                                <tr><td>Plan de beneficios</td><td>30</td></tr>
+                                <tr><td>Número de la póliza</td><td>10</td></tr>
+                                <tr><td>Valor total del pago compartido (copago)</td><td>15</td></tr>
+                                <tr><td>Valor de la comisión</td><td>15</td></tr>
+                                <tr><td>Valor total de descuentos</td><td>15</td></tr>
+                                <tr><td>Valor neto a pagar por la entidad contratante</td><td>15</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- AD - Descripción Agrupada -->
+                <div class="tab-pane fade" id="v-pills-ad" role="tabpanel">
+                    <div class="table-container">
+                        <h3 class="fw-bold mb-4 text-primary">Descripción Agrupada (AD)</h3>
+                        <table class="table table-hover rips-table">
+                            <thead>
+                                <tr>
+                                    <th>Dato</th>
+                                    <th>Longitud</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr><td>Número de la factura</td><td>20</td></tr>
+                                <tr><td>Código del prestador de servicios de salud</td><td>10</td></tr>
+                                <tr><td>Código del concepto</td><td>2</td></tr>
+                                <tr><td>Cantidad</td><td>15</td></tr>
+                                <tr><td>Valor unitario</td><td>15</td></tr>
+                                <tr><td>Valor total por concepto</td><td>15</td></tr>
+                            </tbody>
+                        </table>
+                        <div class="alert alert-info mt-3">
+                            <i class="bi bi-info-circle-fill me-2"></i>
+                            En este registro, siempre debe venir el valor unitario en cero (0) o espacio en blanco.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- US - Usuarios -->
+                <div class="tab-pane fade" id="v-pills-us" role="tabpanel">
+                    <div class="table-container">
+                        <h3 class="fw-bold mb-4 text-primary">Usuarios de los Servicios (US)</h3>
+                        <table class="table table-hover rips-table">
+                            <thead>
+                                <tr>
+                                    <th>Dato</th>
+                                    <th>Longitud</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr><td>Tipo de identificación del usuario</td><td>2</td></tr>
+                                <tr><td>Número de identificación del usuario en el Sistema</td><td>20</td></tr>
+                                <tr><td>Código entidad administradora</td><td>6</td></tr>
+                                <tr><td>Tipo de usuario</td><td>1</td></tr>
+                                <tr><td>Primer apellido del usuario</td><td>30</td></tr>
+                                <tr><td>Segundo apellido del usuario</td><td>30</td></tr>
+                                <tr><td>Primer nombre del usuario</td><td>20</td></tr>
+                                <tr><td>Segundo nombre del usuario</td><td>20</td></tr>
+                                <tr><td>Edad</td><td>3</td></tr>
+                                <tr><td>Unidad de medida de la edad</td><td>1</td></tr>
+                                <tr><td>Sexo</td><td>1</td></tr>
+                                <tr><td>Código del departamento de residencia habitual</td><td>2</td></tr>
+                                <tr><td>Código de municipios de residencia habitual</td><td>3</td></tr>
+                                <tr><td>Zona de residencia habitual</td><td>1</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- AC - Consulta -->
+                <div class="tab-pane fade" id="v-pills-ac" role="tabpanel">
+                    <div class="table-container">
+                        <h3 class="fw-bold mb-4 text-primary">Archivo de Consulta (AC)</h3>
+                        <table class="table table-hover rips-table">
+                            <thead>
+                                <tr>
+                                    <th>Dato</th>
+                                    <th>Longitud</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr><td>Número de la factura</td><td>20</td></tr>
+                                <tr><td>Código del prestador de servicios de salud</td><td>10</td></tr>
+                                <tr><td>Tipo de identificación del usuario</td><td>2</td></tr>
+                                <tr><td>Número de identificación del usuario en el Sistema</td><td>20</td></tr>
+                                <tr><td>Fecha de la consulta</td><td>10</td></tr>
+                                <tr><td>Número de autorización</td><td>15</td></tr>
+                                <tr><td>Código de consulta</td><td>8</td></tr>
+                                <tr><td>Finalidad de la consulta</td><td>2</td></tr>
+                                <tr><td>Causa externa</td><td>2</td></tr>
+                                <tr><td>Código del diagnóstico principal</td><td>4</td></tr>
+                                <tr><td>Código del diagnóstico relacionado No. 1</td><td>4</td></tr>
+                                <tr><td>Código del diagnóstico relacionado No. 2</td><td>4</td></tr>
+                                <tr><td>Código del diagnóstico relacionado No. 3</td><td>4</td></tr>
+                                <tr><td>Tipo de diagnóstico principal</td><td>1</td></tr>
+                                <tr><td>Valor de la consulta</td><td>15</td></tr>
+                                <tr><td>Valor de la cuota moderadora</td><td>15</td></tr>
+                                <tr><td>Valor neto a pagar</td><td>15</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- AP - Procedimientos -->
+                <div class="tab-pane fade" id="v-pills-ap" role="tabpanel">
+                    <div class="table-container">
+                        <h3 class="fw-bold mb-4 text-primary">Archivo de Procedimientos (AP)</h3>
+                        <table class="table table-hover rips-table">
+                            <thead>
+                                <tr>
+                                    <th>Dato</th>
+                                    <th>Longitud</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr><td>Número de la factura</td><td>20</td></tr>
+                                <tr><td>Código del prestador de servicios de salud</td><td>10</td></tr>
+                                <tr><td>Tipo de identificación del usuario</td><td>2</td></tr>
+                                <tr><td>Número de identificación del usuario en el Sistema</td><td>20</td></tr>
+                                <tr><td>Fecha del procedimiento</td><td>10</td></tr>
+                                <tr><td>Número de autorización</td><td>15</td></tr>
+                                <tr><td>Código del procedimiento</td><td>8</td></tr>
+                                <tr><td>Ámbito de realización del procedimiento</td><td>1</td></tr>
+                                <tr><td>Finalidad del procedimiento</td><td>1</td></tr>
+                                <tr><td>Personal que atiende</td><td>1</td></tr>
+                                <tr><td>Diagnóstico principal</td><td>4</td></tr>
+                                <tr><td>Diagnóstico relacionado</td><td>4</td></tr>
+                                <tr><td>Complicación</td><td>4</td></tr>
+                                <tr><td>Forma de realización del acto quirúrgico</td><td>1</td></tr>
+                                <tr><td>Valor del procedimiento</td><td>15</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- AU - Urgencias -->
+                <div class="tab-pane fade" id="v-pills-au" role="tabpanel">
+                    <div class="table-container">
+                        <h3 class="fw-bold mb-4 text-primary">Urgencias con Observación (AU)</h3>
+                        <table class="table table-hover rips-table">
+                            <thead>
+                                <tr>
+                                    <th>Dato</th>
+                                    <th>Longitud</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr><td>Número de la factura</td><td>20</td></tr>
+                                <tr><td>Código del prestador de servicios de salud</td><td>10</td></tr>
+                                <tr><td>Tipo de identificación del usuario</td><td>2</td></tr>
+                                <tr><td>Número de identificación del usuario en el Sistema</td><td>20</td></tr>
+                                <tr><td>Fecha de ingreso del usuario a observación</td><td>10</td></tr>
+                                <tr><td>Hora de ingreso del usuario a observación</td><td>5</td></tr>
+                                <tr><td>Número de autorización</td><td>15</td></tr>
+                                <tr><td>Causa externa</td><td>2</td></tr>
+                                <tr><td>Diagnóstico a la salida</td><td>4</td></tr>
+                                <tr><td>Diagnóstico relacionado No. 1, a la salida</td><td>4</td></tr>
+                                <tr><td>Diagnóstico relacionado Nro. 2, a la salida</td><td>4</td></tr>
+                                <tr><td>Diagnóstico relacionado Nro. 3, a la salida</td><td>4</td></tr>
+                                <tr><td>Destino del usuario a la salida de observación</td><td>1</td></tr>
+                                <tr><td>Estado a la salida</td><td>1</td></tr>
+                                <tr><td>Causa básica de muerte en urgencias</td><td>4</td></tr>
+                                <tr><td>Fecha de salida del usuario de observación</td><td>10</td></tr>
+                                <tr><td>Hora de salida del usuario de observación</td><td>5</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                 <!-- AH - Hospitalización -->
+                <div class="tab-pane fade" id="v-pills-ah" role="tabpanel">
+                    <div class="table-container">
+                        <h3 class="fw-bold mb-4 text-primary">Archivo de Hospitalización (AH)</h3>
+                        <table class="table table-hover rips-table">
+                            <thead>
+                                <tr>
+                                    <th>Dato</th>
+                                    <th>Longitud</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr><td>Número de la factura</td><td>20</td></tr>
+                                <tr><td>Código del prestador de servicios de salud</td><td>10</td></tr>
+                                <tr><td>Tipo de identificación del usuario</td><td>2</td></tr>
+                                <tr><td>Número de identificación del usuario en el Sistema</td><td>20</td></tr>
+                                <tr><td>Vía de ingreso a la institución</td><td>1</td></tr>
+                                <tr><td>Fecha de ingreso del usuario a la institución</td><td>10</td></tr>
+                                <tr><td>Hora de ingreso del usuario a la institución</td><td>5</td></tr>
+                                <tr><td>Número de autorización</td><td>15</td></tr>
+                                <tr><td>Causa externa</td><td>2</td></tr>
+                                <tr><td>Diagnóstico principal de ingreso</td><td>4</td></tr>
+                                <tr><td>Diagnóstico principal de egreso</td><td>4</td></tr>
+                                <tr><td>Diagnóstico relacionado No. 1, de egreso</td><td>4</td></tr>
+                                <tr><td>Diagnóstico relacionado No. 2, de egreso</td><td>4</td></tr>
+                                <tr><td>Diagnóstico relacionado No. 3, de egreso</td><td>4</td></tr>
+                                <tr><td>Diagnóstico de la complicación</td><td>4</td></tr>
+                                <tr><td>Estado a la salida</td><td>1</td></tr>
+                                <tr><td>Diagnóstico de la causa básica de muerte</td><td>4</td></tr>
+                                <tr><td>Fecha de egreso del usuario a la institución</td><td>10</td></tr>
+                                <tr><td>Hora de egreso del usuario a la institución</td><td>5</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                 <!-- AN - Recién Nacidos -->
+                <div class="tab-pane fade" id="v-pills-an" role="tabpanel">
+                    <div class="table-container">
+                        <h3 class="fw-bold mb-4 text-primary">Archivo de Recién Nacidos (AN)</h3>
+                        <table class="table table-hover rips-table">
+                            <thead>
+                                <tr>
+                                    <th>Dato</th>
+                                    <th>Longitud</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr><td>Número de la factura</td><td>20</td></tr>
+                                <tr><td>Código del prestador de servicios de salud</td><td>10</td></tr>
+                                <tr><td>Tipo de identificación de la madre</td><td>2</td></tr>
+                                <tr><td>Número de identificación de la madre en el Sistema</td><td>20</td></tr>
+                                <tr><td>Fecha de nacimiento del recién nacido</td><td>10</td></tr>
+                                <tr><td>Hora de nacimiento</td><td>5</td></tr>
+                                <tr><td>Edad gestacional</td><td>2</td></tr>
+                                <tr><td>Control prenatal</td><td>1</td></tr>
+                                <tr><td>Sexo</td><td>1</td></tr>
+                                <tr><td>Peso</td><td>4</td></tr>
+                                <tr><td>Diagnóstico del recién nacido</td><td>4</td></tr>
+                                <tr><td>Causa básica de muerte</td><td>4</td></tr>
+                                <tr><td>Fecha de muerte del recién nacido</td><td>10</td></tr>
+                                <tr><td>Hora de muerte del recién nacido</td><td>5</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- AM - Medicamentos -->
+                <div class="tab-pane fade" id="v-pills-am" role="tabpanel">
+                    <div class="table-container">
+                        <h3 class="fw-bold mb-4 text-primary">Archivo de Medicamentos (AM)</h3>
+                        <table class="table table-hover rips-table">
+                            <thead>
+                                <tr>
+                                    <th>Dato</th>
+                                    <th>Longitud</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr><td>Número de la factura</td><td>20</td></tr>
+                                <tr><td>Código del prestador de servicios de salud</td><td>10</td></tr>
+                                <tr><td>Tipo de identificación del usuario</td><td>2</td></tr>
+                                <tr><td>Número de identificación del usuario en el Sistema</td><td>20</td></tr>
+                                <tr><td>Número de autorización</td><td>15</td></tr>
+                                <tr><td>Código del medicamento</td><td>20</td></tr>
+                                <tr><td>Tipo de medicamento</td><td>1</td></tr>
+                                <tr><td>Nombre genérico del medicamento</td><td>30</td></tr>
+                                <tr><td>Forma farmacéutica</td><td>20</td></tr>
+                                <tr><td>Concentración del medicamento</td><td>20</td></tr>
+                                <tr><td>Unidad de medida del medicamento</td><td>20</td></tr>
+                                <tr><td>Número de unidades</td><td>5</td></tr>
+                                <tr><td>Valor unitario de medicamento</td><td>15</td></tr>
+                                <tr><td>Valor total de medicamento</td><td>15</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- AT - Otros Servicios -->
+                <div class="tab-pane fade" id="v-pills-at" role="tabpanel">
+                    <div class="table-container">
+                        <h3 class="fw-bold mb-4 text-primary">Otros Servicios (AT)</h3>
+                        <table class="table table-hover rips-table">
+                            <thead>
+                                <tr>
+                                    <th>Dato</th>
+                                    <th>Longitud</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr><td>Número de la factura</td><td>20</td></tr>
+                                <tr><td>Código del prestador de servicios de salud</td><td>10</td></tr>
+                                <tr><td>Tipo de identificación del usuario</td><td>2</td></tr>
+                                <tr><td>Número de identificación del usuario en el Sistema</td><td>20</td></tr>
+                                <tr><td>Número de autorización</td><td>15</td></tr>
+                                <tr><td>Tipo de servicio</td><td>1</td></tr>
+                                <tr><td>Código del servicio</td><td>20</td></tr>
+                                <tr><td>Nombre del servicio</td><td>60</td></tr>
+                                <tr><td>Cantidad</td><td>5</td></tr>
+                                <tr><td>Valor unitario del material e insumo</td><td>15</td></tr>
+                                <tr><td>Valor total del material e insumo</td><td>15</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

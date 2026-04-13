@@ -1,0 +1,154 @@
+{% extends 'core/base.html' %}
+
+{% block content %}
+{% load humanize %}
+<div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+    <div class="px-4 py-6 sm:px-0">
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="text-3xl font-bold text-gray-900">Consulta de RPs</h1>
+             <div class="space-x-2">
+                <a href="{% url 'home' %}" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded transition duration-300">
+                    <i class="fas fa-arrow-left mr-2"></i>Volver
+                </a>
+            </div>
+        </div>
+        
+        <!-- Search Form -->
+        <div class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-6">
+            <form method="get" class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                <div>
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="fecha_desde">
+                        Fecha Desde
+                    </label>
+                    <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" 
+                           id="fecha_desde" type="date" name="fecha_desde" value="{{ request.GET.fecha_desde }}">
+                </div>
+                <div>
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="fecha_hasta">
+                        Fecha Hasta
+                    </label>
+                    <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" 
+                           id="fecha_hasta" type="date" name="fecha_hasta" value="{{ request.GET.fecha_hasta }}">
+                </div>
+                <div>
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="numero">
+                        Número RP
+                    </label>
+                    <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" 
+                           id="numero" type="text" name="numero" placeholder="Número..." value="{{ request.GET.numero }}">
+                </div>
+                <div>
+                    <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline w-full cursor-pointer">
+                        <i class="fas fa-search mr-2"></i>Consultar
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <div class="flex flex-col">
+            <div class="-my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
+                <div class="py-2 align-middle inline-block min-w-full sm:px-6 lg:px-8">
+                    <div class="shadow overflow-hidden border-b border-gray-200 sm:rounded-lg">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        RP
+                                    </th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Fecha CDP
+                                    </th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Fecha RP
+                                    </th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Tercero
+                                    </th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Valor
+                                    </th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Objeto
+                                    </th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Rubro
+                                    </th>
+                                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Nombre Rubro
+                                    </th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Otros Datos
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200">
+                                {% for rp in rps %}
+                                <tr>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                        {{ rp.rp_numero }}
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        {{ rp.cdp.fecha|date:"d/m/Y" }}
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        {{ rp.fecha|date:"d/m/Y" }}
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        {{ rp.tercero }}
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        ${{ rp.valor|intcomma }}
+                                    </td>
+                                    <td class="px-6 py-4 text-sm text-gray-500 max-w-xs truncate" title="{{ rp.objeto }}">
+                                        {{ rp.objeto|truncatechars:50 }}
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        {{ rp.cdp.rubro }}
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        {{ rp.cdp.nombre_rubro }}
+                                    </td>
+                                    <td class="px-6 py-4 text-sm text-gray-500 max-w-xs truncate" title="{{ rp.otros_datos }}">
+                                        {{ rp.otros_datos|truncatechars:50 }}
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="9" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
+                                        {% if request.GET.fecha_desde or request.GET.fecha_hasta or request.GET.numero %}
+                                            No se encontraron RPs para los filtros seleccionados.
+                                        {% else %}
+                                            Ingrese parámetros de búsqueda para consultar.
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+        <!-- Pagination (Basic) -->
+        {% if is_paginated %}
+        <div class="px-5 py-5 bg-white border-t flex flex-col xs:flex-row items-center xs:justify-between">
+            <span class="text-xs xs:text-sm text-gray-900">
+                Mostrando {{ page_obj.start_index }} a {{ page_obj.end_index }} de {{ page_obj.paginator.count }} Entradas
+            </span>
+            <div class="inline-flex mt-2 xs:mt-0">
+                {% if page_obj.has_previous %}
+                <a href="?page={{ page_obj.previous_page_number }}{% if request.GET.fecha_desde %}&fecha_desde={{ request.GET.fecha_desde }}{% endif %}{% if request.GET.fecha_hasta %}&fecha_hasta={{ request.GET.fecha_hasta }}{% endif %}{% if request.GET.numero %}&numero={{ request.GET.numero }}{% endif %}" class="text-sm bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold py-2 px-4 rounded-l">
+                    Anterior
+                </a>
+                {% endif %}
+                {% if page_obj.has_next %}
+                <a href="?page={{ page_obj.next_page_number }}{% if request.GET.fecha_desde %}&fecha_desde={{ request.GET.fecha_desde }}{% endif %}{% if request.GET.fecha_hasta %}&fecha_hasta={{ request.GET.fecha_hasta }}{% endif %}{% if request.GET.numero %}&numero={{ request.GET.numero }}{% endif %}" class="text-sm bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold py-2 px-4 rounded-r">
+                    Siguiente
+                </a>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+    {% endblock %}

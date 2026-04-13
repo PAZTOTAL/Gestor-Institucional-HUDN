@@ -1,0 +1,109 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Detalle Matriz {{ matriz.orden_produccion }} | FRFAR-127{% endblock %}
+
+{% block content %}
+<div class="space-y-6 animate-in fade-in duration-500">
+    <!-- Header -->
+    <div class="bg-white rounded-3xl p-8 border border-gray-100 shadow-xl">
+        <div class="flex flex-col md:flex-row justify-between items-start gap-6">
+            <div>
+                <div class="flex items-center gap-2 mb-2">
+                    <a href="{% url 'mezclas:onco_matriz_list' %}" class="p-2 rounded-xl bg-gray-50 text-gray-400 hover:bg-gray-100 transition-all">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg>
+                    </a>
+                    <span class="text-xs font-black text-orange-500 uppercase tracking-widest">FRFAR-127 — Matriz Oncológica</span>
+                </div>
+                <h1 class="text-3xl font-black text-gray-900 uppercase">{{ matriz.orden_produccion }}</h1>
+                <p class="text-gray-500 font-medium">Fecha: {{ matriz.fecha }}</p>
+            </div>
+            <div class="flex flex-wrap gap-4 text-sm">
+                <div class="bg-gray-50 rounded-2xl px-4 py-3">
+                    <div class="text-[10px] text-gray-400 uppercase font-black">Quien Prepara</div>
+                    <div class="font-bold text-gray-900">{{ matriz.quien_prepara|default:"—" }}</div>
+                </div>
+                <div class="bg-gray-50 rounded-2xl px-4 py-3">
+                    <div class="text-[10px] text-gray-400 uppercase font-black">Alistamiento</div>
+                    <div class="font-bold text-gray-900">{{ matriz.alistamiento|default:"—" }}</div>
+                </div>
+                <div class="bg-gray-50 rounded-2xl px-4 py-3">
+                    <div class="text-[10px] text-gray-400 uppercase font-black">Quien Cobra</div>
+                    <div class="font-bold text-gray-900">{{ matriz.quien_cobra|default:"—" }}</div>
+                </div>
+                <div class="bg-gray-50 rounded-2xl px-4 py-3">
+                    <div class="text-[10px] text-gray-400 uppercase font-black">Jefe de Producción</div>
+                    <div class="font-bold text-gray-900">{{ matriz.jefe_produccion|default:"—" }}</div>
+                </div>
+                <div class="bg-gray-50 rounded-2xl px-4 py-3">
+                    <div class="text-[10px] text-gray-400 uppercase font-black">Jefe Control Calidad</div>
+                    <div class="font-bold text-gray-900">{{ matriz.jefe_control_calidad|default:"—" }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Items Table -->
+    <div class="bg-white rounded-3xl border border-gray-100 shadow-2xl overflow-hidden">
+        <div class="flex justify-between items-center px-6 py-4 border-b border-gray-100">
+            <h2 class="font-black text-gray-900 uppercase tracking-tight">Ítems de la Matriz</h2>
+            <a href="{% url 'mezclas:onco_matriz_item_crear' matriz.pk %}" class="px-4 py-2 bg-orange-500 text-white rounded-xl font-black text-sm flex items-center gap-2 hover:scale-105 transition-all">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+                AGREGAR ÍTEM
+            </a>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse text-sm">
+                <thead>
+                    <tr class="bg-orange-50/40 border-b border-orange-100">
+                        <th class="px-4 py-3 text-[10px] font-black text-orange-400 uppercase tracking-widest">Lote Interno</th>
+                        <th class="px-4 py-3 text-[10px] font-black text-orange-400 uppercase tracking-widest">Paciente</th>
+                        <th class="px-4 py-3 text-[10px] font-black text-orange-400 uppercase tracking-widest">Cama/Servicio</th>
+                        <th class="px-4 py-3 text-[10px] font-black text-orange-400 uppercase tracking-widest">Medicamento</th>
+                        <th class="px-4 py-3 text-[10px] font-black text-orange-400 uppercase tracking-widest">Dosis</th>
+                        <th class="px-4 py-3 text-[10px] font-black text-orange-400 uppercase tracking-widest">Vol. Final</th>
+                        <th class="px-4 py-3 text-[10px] font-black text-orange-400 uppercase tracking-widest">Vía</th>
+                        <th class="px-4 py-3 text-[10px] font-black text-orange-400 uppercase tracking-widest">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-50">
+                    {% for item in items %}
+                    <tr class="hover:bg-orange-50/10 transition-colors group">
+                        <td class="px-4 py-3 font-bold text-orange-500">{{ item.lote_interno }}</td>
+                        <td class="px-4 py-3">
+                            <div class="font-bold text-gray-900">{{ item.paciente_nombre }}</div>
+                            <div class="text-[10px] text-gray-400">{{ item.identificacion }}</div>
+                        </td>
+                        <td class="px-4 py-3 text-gray-600">{{ item.cama }} / {{ item.servicio }}</td>
+                        <td class="px-4 py-3">
+                            <div class="font-bold text-gray-900 uppercase">{{ item.medicamento }}</div>
+                            <div class="text-[10px] text-gray-400">{{ item.concentracion }}</div>
+                        </td>
+                        <td class="px-4 py-3 text-gray-700">{{ item.dosis }}</td>
+                        <td class="px-4 py-3 font-bold text-gray-700">{{ item.vol_final_unidosis|default:"—" }}</td>
+                        <td class="px-4 py-3">
+                            {% if item.via_admon %}
+                            <span class="px-2 py-1 rounded bg-blue-50 text-blue-600 text-xs font-black">{{ item.via_admon }}</span>
+                            {% else %}—{% endif %}
+                        </td>
+                        <td class="px-4 py-3">
+                            <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <a href="{% url 'mezclas:onco_matriz_item_eliminar' item.pk %}" class="p-1.5 text-red-300 hover:bg-red-50 hover:text-red-500 rounded-lg transition-all">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/></svg>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="8" class="px-6 py-8 text-center text-sm text-gray-400">
+                            Sin ítems. Haga clic en "AGREGAR ÍTEM" para comenzar.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

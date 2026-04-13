@@ -1,0 +1,339 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Firma Digital | Gestor Institucional Digital  HUDN{% endblock %}
+
+{% block content %}
+<div class="space-y-8 animate-in fade-in duration-700">
+    <!-- Header Section -->
+    <div class="relative overflow-hidden rounded-3xl bg-white/40 backdrop-blur-xl border border-white/20 p-8 shadow-2xl shadow-blue-500/10">
+        <div class="absolute -top-24 -right-24 w-64 h-64 bg-primary/10 rounded-full blur-3xl"></div>
+        <div class="absolute -bottom-24 -left-24 w-64 h-64 bg-secondary/10 rounded-full blur-3xl"></div>
+        
+        <div class="relative flex flex-col md:flex-row justify-between items-center gap-6">
+            <div class="mb-8 p-6 bg-white/50 backdrop-blur border border-white/20 rounded-3xl shadow-sm">
+                <h1 class="text-3xl font-black text-gray-800 tracking-tight mb-2">
+                    <span class="text-primary italic">Firma Digital</span>
+                </h1>
+                <p class="text-gray-600 font-medium">Documentos pendientes por firmar digitalmente.</p>
+            </div>
+            <div class="flex flex-wrap gap-4 w-full md:w-auto items-center">
+                <!-- Indicador de Paciente Seleccionado -->
+                <div id="selected-patient-info" class="hidden px-4 py-2 rounded-2xl bg-primary/10 border border-primary/20 flex items-center gap-3">
+                    <div class="w-2 h-2 rounded-full bg-primary animate-pulse"></div>
+                    <div class="text-xs">
+                        <p class="font-black text-primary uppercase tracking-tighter">Paciente Seleccionado</p>
+                        <p id="selected-patient-name" class="text-gray-700 font-bold truncate max-w-[150px]">Nombre...</p>
+                    </div>
+                    <button onclick="clearSelectedPatient()" class="text-gray-400 hover:text-red-500 transition-colors">
+                        <i class="fas fa-times-circle"></i>
+                    </button>
+                </div>
+
+                <div class="relative flex-1 md:w-48">
+                    <input type="text" id="search-docs" placeholder="Filtrar..." class="w-full px-4 py-3 rounded-2xl bg-white/70 backdrop-blur border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary/50 font-medium text-sm">
+                </div>
+
+                <button onclick="openPatientModal()" class="px-6 py-3 rounded-2xl bg-primary text-white font-black shadow-lg shadow-primary/20 hover:shadow-primary/40 hover:scale-105 transition-all duration-300 flex items-center gap-2">
+                    <i class="fas fa-users"></i>
+                    Pacientes Activos
+                </button>
+
+                <a href="{% url 'consentimientos_v2:registro_firma_staff' %}" class="px-6 py-3 rounded-2xl bg-secondary text-white font-black shadow-lg shadow-secondary/20 hover:shadow-secondary/40 hover:scale-105 transition-all duration-300 flex items-center gap-2">
+                    <i class="fas fa-signature"></i>
+                    Mi Firma Oficial
+                </a>
+
+                <a href="{% url 'consentimientos:list' %}" class="px-6 py-3 rounded-2xl bg-white text-gray-700 font-black shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300 border border-gray-200">
+                    <span class="flex items-center gap-2">← Atrás</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Patient Selection Modal -->
+    <div id="patient-modal" class="fixed inset-0 z-50 hidden">
+        <div class="absolute inset-0 bg-gray-900/60 backdrop-blur-sm" onclick="closePatientModal()"></div>
+        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-4xl p-4">
+            <div class="bg-white rounded-3xl shadow-2xl overflow-hidden border border-white/20 animate-in zoom-in duration-300">
+                <div class="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+                    <div>
+                        <h3 class="text-2xl font-black text-gray-800">Pacientes Activos</h3>
+                        <p class="text-sm text-gray-500 font-medium">Seleccione un paciente para auto-completar los datos.</p>
+                    </div>
+                    <button onclick="closePatientModal()" class="w-10 h-10 rounded-xl bg-white shadow-sm border border-gray-100 flex items-center justify-center text-gray-400 hover:text-gray-600 transition-all">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                
+                <div class="p-6">
+                    <div class="mb-6 relative">
+                        <input type="text" id="search-patient" placeholder="Buscar por nombre o documento..." class="w-full px-6 py-4 rounded-2xl bg-gray-100 border-none focus:ring-2 focus:ring-primary/50 font-medium">
+                        <div class="absolute right-6 top-4 text-gray-400">
+                            <i class="fas fa-search"></i>
+                        </div>
+                    </div>
+
+                    <div class="overflow-y-auto max-h-[400px] custom-scrollbar">
+                        <table class="w-full text-left border-separate border-spacing-y-2">
+                            <thead>
+                                <tr class="text-gray-400 text-[10px] font-black uppercase tracking-widest px-4">
+                                    <th class="pb-2 pl-4">Paciente</th>
+                                    <th class="pb-2">Documento</th>
+                                    <th class="pb-2">Ubicación</th>
+                                    <th class="pb-2 text-right pr-4">Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody id="patient-list-body">
+                                <!-- Se llenará vía JS -->
+                                <tr>
+                                    <td colspan="4" class="text-center py-8">
+                                        <div class="inline-block animate-spin rounded-full h-8 w-8 border-4 border-primary border-t-transparent"></div>
+                                        <p class="mt-2 text-gray-400 font-medium">Cargando pacientes...</p>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Document List -->
+    <div class="flex flex-col gap-3">
+        <div class="mb-4 flex justify-between items-center px-2">
+            <h2 class="text-xl font-bold text-gray-800 flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-primary"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                Documentos Disponibles
+            </h2>
+            <div id="filling-indicator" class="hidden text-[10px] font-black text-primary uppercase bg-primary/5 px-3 py-1 rounded-lg border border-primary/10 animate-pulse">
+                Modo Auto-llenado Activo
+            </div>
+        </div>
+        
+        {% for doc in documentos %}
+        <a href="{% url 'consentimientos_v2:detalle' doc.pk %}" class="group relative overflow-hidden rounded-xl bg-white border border-gray-100 p-4 shadow-sm hover:shadow-md transition-all duration-300 hover:translate-x-1 block">
+            <div class="absolute inset-y-0 left-0 w-1 bg-primary transform -translate-x-full group-hover:translate-x-0 transition-transform"></div>
+            <div class="relative flex items-center justify-between">
+                <div class="flex items-center gap-4">
+                    <div class="p-3 rounded-xl bg-blue-50 text-blue-600">
+                        <i class="fas fa-file-alt text-xl"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-gray-900 group-hover:text-primary transition-colors">{{ doc.titulo }}</h3>
+                        <p class="text-xs text-gray-400">HUDN • Versión {{ doc.version }}</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-4">
+                    <i class="fas fa-chevron-right text-gray-300 group-hover:text-primary transition-colors"></i>
+                </div>
+            </div>
+        </a>
+        {% empty %}
+        <div class="col-span-full text-center py-16 rounded-3xl bg-white border-2 border-dashed border-gray-200 shadow-sm">
+            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="mx-auto text-gray-300 mb-4"><path d="M14 2H6a2 2 0 0 0-2 2v16c0 1.1.9 2 2 2h12a2 2 0 0 0 2-2V8l-6-6z"/><path d="M14 3v5h5M16 13H8M16 17H8M10 9H8"/></svg>
+            <p class="text-gray-500 font-medium text-lg">No hay documentos disponibles en este momento.</p>
+            <p class="text-gray-400 text-sm mt-2">Los consentimientos aparecerán aquí cuando estén configurados.</p>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Historial de Firmas del Paciente Seleccionado -->
+    <div id="signature-history-section" class="hidden animate-in slide-in-from-bottom duration-700">
+        <div class="mb-4 flex items-center gap-2 px-2">
+            <h2 class="text-xl font-bold text-gray-800 flex items-center gap-2">
+                <i class="fas fa-history text-secondary"></i>
+                Firmas Realizadas en este Ingreso
+            </h2>
+        </div>
+        <div id="history-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <!-- Cargado vía AJAX -->
+        </div>
+    </div>
+</div>
+
+<style>
+    @keyframes fade-in {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+    .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #cbd5e1; }
+</style>
+
+<script>
+    // Búsqueda de documentos
+    document.getElementById('search-docs').addEventListener('input', function(e) {
+        const text = e.target.value.toLowerCase();
+        const cards = document.querySelectorAll('.group[href*="/consentimientos-v2/"]');
+        cards.forEach(card => {
+            const title = card.querySelector('h3').textContent.toLowerCase();
+            const subtitle = card.querySelector('p').textContent.toLowerCase();
+            card.style.display = (title.includes(text) || subtitle.includes(text)) ? 'block' : 'none';
+        });
+    });
+
+    // Validación de Selección antes de abrir un documento
+    document.querySelectorAll('.group[href*="/consentimientos-v2/"]').forEach(card => {
+        card.addEventListener('click', function(e) {
+            const selectedId = localStorage.getItem('selected_patient_ingreso_id');
+            if (!selectedId) {
+                e.preventDefault(); // Detener navegación
+                openPatientModal();
+                
+                // Mostrar alerta visual temporalmente
+                const btn = document.querySelector('button[onclick="openPatientModal()"]');
+                btn.classList.add('ring-4', 'ring-primary/30', 'scale-110');
+                setTimeout(() => btn.classList.remove('ring-4', 'ring-primary/30', 'scale-110'), 2000);
+
+                console.warn("Debe seleccionar un paciente antes de abrir un consentimiento.");
+            }
+        });
+    });
+
+    // Gestión de Pacientes
+    let allPatients = [];
+
+    function openPatientModal() {
+        document.getElementById('patient-modal').classList.remove('hidden');
+        loadPatients();
+    }
+
+    function closePatientModal() {
+        document.getElementById('patient-modal').classList.add('hidden');
+    }
+
+    async function loadPatients() {
+        const tbody = document.getElementById('patient-list-body');
+        try {
+            const response = await fetch('{% url "consentimientos_v2:api_pacientes_activos" %}');
+            const data = await response.json();
+            allPatients = data.results;
+            renderPatients(allPatients);
+        } catch (error) {
+            tbody.innerHTML = '<tr><td colspan="4" class="text-center py-8 text-red-500 font-bold italic">Error cargando pacientes</td></tr>';
+        }
+    }
+
+    function renderPatients(patients) {
+        const tbody = document.getElementById('patient-list-body');
+        tbody.innerHTML = '';
+        
+        if (patients.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="4" class="text-center py-8 text-gray-400 font-medium italic">No se encontraron pacientes activos</td></tr>';
+            return;
+        }
+
+        patients.forEach(p => {
+            const tr = document.createElement('tr');
+            tr.className = 'group/row bg-white hover:bg-primary/5 transition-all border border-gray-100 rounded-2xl overflow-hidden cursor-pointer';
+            tr.onclick = () => selectPatient(p);
+            
+            tr.innerHTML = `
+                <td class="py-4 pl-4">
+                    <div class="font-bold text-gray-900 uppercase tracking-tighter">${p.nombre}</div>
+                    <div class="text-[10px] text-gray-400 font-black">${p.area}</div>
+                </td>
+                <td class="py-4 font-black text-gray-500 text-sm">${p.documento}</td>
+                <td class="py-4">
+                    <span class="px-3 py-1 rounded-lg bg-gray-100 text-gray-700 text-xs font-bold ring-1 ring-gray-200">Cama ${p.cama}</span>
+                </td>
+                <td class="py-4 pr-4 text-right">
+                    <button class="w-8 h-8 rounded-full bg-white shadow-sm border border-gray-100 text-primary hover:bg-primary hover:text-white transition-all">
+                        <i class="fas fa-check"></i>
+                    </button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    // Búsqueda en el modal
+    document.getElementById('search-patient').addEventListener('input', function(e) {
+        const text = e.target.value.toLowerCase();
+        const filtered = allPatients.filter(p => 
+            p.nombre.toLowerCase().includes(text) || 
+            p.documento.includes(text) ||
+            p.cama.toLowerCase().includes(text)
+        );
+        renderPatients(filtered);
+    });
+
+    function selectPatient(patient) {
+        localStorage.setItem('selected_patient_ingreso_id', patient.ingreso_id);
+        localStorage.setItem('selected_patient_name', patient.nombre);
+        localStorage.setItem('selected_patient_documento', patient.documento);
+        updatePatientUI();
+        closePatientModal();
+        loadSignatureHistory();
+    }
+
+    async function loadSignatureHistory() {
+        const ingresoId = localStorage.getItem('selected_patient_ingreso_id');
+        const historia = localStorage.getItem('selected_patient_documento');
+        const section = document.getElementById('signature-history-section');
+        const list = document.getElementById('history-list');
+
+        if (!ingresoId) {
+            section.classList.add('hidden');
+            return;
+        }
+
+        try {
+            const res = await fetch(`{% url "consentimientos_v2:api_historial_firmas" %}?ingreso_id=${ingresoId}&historia=${historia}`);
+            const data = await res.json();
+            
+            if (data.results.length > 0) {
+                section.classList.remove('hidden');
+                list.innerHTML = data.results.map(f => `
+                    <div class="p-4 rounded-2xl bg-white border border-secondary/20 shadow-sm hover:shadow-md transition-all group">
+                        <div class="flex justify-between items-start mb-2">
+                            <div class="px-2 py-0.5 rounded-lg bg-secondary/10 text-secondary text-[10px] font-black uppercase tracking-tighter border border-secondary/10">Folio: ${f.folio}</div>
+                            <div class="text-[9px] text-gray-400 font-bold">${f.fecha}</div>
+                        </div>
+                        <h4 class="font-black text-gray-800 text-sm leading-tight mb-3 group-hover:text-secondary transition-colors line-clamp-2">${f.titulo}</h4>
+                        <a href="${f.descargar_url}" class="w-full py-2 rounded-xl bg-gray-50 text-gray-700 text-xs font-black flex items-center justify-center gap-2 hover:bg-secondary hover:text-white transition-all shadow-sm">
+                            <i class="fas fa-file-pdf"></i> VER FIRMADO
+                        </a>
+                    </div>
+                `).join('');
+            } else {
+                section.classList.add('hidden');
+            }
+        } catch (e) {
+            console.error("Error cargando historial:", e);
+        }
+    }
+
+    function clearSelectedPatient() {
+        localStorage.removeItem('selected_patient_ingreso_id');
+        localStorage.removeItem('selected_patient_name');
+        localStorage.removeItem('selected_patient_documento');
+        updatePatientUI();
+        loadSignatureHistory();
+    }
+
+    function updatePatientUI() {
+        const name = localStorage.getItem('selected_patient_name');
+        const infoDiv = document.getElementById('selected-patient-info');
+        const fillingInd = document.getElementById('filling-indicator');
+        const nameEl = document.getElementById('selected-patient-name');
+
+        if (name) {
+            infoDiv.classList.remove('hidden');
+            fillingInd.classList.remove('hidden');
+            nameEl.textContent = name;
+        } else {
+            infoDiv.classList.add('hidden');
+            fillingInd.classList.add('hidden');
+        }
+    }
+
+    // Inicializar UI al cargar
+    updatePatientUI();
+    loadSignatureHistory();
+</script>
+{% endblock %}

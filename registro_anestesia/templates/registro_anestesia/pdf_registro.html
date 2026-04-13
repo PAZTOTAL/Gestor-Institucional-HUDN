@@ -1,0 +1,248 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Registro de Anestesia - {{ registro.id }}</title>
+    <style>
+        @page {
+            size: letter;
+            margin: 1cm;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 10px;
+            color: #333;
+        }
+
+        .header-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 10px;
+        }
+
+        .header-table td {
+            border: 1px solid #000;
+            padding: 5px;
+            text-align: center;
+            vertical-align: middle;
+        }
+
+        .section-title {
+            background-color: #f0f0f0;
+            font-weight: bold;
+            padding: 3px;
+            border: 1px solid #ccc;
+            margin-top: 10px;
+            margin-bottom: 5px;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 5px;
+        }
+
+        .data-table td,
+        .data-table th {
+            border: 1px solid #ccc;
+            padding: 3px;
+        }
+
+        .label {
+            font-weight: bold;
+            color: #555;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Header -->
+    <table class="header-table">
+        <tr>
+            <td width="20%">LOGO</td>
+            <td width="40%">
+                <h3>REGISTRO DE ANESTESIA</h3>
+            </td>
+            <td width="20%">Código: FRQUI-032</td>
+            <td width="20%">Versión: 02</td>
+        </tr>
+    </table>
+
+    <!-- Generic Data -->
+    <div class="section-title">1. DATOS GENERALES</div>
+    <table class="data-table">
+        <tr>
+            <td class="label">Paciente:</td>
+            <td>{{ registro.paciente }}</td>
+            <td class="label">Documento:</td>
+            <td>{{ registro.paciente.documento }}</td>
+        </tr>
+        <tr>
+            <td class="label">Edad:</td>
+            <td>{{ registro.paciente.edad }}</td> <!-- Assuming age method exists -->
+            <td class="label">Género:</td>
+            <td>{{ registro.paciente.genero }}</td>
+        </tr>
+        <tr>
+            <td class="label">Fecha:</td>
+            <td>{{ registro.created_at|date:"d/m/Y H:i" }}</td>
+            <td class="label">Sala:</td>
+            <td>{{ registro.sala }}</td>
+        </tr>
+        <tr>
+            <td class="label">Diagnóstico Pre:</td>
+            <td colspan="3">{{ registro.diagnostico_pre }}</td>
+        </tr>
+        <tr>
+            <td class="label">Cirugía Propuesta:</td>
+            <td colspan="3">{{ registro.cirugia_propuesta }}</td>
+        </tr>
+    </table>
+
+    <!-- Evaluation -->
+    <div class="section-title">2. EVALUACIÓN PRE-ANESTÉSICA</div>
+    <table class="data-table">
+        <tr>
+            <td class="label">Antecedentes Patológicos:</td>
+            <td colspan="3">{{ registro.evaluacion_preanestesica.antecedentes_patologicos }}</td>
+        </tr>
+        <tr>
+            <td class="label">Qx:</td>
+            <td>{{ registro.evaluacion_preanestesica.antecedentes_quirurgicos }}</td>
+            <td class="label">Farm:</td>
+            <td>{{ registro.evaluacion_preanestesica.antecedentes_farmacologicos }}</td>
+        </tr>
+        <tr>
+            <td class="label">Alergias:</td>
+            <td colspan="3">{{ registro.evaluacion_preanestesica.antecedentes_alergicos }}</td>
+        </tr>
+        <tr>
+            <td class="label">Peso:</td>
+            <td>{{ registro.evaluacion_preanestesica.peso }} kg</td>
+            <td class="label">Talla:</td>
+            <td>{{ registro.evaluacion_preanestesica.talla }} cm</td>
+        </tr>
+        <tr>
+            <td class="label">ASA:</td>
+            <td>{{ registro.evaluacion_preanestesica.asa }}</td>
+            <td class="label">Mallampati:</td>
+            <td>{{ registro.evaluacion_preanestesica.mallampati }}</td>
+        </tr>
+    </table>
+
+    <!-- Monitoring -->
+    <div class="section-title">3. MONITOREO</div>
+    <table class="data-table">
+        <tr>
+            <td>EKG: {{ registro.monitoreo.ekg|yesno:"Sí,No" }}</td>
+            <td>PANI: {{ registro.monitoreo.pni|yesno:"Sí,No" }}</td>
+            <td>Oximetría: {{ registro.monitoreo.pulx|yesno:"Sí,No" }}</td>
+            <td>Capnografía: {{ registro.monitoreo.capno|yesno:"Sí,No" }}</td>
+        </tr>
+        <tr>
+            <td>Temp: {{ registro.monitoreo.temp|yesno:"Sí,No" }}</td>
+            <td colspan="3">Otros: {{ registro.monitoreo.otro }}</td>
+        </tr>
+    </table>
+
+    <!-- Technique -->
+    <div class="section-title">4. TÉCNICA ANESTÉSICA</div>
+    <table class="data-table">
+        <tr>
+            <td>General: {{ registro.tecnica.general|yesno:"Sí,No" }}</td>
+            <td>Regional: {{ registro.tecnica.regional|yesno:"Sí,No" }}</td>
+            <td>Sedación: {{ registro.tecnica.sedacion|yesno:"Sí,No" }}</td>
+        </tr>
+        <tr>
+            <td colspan="3" class="label">Descripción:</td>
+        </tr>
+        <tr>
+            <td colspan="3">{{ registro.tecnica.descripcion }}</td>
+        </tr>
+    </table>
+
+    <!-- Fluids & Output -->
+    <div class="section-title">5. LÍQUIDOS Y SALIDA</div>
+    <table class="data-table">
+        <tr>
+            <td class="label">Líquidos Admin:</td>
+            <td>{{ registro.liquidos.liquidos_administrados }}</td>
+            <td class="label">Diuresis:</td>
+            <td>{{ registro.liquidos.diuresis }}</td>
+        </tr>
+        <tr>
+            <td class="label">Cirugía Realizada:</td>
+            <td colspan="3">{{ registro.salida.cirugia_realizada }}</td>
+        </tr>
+        <tr>
+            <td class="label">Destino:</td>
+            <td>{{ registro.salida.destino }}</td>
+            <td class="label">Aldrete:</td>
+            <td>{{ registro.salida.aldrete }}</td>
+        </tr>
+    </table>
+
+    <!-- Vital Signs Graph & Data -->
+    <div class="section-title">6. SIGNOS VITALES (GRÁFICA Y DATOS)</div>
+
+    {% if chart_path %}
+    <div style="text-align: center; margin-bottom: 10px;">
+        <img src="{{ chart_path }}" width="900" />
+    </div>
+    {% endif %}
+
+    <table class="data-table" style="font-size: 8px;">
+        <thead>
+            <tr style="background-color: #f9f9f9;">
+                <th width="20%">Hora</th>
+                <th width="20%">PA Sistólica</th>
+                <th width="20%">PA Diastólica</th>
+                <th width="20%">Frecuencia Cardíaca</th>
+                <th width="20%">SaO2</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for signo in registro.signos_vitales.all %}
+            <tr>
+                <td style="text-align: center;">{{ signo.hora|time:"H:i" }}</td>
+                <td style="text-align: center;">{{ signo.pa_sistolica|default:"-" }}</td>
+                <td style="text-align: center;">{{ signo.pa_diastolica|default:"-" }}</td>
+                <td style="text-align: center;">{{ signo.fc|default:"-" }}</td>
+                <td style="text-align: center;">{{ signo.sao2|default:"-" }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="5" style="text-align: center;">No hay datos registrados.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- Observations -->
+    <div class="section-title">7. OBSERVACIONES</div>
+    <div style="border: 1px solid #ccc; padding: 5px; min-height: 50px;">
+        {{ registro.observaciones.texto }}
+    </div>
+
+    <!-- Signatures -->
+    <br><br><br>
+    <table width="100%">
+        <tr>
+            <td width="50%" align="center">
+                _______________________________<br>
+                <b>Anestesiólogo</b><br>
+                {{ registro.anestesiologo.get_full_name }}
+            </td>
+            <td width="50%" align="center">
+
+            </td>
+        </tr>
+    </table>
+
+</body>
+
+</html>

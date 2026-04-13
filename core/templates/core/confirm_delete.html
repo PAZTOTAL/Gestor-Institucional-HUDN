@@ -1,0 +1,37 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Confirmar Eliminación{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto flex items-center justify-center min-h-[60vh]">
+    <div class="glass-card p-8 w-full text-center">
+        <div class="mx-auto w-16 h-16 rounded-full bg-red-400/20 text-red-400 flex items-center justify-center mb-6">
+            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="3 6 5 6 21 6" />
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                <line x1="10" y1="11" x2="10" y2="17" />
+                <line x1="14" y1="11" x2="14" y2="17" />
+            </svg>
+        </div>
+
+        <h1 class="text-3xl font-bold mb-4">¿Eliminar registro?</h1>
+        <p class="text-muted text-lg mb-8">
+            Está a punto de eliminar un registro de <strong>{{ model_name }}</strong>.<br>
+            Esta acción no se puede deshacer.
+        </p>
+
+        <form method="post" class="flex justify-center gap-4">
+            {% csrf_token %}
+            <a href="{% url 'table_detail' module_slug model_slug %}"
+                class="px-6 py-2 rounded-lg bg-white/5 hover:bg-white/10 transition-colors text-white">
+                Cancelar
+            </a>
+            <button type="submit"
+                class="px-6 py-2 rounded-lg bg-red-500 hover:bg-red-600 transition-colors text-white font-bold shadow-lg shadow-red-500/20">
+                Sí, Eliminar
+            </button>
+        </form>
+    </div>
+</div>
+{% endblock %}

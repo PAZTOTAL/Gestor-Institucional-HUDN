@@ -1,0 +1,58 @@
+{% extends 'core/base.html' %}
+{% block title %}{{ titulo|default:"Nueva Matriz NPT" }} | Central de Mezclas{% endblock %}
+{% block content %}
+<div class="max-w-4xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-700">
+    <div class="bg-white rounded-[2.5rem] shadow-2xl shadow-green-500/10 border border-gray-100 overflow-hidden">
+        <div class="bg-gradient-to-tr from-green-600 to-green-500 p-8 text-white relative overflow-hidden">
+            <div class="relative z-10">
+                <h1 class="text-3xl font-black tracking-tight">{{ titulo|default:"Registro de Matriz NPT" }}</h1>
+                <p class="text-green-100 font-medium text-sm">Encabezado de producción para Nutriciones Parentales.</p>
+            </div>
+            <!-- Decorative SVG background -->
+            <div class="absolute right-0 top-0 opacity-10">
+                <svg width="200" height="200" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+            </div>
+        </div>
+        
+        <form method="post" class="p-8 space-y-6">
+            {% csrf_token %}
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {% for field in form %}
+                <div class="space-y-2">
+                    <label class="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">{{ field.label }}</label>
+                    {{ field }}
+                    {% if field.errors %}
+                        <p class="text-red-500 text-[10px] font-bold">{{ field.errors.0 }}</p>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+            
+            <div class="pt-6 border-t border-gray-50 flex gap-4">
+                <button type="submit" class="flex-1 bg-green-600 text-white font-black py-4 rounded-2xl hover:bg-green-700 transition-all shadow-lg shadow-green-200 uppercase tracking-widest text-xs">Guardar Encabezado</button>
+                <a href="{% url 'mezclas:nutricion_list' %}" class="px-8 bg-gray-50 text-gray-500 font-black py-4 rounded-2xl hover:bg-gray-100 transition-all uppercase tracking-widest text-xs">Cancelar</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+    input, select, textarea {
+        width: 100%;
+        padding: 1rem 1.25rem;
+        background-color: #f9fafb;
+        border: 1px solid #f3f4f6;
+        border-radius: 1.25rem;
+        font-weight: 700;
+        font-size: 0.875rem;
+        transition: all 0.3s;
+        color: #374151;
+    }
+    input:focus, select:focus, textarea:focus {
+        outline: none;
+        background-color: white;
+        border-color: #16a34a;
+        box-shadow: 0 0 0 4px rgba(22, 163, 74, 0.1);
+    }
+</style>
+{% endblock %}

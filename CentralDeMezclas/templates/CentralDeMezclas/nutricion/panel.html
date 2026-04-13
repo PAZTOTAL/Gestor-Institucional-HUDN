@@ -1,0 +1,130 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Panel Nutriciones Parentales | Central de Mezclas{% endblock %}
+
+{% block content %}
+<div class="space-y-8 animate-in fade-in duration-700">
+    <!-- Header -->
+    <div class="relative overflow-hidden rounded-3xl bg-white border border-gray-100 p-8 shadow-2xl shadow-green-500/5">
+        <div class="absolute top-0 right-0 p-8 opacity-5 text-green-600">
+            <svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/></svg>
+        </div>
+        <div class="relative flex flex-col md:flex-row justify-between items-end md:items-center gap-6">
+            <div>
+                <a href="{% url 'mezclas:main' %}" class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-100 text-slate-500 text-[10px] font-black uppercase tracking-widest mb-4 hover:bg-slate-200 transition-all shadow-sm border border-slate-200">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+                    Regresar al Menú Principal
+                </a>
+                <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-green-50 text-green-600 text-xs font-black uppercase tracking-widest mb-4">
+                    <span class="w-2 h-2 rounded-full bg-green-600 animate-pulse"></span>
+                    Nutriciones Parentales (NPTHUDN1)
+                </span>
+                <h1 class="text-4xl font-black text-gray-900 tracking-tight">Panel <span class="text-green-600">Parentales</span></h1>
+                <p class="text-gray-500 font-medium mt-2">Flujo operativo completo para mezclas de nutrición parenteral neonatal y adulto.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div class="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm text-center">
+            <div class="text-3xl font-black text-indigo-500 mb-1">{{ stats.matrices|default:"0" }}</div>
+            <div class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Matrices NPT</div>
+            <div class="text-[10px] text-gray-400">FRFAR-106</div>
+        </div>
+        <div class="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm text-center">
+            <div class="text-3xl font-black text-blue-600 mb-1">{{ stats.ordenes|default:"0" }}</div>
+            <div class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Órdenes Prod.</div>
+            <div class="text-[10px] text-gray-400">FRFAR-182</div>
+        </div>
+        <div class="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm text-center">
+            <div class="text-3xl font-black text-teal-600 mb-1">{{ stats.alistamientos|default:"0" }}</div>
+            <div class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Alistamientos</div>
+            <div class="text-[10px] text-gray-400">FRFAR-162</div>
+        </div>
+        <div class="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm text-center opacity-50">
+            <div class="text-3xl font-black text-gray-400 mb-1">0</div>
+            <div class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Controles Calidad</div>
+            <div class="text-[10px] text-gray-400">FRFAR-189</div>
+        </div>
+    </div>
+
+    <!-- Module Cards in Order -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+
+        <!-- 1. Matriz NPT -->
+        <a href="{% url 'mezclas:nutricion_list' %}" class="bg-indigo-50 p-7 rounded-[2.5rem] border border-indigo-100 shadow-xl hover:scale-[1.03] hover:shadow-indigo-500/30 transition-all group border-b-4 border-b-indigo-400 shadow-indigo-100/50">
+            <div class="flex flex-col h-full items-center text-center">
+                <div class="w-16 h-16 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center group-hover:bg-indigo-600 group-hover:text-white transition-all shadow-inner mb-5">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18"/><path d="M3 15h18"/><path d="M9 3v18"/><path d="M15 3v18"/></svg>
+                </div>
+                <span class="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-1">Paso 1: FRFAR-106</span>
+                <h3 class="font-black text-gray-900 uppercase text-lg leading-tight">Matriz NPT</h3>
+                <p class="text-xs text-gray-400 mt-2">Registro Principal Nutriciones Parentales</p>
+            </div>
+        </a>
+
+        <!-- 2. Orden de Producción -->
+        <a href="#" class="bg-blue-50 p-7 rounded-[2.5rem] border border-blue-100 shadow-xl hover:scale-[1.03] hover:shadow-blue-500/30 transition-all group border-b-4 border-b-blue-400 shadow-blue-100/50">
+            <div class="flex flex-col h-full items-center text-center">
+                <div class="w-16 h-16 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition-all shadow-inner mb-5">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v10"/><path d="m16 8-4 4-4-4"/><rect width="20" height="14" x="2" y="6" rx="2"/></svg>
+                </div>
+                <span class="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-1">Paso 2: FRFAR-182</span>
+                <h3 class="font-black text-gray-900 uppercase text-lg leading-tight">Orden Producción</h3>
+                <p class="text-xs text-gray-400 mt-2">Detalle de Volúmenes por Paciente</p>
+            </div>
+        </a>
+
+        <!-- 3. Alistamiento -->
+        <a href="#" class="bg-teal-50 p-7 rounded-[2.5rem] border border-teal-100 shadow-xl hover:scale-[1.03] hover:shadow-teal-500/30 transition-all group border-b-4 border-b-teal-400 shadow-teal-100/50">
+            <div class="flex flex-col h-full items-center text-center">
+                <div class="w-16 h-16 rounded-2xl bg-teal-50 text-teal-600 flex items-center justify-center group-hover:bg-teal-600 group-hover:text-white transition-all shadow-inner mb-5">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20"/><path d="M5 5h14"/><path d="M5 10h14"/><path d="M5 15h14"/><path d="M5 20h14"/></svg>
+                </div>
+                <span class="text-[10px] font-black text-teal-400 uppercase tracking-widest mb-1">Paso 3: FRFAR-162</span>
+                <h3 class="font-black text-gray-900 uppercase text-lg leading-tight">Alistamiento</h3>
+                <p class="text-xs text-gray-400 mt-2">Conciliación de Insumos NPT</p>
+            </div>
+        </a>
+
+        <!-- 4. Cálculos y Ajustes -->
+        <a href="#" class="bg-orange-50 p-7 rounded-[2.5rem] border border-orange-100 shadow-xl hover:scale-[1.03] hover:shadow-orange-500/30 transition-all group border-b-4 border-b-orange-400 shadow-orange-100/50">
+            <div class="flex flex-col h-full items-center text-center">
+                <div class="w-16 h-16 rounded-2xl bg-orange-50 text-orange-600 flex items-center justify-center group-hover:bg-orange-600 group-hover:text-white transition-all shadow-inner mb-5">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20"/><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 12h6"/><path d="M12 9v6"/></svg>
+                </div>
+                <span class="text-[10px] font-black text-orange-400 uppercase tracking-widest mb-1">Cálculos NPT</span>
+                <h3 class="font-black text-gray-900 uppercase text-lg leading-tight">Cálculos D/L/purga</h3>
+                <p class="text-xs text-gray-400 mt-2">Cálculos FRFAR-065 y Densidades</p>
+            </div>
+        </a>
+
+        <!-- 5. Etiquetas -->
+        <a href="#" class="bg-amber-50 p-7 rounded-[2.5rem] border border-amber-100 shadow-xl hover:scale-[1.03] hover:shadow-amber-500/30 transition-all group border-b-4 border-b-amber-400 shadow-amber-100/50">
+            <div class="flex flex-col h-full items-center text-center">
+                <div class="w-16 h-16 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center group-hover:bg-amber-600 group-hover:text-white transition-all shadow-inner mb-5">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18"/><path d="M3 15h18"/><path d="M9 3v18"/><path d="M15 3v18"/></svg>
+                </div>
+                <span class="text-[10px] font-black text-amber-400 uppercase tracking-widest mb-1">Extras: ETIQUETAS</span>
+                <h3 class="font-black text-gray-900 uppercase text-lg leading-tight">Etiquetas</h3>
+                <p class="text-xs text-gray-400 mt-2">Generación de etiquetas NPT y Bandera</p>
+            </div>
+        </a>
+
+        <!-- 6. Control Calidad -->
+        <a href="#" class="bg-red-50 p-7 rounded-[2.5rem] border border-red-100 shadow-xl hover:scale-[1.03] hover:shadow-red-500/30 transition-all group border-b-4 border-b-red-400 shadow-red-100/50">
+            <div class="flex flex-col h-full items-center text-center">
+                <div class="w-16 h-16 rounded-2xl bg-red-50 text-red-600 flex items-center justify-center group-hover:bg-red-600 group-hover:text-white transition-all shadow-inner mb-5">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/></svg>
+                </div>
+                <span class="text-[10px] font-black text-red-400 uppercase tracking-widest mb-1">Final: FRFAR-189</span>
+                <h3 class="font-black text-gray-900 uppercase text-lg leading-tight">Control Calidad</h3>
+                <p class="text-xs text-gray-400 mt-2">Liberación de Nutriciones Parentales</p>
+            </div>
+        </a>
+
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,316 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Formulario MEOWS - Sistema de Alerta Temprana Obstétrico{% endblock %}
+
+{% block content %}
+<link rel="stylesheet" href="{% static 'css/meows-form.css' %}">
+<style>
+    /* Modal Styles */
+    .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        overflow: auto;
+        background-color: rgb(0, 0, 0);
+        background-color: rgba(0, 0, 0, 0.4);
+    }
+
+    .modal-content {
+        background-color: #fefefe;
+        margin: 15% auto;
+        padding: 20px;
+        border: 1px solid #888;
+        width: 80%;
+        max-width: 600px;
+        border-radius: 8px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px solid #eee;
+        padding-bottom: 10px;
+        margin-bottom: 15px;
+    }
+
+    .close-modal {
+        color: #aaa;
+        font-size: 28px;
+        font-weight: bold;
+        cursor: pointer;
+    }
+
+    .close-modal:hover,
+    .close-modal:focus {
+        color: black;
+        text-decoration: none;
+        cursor: pointer;
+    }
+
+    .patient-list {
+        max-height: 300px;
+        overflow-y: auto;
+    }
+
+    .patient-item {
+        padding: 10px;
+        border-bottom: 1px solid #eee;
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+
+    .patient-item:hover {
+        background-color: #f0f7ff;
+    }
+
+    .patient-item h4 {
+        margin: 0 0 5px 0;
+        color: #333;
+    }
+
+    .patient-item p {
+        margin: 0;
+        color: #666;
+        font-size: 0.9em;
+    }
+
+    .loading-spinner {
+        text-align: center;
+        padding: 20px;
+        color: #666;
+    }
+</style>
+
+<div class="container">
+    <!-- HEADER -->
+    <header class="header">
+        <div class="header-left">
+            <img src="{% static 'img/logo_hospital.png' %}" alt="Logo Hospital" class="logo-hospital">
+        </div>
+        <div class="header-content">
+            <h1 class="title">Sistema de Alerta Temprana Obstétrico</h1>
+            <h2 class="subtitle">Formulario MEOWS</h2>
+        </div>
+        <div class="header-right">
+            <img src="{% static 'img/logo_acreditacion.png' %}" alt="Logo Acreditación" class="logo-acreditacion">
+        </div>
+    </header>
+
+    <!-- SECCIÓN: INFORMACIÓN DEL PACIENTE -->
+    <section class="section patient-section">
+        <h3 class="section-title">
+            <span class="icon">👤</span>
+            Información del Paciente
+        </h3>
+        <div class="patient-info-grid">
+            <div class="info-item">
+                <label class="info-label" for="nombre_completo">Nombre Completo *</label>
+                <input type="text" id="nombre_completo" name="nombre_completo" class="patient-input"
+                    value="{% if paciente %}{{ paciente.nombres }} {{ paciente.apellidos }}{% endif %}"
+                    placeholder="Ingrese nombre y apellidos" required>
+            </div>
+            <div class="info-item">
+                <label class="info-label" for="numero_documento">Número Documento *</label>
+                <input type="text" id="numero_documento" name="numero_documento" class="patient-input"
+                    value="{{ paciente.numero_documento|default:'' }}" placeholder="Ingrese número de documento"
+                    required>
+            </div>
+            <div class="info-item">
+                <label class="info-label" for="fecha_nacimiento">Fecha Nacimiento</label>
+                <input type="date" id="fecha_nacimiento" name="fecha_nacimiento" class="patient-input"
+                    value="{% if paciente.fecha_nacimiento %}{{ paciente.fecha_nacimiento|date:'Y-m-d' }}{% endif %}">
+            </div>
+            <div class="info-item">
+                <label class="info-label" for="edad">Edad</label>
+                <input type="number" id="edad" name="edad" class="patient-input" value="{{ paciente.edad|default:'' }}"
+                    min="0" max="150" placeholder="Años">
+            </div>
+            <div class="info-item">
+                <label class="info-label" for="aseguradora">Aseguradora</label>
+                <input type="text" id="aseguradora" name="aseguradora" class="patient-input"
+                    value="{{ paciente.aseguradora|default:'' }}" placeholder="Nombre de la aseguradora">
+            </div>
+            <div class="info-item">
+                <label class="info-label" for="cama">Cama</label>
+                <input type="text" id="cama" name="cama" class="patient-input" value="{{ paciente.cama|default:'' }}"
+                    placeholder="Número o código de cama">
+            </div>
+            <div class="info-item">
+                <label class="info-label" for="fecha_ingreso">Fecha de Ingreso</label>
+                <input type="date" id="fecha_ingreso" name="fecha_ingreso" class="patient-input"
+                    value="{% if paciente.fecha_ingreso %}{{ paciente.fecha_ingreso|date:'Y-m-d' }}{% endif %}">
+            </div>
+        </div>
+        <div class="patient-section-actions">
+            <div class="search-patient-wrapper">
+                <input type="text" id="buscar-paciente-input" class="search-patient-input"
+                    placeholder="Buscar por documento">
+                <button type="button" id="btn-buscar-paciente" class="btn btn-search-patient">
+                    <span class="btn-icon">🔍</span>
+                    Buscar Paciente
+                </button>
+            </div>
+            <button type="button" class="btn btn-pdf" id="btn-generar-pdf">
+                <span class="btn-icon">📄</span>
+                Generar PDF
+            </button>
+        </div>
+    </section>
+
+    <!-- SECCIÓN: PARÁMETROS VITALES -->
+    <section class="section parameters-section">
+        <h3 class="section-title">
+            <span class="icon">📊</span>
+            Parámetros Vitales
+        </h3>
+        <p class="section-description">Ingrese los valores clínicos. El sistema calculará automáticamente los
+            puntajes MEOWS.</p>
+
+        <form method="post" id="meows-form" class="meows-form">
+            {% csrf_token %}
+
+            <!-- Campos del paciente incluidos en el formulario MEOWS -->
+            <input type="hidden" name="nombre_completo" id="hidden-nombre_completo"
+                value="{% if paciente %}{{ paciente.nombres }} {{ paciente.apellidos }}{% endif %}">
+            <input type="hidden" name="numero_documento" id="hidden-numero_documento"
+                value="{{ paciente.numero_documento|default:'' }}">
+            <input type="hidden" name="fecha_nacimiento" id="hidden-fecha_nacimiento">
+            <input type="hidden" name="edad" id="hidden-edad">
+            <input type="hidden" name="aseguradora" id="hidden-aseguradora">
+            <input type="hidden" name="cama" id="hidden-cama">
+            <input type="hidden" name="fecha_ingreso" id="hidden-fecha_ingreso">
+            <input type="hidden" name="responsable" id="hidden-responsable">
+
+            <div class="parameters-grid">
+                {% for parametro in parametros %}
+                <div class="parameter-card" data-param="{{ parametro.codigo }}">
+                    <div class="parameter-header">
+                        <label class="parameter-label" for="{{ parametro.codigo }}">
+                            {{ parametro.nombre }}
+                            <span class="parameter-unit">({{ parametro.unidad }})</span>
+                        </label>
+                    </div>
+
+                    <div class="input-wrapper">
+                        {% if parametro.codigo == 'glasgow' %}
+                        <select id="{{ parametro.codigo }}" name="{{ parametro.codigo }}"
+                            class="parameter-input parameter-select" required data-param="{{ parametro.codigo }}"
+                            data-unidad="{{ parametro.unidad }}">
+                            <option value="">seleccione</option>
+                            <option value="15">ALERTA (Glasgow = 15)</option>
+                            <option value="14">NO ALERTA (Glasgow &lt; 15)</option>
+                        </select>
+                        <span class="input-unit">{{ parametro.unidad }}</span>
+                        {% else %}
+                        <input type="number" id="{{ parametro.codigo }}" name="{{ parametro.codigo }}"
+                            class="parameter-input" step="{% if parametro.codigo == 'temp' %}0.1{% else %}1{% endif %}"
+                            placeholder="Ingrese valor" required data-param="{{ parametro.codigo }}"
+                            data-unidad="{{ parametro.unidad }}">
+                        <span class="input-unit">{{ parametro.unidad }}</span>
+                        {% endif %}
+                    </div>
+
+                    <!-- Feedback visual del score -->
+                    <div class="score-feedback" id="feedback-{{ parametro.codigo }}">
+                        <div class="score-indicator">
+                            <span class="score-label">Puntaje:</span>
+                            <span class="score-value" id="score-{{ parametro.codigo }}">-</span>
+                        </div>
+                        <div class="score-bar">
+                            <div class="score-fill" id="fill-{{ parametro.codigo }}"></div>
+                        </div>
+                    </div>
+
+                    <!-- Mensaje de validación -->
+                    <div class="validation-message" id="message-{{ parametro.codigo }}"></div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- SECCIÓN: RESUMEN PREVIEW -->
+            <section class="section summary-section">
+                <h3 class="section-title">
+                    <span class="icon">📋</span>
+                    Resumen
+                </h3>
+                <div class="summary-card">
+                    <div class="summary-item">
+                        <label class="summary-label">Puntaje Total MEOWS</label>
+                        <div class="summary-value" id="total-score">0</div>
+                    </div>
+                    <div class="summary-item">
+                        <label class="summary-label">Nivel de Riesgo</label>
+                        <div class="summary-risk" id="risk-level">
+                            <span class="risk-badge risk-verde">VERDE</span>
+                        </div>
+                    </div>
+                    <div class="summary-item">
+                        <label class="summary-label">GRADO DE RESPUESTA</label>
+                        <div class="summary-conducta" id="conducta-text">
+                            Esperando valores...
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- BOTONES DE ACCIÓN -->
+            <div class="form-actions">
+                <div class="responsable-field">
+                    <label for="responsable" class="responsable-label">Responsable</label>
+                    <input type="text" id="responsable" name="responsable" class="responsable-input"
+                        placeholder="Ingrese nombre del responsable" value="{{ paciente.responsable|default:'' }}">
+                </div>
+                <a href="{% url 'historial_meows' paciente_id=paciente.id|default:0 %}" class="btn btn-info"
+                    id="btn-ver-historial" {% if not paciente.id %} style="display: none;" {% endif %}>
+                    <span class="btn-icon">📊</span>
+                    Ver Historial
+                </a>
+                <button type="button" class="btn btn-secondary" id="btn-limpiar">
+                    <span class="btn-icon">🗑️</span>
+                    Limpiar Formulario
+                </button>
+                <button type="submit" class="btn btn-primary" id="btn-guardar">
+                    <span class="btn-icon">💾</span>
+                    Guardar Medición
+                </button>
+            </div>
+        </form>
+    </section>
+</div>
+
+<!-- Modal de Selección de Pacientes Activos -->
+<div id="modal-pacientes-activos" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Pacientes Activos en Obstetricia</h2>
+            <span class="close-modal">&times;</span>
+        </div>
+        <div class="modal-body">
+            <p>Seleccione un paciente de la lista:</p>
+            <div class="loading-spinner" id="modal-loading">Cargando...</div>
+            <div class="patient-list" id="lista-pacientes-activos">
+                <!-- Items se inyectan via JS -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Audio para alerta sonora de riesgo ALTO -->
+<audio id="alertSound" preload="auto">
+    <source src="{% static 'sounds/alert_soft.mp3' %}" type="audio/mpeg">
+    <source src="{% static 'sounds/alert_soft.wav' %}" type="audio/wav">
+</audio>
+
+{% endblock %}
+
+{% block scripts %}
+<!-- Scripts -->
+<script src="{% static 'js/meows-form.js' %}?v=2"></script>
+{% endblock %}

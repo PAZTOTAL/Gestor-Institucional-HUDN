@@ -1,0 +1,362 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block extra_css %}
+<style>
+    :root {
+        --detail-primary: #1976d2;
+        --detail-secondary: #2196f3;
+        --timeline-color: #90caf9;
+    }
+
+    body {
+        background-color: #f5f7fa;
+    }
+
+    .detail-header {
+        background: linear-gradient(135deg, var(--detail-primary) 0%, var(--detail-secondary) 100%);
+        border-radius: 20px;
+        padding: 2.5rem;
+        color: white;
+        margin-bottom: 2rem;
+        box-shadow: 0 8px 24px rgba(25, 118, 210, 0.2);
+    }
+
+    .info-card {
+        background: white;
+        border-radius: 16px;
+        padding: 2rem;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        margin-bottom: 1.5rem;
+    }
+
+    .info-row {
+        display: flex;
+        padding: 0.8rem 0;
+        border-bottom: 1px solid #f0f2f5;
+    }
+
+    .info-row:last-child {
+        border-bottom: none;
+    }
+
+    .info-label {
+        font-weight: 700;
+        color: #7f8c8d;
+        width: 180px;
+        flex-shrink: 0;
+    }
+
+    .info-value {
+        color: #2c3e50;
+        font-weight: 500;
+    }
+
+    .timeline {
+        position: relative;
+        padding-left: 2rem;
+    }
+
+    .timeline::before {
+        content: '';
+        position: absolute;
+        left: 8px;
+        top: 0;
+        bottom: 0;
+        width: 3px;
+        background: var(--timeline-color);
+    }
+
+    .timeline-item {
+        position: relative;
+        padding-bottom: 2rem;
+    }
+
+    .timeline-marker {
+        position: absolute;
+        left: -2rem;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background: white;
+        border: 3px solid var(--detail-primary);
+        z-index: 1;
+    }
+
+    .timeline-marker.ingreso {
+        background: #4caf50;
+        border-color: #4caf50;
+    }
+
+    .timeline-marker.evolucion {
+        background: #2196f3;
+        border-color: #2196f3;
+    }
+
+    .timeline-marker.nota_enfermeria {
+        background: #9c27b0;
+        border-color: #9c27b0;
+    }
+
+    .timeline-content {
+        background: white;
+        border-radius: 12px;
+        padding: 1.2rem;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        border-left: 3px solid var(--detail-primary);
+    }
+
+    .timeline-date {
+        font-size: 0.85rem;
+        color: #7f8c8d;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+    }
+
+    .timeline-title {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #2c3e50;
+        margin-bottom: 0.3rem;
+    }
+
+    .timeline-area {
+        color: #7f8c8d;
+        font-size: 0.9rem;
+    }
+
+    .diagnosis-badge {
+        background: #e3f2fd;
+        border: 2px solid #2196f3;
+        border-radius: 12px;
+        padding: 1rem 1.5rem;
+        margin-bottom: 1rem;
+        transition: all 0.3s ease;
+    }
+
+    .diagnosis-badge:hover {
+        transform: translateX(5px);
+        box-shadow: 0 4px 12px rgba(33, 150, 243, 0.2);
+    }
+
+    .diagnosis-name {
+        font-weight: 700;
+        color: #1976d2;
+        font-size: 1.05rem;
+    }
+
+    .diagnosis-meta {
+        font-size: 0.85rem;
+        color: #7f8c8d;
+        margin-top: 0.3rem;
+    }
+
+    .stat-box {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 16px;
+        padding: 1.5rem;
+        color: white;
+        text-align: center;
+        margin-bottom: 1rem;
+    }
+
+    .stat-box.green {
+        background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+    }
+
+    .stat-box.orange {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    }
+
+    .stat-number {
+        font-size: 2rem;
+        font-weight: 800;
+    }
+
+    .stat-label {
+        font-size: 0.85rem;
+        opacity: 0.9;
+        text-transform: uppercase;
+        font-weight: 600;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-4">
+    <!-- Header -->
+    <div class="detail-header">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h1 class="fw-black mb-2">
+                    <i class="fas fa-user-injured me-3"></i>
+                    {% if paciente %}
+                        {{ paciente.pacprinom }} {{ paciente.pacsegnom }} 
+                        {{ paciente.pacpriape }} {{ paciente.pacsegape }}
+                    {% else %}
+                        Paciente sin datos
+                    {% endif %}
+                </h1>
+                <p class="mb-0 opacity-75">Seguimiento detallado del paciente</p>
+            </div>
+            <a href="{% url 'consultas:pacientes_urgencias_list' %}" class="btn btn-light rounded-pill px-4 fw-bold">
+                <i class="fas fa-arrow-left me-2"></i>Volver a Lista
+            </a>
+        </div>
+    </div>
+
+    <!-- Stats Row -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-3">
+            <div class="stat-box green">
+                <div class="stat-number">{{ estado_actual }}</div>
+                <div class="stat-label">Estado</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-box">
+                <div class="stat-number">{{ dias_hospitalizacion }}</div>
+                <div class="stat-label">Días Hospitalizado</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-box orange">
+                <div class="stat-number">{{ num_evoluciones }}</div>
+                <div class="stat-label">Evoluciones</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-box">
+                <div class="stat-number">{{ diagnosticos|length }}</div>
+                <div class="stat-label">Diagnósticos</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Left Column: Patient Info -->
+        <div class="col-md-4">
+            <!-- Patient Demographics -->
+            <div class="info-card">
+                <h5 class="fw-bold mb-4"><i class="fas fa-id-card me-2 text-primary"></i>Información del Paciente</h5>
+                <div class="info-row">
+                    <div class="info-label">Documento:</div>
+                    <div class="info-value">{% if paciente %}{{ paciente.pacnumdoc }}{% else %}N/A{% endif %}</div>
+                </div>
+                <div class="info-row">
+                    <div class="info-label">Edad:</div>
+                    <div class="info-value">{{ edad|default:"N/A" }}</div>
+                </div>
+                <div class="info-row">
+                    <div class="info-label">Sexo:</div>
+                    <div class="info-value">
+                        {% if paciente %}
+                            {% if paciente.pacsexo == 1 %}Masculino{% elif paciente.pacsexo == 2 %}Femenino{% else %}N/A{% endif %}
+                        {% else %}N/A{% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Admission Info -->
+            <div class="info-card">
+                <h5 class="fw-bold mb-4"><i class="fas fa-hospital me-2 text-primary"></i>Información de Ingreso</h5>
+                <div class="info-row">
+                    <div class="info-label">Fecha Ingreso:</div>
+                    <div class="info-value">{{ ingreso.ainfecing|date:"d/m/Y H:i" }}</div>
+                </div>
+                <div class="info-row">
+                    <div class="info-label">Tiempo:</div>
+                    <div class="info-value">{{ horas_hospitalizacion }} horas</div>
+                </div>
+                <div class="info-row">
+                    <div class="info-label">Aseguradora:</div>
+                    <div class="info-value">
+                        {% if ingreso.gendetcon %}{{ ingreso.gendetcon.gdenombre }}{% else %}N/A{% endif %}
+                    </div>
+                </div>
+                <div class="info-row">
+                    <div class="info-label">Consecutivo:</div>
+                    <div class="info-value">{{ ingreso.ainconsec|default:"N/A" }}</div>
+                </div>
+            </div>
+
+            <!-- Diagnoses -->
+            <div class="info-card">
+                <h5 class="fw-bold mb-4"><i class="fas fa-notes-medical me-2 text-primary"></i>Diagnósticos</h5>
+                {% if diagnosticos %}
+                    {% for diag in diagnosticos %}
+                    <div class="diagnosis-badge">
+                        <div class="diagnosis-name">
+                            {{ diag.nombre }}
+                        </div>
+                        <div class="diagnosis-meta">
+                            <span class="badge bg-primary me-2">{{ diag.tipo }}</span>
+                            <i class="fas fa-calendar me-1"></i>{{ diag.fecha|date:"d/m/Y H:i" }}
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="text-muted text-center py-3">
+                        <i class="fas fa-info-circle me-2"></i>Sin diagnósticos registrados
+                    </p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Right Column: Timeline -->
+        <div class="col-md-8">
+            <div class="info-card">
+                <h5 class="fw-bold mb-4"><i class="fas fa-stream me-2 text-primary"></i>Línea de Tiempo del Paciente</h5>
+                
+                {% if timeline %}
+                <div class="timeline">
+                    {% for evento in timeline %}
+                    <div class="timeline-item">
+                        <div class="timeline-marker {{ evento.tipo }}"></div>
+                        <div class="timeline-content">
+                            <div class="timeline-date">
+                                <i class="fas fa-clock me-2"></i>{{ evento.fecha|date:"d/m/Y H:i" }}
+                            </div>
+                            <div class="timeline-title">{{ evento.descripcion }}</div>
+                            
+                            {% if evento.tipo == 'evolucion' %}
+                                <div class="timeline-area mb-2">
+                                    <i class="fas fa-map-marker-alt me-2"></i>{{ evento.area }}
+                                </div>
+                                {% if evento.diagnosticos %}
+                                    <div class="mt-2">
+                                        <small class="text-muted fw-bold d-block mb-1">Diagnósticos:</small>
+                                        {% for diag in evento.diagnosticos %}
+                                            <span class="badge bg-light text-dark border me-1 mb-1">
+                                                {{ diag.nombre }}
+                                                {% if diag.tipo == 'Principal' %}
+                                                    <i class="fas fa-star text-warning ms-1" title="Principal"></i>
+                                                {% endif %}
+                                            </span>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            {% elif evento.tipo == 'nota_enfermeria' %}
+                                <div class="mt-2 p-2 bg-light rounded border-start border-4 border-info">
+                                    <small>{{ evento.contenido|linebreaksbr }}</small>
+                                </div>
+                            {% else %}
+                                <div class="timeline-area">
+                                    <i class="fas fa-map-marker-alt me-2"></i>{{ evento.area }}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                    <p class="text-muted text-center py-5">
+                        <i class="fas fa-info-circle fa-3x mb-3 d-block"></i>
+                        No hay eventos registrados en el timeline
+                    </p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

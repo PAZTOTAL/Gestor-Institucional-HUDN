@@ -1,0 +1,264 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block content %}
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<style>
+    :root {
+        --primary-blue: #1a237e;
+        --secondary-blue: #0d47a1;
+        --accent-teal: #00bfa5;
+        --soft-gray: #f8f9fa;
+    }
+
+    .historial-header {
+        background: linear-gradient(135deg, var(--primary-blue) 0%, var(--secondary-blue) 100%);
+        border-radius: 20px;
+        padding: 3rem;
+        color: white;
+        margin-bottom: 2rem;
+        box-shadow: 0 10px 30px rgba(26, 35, 126, 0.2);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .historial-header::after {
+        content: '\f477';
+        font-family: 'Font Awesome 5 Free';
+        font-weight: 900;
+        position: absolute;
+        right: -20px;
+        bottom: -20px;
+        font-size: 15rem;
+        opacity: 0.1;
+    }
+
+    .indicator-card {
+        background: white;
+        border-radius: 16px;
+        padding: 1.5rem;
+        border: none;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        transition: transform 0.3s ease;
+        height: 100%;
+    }
+
+    .indicator-card:hover {
+        transform: translateY(-5px);
+    }
+
+    .indicator-value {
+        font-size: 2.2rem;
+        font-weight: 800;
+        color: var(--primary-blue);
+        line-height: 1;
+        margin-bottom: 0.5rem;
+    }
+
+    .indicator-label {
+        color: #7f8c8d;
+        font-size: 0.85rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .status-badge {
+        padding: 0.5rem 1rem;
+        border-radius: 50px;
+        font-weight: 700;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+    }
+
+    .ingreso-item {
+        border-left: 4px solid var(--primary-blue);
+        background: white;
+        margin-bottom: 1rem;
+        border-radius: 0 12px 12px 0;
+        transition: all 0.2s;
+    }
+
+    .ingreso-item:hover {
+        background: #f0f4ff;
+    }
+
+    .diag-pill {
+        background: #e3f2fd;
+        color: #1565c0;
+        padding: 2px 10px;
+        border-radius: 4px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        display: inline-block;
+        margin-right: 5px;
+        margin-bottom: 5px;
+    }
+
+    .rating-excellent { color: #2e7d32; }
+    .rating-acceptable { color: #f9a825; }
+    .rating-poor { color: #d32f2f; }
+
+</style>
+
+<div class="container-fluid px-4 py-4">
+    <!-- Search Bar -->
+    <div class="row mb-4">
+        <div class="col-md-8 mx-auto">
+            <form action="{% url 'consultas:paciente_historial_search' %}" method="GET" class="input-group input-group-lg shadow-sm rounded-pill overflow-hidden bg-white">
+                <span class="input-group-text bg-white border-0 ps-4"><i class="fas fa-search text-primary"></i></span>
+                <input type="text" name="documento" class="form-control border-0 px-3" placeholder="Buscar historial completo por número de documento..." value="{{ documento|default:'' }}">
+                <button class="btn btn-primary px-5 fw-bold" type="submit">Consultar Historial</button>
+            </form>
+        </div>
+    </div>
+
+    {% if searched %}
+        {% if found %}
+        <!-- Header Profile -->
+        <div class="historial-header">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h1 class="fw-black mb-1"><i class="fas fa-user-circle me-3"></i>{{ paciente.pacprinom }} {{ paciente.pacpriape }}</h1>
+                    <p class="fs-4 mb-3 opacity-75">{{ paciente.pacnumdoc }} | {{ paciente.pacsegnom|default:'' }} {{ paciente.pacsegape|default:'' }}</p>
+                    <div class="d-flex gap-4">
+                        <span><i class="fas fa-birthday-cake me-2"></i>{{ paciente.gpafecnac|date:"d M, Y" }}</span>
+                        <span><i class="fas fa-venus-mars me-2"></i>{% if paciente.gpasexo == 1 %}Masculino{% else %}Femenino{% endif %}</span>
+                    </div>
+                </div>
+                <div class="col-md-4 text-md-end">
+                    <div class="bg-white bg-opacity-25 rounded-3 p-3 d-inline-block text-start">
+                        <div class="small fw-bold border-bottom border-white border-opacity-25 pb-1 mb-2">CALIFICACIÓN GLOBAL SERVICIO</div>
+                        <div class="h3 mb-0 fw-black {% if calificacion == 'Excelente' %}text-success{% elif calificacion == 'Aceptable' %}text-warning{% else %}text-danger{% endif %}">
+                            <i class="fas fa-star me-2"></i>{{ calificacion }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Indicators Row -->
+        <div class="row g-4 mb-5">
+            <div class="col-md-3">
+                <div class="indicator-card">
+                    <div class="indicator-value">{{ total_ingresos }}</div>
+                    <div class="indicator-label">Total Ingresos Historicos</div>
+                    <div class="progress mt-3" style="height: 6px;">
+                        <div class="progress-bar bg-primary" style="width: 100%"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="indicator-card">
+                    <div class="indicator-value text-success">{{ avg_oportunidad }} <small class="fs-6">min</small></div>
+                    <div class="indicator-label">Promedio Oportunidad (Triage)</div>
+                    <p class="small text-muted mt-2 mb-0">Atención inicial promedio</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="indicator-card">
+                    <div class="indicator-value text-info">{{ avg_estancia }} <small class="fs-6">días</small></div>
+                    <div class="indicator-label">Estancia Promedio</div>
+                    <p class="small text-muted mt-2 mb-0">Permanencia en el hospital</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="indicator-card bg-primary text-white">
+                    <div class="indicator-label text-white text-opacity-75 mb-3">Diagnósticos Top</div>
+                    {% for diag, count in top_diagnosticos %}
+                        <div class="d-flex justify-content-between small mb-1">
+                            <span class="text-truncate" style="max-width: 150px;">{{ diag }}</span>
+                            <span class="badge bg-white text-primary rounded-pill">{{ count }}</span>
+                        </div>
+                    {% empty %}
+                        <p class="small text-white text-opacity-50">Sin diagnósticos registrados</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Admissions List -->
+        <div class="row">
+            <div class="col-12">
+                <h4 class="fw-bold mb-4 text-dark"><i class="fas fa-list-ul me-2"></i>Cronología de Atención</h4>
+                <div class="timeline-container">
+                    {% for item in historial %}
+                    <div class="card ingreso-item shadow-sm border-0 mb-3">
+                        <div class="card-body p-4">
+                            <div class="row align-items-center">
+                                <div class="col-md-2 border-end text-center">
+                                    <div class="fw-black h4 mb-0 text-primary">{{ item.ingreso.ainfecing|date:"d M" }}</div>
+                                    <div class="text-muted small">{{ item.ingreso.ainfecing|date:"Y" }}</div>
+                                    <div class="mt-2">
+                                        {% if item.is_active %}
+                                            <span class="badge bg-success status-badge">Activo</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary status-badge">Finalizado</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <div class="col-md-4 px-4">
+                                    <h5 class="fw-bold mb-2">Ingreso #{{ item.ingreso.oid }}</h5>
+                                    <p class="text-muted small mb-3"><i class="fas fa-clock me-1"></i> Hora: {{ item.ingreso.ainfecing|date:"H:i" }}</p>
+                                    <div class="d-flex flex-wrap">
+                                        {% for diag in item.diagnosticos %}
+                                            <span class="diag-pill">{{ diag }}</span>
+                                        {% empty %}
+                                            <span class="text-muted italic small">Sin diagnósticos principales</span>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="mb-3">
+                                        <div class="small text-muted mb-1 text-uppercase fw-bold">Oportunidad Atención</div>
+                                        <div class="d-flex align-items-center">
+                                            <span class="h5 fw-black mb-0 me-2">{{ item.oportunidad|default:"--" }} min</span>
+                                            {% if item.atencion_oportuna %}
+                                                <i class="fas fa-check-circle text-success" title="Atención Oportuna"></i>
+                                            {% elif item.oportunidad %}
+                                                <i class="fas fa-exclamation-triangle text-warning" title="Atención Lenta"></i>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <div class="small text-muted mb-1 text-uppercase fw-bold">Estancia</div>
+                                        <div class="h5 fw-black mb-0">{{ item.estancia }} días</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 text-end">
+                                    <div class="mb-2">
+                                        <span class="small text-muted">Triage:</span>
+                                        <span class="badge bg-danger rounded-pill px-3">Nivel {{ item.triage|default:"S/D" }}</span>
+                                    </div>
+                                    <a href="{% url 'consultas:paciente_detalle' item.ingreso.oid %}" class="btn btn-outline-primary btn-sm rounded-pill px-4">
+                                        Ver Trazabilidad <i class="fas fa-arrow-right ms-1"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        {% else %}
+        <!-- Not Found -->
+        <div class="text-center py-5">
+            <i class="fas fa-user-slash fa-5x text-muted mb-4"></i>
+            <h3 class="text-dark">Paciente no encontrado</h3>
+            <p class="text-muted">No se encontraron registros históricos para el documento: <strong>{{ documento }}</strong></p>
+            <a href="{% url 'consultas:pacientes_urgencias_list' %}" class="btn btn-primary rounded-pill px-4 mt-3">Volver al Buscador</a>
+        </div>
+        {% endif %}
+    {% else %}
+        <!-- Initial State (No search yet) -->
+        <div class="text-center py-5 mt-5">
+            <i class="fas fa-hospital-user fa-6x text-light mb-4"></i>
+            <h2 class="text-muted fw-bold">Módulo de Historial e Indicadores</h2>
+            <p class="text-muted fs-5">Ingrese el número de documento de identidad del paciente <br> para generar el reporte de trazabilidad histórica.</p>
+        </div>
+    {% endif %}
+</div>
+
+{% endblock %}

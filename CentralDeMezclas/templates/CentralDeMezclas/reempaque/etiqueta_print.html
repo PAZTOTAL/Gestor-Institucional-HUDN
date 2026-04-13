@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Etiqueta {{ orden.lote_interno }}</title>
+    <style>
+        @page { size: 10cm 6cm; margin: 0; }
+        body { font-family: 'Courier New', Courier, monospace; margin: 0.5cm; color: #000; }
+        .label-container { border: 2px solid #000; padding: 10px; height: 4.5cm; position: relative; }
+        .header { text-align: center; border-bottom: 2px solid #000; margin-bottom: 10px; padding-bottom: 5px; }
+        .hospital-name { font-size: 14px; font-weight: 900; text-transform: uppercase; }
+        .med-name { font-size: 18px; font-weight: 900; margin: 5px 0; }
+        .data-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; font-size: 12px; font-weight: bold; }
+        .footer { font-size: 10px; text-align: center; margin-top: 10px; font-style: italic; }
+        
+        /* Tipo COLOR */
+        .tipo-color { background: #f0fdf4; border: 3px solid #16a34a; }
+        .tipo-liberacion { background: #fee2e2; border: 4px solid #dc2626; text-align: center; }
+        .stamp { 
+            position: absolute; 
+            bottom: 20px; 
+            right: 20px; 
+            border: 4px double #dc2626; 
+            color: #dc2626; 
+            padding: 5px; 
+            transform: rotate(-15deg); 
+            font-weight: 900; 
+            text-transform: uppercase;
+        }
+    </style>
+</head>
+<body onload="window.print()">
+    <div class="label-container {% if tipo == 'LIBERACION' %}tipo-liberacion{% endif %}" 
+         style="{% if tipo == 'COLOR' and orden.medicamento.alerta %}border: 5px solid {{ orden.medicamento.alerta.color }}; background-color: {{ orden.medicamento.alerta.color }}15;{% endif %}">
+        
+        {% if tipo == 'LIBERACION' %}
+            <div class="stamp">LIBERADO</div>
+        {% endif %}
+
+        <div class="header">
+            <div class="hospital-name">HU DE NARIÑO - CENTRAL DE MEZCLAS</div>
+            <div class="med-name">{{ orden.medicamento.nombre }}</div>
+            <div style="font-size: 14px; font-weight: 900;">{{ orden.medicamento.concentracion }}</div>
+        </div>
+
+        <div class="data-grid">
+            <div>LOTE INT: {{ orden.lote_interno }}</div>
+            <div>LOTE FAB: {{ orden.lote_fabricante }}</div>
+            <div>VENCE: {{ orden.fecha_vencimiento_reempaque }}</div>
+            <div>CANT: {{ orden.cantidad_a_reempacar }} UNID.</div>
+            <div>VIA: {{ orden.medicamento.convencion.via|default:"N/A" }}</div>
+            <div>RESP: {{ orden.responsable_reempaque.nombre_completo|default:"-" }}</div>
+        </div>
+
+        <div class="footer">
+            Proceso de Reempaque y Reenvase RV-RS - INVIMA BPE
+            <br>Conservar según especificaciones del fabricante.
+        </div>
+    </div>
+</body>
+</html>

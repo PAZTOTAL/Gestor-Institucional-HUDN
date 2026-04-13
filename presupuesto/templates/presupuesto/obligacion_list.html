@@ -1,0 +1,123 @@
+{% extends 'core/base.html' %}
+{% load humanize %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="flex flex-col md:flex-row justify-between items-center mb-6">
+        <h1 class="text-3xl font-bold text-gray-800 mb-4 md:mb-0">
+            <i class="fas fa-file-contract mr-3 text-blue-600"></i>Consulta de Obligaciones
+        </h1>
+        <div class="space-x-2">
+            <a href="{% url 'home' %}" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded transition duration-300">
+                <i class="fas fa-arrow-left mr-2"></i>Volver
+            </a>
+        </div>
+    </div>
+
+    <!-- Search Form -->
+    <div class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-6">
+        <form method="get" class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+            <div>
+                <label class="block text-gray-700 text-sm font-bold mb-2" for="fecha_desde">
+                    Fecha Desde
+                </label>
+                <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" 
+                       id="fecha_desde" type="date" name="fecha_desde" value="{{ request.GET.fecha_desde }}">
+            </div>
+            <div>
+                <label class="block text-gray-700 text-sm font-bold mb-2" for="fecha_hasta">
+                    Fecha Hasta
+                </label>
+                <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" 
+                       id="fecha_hasta" type="date" name="fecha_hasta" value="{{ request.GET.fecha_hasta }}">
+            </div>
+            <div>
+                <label class="block text-gray-700 text-sm font-bold mb-2" for="numero">
+                    Número Obligación
+                </label>
+                <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" 
+                       id="numero" type="text" name="numero" placeholder="Número..." value="{{ request.GET.numero }}">
+            </div>
+            <div>
+                <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline w-full cursor-pointer">
+                    <i class="fas fa-search mr-2"></i>Consultar
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <div class="bg-white shadow-lg rounded-lg overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="min-w-full leading-normal">
+                <thead>
+                    <tr>
+                        <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                            Consecutivo
+                        </th>
+                        <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                            Fecha
+                        </th>
+                        <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                            Valor
+                        </th>
+                        <th class="px-5 py-3 border-b-2 border-gray-200 bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                            Detalle
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for obligacion in obligaciones %}
+                    <tr class="hover:bg-gray-50 transition duration-150">
+                        <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">
+                            <span class="font-semibold text-gray-900">{{ obligacion.scdconsec }}</span>
+                        </td>
+                        <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">
+                            <span class="text-gray-600">{{ obligacion.scdfecdoc|date:"d/m/Y" }}</span>
+                        </td>
+                        <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">
+                            <span class="text-green-600 font-bold">${{ obligacion.scdvalor|intcomma }}</span>
+                        </td>
+                        <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">
+                             <div class="text-gray-900 text-xs max-w-xs truncate" title="{{ obligacion.scdobjsoli }}">
+                                {{ obligacion.scdobjsoli|default:"-" }}
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="4" class="px-5 py-5 border-b border-gray-200 bg-white text-sm text-center text-gray-500">
+                            {% if request.GET.fecha_desde or request.GET.fecha_hasta or request.GET.numero %}
+                                No se encontraron Obligaciones para los filtros seleccionados.
+                            {% else %}
+                                Ingrese parámetros de búsqueda para consultar.
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Pagination (Basic) -->
+        {% if is_paginated %}
+        <div class="px-5 py-5 bg-white border-t flex flex-col xs:flex-row items-center xs:justify-between">
+            <span class="text-xs xs:text-sm text-gray-900">
+                Mostrando {{ page_obj.start_index }} a {{ page_obj.end_index }} de {{ page_obj.paginator.count }} Entradas
+            </span>
+            <div class="inline-flex mt-2 xs:mt-0">
+                {% if page_obj.has_previous %}
+                <a href="?page={{ page_obj.previous_page_number }}{% if request.GET.fecha_desde %}&fecha_desde={{ request.GET.fecha_desde }}{% endif %}{% if request.GET.fecha_hasta %}&fecha_hasta={{ request.GET.fecha_hasta }}{% endif %}{% if request.GET.numero %}&numero={{ request.GET.numero }}{% endif %}" class="text-sm bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold py-2 px-4 rounded-l">
+                    Anterior
+                </a>
+                {% endif %}
+                {% if page_obj.has_next %}
+                <a href="?page={{ page_obj.next_page_number }}{% if request.GET.fecha_desde %}&fecha_desde={{ request.GET.fecha_desde }}{% endif %}{% if request.GET.fecha_hasta %}&fecha_hasta={{ request.GET.fecha_hasta }}{% endif %}{% if request.GET.numero %}&numero={{ request.GET.numero }}{% endif %}" class="text-sm bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold py-2 px-4 rounded-r">
+                    Siguiente
+                </a>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

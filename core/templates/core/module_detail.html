@@ -1,0 +1,52 @@
+{% extends 'core/base.html' %}
+
+{% block title %}{{ module_name }} - Tablas{% endblock %}
+
+{% block content %}
+<div class="mb-8">
+    <a href="{% url 'home' %}" class="flex items-center text-muted hover:text-white transition-colors mb-4">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2">
+            <path d="M19 12H5" />
+            <path d="M12 19l-7-7 7-7" />
+        </svg>
+        Volver al Panel de Control
+    </a>
+    <h1 class="text-4xl font-bold mb-2">{{ module_name }}</h1>
+    <p class="text-xl text-muted">Tablas y Entidades Disponibles</p>
+</div>
+
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+    {% for model in models %}
+    <a href="{% url 'table_detail' module_slug model.slug %}"
+        class="glass-card p-6 block hover:bg-white/5 transition-colors group">
+        <div class="flex items-start justify-between mb-4">
+            <div class="p-3 rounded-lg bg-primary/20 text-primary group-hover:bg-primary/30 transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M3 3h18v18H3zM21 9H3M9 21V9" />
+                </svg>
+            </div>
+        </div>
+        <h3 class="text-xl font-bold mb-2 break-all">{{ model.verbose_name|title }}</h3>
+        <p class="text-sm font-mono text-muted mb-2">{{ model.name }}</p>
+        {% if model.description %}
+        <p class="text-sm text-dim line-clamp-2">{{ model.description }}</p>
+        {% endif %}
+    </a>
+    {% empty %}
+    <div class="col-span-full text-center py-12 text-muted">
+        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+            class="mx-auto mb-4 opacity-50">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+            <polyline points="14 2 14 8 20 8" />
+            <line x1="16" y1="13" x2="8" y2="13" />
+            <line x1="16" y1="17" x2="8" y2="17" />
+            <polyline points="10 9 9 9 8 9" />
+        </svg>
+        <p class="text-xl">No hay tablas definidas en este módulo.</p>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

@@ -1,0 +1,137 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Trasplantes - Donación | Dashboard{% endblock %}
+
+{% block content %}
+<link rel="stylesheet" href="{% static 'css/trasplantes.css' %}">
+
+<div class="trasplantes-container">
+    <header class="d-flex justify-content-between align-items-center mb-5">
+        <div>
+            <h1 class="display-4 font-weight-bold" style="background: var(--primary-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Trasplantes - Donación</h1>
+            <p class="text-muted">Seguimiento de Pacientes Neurocríticos y Alertas de Donación</p>
+        </div>
+        <div class="d-flex gap-3">
+            <form action="{% url 'trasplantes_donacion:sync_husn' %}" method="post">
+                {% csrf_token %}
+                <button type="submit" class="btn-sync-husn">
+                    <span class="icon">🏥</span>
+                    Actualizar Datos
+                </button>
+            </form>
+            <form action="{% url 'trasplantes_donacion:sync' %}" method="post">
+                {% csrf_token %}
+                <button type="submit" class="btn-sync">
+                    <span class="icon">🔄</span>
+                    Sincronizar Excel
+                </button>
+            </form>
+            <a href="{% url 'trasplantes_donacion:alertas' %}" class="btn btn-danger d-flex align-items-center gap-2" style="border-radius: 0.5rem; font-weight: 600;">
+                <span class="icon">🔔</span>
+                Ver Alertas ({{ alertados }})
+            </a>
+        </div>
+    </header>
+
+    {% if messages %}
+    <div class="messages mb-4">
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} shadow-sm" style="border-radius: 0.5rem; border: none; background: var(--glass-bg); backdrop-filter: blur(10px);">
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="dashboard-stats">
+        <div class="stat-card">
+            <div class="stat-label">Total Neurocríticos</div>
+            <div class="stat-value">{{ total_pacientes }}</div>
+            <div class="progress" style="height: 4px; background: rgba(0,0,0,0.05);">
+                <div class="progress-bar bg-primary" style="width: 100%"></div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Alertas Glasgow (3-5)</div>
+            <div class="stat-value" style="background: var(--danger-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">{{ alertados }}</div>
+            <div class="progress" style="height: 4px; background: rgba(0,0,0,0.05);">
+                <div class="progress-bar bg-danger" style="width: {% if total_pacientes > 0 %}{{ alertados|add:0|floatformat:0 }}%{% else %}0%{% endif %}"></div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Donantes Efectivos</div>
+            <div class="stat-value" style="background: var(--success-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">{{ donantes_efectivos }}</div>
+            <div class="progress" style="height: 4px; background: rgba(0,0,0,0.05);">
+                <div class="progress-bar bg-success" style="width: 100%"></div>
+            </div>
+        </div>
+    </div>
+
+    <section class="section">
+        <div class="premium-table-container shadow-lg">
+            <table class="premium-table">
+                <thead>
+                    <tr>
+                        <th>Identificación</th>
+                        <th>Paciente</th>
+                        <th>Servicio</th>
+                        <th>Ingreso</th>
+                        <th>Glasgow</th>
+                        <th>CIE10</th>
+                        <th>Estado</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for paciente in pacientes %}
+                    <tr class="{% if paciente.glasgow_ingreso <= 5 %}alert-item{% endif %}">
+                        <td><strong>{{ paciente.tipo_identificacion }} {{ paciente.numero_documento }}</strong></td>
+                        <td>
+                            <div class="font-weight-bold">{{ paciente.primer_nombre }} {{ paciente.primer_apellido }}</div>
+                            <div class="small text-muted">{{ paciente.sexo }} | {{ paciente.edad }} años</div>
+                        </td>
+                        <td>{{ paciente.servicio|default:"N/A" }}</td>
+                        <td>{{ paciente.fecha_ingreso|date:"d/m/Y H:i"|default:"-" }}</td>
+                        <td>
+                            <span class="{% if paciente.glasgow_ingreso <= 5 %}badge-alert{% else %}badge badge-light{% endif %}">
+                                {{ paciente.glasgow_ingreso|default:"-" }}
+                            </span>
+                        </td>
+                        <td><code>{{ paciente.codigo_cie10|default:"-" }}</code></td>
+                        <td>
+                            {% if paciente.donante_efectivo == 'SI' %}
+                            <span class="badge badge-success">Donante Efectivo</span>
+                            {% elif paciente.dx_muerte_encefalica == 'SI' %}
+                            <span class="badge badge-warning">Muerte Encefálica</span>
+                            {% else %}
+                            <span class="badge badge-info">Observación</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-center py-5">
+                            <div class="text-muted">No hay registros procesados. Pulse "Sincronizar Excel".</div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% if is_paginated %}
+        <nav class="mt-4">
+            <ul class="pagination justify-content-center">
+                {% if page_obj.has_previous %}
+                <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}">Anterior</a></li>
+                {% endif %}
+                <li class="page-item active"><span class="page-link">{{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span></li>
+                {% if page_obj.has_next %}
+                <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}">Siguiente</a></li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+    </section>
+</div>
+{% endblock %}

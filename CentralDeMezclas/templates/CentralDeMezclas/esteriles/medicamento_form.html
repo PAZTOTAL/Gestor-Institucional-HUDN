@@ -1,0 +1,271 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Preparación Estéril | Formulario{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div class="bg-white rounded-[2.5rem] border border-gray-100 shadow-2xl overflow-hidden">
+        
+        <!-- Form Header -->
+        <div class="bg-primary p-8 text-white relative overflow-hidden">
+            <div class="absolute top-0 right-0 p-8 opacity-20 rotate-12">
+                <svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 16.5c-1.5 1.26-2 2.6-2 3.5 0 1.5 1 2.5 2.5 2.5s2.5-1 2.5-2.5c0-.9-.5-2.24-2-3.5z"/><path d="m10 10 5.5-5.5"/><path d="m14 5 5 5"/><path d="M8.5 2h7"/></svg>
+            </div>
+            <div class="relative z-10">
+                <h1 class="text-3xl font-black uppercase tracking-tight">Registro de Preparación Estéril</h1>
+                <p class="text-white/80 font-bold mt-1 uppercase text-xs tracking-widest">Base de Datos Maestro de Medicamentos</p>
+            </div>
+        </div>
+
+        <form method="post" class="p-8 space-y-8">
+            {% csrf_token %}
+            
+            {% if form.errors %}
+            <div class="bg-red-50 border-l-4 border-red-500 p-4 rounded-xl">
+                <div class="flex items-center gap-3">
+                    <svg class="h-5 w-5 text-red-500" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                    </svg>
+                    <p class="text-sm font-black text-red-700">Por favor corrija los errores en el formulario.</p>
+                </div>
+            </div>
+            {% endif %}
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-12">
+                
+                <!-- Section 1: Identificación y Concentración -->
+                <div class="space-y-6">
+                    <div class="flex items-center gap-3 border-b-2 border-gray-50 pb-4">
+                        <span class="w-8 h-8 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center font-black text-sm">1</span>
+                        <h2 class="font-black text-gray-900 uppercase tracking-tight">Identificación y Concentración</h2>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <div class="md:col-span-1">
+                            <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">COD.</label>
+                            {{ form.codigo }}
+                        </div>
+                        <div class="md:col-span-3">
+                            <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Medicamento 1</label>
+                            {{ form.medicamento_1 }}
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Medicamento 2 (Opcional)</label>
+                            {{ form.medicamento_2 }}
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Concentración Med 1</label>
+                            {{ form.concentracion_1 }}
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Concentración Med 2</label>
+                            {{ form.concentracion_2 }}
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Dosis Estándar</label>
+                            {{ form.dosis_estandar }}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 2: Dosificación y Reconstitución -->
+                <div class="space-y-6">
+                    <div class="flex items-center gap-3 border-b-2 border-gray-50 pb-4">
+                        <span class="w-8 h-8 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center font-black text-sm">2</span>
+                        <h2 class="font-black text-gray-900 uppercase tracking-tight">Dosificación y Reconstitución</h2>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Dosis y Frecuencia</label>
+                            {{ form.dosis_frecuencia }}
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Dosis Med 1 (Numérica)</label>
+                            {{ form.dosis_med_1 }}
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Vol. Reconst./Diluc. Med 1</label>
+                            {{ form.vol_reconstitucion_1 }}
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Cantidad Necesaria</label>
+                            {{ form.cantidad_necesaria }}
+                        </div>
+                    </div>
+
+                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Diluyente</label>
+                            {{ form.diluyente }}
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Cod. Diluyente</label>
+                            {{ form.cod_diluyente }}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 3: Vía y Vehículo -->
+                <div class="space-y-6">
+                    <div class="flex items-center gap-3 border-b-2 border-gray-50 pb-4">
+                        <span class="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center font-black text-sm">3</span>
+                        <h2 class="font-black text-gray-900 uppercase tracking-tight">Vía y Vehículo Final</h2>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <div class="md:col-span-1">
+                            <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Vía</label>
+                            {{ form.via }}
+                        </div>
+                        <div class="md:col-span-3">
+                            <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Vehículo Final</label>
+                            {{ form.vehiculo_final }}
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Jeringa</label>
+                            {{ form.jeringa }}
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Agua Hipodérmica</label>
+                            {{ form.agua_hipodermica }}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 4: Almacenamiento y Control -->
+                <div class="space-y-6">
+                    <div class="flex items-center gap-3 border-b-2 border-gray-50 pb-4">
+                        <span class="w-8 h-8 rounded-lg bg-orange-100 text-orange-600 flex items-center justify-center font-black text-sm">4</span>
+                        <h2 class="font-black text-gray-900 uppercase tracking-tight">Almacenamiento y Control</h2>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Almacenamiento</label>
+                            {{ form.almacenamiento }}
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Manejo Especial</label>
+                            {{ form.manejo_especial }}
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Fecha de Preparación</label>
+                            {{ form.fecha_preparacion }}
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Cod. Med 1</label>
+                            {{ form.cod_med_1 }}
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Cod. Med 2</label>
+                            {{ form.cod_med_2 }}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 5: Seguridad del Paciente -->
+                <div class="space-y-6">
+                    <div class="flex items-center gap-3 border-b-2 border-gray-50 pb-4">
+                        <span class="w-8 h-8 rounded-lg bg-red-100 text-red-600 flex items-center justify-center font-black text-sm">5</span>
+                        <h2 class="font-black text-gray-900 uppercase tracking-tight">Seguridad del Paciente</h2>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="flex items-center gap-4 bg-gray-50 p-4 rounded-2xl border-2 border-dashed border-gray-200">
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                {{ form.lasa }}
+                                <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:width-5 after:transition-all peer-checked:bg-blue-600"></div>
+                            </label>
+                            <div>
+                                <span class="block text-xs font-black text-gray-900 uppercase tracking-tight">Es Medicamento LASA</span>
+                                <span class="text-[10px] text-gray-400 font-medium">Nombre o apariencia similar</span>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center gap-4 bg-red-50 p-4 rounded-2xl border-2 border-dashed border-red-100">
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                {{ form.alto_riesgo }}
+                                <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:width-5 after:transition-all peer-checked:bg-red-600"></div>
+                            </label>
+                            <div>
+                                <span class="block text-xs font-black text-red-900 uppercase tracking-tight">Es ALTO RIESGO</span>
+                                <span class="text-[10px] text-red-400 font-medium">Requiere doble verificación</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                  <!-- Section 6: Firmas y Validación -->
+                  <div class="lg:col-span-2 space-y-6">
+                     <div class="flex items-center gap-3 border-b-2 border-gray-50 pb-4">
+                         <span class="w-8 h-8 rounded-lg bg-slate-100 text-slate-600 flex items-center justify-center font-black text-sm">6</span>
+                         <h2 class="font-black text-gray-900 uppercase tracking-tight">Firmas y Validación</h2>
+                     </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div>
+                            <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">ELABORADO POR</label>
+                            {{ form.elaborado_por }}
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">VERIFICADO POR</label>
+                            {{ form.verificado_por }}
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Footer Buttons -->
+            <div class="flex flex-col md:flex-row justify-end gap-4 pt-8 border-t border-gray-100">
+                <a href="{% url 'mezclas:esteriles_med_list' %}" class="px-8 py-3 bg-gray-100 text-gray-500 rounded-2xl font-black text-center hover:bg-gray-200 transition-all uppercase text-sm">
+                    Cancelar
+                </a>
+                <button type="submit" class="px-12 py-3 bg-primary text-white rounded-2xl font-black shadow-lg shadow-primary/25 hover:scale-105 transition-all uppercase text-sm">
+                    Guardar Preparación
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+    input, select, textarea {
+        width: 100%;
+        background-color: #F9FAFB;
+        border: 2px solid #F3F4F6;
+        border-radius: 1rem;
+        padding: 0.75rem 1rem;
+        font-weight: 700;
+        color: #111827;
+        transition: all 0.3s ease;
+        text-transform: uppercase;
+    }
+    input:focus, select:focus, textarea:focus {
+        outline: none;
+        border-color: #3B82F6;
+        background-color: #FFFFFF;
+        box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+    }
+    label {
+        margin-left: 0.25rem;
+    }
+</style>
+{% endblock %}

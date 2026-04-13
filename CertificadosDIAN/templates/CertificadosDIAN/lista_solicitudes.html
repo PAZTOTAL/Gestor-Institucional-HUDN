@@ -1,0 +1,137 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Solicitudes de Certificados - WhatsApp{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto py-10 space-y-8 animate-in fade-in slide-in-from-bottom-6 duration-700">
+    <!-- Header Premium -->
+    <div class="bg-white rounded-[2rem] p-10 border border-slate-100 shadow-2xl relative overflow-hidden group">
+        <div class="absolute -top-24 -right-24 w-64 h-64 bg-green-500/5 rounded-full blur-3xl group-hover:bg-green-500/10 transition-all duration-1000"></div>
+        
+        <!-- Iframe invisible para disparar la descarga -->
+        <iframe id="download_frame" style="display:none;"></iframe>
+
+        <script>
+            function smartSend(cedula, telefono) {
+                // 1. Disparar la descarga del PDF en el mismo navegador
+                const downloadUrl = `{% url 'certificados_dian:generar_ingresos' %}?cedula=${cedula}&anio=2025`;
+                document.getElementById('download_frame').src = downloadUrl;
+
+                // 2. Abrir el chat de WhatsApp en una nueva pestaña (del mismo navegador)
+                const text = "Hola, adjunto envío su Certificado de Ingresos y Retenciones 2025.";
+                const wpUrl = `https://web.whatsapp.com/send?phone=57${telefono}&text=${encodeURIComponent(text)}`;
+                
+                // Pequeño delay para asegurar que el comando de descarga se procese
+                setTimeout(() => {
+                    window.open(wpUrl, '_blank');
+                }, 500);
+            }
+        </script>
+
+        <div class="relative flex flex-col md:flex-row md:items-center justify-between gap-6">
+            <div>
+                <a href="{% url 'home' %}?section=varios" class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-slate-100 text-slate-600 text-[10px] font-black uppercase tracking-widest mb-6 hover:bg-slate-800 hover:text-white transition-all shadow-sm border border-slate-200">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+                    Regresar a Varios
+                </a>
+                <h1 class="text-4xl md:text-5xl font-black text-slate-900 tracking-tight leading-tight">
+                    Solicitudes <span class="bg-clip-text text-transparent bg-gradient-to-r from-green-600 to-emerald-600">WhatsApp</span>
+                </h1>
+                <p class="text-slate-500 font-medium text-lg mt-2">Gestión de trámites Formulario 220 - Vigencia 2025</p>
+            </div>
+            <div class="flex items-center gap-4 bg-slate-50 p-6 rounded-[2rem] border border-slate-100">
+                <div class="text-right">
+                    <div class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total Trámites</div>
+                    <div class="text-3xl font-black text-slate-900">{{ solicitudes.count }}</div>
+                </div>
+                <div class="w-12 h-12 rounded-2xl bg-green-600 text-white flex items-center justify-center shadow-lg">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 1 1-7.6-11.7 8.38 8.38 0 0 1 3.8.9L21 3z"/></svg>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtros y Tabla -->
+    <div class="bg-white rounded-[2rem] border border-slate-100 shadow-2xl overflow-hidden min-h-[400px]">
+        <div class="p-8">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left">
+                    <thead>
+                        <tr class="border-b border-slate-100">
+                            <th class="px-4 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Usuario Solicitó</th>
+                            <th class="px-4 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Nombre Empleado</th>
+                            <th class="px-4 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Cédula</th>
+                            <th class="px-4 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">WhatsApp</th>
+                            <th class="px-4 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Fecha/Hora</th>
+                            <th class="px-4 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Estado</th>
+                            <th class="px-4 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-50 text-sm">
+                        {% for sol in solicitudes %}
+                        <tr class="hover:bg-slate-50/50 transition-colors group">
+                            <td class="px-4 py-5 font-bold text-slate-900 text-xs">
+                                {{ sol.usuario.username }}
+                            </td>
+                            <td class="px-4 py-5 font-black text-blue-600 uppercase tracking-tighter text-xs">
+                                {{ sol.nombre_empleado|default:"No registrado" }}
+                            </td>
+                            <td class="px-4 py-5 font-black text-slate-600 tracking-wider">
+                                {{ sol.cedula_consultada }}
+                            </td>
+                            <td class="px-4 py-5 font-black text-slate-400 tracking-wider">
+                                {{ sol.telefono }}
+                            </td>
+                            <td class="px-4 py-5 text-slate-500 font-medium">
+                                {{ sol.fecha_solicitud|date:"d/m/Y" }} <br>
+                                <span class="font-black text-slate-900">{{ sol.fecha_solicitud|date:"H:i" }}</span>
+                            </td>
+                            <td class="px-4 py-5">
+                                {% if sol.procesado %}
+                                <span class="px-3 py-1 bg-blue-100 text-blue-600 rounded-lg text-[10px] font-black uppercase">Enviado</span>
+                                {% else %}
+                                <span class="px-3 py-1 bg-amber-100 text-amber-600 rounded-lg text-[10px] font-black uppercase">Pendiente</span>
+                                {% endif %}
+                            </td>
+                            <td class="px-4 py-5 text-right flex justify-end items-center gap-3">
+                                <!-- Botón 1: Descargar PDF -->
+                                <a href="{% url 'certificados_dian:generar_ingresos' %}?cedula={{ sol.cedula_consultada }}" target="_blank" class="p-3 bg-slate-100 text-slate-600 hover:bg-slate-800 hover:text-white rounded-2xl transition-all shadow-sm" title="Descargar PDF">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>
+                                </a>
+
+                                <!-- Botón 2: Abrir Chat de WhatsApp Manual -->
+                                <a href="https://web.whatsapp.com/send?phone=57{{ sol.telefono }}&text=Hola Sr(a). {{ sol.nombre_empleado|default:'Funcionario' }}, adjunto envío su Certificado DIAN 2025." 
+                                   target="_blank"
+                                   class="flex items-center gap-2 px-5 py-3 bg-green-600 text-white rounded-2xl font-black text-xs hover:bg-green-700 hover:scale-105 transition-all shadow-lg active:scale-95">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 1 1-7.6-11.7 8.38 8.38 0 0 1 3.8.9L21 3z"/></svg>
+                                    ABRIR CHAT
+                                </a>
+
+                                {% if not sol.procesado %}
+                                <!-- Botón 3: Marcar -->
+                                <a href="{% url 'certificados_dian:marcar_procesado' sol.pk %}" class="p-3 bg-slate-50 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-2xl transition-all border border-slate-100" title="Marcar como Enviado">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                                </a>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="px-4 py-20 text-center">
+                                <div class="flex flex-col items-center">
+                                    <div class="w-16 h-16 bg-slate-50 text-slate-300 rounded-full flex items-center justify-center mb-4">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="20" x="2" y="2" rx="2" ry="2"/><path d="M12 8v8"/><path d="M8 12h8"/></svg>
+                                    </div>
+                                    <p class="text-slate-500 font-bold">No hay solicitudes pendientes en este momento.</p>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

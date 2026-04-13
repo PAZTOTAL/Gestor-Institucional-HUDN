@@ -1,0 +1,155 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Medicamentos Estériles | Gestor Institucional Digital  HUDN{% endblock %}
+
+{% block content %}
+<div class="space-y-8 animate-in fade-in duration-700">
+    <!-- Pharmaceutical Header -->
+    <div class="relative overflow-hidden rounded-3xl bg-white border border-gray-100 p-8 shadow-2xl shadow-blue-500/5">
+        <div class="absolute top-0 right-0 p-8 opacity-5">
+            <svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 16.5c-1.5 1.26-2 2.6-2 3.5 0 1.5 1 2.5 2.5 2.5s2.5-1 2.5-2.5c0-.9-.5-2.24-2-3.5z"/><path d="m10 10 5.5-5.5"/><path d="m14 5 5 5"/><path d="M8.5 2h7"/></svg>
+        </div>
+        
+        <div class="relative flex flex-col md:flex-row justify-between items-end md:items-center gap-6">
+            <div>
+                <a href="{% url 'mezclas:main' %}" class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-100 text-slate-500 text-[10px] font-black uppercase tracking-widest mb-4 hover:bg-slate-200 transition-all shadow-sm border border-slate-200">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+                    Regresar al Menú Principal
+                </a>
+                <br>
+                <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 text-blue-600 text-xs font-black uppercase tracking-widest mb-4">
+                    <span class="w-2 h-2 rounded-full bg-blue-600 animate-pulse"></span>
+                    Central de Mezclas
+                </span>
+                <h1 class="text-4xl font-black text-gray-900 tracking-tight">
+                    Medicamentos <span class="text-primary">Estériles</span>
+                </h1>
+                <p class="text-gray-500 font-medium mt-2 max-w-xl">Gestión técnica y operativa de productos estériles y unidosis adultos.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 9 Operational Modules Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        
+        <!-- 1. Base de Datos -->
+        <a href="{% url 'mezclas:esteriles_med_list' %}" class="bg-white p-6 rounded-3xl border border-gray-100 shadow-xl shadow-gray-200/20 hover:scale-[1.02] hover:shadow-blue-500/10 transition-all group overflow-hidden relative">
+            <div class="relative z-10 flex flex-col h-full justify-between">
+                <div class="w-14 h-14 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition-all shadow-inner mb-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>
+                </div>
+                <div>
+                    <h3 class="font-black text-gray-900 tracking-tight leading-tight mb-1 uppercase text-sm">BASE DE DATOS MEDICAMENTOS ESTÉRILES</h3>
+                    <p class="text-[10px] font-black text-blue-500 uppercase tracking-widest">Catálogo Maestro</p>
+                </div>
+            </div>
+        </a>
+
+        <!-- 2. Matriz de Medicamentos -->
+        <a href="{% url 'mezclas:unidosis_list' %}" class="bg-white p-6 rounded-3xl border border-gray-100 shadow-xl shadow-gray-200/20 hover:scale-[1.02] hover:shadow-indigo-500/10 transition-all group overflow-hidden relative">
+            <div class="relative z-10 flex flex-col h-full justify-between">
+                <div class="w-14 h-14 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center group-hover:bg-indigo-600 group-hover:text-white transition-all shadow-inner mb-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y1="21"/><line x1="15" y1="3" x2="15" y2="21"/></svg>
+                </div>
+                <div>
+                    <h3 class="font-black text-gray-900 tracking-tight leading-tight mb-1 uppercase text-sm">MATRIZ DE MEDICAMENTOS UNIDOSIS ADULTOS</h3>
+                    <p class="text-[10px] font-black text-indigo-500 uppercase tracking-widest">Seguimiento Operativo</p>
+                </div>
+            </div>
+        </a>
+
+        <!-- 3. Control de Calidad -->
+        <a href="#" class="bg-white p-6 rounded-3xl border border-gray-100 shadow-xl shadow-gray-200/20 hover:scale-[1.02] hover:shadow-red-500/10 transition-all group overflow-hidden relative">
+            <div class="relative z-10 flex flex-col h-full justify-between">
+                <div class="w-14 h-14 rounded-2xl bg-red-50 text-red-600 flex items-center justify-center group-hover:bg-red-600 group-hover:text-white transition-all shadow-inner mb-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/></svg>
+                </div>
+                <div>
+                    <h3 class="font-black text-gray-900 tracking-tight leading-tight mb-1 uppercase text-sm">CONTROL DE CALIDAD Y LIBERACIÓN</h3>
+                    <p class="text-[10px] font-black text-red-500 uppercase tracking-widest">Inicial, Proceso, Final</p>
+                </div>
+            </div>
+        </a>
+
+        <!-- 4. Alistamiento -->
+        <a href="#" class="bg-white p-6 rounded-3xl border border-gray-100 shadow-xl shadow-gray-200/20 hover:scale-[1.02] hover:shadow-orange-500/10 transition-all group overflow-hidden relative">
+            <div class="relative z-10 flex flex-col h-full justify-between">
+                <div class="w-14 h-14 rounded-2xl bg-orange-50 text-orange-600 flex items-center justify-center group-hover:bg-orange-600 group-hover:text-white transition-all shadow-inner mb-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20"/><path d="M5 5h14"/><path d="M5 10h14"/><path d="M5 15h14"/><path d="M5 20h14"/></svg>
+                </div>
+                <div>
+                    <h3 class="font-black text-gray-900 tracking-tight leading-tight mb-1 uppercase text-sm">ALISTAMIENTO Y CONCILIACIÓN</h3>
+                    <p class="text-[10px] font-black text-orange-500 uppercase tracking-widest">Med, DM e Insumos</p>
+                </div>
+            </div>
+        </a>
+
+        <!-- 5. Inventario -->
+        <a href="#" class="bg-white p-6 rounded-3xl border border-gray-100 shadow-xl shadow-gray-200/20 hover:scale-[1.02] hover:shadow-cyan-500/10 transition-all group overflow-hidden relative">
+            <div class="relative z-10 flex flex-col h-full justify-between">
+                <div class="w-14 h-14 rounded-2xl bg-cyan-50 text-cyan-600 flex items-center justify-center group-hover:bg-cyan-600 group-hover:text-white transition-all shadow-inner mb-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="6" rx="2"/><path d="M12 2v4"/><path d="M12 14v4"/></svg>
+                </div>
+                <div>
+                    <h3 class="font-black text-gray-900 tracking-tight leading-tight mb-1 uppercase text-sm">REPORTE INVENTARIO</h3>
+                    <p class="text-[10px] font-black text-cyan-500 uppercase tracking-widest">Existencias y Stock</p>
+                </div>
+            </div>
+        </a>
+
+        <!-- 6. Orden Producción -->
+        <a href="#" class="bg-white p-6 rounded-3xl border border-gray-100 shadow-xl shadow-gray-200/20 hover:scale-[1.02] hover:shadow-teal-500/10 transition-all group overflow-hidden relative">
+            <div class="relative z-10 flex flex-col h-full justify-between">
+                <div class="w-14 h-14 rounded-2xl bg-teal-50 text-teal-600 flex items-center justify-center group-hover:bg-teal-600 group-hover:text-white transition-all shadow-inner mb-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M12 11h4"/><path d="M12 16h4"/><path d="M8 11h.01"/><path d="M8 16h.01"/><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/></svg>
+                </div>
+                <div>
+                    <h3 class="font-black text-gray-900 tracking-tight leading-tight mb-1 uppercase text-sm">ORDEN DE PRODUCCIÓN UNIDOSIS ADULTOS</h3>
+                    <p class="text-[10px] font-black text-teal-500 uppercase tracking-widest">Registro de Lote</p>
+                </div>
+            </div>
+        </a>
+
+        <!-- 7. Hoja de Cálculos -->
+        <a href="#" class="bg-white p-6 rounded-3xl border border-gray-100 shadow-xl shadow-gray-200/20 hover:scale-[1.02] hover:shadow-violet-500/10 transition-all group overflow-hidden relative">
+            <div class="relative z-10 flex flex-col h-full justify-between">
+                <div class="w-14 h-14 rounded-2xl bg-violet-50 text-violet-600 flex items-center justify-center group-hover:bg-violet-600 group-hover:text-white transition-all shadow-inner mb-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 2H8a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2z"/><path d="M9 12h6"/><path d="M12 9v6"/></svg>
+                </div>
+                <div>
+                    <h3 class="font-black text-gray-900 tracking-tight leading-tight mb-1 uppercase text-sm">HOJA DE CÁLCULOS</h3>
+                    <p class="text-[10px] font-black text-violet-500 uppercase tracking-widest">Medicamentos Estériles</p>
+                </div>
+            </div>
+        </a>
+
+        <!-- 8. Validación Orden -->
+        <a href="#" class="bg-white p-6 rounded-3xl border border-gray-100 shadow-xl shadow-gray-200/20 hover:scale-[1.02] hover:shadow-emerald-500/10 transition-all group overflow-hidden relative">
+            <div class="relative z-10 flex flex-col h-full justify-between">
+                <div class="w-14 h-14 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center group-hover:bg-emerald-600 group-hover:text-white transition-all shadow-inner mb-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                </div>
+                <div>
+                    <h3 class="font-black text-gray-900 tracking-tight leading-tight mb-1 uppercase text-sm">VALIDACIÓN ORDEN MÉDICA ESTÉRILES</h3>
+                    <p class="text-[10px] font-black text-emerald-500 uppercase tracking-widest">Criterios Técnicos</p>
+                </div>
+            </div>
+        </a>
+
+        <!-- 9. Etiquetas -->
+        <a href="#" class="bg-white p-6 rounded-3xl border border-gray-100 shadow-xl shadow-gray-200/20 hover:scale-[1.02] hover:shadow-amber-500/10 transition-all group overflow-hidden relative">
+            <div class="relative z-10 flex flex-col h-full justify-between">
+                <div class="w-14 h-14 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center group-hover:bg-amber-600 group-hover:text-white transition-all shadow-inner mb-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2H4Z"/><path d="M16 10a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-4Z"/><path d="m4 16 3-3 3 3"/><path d="m14 16 3-3 3 3"/></svg>
+                </div>
+                <div>
+                    <h3 class="font-black text-gray-900 tracking-tight leading-tight mb-1 uppercase text-sm">ETIQUETAS</h3>
+                    <p class="text-[10px] font-black text-amber-500 uppercase tracking-widest">Identificación Unidosis</p>
+                </div>
+            </div>
+        </a>
+
+    </div>
+</div>
+{% endblock %}

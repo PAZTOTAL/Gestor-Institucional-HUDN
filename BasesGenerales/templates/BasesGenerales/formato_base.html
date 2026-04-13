@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Formato HUDN{% endblock %}</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: white;
+        }
+
+        .page {
+            max-width: 21cm;
+            margin: 0 auto;
+            background: white;
+            padding: 1cm;
+        }
+
+        /* Encabezado del formato */
+        .formato-header {
+            width: 100%;
+            border: 2px solid #000;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+
+        .formato-header td {
+            border: 1px solid #000;
+            padding: 8px;
+            vertical-align: middle;
+        }
+
+        /* Logo izquierdo */
+        .logo-cell {
+            width: 120px;
+            text-align: center;
+            padding: 10px;
+        }
+
+        .logo-hudn {
+            width: 100px;
+            height: auto;
+        }
+
+        /* Título del formato */
+        .titulo-cell {
+            width: 300px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 16px;
+            padding: 15px;
+        }
+
+        /* Columna de información */
+        .info-cell {
+            width: 150px;
+        }
+
+        .info-label {
+            font-weight: bold;
+            font-size: 11px;
+            text-align: center;
+            background-color: #f0f0f0;
+            padding: 4px;
+        }
+
+        .info-value {
+            font-size: 11px;
+            text-align: center;
+            padding: 6px;
+            font-weight: bold;
+        }
+
+        /* Logo derecho */
+        .logo-right-cell {
+            width: 80px;
+            text-align: center;
+            padding: 5px;
+        }
+
+        .logo-acreditacion {
+            width: 60px;
+            height: auto;
+        }
+
+        /* Contenido del formato */
+        .formato-content {
+            margin-top: 20px;
+            min-height: 500px;
+        }
+
+        /* Estilos para impresión */
+        @media print {
+            body {
+                padding: 0;
+            }
+
+            .page {
+                padding: 0.5cm;
+            }
+
+            .no-print {
+                display: none;
+            }
+        }
+
+        /* Estilos adicionales para el contenido */
+        .section-title {
+            background-color: #e8e8e8;
+            padding: 8px;
+            font-weight: bold;
+            margin-top: 15px;
+            margin-bottom: 10px;
+            border: 1px solid #000;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-label {
+            font-weight: bold;
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        table.data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 10px 0;
+        }
+
+        table.data-table th,
+        table.data-table td {
+            border: 1px solid #000;
+            padding: 8px;
+            text-align: left;
+        }
+
+        table.data-table th {
+            background-color: #e8e8e8;
+            font-weight: bold;
+        }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+
+<body>
+    <div class="page">
+        <!-- Encabezado del Formato -->
+        <table class="formato-header">
+            <tr>
+                <!-- Logo Hospital -->
+                <td class="logo-cell" rowspan="4">
+                    <img src="{% block logo_hudn_url %}data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Crect fill='%234a90e2' width='100' height='100'/%3E%3Ctext x='50' y='50' font-size='12' fill='white' text-anchor='middle' dominant-baseline='middle'%3EHUDN%3C/text%3E%3C/svg%3E{% endblock %}"
+                        alt="Logo HUDN" class="logo-hudn">
+                </td>
+
+                <!-- Título del Formato -->
+                <td class="titulo-cell" rowspan="4">
+                    {% block titulo_formato %}NOMBRE DEL FORMATO{% endblock %}
+                </td>
+
+                <!-- Código -->
+                <td class="info-cell" colspan="2">
+                    <div class="info-label">CÓDIGO:</div>
+                </td>
+
+                <!-- Fecha de Elaboración -->
+                <td class="info-cell" colspan="2">
+                    <div class="info-label">FECHA DE ELABORACIÓN:</div>
+                </td>
+
+                <!-- Logo Acreditación -->
+                <td class="logo-right-cell" rowspan="4">
+                    <img src="{% block logo_acreditacion_url %}data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='80'%3E%3Crect fill='%23f0f0f0' width='60' height='80'/%3E%3C/svg%3E{% endblock %}"
+                        alt="Logo Acreditación" class="logo-acreditacion">
+                </td>
+            </tr>
+            <tr>
+                <!-- Valor Código -->
+                <td class="info-value" colspan="2">
+                    {% block codigo_formato %}FRXXX-000{% endblock %}
+                </td>
+
+                <!-- Valor Fecha Elaboración -->
+                <td class="info-value" colspan="2">
+                    {% block fecha_elaboracion %}DD DE MES DE AAAA{% endblock %}
+                </td>
+            </tr>
+            <tr>
+                <!-- Versión -->
+                <td class="info-cell" colspan="2">
+                    <div class="info-label">VERSIÓN:</div>
+                </td>
+
+                <!-- Fecha de Actualización -->
+                <td class="info-cell" colspan="2">
+                    <div class="info-label">FECHA DE ACTUALIZACIÓN:</div>
+                </td>
+            </tr>
+            <tr>
+                <!-- Valor Versión -->
+                <td class="info-value" colspan="2">
+                    {% block version %}01{% endblock %}
+                </td>
+
+                <!-- Valor Fecha Actualización -->
+                <td class="info-value" colspan="2">
+                    {% block fecha_actualizacion %}DD DE MES DE AAAA{% endblock %}
+                </td>
+            </tr>
+            <tr>
+                <!-- Hoja -->
+                <td class="info-cell" colspan="6">
+                    <div class="info-label" style="display: inline;">HOJA: </div>
+                    <span class="info-value" style="display: inline;">{% block numero_hoja %}1{% endblock %} DE: {%
+                        block total_hojas %}1{% endblock %}</span>
+                </td>
+            </tr>
+        </table>
+
+        <!-- Contenido del Formato -->
+        <div class="formato-content">
+            {% block content %}
+            <!-- El contenido específico de cada formato va aquí -->
+            <div class="section-title">CONTENIDO DEL FORMATO</div>
+            <p>Este es un ejemplo de plantilla base. Extiende este template para crear formatos específicos.</p>
+            {% endblock %}
+        </div>
+
+        <!-- Pie de página (opcional) -->
+        {% block footer %}{% endblock %}
+    </div>
+
+    {% block extra_js %}{% endblock %}
+</body>
+
+</html>

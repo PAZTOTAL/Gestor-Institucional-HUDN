@@ -1,0 +1,79 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Alertas de Donación | Trasplantes{% endblock %}
+
+{% block content %}
+<link rel="stylesheet" href="{% static 'css/trasplantes.css' %}">
+
+<div class="trasplantes-container">
+    <header class="mb-5">
+        <h1 class="display-4 font-weight-bold" style="background: var(--danger-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Alertas de Donación</h1>
+        <p class="text-muted">Pacientes con Criterios de Donación (Glasgow 3-5)</p>
+        <a href="{% url 'trasplantes_donacion:dashboard' %}" class="btn btn-secondary shadow-sm" style="border-radius: 0.5rem;">
+            ← Volver al Dashboard
+        </a>
+    </header>
+
+    <div class="dashboard-stats mb-5">
+        <div class="stat-card" style="border-top: 4px solid #ef4444;">
+            <div class="stat-label">Alertas de Donación</div>
+            <div class="stat-value" style="color: #ef4444;">{{ pacientes_criticos.count }}</div>
+            <div class="progress" style="height: 4px; background: rgba(0,0,0,0.05);">
+                <div class="progress-bar bg-danger" style="width: 100%"></div>
+            </div>
+        </div>
+    </div>
+
+    <section class="section">
+        <div class="premium-table-container shadow-lg">
+            <table class="premium-table">
+                <thead>
+                    <tr>
+                        <th>Identificación</th>
+                        <th>Paciente</th>
+                        <th>Servicio</th>
+                        <th>Glasgow</th>
+                        <th>Alertado a CRT</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for paciente in pacientes_criticos %}
+                    <tr class="alert-item">
+                        <td><strong>{{ paciente.tipo_identificacion }} {{ paciente.numero_documento }}</strong></td>
+                        <td>
+                            <div class="font-weight-bold">{{ paciente.primer_nombre }} {{ paciente.primer_apellido }}</div>
+                            <div class="small text-muted">{{ paciente.sexo }} | {{ paciente.edad }} años</div>
+                        </td>
+                        <td>{{ paciente.servicio|default:"N/A" }}</td>
+                        <td>
+                            <span class="badge-alert">
+                                {{ paciente.glasgow_ingreso }}
+                            </span>
+                        </td>
+                        <td>
+                            {% if paciente.paciente_alertado == 'SI' %}
+                            <span class="badge badge-success">SÍ - {{ paciente.fecha_hora_alerta_crt|date:"d/m/Y H:i" }}</span>
+                            {% else %}
+                            <span class="badge badge-danger">PENDIENTE</span>
+                            {% endif %}
+                        </td>
+                        <td class="d-flex gap-2">
+                            <button class="btn btn-sm btn-outline-primary" style="border-radius: 0.25rem;">📝 Reportar</button>
+                            <button class="btn btn-sm btn-danger shadow-sm" style="border-radius: 0.25rem;">🔔 Alerta CRT</button>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center py-5">
+                            <div class="text-muted">No hay alertas activas en este momento.</div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+</div>
+{% endblock %}

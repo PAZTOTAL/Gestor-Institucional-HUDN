@@ -1,0 +1,1243 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block content %}
+<!-- Bootstrap 5 CSS (Required for Grid & Modal) -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<!-- Active Patients Modal (Moved here to ensure z-index correctness) -->
+<div class="modal fade" id="activePatientsModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
+    aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header bg-light pb-0">
+                <div class="w-100">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h5 class="modal-title text-primary"><i class="fas fa-hospital-user"></i> Pacientes Activos en Hospitalización</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="input-group mb-2">
+                        <span class="input-group-text bg-white border-end-0"><i class="fas fa-search text-muted"></i></span>
+                        <input type="text" id="modal-patient-search" class="form-control border-start-0 ps-0" placeholder="Buscar por nombre o documento...">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-body">
+                <div id="modal-loading" class="text-center py-5 text-muted">
+                    <i class="fas fa-circle-notch fa-spin fa-2x mb-2"></i>
+                    <p>Consultando camas ocupadas...</p>
+                </div>
+                <div id="modal-content-area" class="d-none">
+                    <!-- Results injected here -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container-fluid py-3 px-4">
+    <form method="post" id="anestesiaForm">
+        {% csrf_token %}
+        <input type="hidden" name="chart_data" id="chart_data">
+
+        <!-- HEADER: Premium & Compact -->
+        <div class="card shadow-sm mb-4 border-0 rounded-3 bg-white">
+            <div class="card-body p-3 d-flex justify-content-between align-items-center">
+                <div>
+                    <h4 class="mb-0 fw-bolder text-dark-blue">
+                        <i class="fas fa-heartbeat me-2 text-gradient"></i>
+                        {% if registro %}
+                        Editar Registro de Anestesia <span class="text-muted fs-6">#{{ registro.id }}</span>
+                        {% else %}
+                        Nuevo Registro de Anestesia
+                        {% endif %}
+                    </h4>
+                    <span class="text-secondary small fw-bold ms-1" style="opacity: 0.7;">FRQUI-032 V02</span>
+                </div>
+                <div class="d-flex gap-2">
+                    {% if registro %}
+                    <a href="#" onclick="submitPDF(); return false;"
+                        class="btn btn-outline-danger fw-bold shadow-sm rounded-pill px-3">
+                        <i class="fas fa-file-pdf me-2"></i> PDF
+                    </a>
+                    <button type="submit" class="btn btn-warning fw-bold shadow-sm rounded-pill px-3 text-dark">
+                        <i class="fas fa-edit me-2"></i> Actualizar
+                    </button>
+                    {% else %}
+                    <button type="submit" class="btn btn-primary fw-bold shadow-sm rounded-pill px-4">
+                        <i class="fas fa-save me-2"></i> Guardar Registro
+                    </button>
+                    {% endif %}
+                    <a href="{% url 'list_registros' %}"
+                        class="btn btn-outline-secondary fw-bold shadow-sm rounded-pill px-3">
+                        <i class="fas fa-search me-2"></i> Buscar
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-4 pb-5">
+
+            <!-- COLUMN 1: PATIENT, PRE-OP, TECHNIQUE, OBSERVATIONS -->
+            <div class="col-lg-6 col-md-12">
+                <!-- Patient Info Block -->
+                <div class="card shadow-sm border-0 mb-4 h-auto">
+                    <div class="card-header bg-gradient-blue text-white py-2 rounded-top">
+                        <h6 class="mb-0 fw-bold small text-uppercase ls-1"><i
+                                class="fas fa-user-injured me-2"></i>Información del Paciente</h6>
+                    </div>
+                    <div class="card-body bg-white p-3">
+                        <div class="mb-3">
+                            <label class="small text-muted fw-bold text-uppercase">Buscar Paciente (Activos en
+                                Cirugía)</label>
+                            <div class="d-flex gap-2 mb-2">
+                                {{ registro_form.paciente }}
+                                <button type="button" id="btn-check-active" class="btn btn-sm btn-info text-white"
+                                    style="background-color: #0dcaf0; color: white; border-color: #0dcaf0;"
+                                    title="Ver lista de pacientes activos" data-bs-toggle="modal"
+                                    data-bs-target="#activePatientsModal">
+                                    <i class="fas fa-list"></i> Ver Activos
+                                </button>
+                            </div>
+                            <div id="debug-patients-list" class="d-none border rounded p-2 bg-light small mt-2"
+                                style="max-height: 200px; overflow-y: auto;"></div>
+                        </div>
+
+                        <!-- 4-Column Patient Details Grid -->
+                        <div id="patient-details-grid"
+                            class="row g-2 mb-3 d-none border rounded p-2 bg-light-blue mx-0">
+                            <!-- Col 1: Identity -->
+                            <div class="col-md-3 border-end">
+                                <label class="small text-muted fw-bold d-block">Paciente</label>
+                                <span class="fw-bold text-dark d-block text-truncate" id="pat-name">-</span>
+                                <span class="small text-secondary" id="pat-doc">-</span>
+                            </div>
+                            <!-- Col 2: Location -->
+                            <div class="col-md-3 border-end">
+                                <label class="small text-muted fw-bold d-block">Ubicación</label>
+                                <div class="d-flex justify-content-between">
+                                    <span>Sala: <span class="fw-bold text-dark" id="pat-sala">-</span></span>
+                                </div>
+                                <div class="d-flex justify-content-between">
+                                    <span>Cama: <span class="fw-bold text-dark" id="pat-cama">-</span></span>
+                                </div>
+                            </div>
+                            <!-- Col 3: Demographics -->
+                            <div class="col-md-3 border-end">
+                                <label class="small text-muted fw-bold d-block">Demografía</label>
+                                <div>Nac: <span class="fw-bold text-dark" id="pat-fnac">-</span></div>
+                                <div>Edad: <span class="fw-bold text-primary" id="pat-edad">-</span></div>
+                            </div>
+                            <!-- Col 4: Admin -->
+                            <div class="col-md-3">
+                                <label class="small text-muted fw-bold d-block">Administrativo</label>
+                                <div class="text-truncate" title="Aseguradora" id="pat-aseguradora">-</div>
+                                <div class="small text-muted">{% now "d/m/Y" %}</div>
+                            </div>
+                        </div>
+
+                        <div class="mb-2">
+                            <label class="small text-muted fw-bold text-uppercase">Diagnóstico Pre-Op</label>
+                            {{ registro_form.diagnostico_pre }}
+                        </div>
+                        <div>
+                            <label class="small text-muted fw-bold text-uppercase">Cirugía Propuesta</label>
+                            {{ registro_form.cirugia_propuesta }}
+                            <div class="d-none">
+                                {{ registro_form.sala }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Evaluación Pre-Anestésica -->
+                <div class="card shadow-sm border-0 mb-4 h-auto">
+                    <div class="card-header bg-gradient-orange text-white py-2 rounded-top">
+                        <h6 class="mb-0 fw-bold small text-uppercase ls-1"><i
+                                class="fas fa-file-medical-alt me-2"></i>Evaluación Pre-Anestésica</h6>
+                    </div>
+                    <div class="card-body bg-white p-3">
+                        <div class="mb-3">
+                            <label class="small text-muted fw-bold text-uppercase mb-1">Antecedentes Patológicos</label>
+                            {{ evaluacion_form.antecedentes_patologicos }}
+                        </div>
+
+                        <!-- Compact Tabs -->
+                        <ul class="nav nav-pills nav-fill small mb-2 gap-1" id="antTab" role="tablist">
+                            <li class="nav-item">
+                                <a class="nav-link active py-1 px-2 rounded-pill fw-bold" data-bs-toggle="tab"
+                                    href="#quir">Quirúrgicos</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link py-1 px-2 rounded-pill fw-bold" data-bs-toggle="tab"
+                                    href="#farm">Fármacos</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link py-1 px-2 rounded-pill fw-bold" data-bs-toggle="tab"
+                                    href="#aler">Alergias</a>
+                            </li>
+                        </ul>
+                        <div class="tab-content mb-3 p-2 bg-light rounded border-0">
+                            <div class="tab-pane fade show active" id="quir">
+                                {{ evaluacion_form.antecedentes_quirurgicos }}
+                            </div>
+                            <div class="tab-pane fade" id="farm">
+                                {{ evaluacion_form.antecedentes_farmacologicos }}
+                            </div>
+                            <div class="tab-pane fade" id="aler">
+                                {{ evaluacion_form.antecedentes_alergicos }}
+                            </div>
+                        </div>
+
+                        <!-- Vitals Grid -->
+                        <div class="row g-2 mb-3">
+                            <div class="col-3">
+                                <label class="small text-center d-block text-muted fw-bold">Peso</label>
+                                {{ evaluacion_form.peso }}
+                            </div>
+                            <div class="col-3">
+                                <label class="small text-center d-block text-muted fw-bold">Talla</label>
+                                {{ evaluacion_form.talla }}
+                            </div>
+                            <div class="col-3">
+                                <label class="small text-center d-block text-muted fw-bold">PA</label>
+                                {{ evaluacion_form.pa }}
+                            </div>
+                            <div class="col-3">
+                                <label class="small text-center d-block text-muted fw-bold">FC</label>
+                                {{ evaluacion_form.fc }}
+                            </div>
+                        </div>
+
+                        <div class="row g-2 align-items-center">
+                            <div class="col-4">
+                                <label class="small text-muted fw-bold">Mallampati</label>
+                                {{ evaluacion_form.mallampati }}
+                            </div>
+                            <div class="col-4">
+                                <label class="small text-muted fw-bold">ASA</label>
+                                {{ evaluacion_form.asa }}
+                            </div>
+                            <div class="col-4">
+                                <div class="form-check form-switch d-flex flex-column align-items-center mt-3">
+                                    {{ evaluacion_form.apto_cirugia }}
+                                    <label class="form-check-label small fw-bold text-success mt-1">APTO</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TECNICA ANESTESICA -->
+                <div class="card shadow-sm border-0 mb-4 h-auto">
+                    <div class="card-header bg-gradient-purple text-white py-2 rounded-top">
+                        <h6 class="mb-0 fw-bold small text-uppercase ls-1"><i class="fas fa-syringe me-2"></i>Técnica
+                            Anestésica</h6>
+                    </div>
+                    <div class="card-body bg-white p-3">
+                        {% if tecnica_form.non_field_errors %}
+                        <div class="alert alert-danger small p-2 mb-2 rounded">
+                            {{ tecnica_form.non_field_errors.as_text }}
+                        </div>
+                        {% endif %}
+                        <div class="row g-2 mb-3">
+                            <div class="col-6">
+                                <div
+                                    class="form-check p-2 border rounded bg-light-purple h-100 d-flex align-items-center">
+                                    {{ tecnica_form.general }} <label class="small fw-bold ms-2">General</label>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div
+                                    class="form-check p-2 border rounded bg-light-purple h-100 d-flex align-items-center">
+                                    {{ tecnica_form.regional }} <label class="small fw-bold ms-2">Regional</label>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div
+                                    class="form-check p-2 border rounded bg-light-purple h-100 d-flex align-items-center">
+                                    {{ tecnica_form.sedacion }} <label class="small fw-bold ms-2">Sedación</label>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div
+                                    class="form-check p-2 border rounded bg-light-purple h-100 d-flex align-items-center">
+                                    {{ tecnica_form.combinada }} <label class="small fw-bold ms-2">Combinada</label>
+                                </div>
+                            </div>
+                        </div>
+                        <label class="small text-muted fw-bold text-uppercase">Descripción detallada</label>
+                        {{ tecnica_form.descripcion }}
+                    </div>
+                </div>
+
+                <!-- OBSERVACIONES -->
+                <div class="card shadow-sm border-0 mb-4 h-auto">
+                    <div class="card-header bg-light text-dark py-2 rounded-top border-bottom">
+                        <h6 class="mb-0 fw-bold small text-uppercase ls-1"><i
+                                class="fas fa-clipboard me-2"></i>Observaciones</h6>
+                    </div>
+                    <div class="card-body bg-white p-3">
+                        {{ observaciones_form.texto }}
+                    </div>
+                </div>
+            </div>
+
+            <!-- COLUMN 2: GRAPH, MONITORS, VENTILATION, BALANCE/EXIT -->
+            <div class="col-lg-6 col-md-12">
+
+                <!-- CHART CARD -->
+                <div class="card shadow-sm border-0 mb-4 h-auto border-primary" style="border-width: 2px !important;">
+                    <div
+                        class="card-header bg-gradient-dark text-white py-2 rounded-top d-flex justify-content-between align-items-center">
+                        <h6 class="mb-0 fw-bold small text-uppercase ls-1"><i class="fas fa-chart-line me-2"></i>Signos
+                            Vitales</h6>
+                        <span class="badge bg-white text-dark small animate-pulse">En Vivo</span>
+                    </div>
+                    <div class="card-body bg-white p-3">
+                        <div class="chart-container position-relative mb-3" style="height: 250px; width: 100%;">
+                            <canvas id="anesthesiaChart"></canvas>
+                        </div>
+
+                        <!-- Chart Controls -->
+                        <div class="bg-light p-3 rounded-3 border">
+                            <div class="row g-2 align-items-end mb-2">
+                                <div class="col-12">
+                                    <label class="small fw-bold text-muted mb-1">Hora Evento</label>
+                                    <div class="input-group">
+                                        <input type="time" id="chart-time"
+                                            class="form-control form-control-sm fw-bold text-center bg-white"
+                                            style="font-size: 1.1rem;">
+                                        <button type="button" class="btn btn-dark btn-sm" onclick="loadTime()"
+                                            title="Ahora">
+                                            <i class="fas fa-clock"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row g-2 mb-3">
+                                <div class="col-6">
+                                    <label class="small fw-bold text-danger text-center w-100 d-block mb-1">P.
+                                        Arterial</label>
+                                    <div class="input-group input-group-sm">
+                                        <input type="number" id="chart-pas"
+                                            class="form-control text-center text-danger fw-bold" placeholder="PAS">
+                                        <span
+                                            class="input-group-text px-1 bg-white border-end-0 border-start-0">/</span>
+                                        <input type="number" id="chart-pad"
+                                            class="form-control text-center text-danger fw-bold" placeholder="PAD">
+                                    </div>
+                                </div>
+                                <div class="col-3">
+                                    <label class="small fw-bold text-primary text-center w-100 d-block mb-1">FC</label>
+                                    <input type="number" id="chart-fc"
+                                        class="form-control form-control-sm text-center text-primary fw-bold"
+                                        placeholder="lpm">
+                                </div>
+                                <div class="col-3">
+                                    <label class="small fw-bold text-info text-center w-100 d-block mb-1">SpO2</label>
+                                    <input type="number" id="chart-spo2"
+                                        class="form-control form-control-sm text-center text-info fw-bold"
+                                        placeholder="%">
+                                </div>
+                            </div>
+
+                            <!-- Events -->
+                            <div class="mb-3">
+                                <label class="small fw-bold text-muted mb-2 d-block text-uppercase"
+                                    style="font-size: 0.7em; letter-spacing: 1px;">Marcadores de Evento</label>
+                                <div class="d-flex flex-wrap gap-2" id="event-buttons">
+                                    <button type="button"
+                                        class="btn btn-outline-info flex-fill btn-event btn-sm rounded-pill py-1"
+                                        data-event="start_anes" onclick="selectEvent(this)">
+                                        <i class="fas fa-play me-1"></i> Ini Anes
+                                    </button>
+                                    <button type="button"
+                                        class="btn btn-outline-primary flex-fill btn-event btn-sm rounded-pill py-1"
+                                        data-event="start_surg" onclick="selectEvent(this)">
+                                        <i class="fas fa-syringe me-1"></i> Ini Cx
+                                    </button>
+                                    <button type="button"
+                                        class="btn btn-outline-warning text-dark flex-fill btn-event btn-sm rounded-pill py-1"
+                                        data-event="end_surg" onclick="selectEvent(this)">
+                                        <i class="fas fa-band-aid me-1"></i> Fin Cx
+                                    </button>
+                                    <button type="button"
+                                        class="btn btn-outline-danger flex-fill btn-event btn-sm rounded-pill py-1"
+                                        data-event="end_anes" onclick="selectEvent(this)">
+                                        <i class="fas fa-stop me-1"></i> Fin Anes
+                                    </button>
+                                </div>
+                                <input type="hidden" id="chart-event-val" value="">
+                            </div>
+
+                            <button type="button"
+                                class="btn btn-success w-100 fw-bold shadow-sm rounded-3 text-uppercase ls-1 py-2"
+                                onclick="addChartPoint()">
+                                <i class="fas fa-plus-circle me-2"></i> Añadir Registro
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- MONITORES Block -->
+                <div class="card shadow-sm border-0 mb-4 h-auto">
+                    <div class="card-header bg-gradient-teal text-white py-2 rounded-top">
+                        <h6 class="mb-0 fw-bold small text-uppercase ls-1"><i class="fas fa-desktop me-2"></i>Monitores
+                            y Dispositivos</h6>
+                    </div>
+                    <div class="card-body bg-white p-3">
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <div class="form-check bg-light p-2 rounded">
+                                    {{ monitoreo_form.ekg }}
+                                    <label class="form-check-label small fw-bold text-dark ms-2">EKG</label>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="form-check bg-light p-2 rounded">
+                                    {{ monitoreo_form.pulx }}
+                                    <label class="form-check-label small fw-bold text-dark ms-2">Oximetría</label>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="form-check bg-light p-2 rounded">
+                                    {{ monitoreo_form.capno }}
+                                    <label class="form-check-label small fw-bold text-dark ms-2">Capnografía</label>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="form-check bg-light p-2 rounded">
+                                    {{ monitoreo_form.pni }}
+                                    <label class="form-check-label small fw-bold text-dark ms-2">PANI</label>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="form-check bg-light p-2 rounded">
+                                    {{ monitoreo_form.linea_arterial }}
+                                    <label class="form-check-label small fw-bold text-dark ms-2">PAI (Arterial)</label>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="form-check bg-light p-2 rounded">
+                                    {{ monitoreo_form.cvc }}
+                                    <label class="form-check-label small fw-bold text-dark ms-2">PVC (Central)</label>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="form-check bg-light p-2 rounded">
+                                    {{ monitoreo_form.temp }}
+                                    <label class="form-check-label small fw-bold text-dark ms-2">Temperatura</label>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="form-check bg-light p-2 rounded">
+                                    {{ monitoreo_form.est_n_perif }}
+                                    <label class="form-check-label small fw-bold text-dark ms-2">Est. Nervioso</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mt-3">
+                            <label class="small text-muted fw-bold">Otro Monitor</label>
+                            {{ monitoreo_form.otro }}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- VENTILACION -->
+                <div class="card shadow-sm border-0 mb-4 h-auto">
+                    <div class="card-header bg-gradient-indigo text-white py-2 rounded-top">
+                        <h6 class="mb-0 fw-bold small text-uppercase ls-1"><i class="fas fa-lungs me-2"></i>Ventilación
+                        </h6>
+                    </div>
+                    <div class="card-body bg-white p-3">
+                        <div class="d-flex justify-content-between mb-3 bg-light p-2 rounded">
+                            <div class="form-check m-0">
+                                {{ ventilacion_form.espontanea }} <label class="small fw-bold">Espontánea</label>
+                            </div>
+                            <div class="form-check m-0">
+                                {{ ventilacion_form.asistida }} <label class="small fw-bold">Asistida</label>
+                            </div>
+                            <div class="form-check m-0">
+                                {{ ventilacion_form.controlada }} <label class="small fw-bold">Controlada</label>
+                            </div>
+                        </div>
+                        <div class="row g-2">
+                            <div class="col-4">
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text px-2 bg-light fw-bold text-muted">VT</span>
+                                    {{ ventilacion_form.vt }}
+                                </div>
+                            </div>
+                            <div class="col-4">
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text px-2 bg-light fw-bold text-muted">FR</span>
+                                    {{ ventilacion_form.fr }}
+                                </div>
+                            </div>
+                            <div class="col-4">
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text px-2 bg-light fw-bold text-muted">PEEP</span>
+                                    {{ ventilacion_form.peep }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- BALANCE & SALIDA -->
+                <div class="card shadow-sm border-0 mb-4 h-auto">
+                    <div class="card-header bg-gradient-red text-white py-2 rounded-top">
+                        <h6 class="mb-0 fw-bold small text-uppercase ls-1"><i class="fas fa-tint me-2"></i>Balance &
+                            Salida</h6>
+                    </div>
+                    <div class="card-body bg-white p-3">
+                        <div class="row g-2 mb-3">
+                            <div class="col-6">
+                                <label class="small text-muted fw-bold">PVC Final</label>
+                                {{ liquidos_form.pvc }}
+                            </div>
+                            <div class="col-6">
+                                <label class="small text-muted fw-bold">Diuresis Total</label>
+                                {{ liquidos_form.diuresis }}
+                            </div>
+                            <div class="col-12">
+                                <label class="small text-muted fw-bold">Líquidos Administrados</label>
+                                {{ liquidos_form.liquidos_administrados }}
+                            </div>
+                        </div>
+
+                        <hr class="text-muted opacity-25">
+
+                        <div class="mb-2">
+                            <label class="small text-muted fw-bold text-uppercase">Diagnóstico Post-Op</label>
+                            {{ salida_form.diagnostico_post }}
+                        </div>
+                        <div class="mb-2">
+                            <label class="small text-muted fw-bold text-uppercase">Cirugía Realizada</label>
+                            {{ salida_form.cirugia_realizada }}
+                        </div>
+                        <div class="row g-2">
+                            <div class="col-8">
+                                <label class="small text-muted fw-bold">Destino</label>
+                                {{ salida_form.destino }}
+                            </div>
+                            <div class="col-4">
+                                <label class="small text-muted fw-bold">Aldrete</label>
+                                {{ salida_form.aldrete }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </form>
+</div>
+
+<style>
+    /* Premium Aesthetic Palette */
+    :root {
+        --primary-blue: #2c3e50;
+        --accent-blue: #3498db;
+        --soft-bg: #f8f9fa;
+        --card-bg: #ffffff;
+        --border-color: #e9ecef;
+        --text-muted: #6c757d;
+        --text-dark: #343a40;
+    }
+
+    body {
+        background-color: var(--soft-bg);
+        font-family: 'Inter', system-ui, -apple-system, sans-serif;
+        /* Assuming Inter is loaded or fallback */
+    }
+
+    .ls-1 {
+        letter-spacing: 0.05em;
+    }
+
+    .text-dark-blue {
+        color: var(--primary-blue);
+    }
+
+    /* Gradients */
+    .bg-gradient-blue {
+        background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);
+    }
+
+    .bg-gradient-teal {
+        background: linear-gradient(135deg, #20c997 0%, #198754 100%);
+    }
+
+    .bg-gradient-orange {
+        background: linear-gradient(135deg, #fd7e14 0%, #d63384 100%);
+    }
+
+    /* A bit more vibrant */
+    .bg-gradient-red {
+        background: linear-gradient(135deg, #dc3545 0%, #b02a37 100%);
+    }
+
+    .bg-gradient-purple {
+        background: linear-gradient(135deg, #6f42c1 0%, #59359a 100%);
+    }
+
+    .bg-gradient-indigo {
+        background: linear-gradient(135deg, #6610f2 0%, #520dc2 100%);
+    }
+
+    .bg-gradient-dark {
+        background: linear-gradient(135deg, #343a40 0%, #212529 100%);
+    }
+
+    /* Form Controls */
+    .form-control,
+    .form-select {
+        border: 1px solid #ced4da;
+        border-radius: 0.375rem;
+        font-size: 0.9rem;
+        padding: 0.4rem 0.6rem;
+        background-color: #fcfcfc;
+        transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+    }
+
+    .form-control:focus,
+    .form-select:focus {
+        border-color: var(--accent-blue);
+        box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.15);
+        background-color: #fff;
+    }
+
+    .form-control-sm,
+    .form-select-sm {
+        font-size: 0.82rem;
+        padding: 0.25rem 0.4rem;
+    }
+
+    textarea.form-control {
+        resize: vertical;
+        min-height: 40px;
+    }
+
+    /* Cards */
+    .card {
+        border-radius: 0.75rem;
+        /* More rounded */
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .card:hover {
+        /* box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.08) !important; */
+    }
+
+    .card-header {
+        border-bottom: 0;
+        font-weight: 600;
+    }
+
+    /* Tabs */
+    .nav-pills .nav-link {
+        color: var(--text-muted);
+        background-color: transparent;
+        transition: all 0.2s;
+    }
+
+    .nav-pills .nav-link.active {
+        background-color: var(--text-dark);
+        /* Dark grey for medical clean look */
+        color: #fff;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
+
+    .nav-pills .nav-link:hover:not(.active) {
+        background-color: #e9ecef;
+    }
+
+    /* Chart Button Gradients */
+    /* Level 1: Info/Teal */
+    .btn-blue-1 {
+        background-color: #e0f7fa;
+        color: #006064;
+        border-color: #b2ebf2;
+    }
+
+    .btn-green-1 {
+        background: linear-gradient(135deg, #20c997 0%, #198754 100%);
+        color: white;
+        border: none;
+    }
+
+    /* Level 2: Primary/Blue */
+    .btn-blue-2 {
+        background-color: #e3f2fd;
+        color: #0d47a1;
+        border-color: #bbdefb;
+    }
+
+    .btn-green-2 {
+        background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);
+        color: white;
+        border: none;
+    }
+
+    /* Level 3: Warning/Orange */
+    .btn-blue-3 {
+        background-color: #fff3e0;
+        color: #e65100;
+        border-color: #ffe0b2;
+    }
+
+    .btn-green-3 {
+        background: linear-gradient(135deg, #ffc107 0%, #ffca2c 100%);
+        color: #000;
+        border: none;
+    }
+
+    /* Level 4: Danger/Red */
+    .btn-blue-4 {
+        background-color: #ffebee;
+        color: #b71c1c;
+        border-color: #ffcdd2;
+    }
+
+    .btn-green-4 {
+        background: linear-gradient(135deg, #dc3545 0%, #b02a37 100%);
+        color: white;
+        border: none;
+    }
+
+    .animate-pulse {
+        animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+        0% {
+            opacity: 1;
+        }
+
+        50% {
+            opacity: 0.5;
+        }
+
+        100% {
+            opacity: 1;
+        }
+    }
+
+    .bg-light-purple {
+        background-color: #f3e5f5;
+    }
+
+    .transition-icon {
+        transition: transform 0.3s ease;
+    }
+</style>
+
+{% endblock %}
+
+{% block scripts %}
+<!-- Bootstrap 5 JS Bundle (Required for Modal) -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+
+<script>
+    // Variables de control de estado
+    let isModalLoading = false;
+
+    $(document).ready(function () {
+        const $contentArea = $('#modal-content-area');
+        const $loading = $('#modal-loading');
+
+        // El modal se abre automáticamente vía data-bs-toggle en el botón HTML.
+        // No instanciamos un nuevo Modal aquí para evitar conflictos de eventos, 
+        // usamos la instancia de Bootstrap si es necesario.
+
+        // Carga de datos al mostrar el modal (Esperamos a que termine la animación)
+        $(document).on('shown.bs.modal', '#activePatientsModal', function () {
+            if (isModalLoading) return;
+            isModalLoading = true;
+
+            $loading.removeClass('d-none');
+            $contentArea.addClass('d-none').empty();
+
+            $.ajax({
+                url: '/api/lookup-paciente-enhanced/',
+                data: { term: '', limit: 500 },
+                dataType: 'json',
+                success: function (data) {
+                    if (data.results && data.results.length > 0) {
+                        const groups = {};
+                        data.results.forEach(p => {
+                            const sala = p.sala || "Sin Ubicación Definida";
+                            if (!groups[sala]) groups[sala] = [];
+                            groups[sala].push(p);
+                        });
+
+                        const accordionContainer = $('<div class="manual-accordion" id="patientAccordion"></div>');
+                        let groupIdx = 0;
+
+                        for (const [salaName, patients] of Object.entries(groups)) {
+                            groupIdx++;
+                            const collapseId = `manual-collapse-${groupIdx}`;
+
+                            const section = $(`
+                                <div class="manual-accordion-item mb-2 border rounded shadow-sm overflow-hidden bg-white">
+                                    <div class="manual-accordion-header bg-light p-3 d-flex justify-content-between align-items-center cursor-pointer" 
+                                         style="cursor: pointer;" data-target="#${collapseId}">
+                                        <span>
+                                            <i class="fas fa-door-open me-2 text-primary"></i> 
+                                            <strong>${salaName}</strong>
+                                        </span>
+                                        <div class="d-flex align-items-center">
+                                            <span class="badge bg-primary rounded-pill me-2">${patients.length}</span>
+                                            <i class="fas fa-chevron-down text-muted transition-icon"></i>
+                                        </div>
+                                    </div>
+                                    <div id="${collapseId}" class="manual-accordion-body" style="display: none; border-top: 1px solid #dee2e6;">
+                                        <div class="list-group list-group-flush"></div>
+                                    </div>
+                                </div>
+                            `);
+
+                            const listGroup = section.find('.list-group');
+                            patients.forEach(p => {
+                                const jsonStr = JSON.stringify(p).replace(/'/g, "&#39;").replace(/"/g, "&quot;");
+                                const item = $(`
+                                    <a href="#" class="list-group-item list-group-item-action select-from-modal py-3" data-json='${jsonStr}'>
+                                        <div class="d-flex w-100 justify-content-between align-items-center">
+                                            <div>
+                                                <h6 class="mb-1 text-dark fw-bold">${p.nombre}</h6>
+                                                <div class="small text-muted">
+                                                    <i class="fas fa-id-card me-1"></i> ${p.documento} | 
+                                                    <i class="fas fa-birthday-cake me-1"></i> ${p.edad} años
+                                                </div>
+                                            </div>
+                                            <div class="text-end">
+                                                <span class="badge bg-light text-primary border border-primary px-3 py-2 rounded-pill">
+                                                    <i class="fas fa-bed me-1"></i> ${p.cama || 'Sin cama'}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </a>
+                                `);
+                                listGroup.append(item);
+                            });
+                            accordionContainer.append(section);
+                        }
+                        $contentArea.append(accordionContainer);
+                    } else {
+                        $contentArea.html('<div class="alert alert-info border-0 shadow-sm"><i class="fas fa-info-circle me-2"></i>No se encontraron pacientes activos actualmente.</div>');
+                    }
+                },
+                error: function (xhr, status, error) {
+                    $contentArea.html(`<div class="alert alert-danger border-0 shadow-sm"><i class="fas fa-exclamation-triangle me-2"></i>Error: ${error}</div>`);
+                },
+                complete: function () {
+                    $loading.addClass('d-none');
+                    $contentArea.removeClass('d-none');
+                    isModalLoading = false;
+                }
+            });
+        });
+
+        // Search Filter Logic for Modal
+        $('#modal-patient-search').on('keyup', function() {
+            var value = $(this).val().toLowerCase();
+            
+            // Filter individual items
+            $('#modal-content-area .list-group-item').filter(function() {
+                var text = $(this).text().toLowerCase();
+                var match = text.indexOf(value) > -1;
+                $(this).toggle(match);
+            });
+
+            // Update Accordion Headers (Hide empty sections)
+            $('.manual-accordion-item').each(function() {
+                var $item = $(this);
+                var visibleChildren = $item.find('.list-group-item:visible').length;
+                
+                if (visibleChildren === 0) {
+                    $item.hide();
+                } else {
+                    $item.show();
+                    // Optional: Update badge count if needed, or just show section
+                    // To show filtered count would require more DOM manipulation, 
+                    // for now just hiding empty sections is good UX.
+                    
+                    // Auto-expand if searching
+                    if (value.length > 0) {
+                        $item.find('.manual-accordion-body').show();
+                        $item.find('.transition-icon').css('transform', 'rotate(0deg)');
+                    } else {
+                        // Collapse back if cleared? Or leave as is. 
+                        // Let's leave as is or collapse all? 
+                        // Better to leave user state or collapse for cleanliness.
+                        // Let's keep it simple: Expand matches.
+                    }
+                }
+            });
+        });
+
+        // Manejador Robusto Manual (Delegación Total)
+        $(document).on('click', '.manual-accordion-header', function (e) {
+            e.preventDefault();
+            const targetSelector = $(this).attr('data-target');
+            const $target = $(targetSelector);
+            const $icon = $(this).find('.transition-icon');
+
+            $target.slideToggle(300);
+
+            // Rotar icono basándose en visibilidad proyectada
+            if ($target.is(':visible')) {
+                $icon.css('transform', 'rotate(0deg)');
+            } else {
+                $icon.css('transform', 'rotate(180deg)');
+            }
+        });
+
+        // --- Configuración Select2 ---
+        const selectElement = $('#id_paciente');
+        if (selectElement.data('select2')) selectElement.select2('destroy');
+
+        selectElement.select2({
+            placeholder: 'Buscar Paciente (Activos)',
+            allowClear: true,
+            width: '100%',
+            minimumInputLength: 3,
+            ajax: {
+                url: '/api/lookup-paciente-enhanced/',
+                dataType: 'json',
+                delay: 250,
+                data: function (params) { return { term: params.term }; },
+                processResults: function (data) { return { results: data.results }; },
+                cache: true
+            }
+        });
+
+        $('#id_paciente').on('select2:select', function (e) {
+            const data = e.params.data;
+            if (data) {
+                $('#pat-name').text(data.nombre);
+                $('#pat-doc').text(data.documento);
+                $('#pat-sala').text(data.sala);
+                $('#pat-cama').text(data.cama);
+                $('#pat-fnac').text(data.fecha_nacimiento);
+                $('#pat-edad').text(data.edad + ' años');
+                $('#pat-aseguradora').text(data.aseguradora);
+                $('#patient-details-grid').removeClass('d-none');
+                if ($('#id_sala').length) $('#id_sala').val(data.sala);
+
+                // Fetch last diagnosis on demand to maintain performance
+                if ($('#id_diagnostico_pre').length) {
+                    $.get(`/api/paciente-ultimo-diagnostico/${data.paciente_id || data.id}/`, function (response) {
+                        if (response.ultimo_diagnostico) {
+                            $('#id_diagnostico_pre').val(response.ultimo_diagnostico);
+                        }
+                        if (response.peso) {
+                            $('#id_eval-peso').val(response.peso);
+                        }
+                        if (response.talla) {
+                            $('#id_eval-talla').val(response.talla);
+                        }
+                    });
+                }
+            }
+        });
+
+        $('#id_paciente').on('select2:unselect', function () {
+            $('#patient-details-grid').addClass('d-none');
+        });
+
+        // Selección desde el Modal (Evento delegado)
+        $(document).on('click', '.select-from-modal', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            const data = $(this).data('json');
+
+            const option = new Option(data.nombre, data.id, true, true);
+            $('#id_paciente').append(option).trigger('change');
+
+            $('#id_paciente').trigger({
+                type: 'select2:select',
+                params: { data: data }
+            });
+
+            const modalEl = document.getElementById('activePatientsModal');
+            let myModal = bootstrap.Modal.getInstance(modalEl);
+            if (!myModal) myModal = new bootstrap.Modal(modalEl);
+            myModal.hide();
+        });
+    });
+
+
+    // --- Anesthesia Chart Logic ---
+    let chartInstance;
+    let chartPoints = {{ final_chart_data| safe }};
+
+    function initChart() {
+        const ctx = document.getElementById('anesthesiaChart').getContext('2d');
+
+        const data = {
+            labels: [],
+            datasets: [
+                {
+                    label: 'PAS',
+                    data: [],
+                    borderColor: 'rgb(220, 53, 69)', // Red
+                    backgroundColor: 'rgba(220, 53, 69, 0.5)',
+                    pointStyle: 'triangle',
+                    pointRadius: 6,
+                    pointRotation: 180,
+                    tension: 0.2,
+                    yAxisID: 'y'
+                },
+                {
+                    label: 'PAD',
+                    data: [],
+                    borderColor: 'rgb(220, 53, 69)', // Red
+                    backgroundColor: 'rgba(220, 53, 69, 0.5)',
+                    pointStyle: 'triangle',
+                    pointRadius: 6,
+                    pointRotation: 180,
+                    tension: 0.2,
+                    yAxisID: 'y'
+                },
+                {
+                    label: 'FC',
+                    data: [],
+                    borderColor: 'rgb(13, 110, 253)', // Blue
+                    backgroundColor: 'rgba(13, 110, 253, 0.5)',
+                    pointStyle: 'circle',
+                    pointRadius: 5,
+                    tension: 0.2,
+                    yAxisID: 'y'
+                },
+                {
+                    label: 'SpO2',
+                    data: [],
+                    borderColor: 'rgb(13, 202, 240)', // Cyan/Info
+                    borderDash: [5, 5],
+                    pointRadius: 0,
+                    tension: 0.4,
+                    yAxisID: 'y1'
+                },
+                {
+                    label: 'Eventos',
+                    data: [],
+                    backgroundColor: 'black',
+                    borderColor: 'black',
+                    showLine: false,
+                    pointRadius: 8,
+                    yAxisID: 'y'
+                }
+            ]
+        };
+
+        const config = {
+            type: 'line',
+            data: data,
+            options: {
+                animation: false,
+                maintainAspectRatio: false, // Allow custom height
+                responsive: true,
+                interaction: {
+                    mode: 'index',
+                    intersect: false,
+                },
+                scales: {
+                    x: {
+                        ticks: { font: { size: 10 } }
+                    },
+                    y: {
+                        type: 'linear',
+                        display: true,
+                        position: 'left',
+                        min: 0,
+                        max: 220,
+                        ticks: { stepSize: 20, font: { size: 10 } },
+                        title: { display: true, text: 'mmHg / lpm', font: { size: 10 } }
+                    },
+                    y1: {
+                        type: 'linear',
+                        display: true,
+                        position: 'right',
+                        min: 0,
+                        max: 100,
+                        grid: { drawOnChartArea: false },
+                        ticks: { font: { size: 10 } },
+                        title: { display: true, text: 'SpO2 (%)', font: { size: 10 } }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        labels: { usePointStyle: true, boxWidth: 6, font: { size: 11 } }
+                    }
+                }
+            }
+        };
+
+        chartInstance = new Chart(ctx, config);
+
+        if (chartPoints.length > 0) {
+            chartPoints.forEach(pt => {
+                addToChartDataset(pt);
+            });
+            updateChartInput();
+        }
+
+        renderEventButtons();
+    }
+
+    function addToChartDataset(pt) {
+        chartInstance.data.labels.push(pt.time);
+        chartInstance.data.datasets[0].data.push(pt.pas || null);
+        chartInstance.data.datasets[1].data.push(pt.pad || null);
+        chartInstance.data.datasets[2].data.push(pt.fc || null);
+        chartInstance.data.datasets[3].data.push(pt.spo2 || null);
+
+        // Events
+        const datasetEvents = chartInstance.data.datasets[4];
+        let eventY = null;
+        if (pt.event) eventY = 210;
+
+        datasetEvents.data.push(eventY);
+
+        if (!Array.isArray(datasetEvents.pointStyle)) {
+            datasetEvents.pointStyle = [];
+        }
+
+        if (pt.event) {
+            if (pt.event.includes('start')) datasetEvents.pointStyle.push('crossRot');
+            else if (pt.event.includes('end_anes')) datasetEvents.pointStyle.push('rectRot');
+            else datasetEvents.pointStyle.push('circle');
+        } else {
+            datasetEvents.pointStyle.push('circle');
+        }
+
+        chartInstance.update();
+    }
+
+    function loadTime() {
+        const now = new Date();
+        const hours = String(now.getHours()).padStart(2, '0');
+        const minutes = String(now.getMinutes()).padStart(2, '0');
+        document.getElementById('chart-time').value = `${hours}:${minutes}`;
+    }
+
+    function renderEventButtons() {
+        const hiddenInput = document.getElementById('chart-event-val');
+        const currentVal = hiddenInput.value;
+        const allBtns = document.querySelectorAll('.btn-event');
+
+        const recordedEvents = new Set(chartPoints.map(pt => pt.event).filter(e => e));
+
+        allBtns.forEach(b => {
+            const ev = b.getAttribute('data-event');
+            b.className = 'btn flex-fill btn-event btn-sm rounded-pill py-1 shadow-sm transition-all';
+
+            let level = 0;
+            if (ev === 'start_anes') level = 1;
+            if (ev === 'start_surg') level = 2;
+            if (ev === 'end_surg') level = 3;
+            if (ev === 'end_anes') level = 4;
+
+            if (ev === currentVal || recordedEvents.has(ev)) {
+                b.classList.add(`btn-green-${level}`);
+                if (ev === currentVal) b.classList.add('ring-2', 'ring-offset-1');
+            } else {
+                b.classList.add(`btn-blue-${level}`);
+            }
+        });
+    }
+
+    function selectEvent(btn) {
+        const val = btn.getAttribute('data-event');
+        const hiddenInput = document.getElementById('chart-event-val');
+
+        if (hiddenInput.value === val) {
+            hiddenInput.value = '';
+        } else {
+            hiddenInput.value = val;
+        }
+        renderEventButtons();
+    }
+
+    function addChartPoint() {
+        const time = document.getElementById('chart-time').value;
+        const pas = document.getElementById('chart-pas').value;
+        const pad = document.getElementById('chart-pad').value;
+        const fc = document.getElementById('chart-fc').value;
+        const spo2 = document.getElementById('chart-spo2').value;
+        const event = document.getElementById('chart-event-val').value;
+
+        if (!time) {
+            alert("Ingrese la hora.");
+            return;
+        }
+
+        const pt = {
+            time: time,
+            pas: pas,
+            pad: pad,
+            fc: fc,
+            spo2: spo2,
+            event: event
+        };
+
+        chartPoints.push(pt);
+        addToChartDataset(pt);
+        updateChartInput();
+        document.getElementById('chart-event-val').value = '';
+        renderEventButtons();
+    }
+
+    function updateChartInput() {
+        document.getElementById('chart_data').value = JSON.stringify(chartPoints);
+    }
+
+    function submitPDF() {
+        const canvas = document.getElementById('anesthesiaChart');
+        if (!canvas) return;
+
+        const tempCanvas = document.createElement('canvas');
+        const context = tempCanvas.getContext('2d');
+        tempCanvas.width = 1000;
+        tempCanvas.height = 500;
+        context.fillStyle = '#FFFFFF';
+        context.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+        context.drawImage(canvas, 0, 0, tempCanvas.width, tempCanvas.height);
+        const imgData = tempCanvas.toDataURL('image/png');
+
+        const form = document.createElement('form');
+        form.method = 'POST';
+        {% if registro %}
+        form.action = "{% url 'print_registro_pdf' registro.id %}";
+        {% else %}
+        alert("Primero debe guardar el registro antes de imprimir.");
+        return;
+        {% endif %}
+        form.target = '_blank';
+
+        const csrfInput = document.createElement('input');
+        csrfInput.type = 'hidden';
+        csrfInput.name = 'csrfmiddlewaretoken';
+        csrfInput.value = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        form.appendChild(csrfInput);
+
+        const imgInput = document.createElement('input');
+        imgInput.type = 'hidden';
+        imgInput.name = 'chart_image';
+        imgInput.value = imgData;
+        form.appendChild(imgInput);
+
+        document.body.appendChild(form);
+        form.submit();
+        document.body.removeChild(form);
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        initChart();
+    });
+</script>
+{% endblock %}

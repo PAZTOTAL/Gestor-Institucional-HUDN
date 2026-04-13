@@ -1,0 +1,224 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Permisos - {{ target_user.username }}{% endblock %}
+
+{% block content %}
+<style>
+    .switch {
+        position: relative;
+        display: inline-block;
+        width: 44px;
+        height: 24px;
+    }
+
+    .switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+
+    .slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: #cbd5e1;
+        transition: .4s;
+        border-radius: 24px;
+        border: 2px solid #94a3b8;
+    }
+
+    .slider:before {
+        position: absolute;
+        content: "";
+        height: 16px;
+        width: 16px;
+        left: 2px;
+        bottom: 2px;
+        background-color: white;
+        transition: .4s;
+        border-radius: 50%;
+    }
+
+    input:checked+.slider {
+        background-color: #2563eb;
+        border-color: #1e40af;
+    }
+
+    input:checked+.slider:before {
+        transform: translateX(20px);
+    }
+</style>
+
+<div class="max-w-6xl mx-auto px-4 mt-4">
+    <div class="flex items-center gap-4 mb-6">
+        <a href="{% url 'gestion_usuarios' %}" class="p-2 bg-blue-100 rounded-lg hover:bg-blue-200">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="3">
+                <path d="m15 18-6-6 6-6" />
+            </svg>
+        </a>
+        <h1 class="text-3xl font-black text-black tracking-tight">PERMISOS: {{ target_user.username }}</h1>
+    </div>
+
+    <form method="post" id="permisosForm">
+        {% csrf_token %}
+        <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+            <!-- Lateral: Roles -->
+            <div class="lg:col-span-1 space-y-4">
+                <div class="bg-white border-2 border-blue-400 p-4 rounded-xl shadow-lg">
+                    <h3 class="font-black mb-4 uppercase text-sm border-b pb-2">Nivel de Usuario</h3>
+                    <div class="space-y-2">
+                        {% for c_code, c_label in categorias %}
+                        <label
+                            class="flex items-center p-3 rounded-lg border-2 cursor-pointer {% if perfil.categoria == c_code %}border-blue-600 bg-blue-50{% else %}border-gray-100{% endif %}">
+                            {% if perfil.categoria == c_code %}
+                            <input type="radio" name="categoria" value="{{ c_code }}" class="hidden" checked>
+                            {% else %}
+                            <input type="radio" name="categoria" value="{{ c_code }}" class="hidden">
+                            {% endif %}
+                            <span class="font-bold text-xs uppercase">
+                                {{ c_label }}
+                            </span>
+                        </label>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="bg-red-50 border-2 border-red-400 p-4 rounded-xl shadow-lg">
+                    <h3 class="font-black mb-4 uppercase text-sm border-b border-red-200 pb-2 text-red-700">Privilegios
+                    </h3>
+                    <div class="space-y-4">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-black uppercase">Superuser</span>
+                            <label class="switch">
+                                {% if target_user.is_superuser %}
+                                <input type="checkbox" name="is_superuser" checked>
+                                {% else %}
+                                <input type="checkbox" name="is_superuser">
+                                {% endif %}
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-black uppercase">Staff</span>
+                            <label class="switch">
+                                {% if target_user.is_staff %}
+                                <input type="checkbox" name="is_staff" checked>
+                                {% else %}
+                                <input type="checkbox" name="is_staff">
+                                {% endif %}
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <button type="submit"
+                    class="w-full py-4 bg-blue-600 text-white font-black rounded-xl hover:bg-black transition-all shadow-lg">
+                    ACTUALIZAR
+                </button>
+            </div>
+
+            <!-- Principal: Apps -->
+            <div class="lg:col-span-3">
+                <div class="bg-white border-2 border-blue-400 p-6 rounded-xl shadow-xl">
+                    <div class="flex flex-col md:flex-row justify-between items-center mb-6 border-b-2 pb-2 gap-4">
+                        <h3 class="text-xl font-black uppercase">Accesos por Aplicación</h3>
+                        <div class="flex gap-2">
+                            <button type="button" onclick="toggleAll('apps', true)"
+                                class="px-3 py-1 bg-blue-100 text-blue-800 font-black rounded-lg text-[10px] uppercase border border-blue-300 hover:bg-blue-200 transition-all">
+                                Seleccionar Todas
+                            </button>
+                            <button type="button" onclick="toggleAll('apps', false)"
+                                class="px-3 py-1 bg-gray-100 text-gray-800 font-black rounded-lg text-[10px] uppercase border border-gray-300 hover:bg-gray-200 transition-all">
+                                Limpiar
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="space-y-4">
+                        {% for app_item in app_permissions %}
+                        <div class="border-2 border-blue-100 rounded-xl overflow-hidden shadow-md">
+                            <details class="group">
+                                <summary class="flex items-center justify-between p-4 bg-blue-50/30 cursor-pointer">
+                                    <span class="font-black text-lg uppercase tracking-tighter">
+                                        {{ app_item.label }}
+                                    </span>
+                                    <div class="flex items-center gap-4" onclick="event.stopPropagation()">
+                                        <div class="flex gap-2 mr-4">
+                                            <button type="button" onclick="toggleAppModels('{{ app_item.slug }}', true)"
+                                                class="text-[10px] font-black text-blue-600 uppercase underline">Todos</button>
+                                            <button type="button"
+                                                onclick="toggleAppModels('{{ app_item.slug }}', false)"
+                                                class="text-[10px] font-black text-gray-400 uppercase underline">Nada</button>
+                                        </div>
+                                        <label class="switch">
+                                            {% if app_item.permitido %}
+                                            <input type="checkbox" name="apps" value="{{ app_item.slug }}"
+                                                data-app="{{ app_item.slug }}" checked>
+                                            {% else %}
+                                            <input type="checkbox" name="apps" value="{{ app_item.slug }}"
+                                                data-app="{{ app_item.slug }}">
+                                            {% endif %}
+                                            <span class="slider"></span>
+                                        </label>
+                                    </div>
+                                </summary>
+                                <div class="p-4 bg-white grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    {% for table_item in app_item.models %}
+                                    <div
+                                        class="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-100">
+                                        <span class="text-[10px] font-black uppercase text-gray-600">
+                                            {{ table_item.verbose_name }}
+                                        </span>
+                                        <label class="switch scale-75">
+                                            {% if table_item.permitido %}
+                                            <input type="checkbox" name="models"
+                                                value="{{ app_item.slug }}.{{ table_item.name }}"
+                                                data-parent-app="{{ app_item.slug }}" checked>
+                                            {% else %}
+                                            <input type="checkbox" name="models"
+                                                value="{{ app_item.slug }}.{{ table_item.name }}"
+                                                data-parent-app="{{ app_item.slug }}">
+                                            {% endif %}
+                                            <span class="slider"></span>
+                                        </label>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </details>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<script>
+    function toggleAll(name, state) {
+        document.querySelectorAll('input[name="' + name + '"]').forEach(cb => {
+            cb.checked = state;
+        });
+        if (name === 'apps' && state === false) {
+            document.querySelectorAll('input[name="models"]').forEach(cb => {
+                cb.checked = false;
+            });
+        }
+    }
+
+    function toggleAppModels(appSlug, state) {
+        document.querySelectorAll('input[data-parent-app="' + appSlug + '"]').forEach(cb => {
+            cb.checked = state;
+        });
+        if (state === true) {
+            const appCb = document.querySelector('input[data-app="' + appSlug + '"]');
+            if (appCb) appCb.checked = true;
+        }
+    }
+</script>
+{% endblock %}

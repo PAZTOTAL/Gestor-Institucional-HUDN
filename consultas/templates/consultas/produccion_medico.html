@@ -1,0 +1,159 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block title %}Producción Médica | Hospital Management{% endblock %}
+
+{% block extra_css %}
+<style>
+    .doctor-header {
+        background-color: #f8f9fa;
+        border-left: 5px solid #0d6efd;
+    }
+    .diagnosis-badge {
+        background-color: #e3f2fd;
+        color: #0d47a1;
+        font-weight: 500;
+        font-size: 0.85em;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="fw-black mb-1">Informe de Producción Médica</h1>
+            <p class="mb-0 opacity-75">
+                Consolidado de atenciones realizadas por profesional y rango de fechas.
+            </p>
+        </div>
+        <div class="d-flex gap-2">
+            {% if is_filtered %}
+            <a href="{% url 'consultas:produccion_medico_excel' %}?fecha_inicio={{ fecha_inicio_str }}&fecha_fin={{ fecha_fin_str }}&fechas_especificas={{ fechas_especificas|urlencode }}{% for d_id in selected_doctors %}&doctor_ids={{ d_id }}{% endfor %}" class="btn btn-success rounded-pill px-4 fw-bold shadow-sm">
+                <i class="bi bi-file-earmark-excel-fill me-2"></i>Exportar a Excel
+            </a>
+            {% endif %}
+            <a href="{% url 'consultas:dashboard_admin' %}" class="btn btn-light rounded-pill px-4 fw-bold shadow-sm">
+                <i class="bi bi-arrow-left me-2"></i>Volver al Dashboard
+            </a>
+        </div>
+    </div>
+
+    <!-- Filter Form -->
+    <div class="card border-0 shadow-sm rounded-4 mb-4">
+        <div class="card-body p-4">
+            <form method="get" class="row g-3 align-items-end">
+                <div class="col-md-3">
+                    <label for="fecha_inicio" class="form-label fw-bold opacity-75">Fecha Inicial</label>
+                    <input type="date" class="form-control rounded-pill" id="fecha_inicio" name="fecha_inicio" value="{{ fecha_inicio_str }}">
+                </div>
+                <div class="col-md-3">
+                    <label for="fecha_fin" class="form-label fw-bold opacity-75">Fecha Final</label>
+                    <input type="date" class="form-control rounded-pill" id="fecha_fin" name="fecha_fin" value="{{ fecha_fin_str }}">
+                </div>
+                <div class="col-md-3">
+                    <label for="doctor_ids" class="form-label fw-bold opacity-75">Médicos <span class="small text-muted">(Ctrl para varios)</span></label>
+                    <select class="form-select rounded-4 shadow-sm" id="doctor_ids" name="doctor_ids" multiple style="height: 100px;">
+                        <option value="" {% if not selected_doctors %}selected{% endif %}>--- TODOS ---</option>
+                        {% for doc in doctors_list %}
+                        <option value="{{ doc.oid }}" {% if doc.oid in selected_doctors %}selected{% endif %}>{{ doc.gmenomcom }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="fechas_especificas" class="form-label fw-bold opacity-75">Fechas Específicas</label>
+                    <textarea class="form-control rounded-4 shadow-sm" id="fechas_especificas" name="fechas_especificas" rows="3" placeholder="Ej: 01/02/2026, 12/02/2026, 18/02/2026">{{ fechas_especificas }}</textarea>
+                    <div class="form-text small">Separe con comas o espacios.</div>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" name="filtrar" value="on" class="btn btn-primary rounded-pill px-4 fw-bold w-100 mb-1">
+                        <i class="bi bi-funnel-fill me-2"></i>Filtrar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Results -->
+    {% if atenciones_por_medico %}
+        {% for doctor, atenciones in atenciones_por_medico.items %}
+        <div class="card border-0 shadow-sm rounded-4 mb-4">
+            <div class="card-header doctor-header p-3 rounded-top-4">
+                <h5 class="mb-0 fw-bold text-primary">
+                    <i class="bi bi-person-badge-fill me-2"></i>{{ doctor.gmenomcom }}
+                </h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0 align-middle" style="font-size: 0.9rem;">
+                        <thead class="bg-light">
+                            <tr>
+                                <th class="ps-3">N°</th>
+                                <th>NOMBRE</th>
+                                <th>CEDULA</th>
+                                <th>FECHA NACIMIENTO</th>
+                                <th>EDAD</th>
+                                <th>CELULAR</th>
+                                <th>DIRECCION</th>
+                                <th>FECHA ATENCIÓN</th>
+                                <th>SEXO</th>
+                                <th>DIAGNOSTICO</th>
+                                <th>ASEGURADOR</th>
+                                <th>PLAN</th>
+                                <th>MEDICO ESPEC</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in atenciones %}
+                            <tr>
+                                <td class="ps-3 text-muted">{{ forloop.counter }}</td>
+                                <td class="fw-bold">
+                                    {{ item.paciente.pacprinom }} {{ item.paciente.pacsegnom|default:"" }} 
+                                    {{ item.paciente.pacpriape }} {{ item.paciente.pacsegape|default:"" }}
+                                </td>
+                                <td>{{ item.paciente.pacnumdoc }}</td>
+                                <td>{{ item.paciente.gpafecnac|date:"d/m/Y" }}</td>
+                                <td>{{ item.edad }}</td>
+                                <td>{{ item.celular }}</td>
+                                <td>{{ item.direccion }}</td>
+                                <td class="fw-bold text-primary">{{ item.folio.hcfecfol|date:"d/m/Y H:i" }}</td>
+                                <td><span class="badge bg-info text-dark">{{ item.sexo }}</span></td>
+                                <td>
+                                    <div class="diagnosis-badge rounded px-2 py-1" title="{{ item.diagnostico_nombre }}">
+                                        {{ item.diagnostico_codigo }}
+                                    </div>
+                                </td>
+                                <td><small>{{ item.asegurador|default:"-" }}</small></td>
+                                <td><small>{{ item.eps|default:"-" }}</small></td>
+                                <td><small class="text-muted">{{ doctor.gmenomcom }}</small></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+             <div class="card-footer bg-white border-0 p-3 text-end">
+                <small class="text-muted fw-bold">Total Atenciones: {{ atenciones|length }}</small>
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        {% if is_filtered %}
+        <div class="alert alert-info rounded-4 border-0 shadow-sm p-4 text-center">
+            <i class="bi bi-info-circle-fill text-info fs-1 d-block mb-3"></i>
+            <h5 class="fw-bold">No se encontraron registros</h5>
+            <p class="mb-0">Intente con otro rango de fechas o médico.</p>
+        </div>
+        {% else %}
+        <div class="text-center py-5 opacity-50">
+            <i class="bi bi-search fs-1 mb-3 d-block"></i>
+            <h4 class="fw-bold">Seleccione un rango de fechas y médicos</h4>
+            <p>Utilice los filtros superiores para generar el reporte.</p>
+        </div>
+        {% endif %}
+    {% endif %}
+
+</div>
+{% endblock %}
+

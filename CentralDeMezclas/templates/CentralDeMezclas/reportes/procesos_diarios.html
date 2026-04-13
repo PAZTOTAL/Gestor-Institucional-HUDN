@@ -1,0 +1,95 @@
+{% extends 'core/base.html' %}
+{% block title %}Procesos Diarios | Central de Mezclas{% endblock %}
+{% block content %}
+<div class="space-y-8 animate-in fade-in duration-700">
+    <a href="{% url 'mezclas:main' %}" class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-100 text-slate-500 text-[10px] font-black uppercase tracking-widest mb-4 hover:bg-slate-200 transition-all shadow-sm border border-slate-200">
+        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+        Regresar al Menú Principal
+    </a>
+    <!-- Header with Date Selection -->
+    <div class="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-xl shadow-blue-500/5 flex flex-col md:flex-row justify-between items-center gap-6">
+        <div>
+            <h1 class="text-3xl font-black text-gray-900 tracking-tight">Procesos <span class="text-primary">Diarios</span></h1>
+            <p class="text-gray-500 font-medium">Consolidado de producción y registros técnicos</p>
+        </div>
+        
+        <form method="get" class="flex items-center gap-4 bg-gray-50 p-2 rounded-2xl border border-gray-100">
+            <input type="date" name="fecha" value="{{ fecha_consulta|date:'Y-m-d' }}" 
+                   class="bg-transparent border-none font-bold text-gray-700 focus:ring-0">
+            <button type="submit" class="bg-primary text-white px-6 py-2 rounded-xl font-black text-xs uppercase tracking-widest hover:scale-105 transition-all">Consultar</button>
+        </form>
+
+        <a href="{% url 'mezclas:informe_diario_pdf' %}?fecha={{ fecha_consulta|date:'Y-m-d' }}" 
+           class="bg-slate-900 text-white px-6 py-3 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center gap-2 hover:bg-black transition-all">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
+            Exportar Informe PDF
+        </a>
+    </div>
+
+    <!-- Stats Overview -->
+    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+        {% for modulo, total in resumen_diario.items %}
+        <div class="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm text-center">
+            <p class="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1">{{ modulo }}</p>
+            <p class="text-3xl font-black text-gray-900">{{ total }}</p>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Unified Activity Log -->
+    <div class="bg-white rounded-[2.5rem] border border-gray-100 shadow-sm overflow-hidden">
+        <div class="p-6 border-b border-gray-50 bg-gray-50/50">
+            <h3 class="font-black text-gray-900 uppercase tracking-tight text-sm">Detalle de Producción del Día</h3>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+                <thead class="bg-gray-50 text-[10px] font-black uppercase tracking-widest text-gray-500">
+                    <tr>
+                        <th class="p-4">Módulo</th>
+                        <th class="p-4">Lote Interno</th>
+                        <th class="p-4">Descripción / Paciente</th>
+                        <th class="p-4">Estado</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-50">
+                    {% for item in esteriles_items %}
+                    <tr class="hover:bg-blue-50/30 transition-all">
+                        <td class="p-4"><span class="px-2 py-1 bg-blue-100 text-blue-700 rounded-lg text-[10px] font-black uppercase">Estéril</span></td>
+                        <td class="p-4 text-sm font-black">{{ item.lote_interno }}</td>
+                        <td class="p-4 text-sm font-medium">{{ item.paciente_nombre }}</td>
+                        <td class="p-4"><span class="w-2 h-2 rounded-full bg-green-500 inline-block"></span></td>
+                    </tr>
+                    {% endfor %}
+                    
+                    {% for item in oncologicos_items %}
+                    <tr class="hover:bg-red-50/30 transition-all">
+                        <td class="p-4"><span class="px-2 py-1 bg-red-100 text-red-700 rounded-lg text-[10px] font-black uppercase">Onco</span></td>
+                        <td class="p-4 text-sm font-black">{{ item.lote_interno }}</td>
+                        <td class="p-4 text-sm font-medium">{{ item.paciente_nombre }}</td>
+                        <td class="p-4"><span class="w-2 h-2 rounded-full bg-green-500 inline-block"></span></td>
+                    </tr>
+                    {% endfor %}
+
+                    {% for item in unidosis_prod_items %}
+                    <tr class="hover:bg-teal-50/30 transition-all">
+                        <td class="p-4"><span class="px-2 py-1 bg-teal-100 text-teal-700 rounded-lg text-[10px] font-black uppercase">Uni Prod</span></td>
+                        <td class="p-4 text-sm font-black">{{ item.lote_interno }}</td>
+                        <td class="p-4 text-sm font-medium">{{ item.medicamento }}</td>
+                        <td class="p-4"><span class="w-2 h-2 rounded-full bg-green-500 inline-block"></span></td>
+                    </tr>
+                    {% endfor %}
+
+                    {% for item in neonatos_items %}
+                    <tr class="hover:bg-pink-50/30 transition-all">
+                        <td class="p-4"><span class="px-2 py-1 bg-pink-100 text-pink-700 rounded-lg text-[10px] font-black uppercase">Neo</span></td>
+                        <td class="p-4 text-sm font-black">{{ item.lote_interno }}</td>
+                        <td class="p-4 text-sm font-medium">{{ item.paciente_nombre }}</td>
+                        <td class="p-4"><span class="w-2 h-2 rounded-full bg-green-500 inline-block"></span></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

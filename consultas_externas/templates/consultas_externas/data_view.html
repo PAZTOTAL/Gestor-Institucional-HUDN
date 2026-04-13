@@ -1,0 +1,182 @@
+{% extends 'core/base.html' %}
+{% load consultas_extras_tags %}
+
+{% block title %}Datos: {{ verbose_name }}{% endblock %}
+
+{% block scripts %}
+<script>
+    document.getElementById('limitOrderSelect').addEventListener('change', function() {
+        const parts = this.value.split('&');
+        const limit = parts[0].split('=')[1];
+        const order = parts[1].split('=')[1];
+        
+        document.getElementById('limitInput').value = limit;
+        document.getElementById('orderInput').value = order;
+    });
+</script>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-[95%] mx-auto py-6">
+    <div class="flex justify-between items-center mb-6">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-800 flex items-center gap-2">
+                <span class="bg-blue-100 text-blue-800 text-sm font-semibold px-2.5 py-0.5 rounded">{{ model_name
+                    }}</span>
+                {{ verbose_name }}
+            </h1>
+            <p class="text-gray-500 text-sm mt-1">{{ page_obj.paginator.count }} registros encontrados totales</p>
+        </div>
+        <a href="{% url 'consultas_externas_index' %}"
+            class="bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 px-4 py-2 rounded-lg shadow-sm transition-all flex items-center gap-2">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+            </svg>
+            Volver a Lista
+        </a>
+    </div>
+
+    <!-- Buscador y Filtros HUDN -->
+    <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-100 mb-6">
+        <form method="get" id="filterForm" class="flex flex-wrap gap-3 items-end">
+            <div class="relative flex-1 min-w-[300px]">
+                <label class="block text-xs font-black text-blue-800 mb-1 uppercase tracking-wider">Buscar en Hospital</label>
+                <div class="relative">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                    </div>
+                    <input type="text" name="q" value="{{ query|default:'' }}"
+                        placeholder="Buscar por Nombre, Documento, Código, etc..."
+                        class="block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition duration-150 ease-in-out font-bold">
+                </div>
+            </div>
+
+            <!-- Selector Inteligente HUDN -->
+            <div class="w-48">
+                <label class="block text-xs font-black text-blue-800 mb-1 uppercase tracking-wider">Ver registros</label>
+                <select id="limitOrderSelect" class="w-full p-2.5 border border-gray-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-blue-500 font-bold transition-all">
+                    <option value="limit=&order=asc" {% if not current_limit and current_order == 'asc' %}selected{% endif %}>Todos (Paginado)</option>
+                    <option value="limit=1&order=asc" {% if current_limit == '1' and current_order == 'asc' %}selected{% endif %}>El Primero</option>
+                    <option value="limit=1&order=desc" {% if current_limit == '1' and current_order == 'desc' %}selected{% endif %}>El Último</option>
+                    <option value="limit=5&order=asc" {% if current_limit == '5' and current_order == 'asc' %}selected{% endif %}>Los 5 Primeros</option>
+                    <option value="limit=5&order=desc" {% if current_limit == '5' and current_order == 'desc' %}selected{% endif %}>Los 5 Últimos</option>
+                    <option value="limit=10&order=asc" {% if current_limit == '10' and current_order == 'asc' %}selected{% endif %}>Los 10 Primeros</option>
+                    <option value="limit=10&order=desc" {% if current_limit == '10' and current_order == 'desc' %}selected{% endif %}>Los 10 Últimos</option>
+                </select>
+                <input type="hidden" name="limit" id="limitInput" value="{{ current_limit|default:'' }}">
+                <input type="hidden" name="order" id="orderInput" value="{{ current_order|default:'asc' }}">
+            </div>
+
+            <button type="submit"
+                class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-lg font-bold shadow-sm transition-colors flex items-center gap-2">
+                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+                BUSCAR
+            </button>
+            {% if query or current_limit %}
+            <a href="."
+                class="bg-red-50 text-red-700 px-4 py-2.5 rounded-lg border border-red-200 hover:bg-red-100 transition-colors flex items-center gap-2 font-bold">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+                Limpiar
+            </a>
+            {% endif %}
+        </form>
+    </div>
+
+    <!-- Tabla de Datos -->
+    <div class="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden flex flex-col">
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200 text-xs">
+                <thead class="bg-gray-50 text-gray-700">
+                    <tr>
+                        {% for field in fields %}
+                        <th class="px-3 py-3 text-left font-semibold uppercase tracking-wider whitespace-nowrap bg-gray-50 sticky top-0 border-b border-gray-200"
+                            title="{{ field.name }}">
+                            {{ field.verbose_name }}
+                        </th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200 bg-white">
+                    {% for obj in page_obj %}
+                    <tr class="hover:bg-blue-50 transition-colors group">
+                        {% for field in fields %}
+                        <td
+                            class="px-3 py-2.5 whitespace-nowrap text-gray-600 border-r border-gray-50 last:border-0 group-hover:text-gray-900">
+                            {{ obj|get_attr:field.name }}
+                        </td>
+                        {% endfor %}
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="{{ fields|length }}" class="px-6 py-12 text-center text-gray-500">
+                            <div class="flex flex-col items-center justify-center">
+                                <svg class="w-12 h-12 text-gray-300 mb-3" fill="none" stroke="currentColor"
+                                    viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                <p class="text-base font-medium">No se encontraron datos</p>
+                                <p class="text-sm">Intenta con otros términos de búsqueda.</p>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Paginación Footer -->
+        <div class="bg-gray-50 px-4 py-3 border-t border-gray-200 sm:px-6 flex items-center justify-between">
+            <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                <div>
+                    <p class="text-sm text-gray-700">
+                        Mostrando página <span class="font-medium">{{ page_obj.number }}</span> de <span
+                            class="font-medium">{{ page_obj.paginator.num_pages }}</span>
+                    </p>
+                </div>
+                <div>
+                    <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                        {% if page_obj.has_previous %}
+                        <a href="?page={{ page_obj.previous_page_number }}&q={{ query|default:'' }}&limit={{ current_limit|default:'' }}&order={{ current_order|default:'asc' }}"
+                            class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                            <span class="sr-only">Anterior</span>
+                            <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"
+                                fill="currentColor" aria-hidden="true">
+                                <path fill-rule="evenodd"
+                                    d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"
+                                    clip-rule="evenodd" />
+                            </svg>
+                        </a>
+                        {% endif %}
+
+                        <span
+                            class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 font-bold text-blue-600">
+                            {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}
+                        </span>
+
+                        {% if page_obj.has_next %}
+                        <a href="?page={{ page_obj.next_page_number }}&q={{ query|default:'' }}&limit={{ current_limit|default:'' }}&order={{ current_order|default:'asc' }}"
+                            class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                            <span class="sr-only">Siguiente</span>
+                            <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"
+                                fill="currentColor" aria-hidden="true">
+                                <path fill-rule="evenodd"
+                                    d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
+                                    clip-rule="evenodd" />
+                            </svg>
+                        </a>
+                        {% endif %}
+                    </nav>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

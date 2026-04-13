@@ -1,0 +1,83 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Control de Calidad | Central de Mezclas{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto animate-in slide-in-from-bottom-8 duration-700">
+    <!-- Breadcrumb -->
+    <nav class="flex mb-8 text-sm font-bold uppercase tracking-widest text-gray-400 gap-2 items-center">
+        <a href="{% url 'mezclas:reempaque_panel' %}" class="hover:text-primary transition-colors">Reempaque</a>
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+        <a href="{% url 'mezclas:reempaque_matriz' %}" class="hover:text-primary transition-colors">Matriz Reempaque</a>
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+        <span class="text-gray-900">Control de Calidad (FRFAR-188)</span>
+    </nav>
+
+    <div class="bg-white rounded-3xl border border-gray-100 shadow-2xl overflow-hidden">
+        <div class="bg-green-600 p-8 text-white relative overflow-hidden">
+            <div class="absolute top-0 right-0 p-8 opacity-10">
+                <svg xmlns="http://www.w3.org/2000/svg" width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/></svg>
+            </div>
+            <h2 class="text-3xl font-black tracking-tight">Inspección de Lote</h2>
+            <p class="text-green-500 font-medium mt-1">Lote Interno: <strong>{{ view.kwargs.orden_id }}</strong></p>
+        </div>
+
+        <form method="post" class="p-8 space-y-8">
+            {% csrf_token %}
+            
+            <div class="space-y-6">
+                <h3 class="text-lg font-black text-gray-800 border-b border-gray-50 pb-4 flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="text-green-600"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                    Puntos de Verificación Críticos
+                </h3>
+
+                <!-- Toggles / Checks -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="flex items-center justify-between p-4 rounded-2xl bg-gray-50 border border-gray-100">
+                        <span class="font-bold text-gray-700 text-sm">¿Aspecto Físico Correcto?</span>
+                        <input type="checkbox" name="aspecto_fisico_ok" class="w-6 h-6 rounded-lg text-green-600 focus:ring-green-500">
+                    </div>
+                    <div class="flex items-center justify-between p-4 rounded-2xl bg-gray-50 border border-gray-100">
+                        <span class="font-bold text-gray-700 text-sm">¿Hermeticidad Verificada?</span>
+                        <input type="checkbox" name="hermeticidad_ok" class="w-6 h-6 rounded-lg text-green-600 focus:ring-green-500">
+                    </div>
+                    <div class="flex items-center justify-between p-4 rounded-2xl bg-gray-50 border border-gray-100">
+                        <span class="font-bold text-gray-700 text-sm">¿Etiquetado Completo y Correcto?</span>
+                        <input type="checkbox" name="etiquetado_completo_ok" class="w-6 h-6 rounded-lg text-green-600 focus:ring-green-500">
+                    </div>
+                    <div class="flex items-center justify-between p-4 rounded-2xl bg-gray-50 border border-gray-100">
+                        <span class="font-bold text-gray-700 text-sm">¿Limpieza de Área Verificada?</span>
+                        <input type="checkbox" name="limpieza_area_ok" class="w-6 h-6 rounded-lg text-green-600 focus:ring-green-500">
+                    </div>
+                </div>
+
+                <!-- Unidades Defectuosas -->
+                <div class="space-y-2">
+                    <label class="text-xs font-black text-gray-400 uppercase tracking-wider">Unidades Defectuosas Halladas</label>
+                    <input type="number" name="unidades_defectuosas" required value="0" class="w-full px-6 py-4 rounded-xl bg-gray-50 border-transparent focus:bg-white focus:border-green-600 transition-all font-black text-gray-900 shadow-inner">
+                </div>
+
+                <!-- Observaciones -->
+                <div class="space-y-2">
+                    <label class="text-xs font-black text-gray-400 uppercase tracking-wider">Observaciones de Calidad / Desviaciones</label>
+                    <textarea name="observaciones_calidad" rows="4" class="w-full px-6 py-4 rounded-xl bg-gray-50 border-transparent focus:bg-white focus:border-green-600 transition-all font-medium text-gray-900 shadow-inner"></textarea>
+                </div>
+            </div>
+
+            <div class="bg-red-50 p-6 rounded-2xl border border-red-100 text-red-800 flex items-start gap-4">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mt-1 flex-shrink-0"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                <div class="text-sm">
+                    <p class="font-black uppercase tracking-tight">Advertencia de Seguridad:</p>
+                    <p class="font-medium opacity-80">Si alguno de los puntos de verificación no es marcado, el lote será automáticamente <strong>RECHAZADO</strong> de acuerdo con el protocolo técnico HV-01.</p>
+                </div>
+            </div>
+
+            <div class="pt-8 border-t border-gray-50 flex justify-end gap-4">
+                <a href="{% url 'mezclas:reempaque_matriz' %}" class="px-8 py-4 rounded-2xl bg-gray-50 text-gray-400 font-black hover:bg-gray-100 transition-all">Cancelar</a>
+                <button type="submit" class="px-12 py-4 rounded-2xl bg-green-600 text-white font-black shadow-xl shadow-green-500/30 hover:scale-105 active:scale-95 transition-all">Finalizar Inspección y Liberar</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

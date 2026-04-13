@@ -1,0 +1,404 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+
+
+{% block content %}
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<style>
+    :root {
+        --urgencias-primary: #d32f2f;
+        --urgencias-secondary: #f44336;
+        --soft-red: #ffebee;
+    }
+
+    .urgencias-header {
+        background: linear-gradient(135deg, var(--urgencias-primary) 0%, var(--urgencias-secondary) 100%);
+        border-radius: 20px;
+        padding: 2.5rem;
+        color: white;
+        margin-bottom: 2rem;
+        box-shadow: 0 8px 24px rgba(211, 47, 47, 0.2);
+    }
+
+    .search-box {
+        background: white;
+        border-radius: 16px;
+        padding: 1.5rem;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        margin-bottom: 2rem;
+    }
+    
+    .stats-box {
+        background: white;
+        border-radius: 16px;
+        padding: 1.5rem;
+        text-align: center;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    }
+
+    .stats-number {
+        font-size: 2.5rem;
+        font-weight: 800;
+        color: var(--urgencias-primary);
+    }
+
+    .stats-label {
+        color: #7f8c8d;
+        font-size: 0.9rem;
+        font-weight: 600;
+        text-transform: uppercase;
+    }
+
+    /* Modal Styles */
+    .modal-content {
+        border-radius: 16px;
+        border: none;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+    }
+    
+    /* Ensure modal hides correctly */
+    .modal {
+        display: none;
+    }
+    .modal.show {
+        display: block;
+    }
+</style>
+
+<div class="container-fluid px-4 py-4">
+    <!-- Header -->
+    <div class="urgencias-header">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h1 class="fw-black mb-2"><i class="fas fa-hospital-user me-3"></i>Trazabilidad de Pacientes</h1>
+                <p class="mb-0 opacity-75">Seguimiento de pacientes activos en todo el hospital</p>
+            </div>
+            <a href="{% url 'home' %}" class="btn btn-light rounded-pill px-4 fw-bold">
+                <i class="fas fa-arrow-left me-2"></i>Volver
+            </a>
+        </div>
+    </div>
+
+    <!-- Stats Row (Only if server-side search is still used or for general stats) -->
+    {% if total_pacientes > 0 and searched %}
+    <div class="row g-4 mb-4">
+        <div class="col-md-4">
+            <div class="stats-box">
+                <div class="stats-number">{{ total_pacientes }}</div>
+                <div class="stats-label">Pacientes Encontrados</div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="stats-box">
+                <div class="stats-number"><i class="fas fa-layer-group text-primary"></i></div>
+                <div class="stats-label">{{ pacientes_por_area|length }} Áreas</div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Search Action Box -->
+    <div class="search-box text-center py-5">
+        <i class="fas fa-search fa-4x text-primary mb-4"></i>
+        <h3 class="text-dark mb-3">Buscador Institucional de Pacientes</h3>
+        <p class="text-muted fs-5 mb-4">Acceso rápido a la trazabilidad y datos de pacientes activos en el hospital</p>
+        
+        <div class="d-flex flex-column flex-md-row justify-content-center gap-3">
+            <button type="button" class="btn btn-primary btn-lg rounded-pill px-5 py-3 fw-bold shadow-sm" data-bs-toggle="modal" data-bs-target="#activePatientsModal">
+                <i class="fas fa-search me-2"></i> Buscar Paciente Activo
+            </button>
+            
+            <button type="button" class="btn btn-info text-white btn-lg rounded-pill px-4 py-3 fw-bold shadow-sm" data-bs-toggle="modal" data-bs-target="#activePatientsModal">
+                <i class="fas fa-hospital me-2"></i> Todo el Hospital
+            </button>
+            
+            <button type="button" class="btn btn-success btn-lg rounded-pill px-4 py-3 fw-bold shadow-sm" data-bs-toggle="modal" data-bs-target="#activePatientsModal">
+                <i class="fas fa-check-circle me-2"></i> Solo Activos
+            </button>
+        </div>
+
+        <div class="mt-4">
+            <p class="text-[10px] text-blue-600 font-bold uppercase tracking-widest"><i class="fas fa-info-circle me-1"></i> Módulo de Trazabilidad y Seguimiento Clínico</p>
+        </div>
+    </div>
+
+    <!-- Historical Search Box -->
+    <div class="row mt-5">
+        <div class="col-md-10 mx-auto">
+            <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+                <div class="row g-0">
+                    <div class="col-md-4 bg-primary d-flex flex-column justify-content-center p-4 text-white text-center">
+                        <i class="fas fa-file-medical-alt fa-3x mb-3"></i>
+                        <h4 class="fw-black">Historial Vitalicio</h4>
+                        <p class="small opacity-75 mb-0">Consulte todos los ingresos, diagnósticos e indicadores históricos de un paciente</p>
+                    </div>
+                    <div class="col-md-8 p-4 bg-light">
+                        <form action="{% url 'consultas:paciente_historial_search' %}" method="GET">
+                            <h5 class="text-dark fw-bold mb-3">Buscador Histórico por Documento</h5>
+                            <div class="input-group">
+                                <input type="text" name="documento" class="form-control form-control-lg border-primary border-opacity-25" placeholder="Ingrese número de identificación..." required>
+                                <button class="btn btn-primary px-4 fw-bold" type="submit">
+                                    <i class="fas fa-history me-2"></i> Generar Reporte
+                                </button>
+                            </div>
+                            <div class="mt-3 d-flex gap-3">
+                                <span class="small text-muted"><i class="fas fa-check text-success me-1"></i> Todos los diagnósticos</span>
+                                <span class="small text-muted"><i class="fas fa-check text-success me-1"></i> Tiempos de atención</span>
+                                <span class="small text-muted"><i class="fas fa-check text-success me-1"></i> Estados finales</span>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Active Patients Modal (Adapted from Registro Anestesia) -->
+<div class="modal fade" id="activePatientsModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header bg-light pb-0">
+                <div class="w-100">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h5 class="modal-title text-primary"><i class="fas fa-hospital-user"></i> Pacientes Activos en Hospitalización</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="input-group mb-2">
+                        <span class="input-group-text bg-white border-end-0"><i class="fas fa-search text-muted"></i></span>
+                        <input type="text" id="modal-patient-search" class="form-control border-start-0 ps-0" placeholder="Buscar por nombre o documento..." autofocus>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-body">
+                <div id="modal-loading" class="text-center py-5 text-muted">
+                    <i class="fas fa-circle-notch fa-spin fa-2x mb-2"></i>
+                    <p>Consultando pacientes activos...</p>
+                </div>
+                <div id="modal-content-area" class="d-none">
+                    <!-- Results injected here -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Reusing styles from create_registro for consistency */
+    .manual-accordion-item {
+        border: 1px solid #e9ecef;
+        margin-bottom: 0.5rem;
+        border-radius: 0.5rem;
+        overflow: hidden;
+    }
+    .manual-accordion-header {
+        background-color: #f8f9fa;
+        padding: 1rem;
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+    .manual-accordion-header:hover {
+        background-color: #e9ecef;
+    }
+    .transition-icon {
+        transition: transform 0.3s ease;
+    }
+</style>
+{% endblock %}
+
+{% block scripts %}
+<!-- Bootstrap 5 JS Bundle -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+<script>
+    let isModalLoading = false;
+
+    $(document).ready(function () {
+        const $contentArea = $('#modal-content-area');
+        const $loading = $('#modal-loading');
+
+        // Focus search input when modal opens
+        $('#activePatientsModal').on('shown.bs.modal', function () {
+            $('#modal-patient-search').focus();
+            
+            // Trigger data load only if empty (or always reload to be fresh?)
+            // Let's reload to ensure fresh data like in create_registro
+            if (isModalLoading) return;
+            isModalLoading = true;
+
+            $loading.removeClass('d-none');
+            $contentArea.addClass('d-none').empty();
+
+            $.ajax({
+                url: '/api/lookup-paciente-enhanced/',
+                data: { term: '', limit: 500 },
+                dataType: 'json',
+                success: function (data) {
+                    if (data.results && data.results.length > 0) {
+                        const groups = {};
+                        data.results.forEach(p => {
+                            const sala = p.sala || "Sin Ubicación Definida";
+                            if (!groups[sala]) groups[sala] = [];
+                            groups[sala].push(p);
+                        });
+
+                        const accordionContainer = $('<div class="manual-accordion" id="patientAccordion"></div>');
+                        let groupIdx = 0;
+
+                        // Sort keys for better UX?
+                        const sortedKeys = Object.keys(groups).sort();
+
+                        for (const salaName of sortedKeys) {
+                            const patients = groups[salaName];
+                            groupIdx++;
+                            const collapseId = `manual-collapse-${groupIdx}`;
+
+                            const section = $(`
+                                <div class="manual-accordion-item mb-2 shadow-sm">
+                                    <div class="manual-accordion-header d-flex justify-content-between align-items-center" 
+                                         data-target="#${collapseId}">
+                                        <span>
+                                            <i class="fas fa-door-open me-2 text-primary"></i> 
+                                            <strong>${salaName}</strong>
+                                        </span>
+                                        <div class="d-flex align-items-center">
+                                            <span class="badge bg-primary rounded-pill me-2">${patients.length}</span>
+                                            <i class="fas fa-chevron-down text-muted transition-icon"></i>
+                                        </div>
+                                    </div>
+                                    <div id="${collapseId}" class="manual-accordion-body" style="display: none; border-top: 1px solid #dee2e6;">
+                                        <div class="list-group list-group-flush"></div>
+                                    </div>
+                                </div>
+                            `);
+
+                            const listGroup = section.find('.list-group');
+                            patients.forEach(p => {
+                                // IMPORTANT: Link to Traceability Detail using 'ingreso_id'
+                                // Fallback to safe ID if missing, but we added it to API
+                                const detailUrl = `/consultas/paciente/${p.ingreso_id || p.id}/`; 
+                                
+                                const item = $(`
+                                    <a href="${detailUrl}" class="list-group-item list-group-item-action py-3 open-popup-link" onclick="window.openPopup(event, '${detailUrl}'); return false;">
+                                        <div class="d-flex w-100 justify-content-between align-items-center">
+                                            <div class="flex-grow-1">
+                                                <h6 class="mb-1 text-dark fw-black" style="font-size: 1.1rem;">${p.nombre}</h6>
+                                                <div class="d-flex gap-3 small text-muted">
+                                                    <span><i class="fas fa-id-card me-1 text-primary"></i> <strong>${p.documento}</strong></span>
+                                                    <span><i class="fas fa-calendar-alt me-1 text-primary"></i> Ingreso: <strong>${p.fecha_ingreso}</strong></span>
+                                                    <span><i class="fas fa-university me-1 text-primary"></i> <strong>${p.aseguradora || 'Particular'}</strong></span>
+                                                </div>
+                                            </div>
+                                            <div class="text-end d-flex align-items-center gap-2">
+                                                <div class="d-flex flex-column align-items-end me-3">
+                                                    <span class="badge bg-soft-blue text-primary border border-primary px-3 py-1 rounded-pill mb-1" style="font-size: 0.7rem; background-color: #e3f2fd;">
+                                                        <i class="fas fa-bed me-1"></i> ${p.cama || 'Sin cama'}
+                                                    </span>
+                                                    <span class="text-[10px] fw-bold text-success uppercase text-nowrap"><i class="fas fa-check-circle me-1"></i> Paciente Activo</span>
+                                                </div>
+                                                <div class="btn btn-sm btn-primary rounded-pill px-3 fw-bold">
+                                                    Trazabilidad <i class="fas fa-chevron-right ms-1"></i>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </a>
+                                `);
+                                listGroup.append(item);
+                            });
+                            accordionContainer.append(section);
+                        }
+                        $contentArea.append(accordionContainer);
+                    } else {
+                        $contentArea.html('<div class="alert alert-info border-0 shadow-sm"><i class="fas fa-info-circle me-2"></i>No se encontraron pacientes activos actualmente.</div>');
+                    }
+                },
+                error: function (xhr, status, error) {
+                    $contentArea.html(`<div class="alert alert-danger border-0 shadow-sm"><i class="fas fa-exclamation-triangle me-2"></i>Error: ${error}</div>`);
+                },
+                complete: function () {
+                    $loading.addClass('d-none');
+                    $contentArea.removeClass('d-none');
+                    isModalLoading = false;
+                }
+            });
+        });
+
+        // Search Filter Logic for Modal
+        $('#modal-patient-search').on('keyup', function() {
+            var value = $(this).val().toLowerCase();
+            
+            // Filter individual items
+            $('#modal-content-area .list-group-item').filter(function() {
+                var text = $(this).text().toLowerCase();
+                var match = text.indexOf(value) > -1;
+                $(this).toggle(match);
+            });
+
+            // Update Accordion Headers (Hide empty sections)
+            $('.manual-accordion-item').each(function() {
+                var $item = $(this);
+                var visibleChildren = $item.find('.list-group-item:visible').length;
+                
+                if (visibleChildren === 0) {
+                    $item.hide();
+                } else {
+                    $item.show();
+                    if (value.length > 0) {
+                        $item.find('.manual-accordion-body').show();
+                        $item.find('.transition-icon').css('transform', 'rotate(180deg)'); // Fix rotation logic to match
+                    }
+                }
+            });
+        });
+
+        // Accordion Toggle Logic
+        $(document).on('click', '.manual-accordion-header', function (e) {
+            e.preventDefault();
+            const targetSelector = $(this).attr('data-target');
+            const $target = $(targetSelector);
+            const $icon = $(this).find('.transition-icon');
+
+            $target.slideToggle(200);
+
+            // Toggle Icon Rotation (Check manually since slideToggle is async)
+            // Or just click-based toggle class? 
+            // Simple check:
+            if ($target.css('display') === 'none') {
+                 $icon.css('transform', 'rotate(0deg)');
+            } else {
+                 $icon.css('transform', 'rotate(180deg)');
+            }
+             // Since slideToggle animates, this check might be eager or inverted.
+             // Better to just flip logic or use callback.
+             // Assuming it toggles from current state.
+             
+             // Let's implement robust toggle state
+             const isHidden = $target.is(':hidden'); // Check before toggle (it was hidden)
+             // wait, slideToggle starts animation.
+             // If it WAS hidden, it becomes visible -> rotate(180)
+             if (isHidden) {
+                  $icon.css('transform', 'rotate(180deg)');
+             } else {
+                  $icon.css('transform', 'rotate(0deg)');
+             }
+        });
+        // Global function for popup (more robust than delegation)
+        window.openPopup = function(event, url) {
+            event.preventDefault(); // Stop navigation
+            event.stopPropagation(); // Stop bubbling
+            window.open(url, 'PacienteDetalle', 'width=1100,height=800,scrollbars=yes,resizable=yes');
+            return false;
+        };
+
+        // Delegated event handler (backup/legacy)
+        $(document).on('click', '.open-popup-link', function(e) {
+            e.preventDefault();
+            const url = $(this).attr('href');
+            window.openPopup(e, url);
+        });
+
+    });
+</script>
+{% endblock %}

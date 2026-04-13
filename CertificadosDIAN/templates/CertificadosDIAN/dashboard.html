@@ -1,0 +1,130 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div id="main-content" class="max-w-4xl mx-auto py-10 space-y-8 animate-in fade-in slide-in-from-bottom-6 duration-700">
+    <!-- Header Premium -->
+    <div class="bg-white rounded-[2rem] p-10 border border-slate-100 shadow-2xl relative overflow-hidden group">
+        <div class="absolute -top-24 -right-24 w-64 h-64 bg-purple-500/5 rounded-full blur-3xl group-hover:bg-purple-500/10 transition-all duration-1000"></div>
+        
+        <div class="relative">
+            <a href="{% url 'home' %}" class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-slate-100 text-slate-600 text-[10px] font-black uppercase tracking-widest mb-6 hover:bg-slate-800 hover:text-white transition-all shadow-sm border border-slate-200">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+                Regresar al Inicio
+            </a>
+            
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                <div>
+                    <h1 class="text-3xl md:text-4xl font-black text-slate-900 tracking-tight leading-tight uppercase">
+                        Certificado de Ingresos <br>
+                        <span class="bg-clip-text text-transparent bg-gradient-to-r from-purple-600 to-blue-600">Generación de Certificados y Bienes 2025</span>
+                    </h1>
+                    <p class="text-slate-500 font-medium text-lg mt-2">Hospital Universitario Departamental de Nariño - E.S.E</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Módulo de Generación -->
+    <div class="bg-white rounded-[2rem] border border-slate-100 shadow-2xl shadow-blue-500/5 overflow-hidden">
+        <div class="p-1 pr-1 bg-gradient-to-r from-purple-600 to-blue-600"></div>
+        
+        <div class="p-10 space-y-8">
+            <div class="flex items-start gap-4">
+                <div class="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center flex-shrink-0">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                </div>
+                <div>
+                    <h2 class="text-2xl font-black text-slate-800 uppercase tracking-tight">Formulario 220 (Vigencia 2025)</h2>
+                    <p class="text-slate-500 font-medium">Ingrese la cédula para solicitar el envío por WhatsApp.</p>
+                </div>
+            </div>
+
+            <form id="main-form" class="space-y-6">
+                <div class="space-y-3">
+                    <label for="cedula" class="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-4">Número de Cédula</label>
+                    <div class="relative group">
+                        <div class="absolute inset-y-0 left-0 pl-6 flex items-center pointer-events-none text-slate-400 group-focus-within:text-purple-600 transition-colors">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>
+                        </div>
+                        <input type="text" name="cedula" id="cedula" required autocomplete="off"
+                                value="{{ cedula_previa|default_if_none:'' }}"
+                                class="w-full pl-14 pr-6 py-5 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:ring-8 focus:ring-purple-500/5 focus:border-purple-500 focus:bg-white outline-none transition-all font-black text-2xl tracking-tight text-slate-900"
+                                placeholder="Identificación">
+                    </div>
+                </div>
+
+                <div class="flex flex-col gap-4 pt-4">
+                    <!-- Opción: Solicitar WhatsApp -->
+                    <button type="button" id="btn-whatsapp-trigger" style="background-color: #059669 !important; color: white !important;" class="group p-10 border-2 border-emerald-400 rounded-[2rem] text-center flex flex-col items-center gap-4 shadow-xl shadow-green-200 hover:brightness-110 transition-all">
+                        <div class="w-16 h-16 bg-white/20 text-white rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform shadow-sm">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 1 1-7.6-11.7 8.38 8.38 0 0 1 3.8.9L21 3z"/></svg>
+                        </div>
+                        <div>
+                            <div class="font-black uppercase tracking-widest text-lg text-white">Solicitar vía WhatsApp</div>
+                            <div class="text-sm font-medium text-white/80">Cerrará la aplicación automáticamente al terminar</div>
+                        </div>
+                    </button>
+                </div>
+
+                <!-- Campo Teléfono (Oculto inicialmente) -->
+                <div id="phone-container" class="hidden animate-in fade-in slide-in-from-top-4 space-y-4 pt-4 border-t border-slate-50">
+                    <div class="space-y-2">
+                        <label for="telefono" class="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-4">Número de Celular</label>
+                        <input type="text" id="telefono" class="w-full px-6 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:border-green-500 outline-none font-black text-xl text-slate-900" placeholder="Ej: 3001234567">
+                    </div>
+                    <button type="button" id="btn-confirma-whatsapp" style="background-color: #16a34a !important; color: white !important;" class="w-full py-6 rounded-2xl font-black uppercase text-xl shadow-2xl shadow-green-500/40 transform active:scale-95 transition-all hover:brightness-110">
+                        CONFIRMAR Y SALIR
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const cedula = document.getElementById('cedula');
+        const phoneContainer = document.getElementById('phone-container');
+        
+        cedula.focus();
+
+        document.getElementById('btn-whatsapp-trigger').addEventListener('click', function() {
+            phoneContainer.classList.toggle('hidden');
+            if(!phoneContainer.classList.contains('hidden')) document.getElementById('telefono').focus();
+        });
+
+        document.getElementById('btn-confirma-whatsapp').addEventListener('click', function() {
+            const tel = document.getElementById('telefono').value.trim();
+            const ced = cedula.value.trim();
+            
+            if(!ced || !tel) { 
+                alert("Por favor ingrese Cédula y Teléfono"); 
+                return; 
+            }
+
+            const url = `{% url 'certificados_dian:solicitar_whatsapp' %}?cedula=${encodeURIComponent(ced)}&telefono=${encodeURIComponent(tel)}`;
+            
+            // 1. Abrimos el éxito en una VENTANA NUEVA (esto sí lo deja cerrar el navegador)
+            const popup = window.open(url, 'success_window', 'width=' + screen.width + ',height=' + screen.height + ',menubar=no,toolbar=no,location=no,status=no');
+            
+            // 2. Intentamos cerrar ESTA ventana (Dashboard) de manera inmediata
+            if (popup) {
+                window.open('', '_self', ''); 
+                window.close();
+                // Si no cerró (bloqueado por navegador), redirigir como salida de sesión
+                setTimeout(() => { 
+                    if (!window.closed) {
+                        window.location.href = "{% url 'certificados_dian:login_rapido' %}"; 
+                    }
+                }, 100);
+            } else {
+                // Si el bloqueador de popups actuó, usamos la misma pestaña
+                window.location.href = url;
+            }
+        });
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,344 @@
+{% extends 'core/base.html' %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="card shadow border-0">
+        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+            <h5 class="mb-0 fw-bold"><i class="fas fa-search me-2"></i>Buscar Registros de Anestesia</h5>
+            <a href="{% url 'create_registro' %}" class="btn btn-light btn-sm fw-bold text-primary">
+                <i class="fas fa-plus me-1"></i> Nuevo Registro
+            </a>
+        </div>
+        <div class="card-body bg-light">
+
+            <!-- Search Form -->
+            <form method="get" class="row g-2 mb-4" id="searchForm">
+                <div class="col-md-4">
+                    <div class="input-group">
+                        <span class="input-group-text bg-white"><i class="fas fa-search text-muted"></i></span>
+                        <input type="text" name="q" id="searchInput" class="form-control"
+                            placeholder="Buscar por paciente, documento o ID..." value="{{ request.GET.q }}">
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" id="searchBtn" class="btn btn-primary w-100 fw-bold">Buscar</button>
+                </div>
+            </form>
+
+            <!-- Table -->
+            <div class="table-responsive bg-white rounded shadow-sm">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="bg-light text-secondary">
+                        <tr>
+                            <th class="ps-3">ID</th>
+                            <th>Fecha</th>
+                            <th>Paciente</th>
+                            <th>Documento</th>
+                            <th>Sala</th>
+                            <th>Anestesiólogo</th>
+                            <th class="text-end pe-3">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for registro in registros %}
+                        <tr>
+                            <td class="ps-3 fw-bold text-muted">#{{ registro.id }}</td>
+                            <td>{{ registro.fecha|date:"d/m/Y" }}</td>
+                            <td class="fw-bold text-primary">{{ registro.paciente_obj.textwidth|default:"Vacio" }}</td>
+                            <td>{{ registro.paciente_obj.ternumdoc|default:"Vacio" }}</td>
+                            <td><span class="badge bg-info text-dark">{{ registro.sala|default:"-" }}</span></td>
+                            <td class="small">{{
+                                registro.anestesiologo.get_full_name|default:registro.anestesiologo.username }}</td>
+                            <td class="text-end pe-3">
+                                <a href="{% url 'update_registro' registro.id %}"
+                                    class="btn btn-sm btn-warning text-dark fw-bold shadow-sm me-2" title="Modificar">
+                                    <i class="fas fa-edit me-1"></i> Modificar
+                                </a>
+                                <a href="{% url 'print_registro_pdf' registro.id %}"
+                                    class="btn btn-sm btn-danger fw-bold shadow-sm" title="Imprimir PDF"
+                                    target="_blank">
+                                    <i class="fas fa-file-pdf me-1"></i> PDF
+                                </a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="7" class="text-center py-5 text-muted">
+                                <i class="fas fa-search fa-2x mb-3 d-block"></i>
+                                Ingrese un número de documento, nombre o ID para buscar.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination (Simple) -->
+            {% if is_paginated %}
+            <div class="mt-3 d-flex justify-content-center">
+                <nav>
+                    <ul class="pagination">
+                        {% if page_obj.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link"
+                                href="?page={{ page_obj.previous_page_number }}&q={{ request.GET.q }}">Anterior</a>
+                        </li>
+                        {% endif %}
+                        <li class="page-item disabled">
+                            <span class="page-link">Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages
+                                }}</span>
+                        </li>
+                        {% if page_obj.has_next %}
+                        <li class="page-item">
+                            <a class="page-link"
+                                href="?page={{ page_obj.next_page_number }}&q={{ request.GET.q }}">Siguiente</a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+            </div>
+            {% endif %}
+
+        </div>
+    </div>
+</div>
+
+<!-- Modal for Recent Patients (Custom - No Bootstrap) -->
+<div id="recentPatientsModal" class="modal-overlay" style="display: none;">
+    <div class="modal-container">
+        <div class="modal-header-custom">
+            <h5 class="modal-title-custom">
+                <i class="fas fa-clock"></i> Pacientes Atendidos - Últimos 3 Días
+            </h5>
+            <button type="button" class="modal-close-btn" onclick="closeModal()">&times;</button>
+        </div>
+        <div class="modal-body-custom">
+            <div id="recentPatientsContent">
+                <!-- Content will be loaded via AJAX -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        z-index: 9999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .modal-container {
+        background: white;
+        border-radius: 8px;
+        width: 90%;
+        max-width: 1200px;
+        max-height: 90vh;
+        overflow: hidden;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .modal-header-custom {
+        background-color: #2563eb;
+        color: white;
+        padding: 1rem 1.5rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .modal-title-custom {
+        margin: 0;
+        font-size: 1.25rem;
+        font-weight: bold;
+    }
+
+    .modal-close-btn {
+        background: none;
+        border: none;
+        color: white;
+        font-size: 2rem;
+        cursor: pointer;
+        line-height: 1;
+        padding: 0;
+        width: 30px;
+        height: 30px;
+    }
+
+    .modal-close-btn:hover {
+        opacity: 0.8;
+    }
+
+    .modal-body-custom {
+        padding: 1.5rem;
+        max-height: calc(90vh - 80px);
+        overflow-y: auto;
+    }
+</style>
+
+<script>
+    function openModal() {
+        document.getElementById('recentPatientsModal').style.display = 'flex';
+    }
+
+    function closeModal() {
+        document.getElementById('recentPatientsModal').style.display = 'none';
+    }
+
+    // Close modal when clicking outside
+    document.addEventListener('click', function (e) {
+        const modal = document.getElementById('recentPatientsModal');
+        if (e.target === modal) {
+            closeModal();
+        }
+    });
+</script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        console.log('Script loaded');
+
+        const searchForm = document.getElementById('searchForm');
+        const searchInput = document.getElementById('searchInput');
+        const searchBtn = document.getElementById('searchBtn');
+
+        if (!searchForm || !searchInput) {
+            console.error('Form elements not found!');
+            return;
+        }
+
+        console.log('Form elements found, attaching event listener');
+
+        searchForm.addEventListener('submit', function (e) {
+            const query = searchInput.value.trim();
+            console.log('Form submitted, query:', query);
+
+            // If search field is empty, show modal instead of submitting
+            if (!query) {
+                console.log('Query is empty, showing modal');
+                e.preventDefault();
+                loadRecentPatients();
+                openModal();  // Use custom modal function
+            }
+            // Otherwise, allow normal form submission
+        });
+
+        function loadRecentPatients() {
+            console.log('Loading recent patients...');
+            const contentDiv = document.getElementById('recentPatientsContent');
+
+            // Show loading state
+            contentDiv.innerHTML = `
+        <div class="text-center py-4">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Cargando...</span>
+            </div>
+            <p class="mt-2 text-muted">Cargando pacientes recientes...</p>
+        </div>
+        `;
+
+            // Fetch recent patients via AJAX
+            fetch('/registro-anestesia/api/recent-patients/', {
+                method: 'GET',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+                .then(response => {
+                    console.log('Response received:', response);
+                    console.log('Response status:', response.status);
+                    console.log('Response headers:', response.headers);
+
+                    // Check if response is OK
+                    if (!response.ok) {
+                        return response.text().then(text => {
+                            console.error('Error response text:', text);
+                            throw new Error(`HTTP error! status: ${response.status}, body: ${text.substring(0, 200)}`);
+                        });
+                    }
+
+                    // Try to parse as JSON
+                    return response.text().then(text => {
+                        console.log('Response text:', text.substring(0, 500));
+                        try {
+                            return JSON.parse(text);
+                        } catch (e) {
+                            console.error('JSON parse error:', e);
+                            console.error('Response was:', text);
+                            throw new Error('Response is not valid JSON: ' + text.substring(0, 100));
+                        }
+                    });
+                })
+                .then(data => {
+                    console.log('Data received:', data);
+                    if (data.registros && data.registros.length > 0) {
+                        let tableHTML = `
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="bg-light">
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Paciente</th>
+                        <th>Documento</th>
+                        <th>Sala</th>
+                        <th>Anestesiólogo</th>
+                        <th class="text-end">Acción</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    `;
+
+                        data.registros.forEach(reg => {
+                            tableHTML += `
+                        <tr>
+                            <td class="fw-bold text-muted">${reg.fecha}</td>
+                            <td class="text-primary fw-bold">${reg.paciente_nombre}</td>
+                            <td>${reg.paciente_documento}</td>
+                            <td><span class="badge bg-info text-dark">${reg.sala}</span></td>
+                            <td class="small">${reg.anestesiologo}</td>
+                            <td class="text-end">
+                                <a href="/registro-anestesia/update/${reg.id}/" 
+                                   class="btn btn-sm btn-primary fw-bold">
+                                    <i class="fas fa-eye me-1"></i> Ver Registro
+                                </a>
+                            </td>
+                        </tr>
+                    `;
+                        });
+
+                        tableHTML += `
+                </tbody>
+            </table>
+        </div>
+        `;
+
+                        contentDiv.innerHTML = tableHTML;
+                    } else {
+                        contentDiv.innerHTML = `
+                    <div class="text-center py-5 text-muted">
+                        <i class="fas fa-inbox fa-3x mb-3"></i>
+                        <p>No se encontraron registros en los últimos 3 días.</p>
+                    </div>
+                `;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading recent patients:', error);
+                    contentDiv.innerHTML = `
+        <div class="alert alert-danger" role="alert">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            Error al cargar los pacientes recientes. Por favor, intente nuevamente.
+            <br><small>Error: ${error.message}</small>
+        </div>
+            `;
+                });
+        }
+    });
+</script>
+{% endblock %}

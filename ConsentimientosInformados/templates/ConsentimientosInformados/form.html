@@ -1,0 +1,340 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Firmar Consentimiento | Gestor Institucional Digital  HUDN (v2 - Foto Huella){% endblock %}
+<!-- Version: 2.0.1 - Metodo Foto Huella -->
+
+{% block content %}
+<div class="max-w-5xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom duration-700">
+    <!-- Header -->
+    <div class="flex items-center justify-between mb-8">
+        <div>
+            <nav class="flex mb-2" aria-label="Breadcrumb">
+                <ol class="flex items-center space-x-2 text-sm text-gray-400 font-bold">
+                    <li><a href="{% url 'consentimientos:list' %}" class="hover:text-primary transition-colors">Consentimientos</a></li>
+                    <li><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></li>
+                    <li class="text-primary">Nueva Firma</li>
+                </ol>
+            </nav>
+            <h1 class="text-3xl font-black text-gray-900">Documento de <span class="text-primary">Autorización</span></h1>
+        </div>
+        <div class="p-4 rounded-2xl bg-primary/5 border border-primary/10">
+            <span class="text-xs font-black text-primary uppercase tracking-widest block mb-1">Formato Seleccionado</span>
+            <span class="text-lg font-black text-gray-800">{{ form.initial.template.nombre }}</span>
+        </div>
+    </div>
+
+    <form method="post" id="consentForm" class="space-y-8">
+        {% csrf_token %}
+        {{ form.template.as_hidden }}
+        
+        <!-- Patient & Professional Selection -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <!-- Patient Search Card -->
+            <div class="bg-white rounded-3xl p-6 shadow-xl border border-gray-100 space-y-4">
+                <label class="flex items-center gap-2 text-sm font-black text-gray-400 uppercase tracking-wider">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="text-primary"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                    Selección de Paciente
+                </label>
+                <select name="paciente_oid" id="pacienteSelect" class="w-full" required></select>
+                <p class="text-xs text-gray-400 font-medium italic">Busque por nombre o número de documento (mín. 3 caracteres).</p>
+            </div>
+
+            <!-- Professional Selection Card -->
+            <div class="bg-white rounded-3xl p-6 shadow-xl border border-gray-100 space-y-4">
+                <label class="flex items-center gap-2 text-sm font-black text-gray-400 uppercase tracking-wider">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="text-primary"><path d="M4.8 2.3A.3.3 0 1 0 5 2H4a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h1a.3.3 0 1 0 .2-.3"/><path d="M13 15h8"/><path d="M15 11h6"/><path d="M17 7h4"/><path d="M3 13v2c0 1.1.9 2 2 2"/><path d="M9 13v2c0 1.1-.9 2-2 2"/><path d="M7 17v4"/><path d="M9 21H5"/><path d="M22 10V4a2 2 0 0 0-2-2h-7a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h7a2 2 0 0 0 2-2z"/></svg>
+                    Profesional Responsable
+                </label>
+                <select name="profesional_oid" id="profesionalSelect" class="w-full" required></select>
+                <p class="text-xs text-gray-400 font-medium italic">Busque al profesional por nombre o cédula.</p>
+            </div>
+            
+            <!-- Email Option -->
+            <div class="md:col-span-2 bg-white rounded-3xl p-6 shadow-xl border border-gray-100 space-y-4">
+                <div class="flex items-center gap-4">
+                    <input type="checkbox" name="email_enviar" id="id_email_enviar" class="w-6 h-6 text-primary rounded-lg border-gray-200">
+                    <label for="id_email_enviar" class="text-sm font-black text-gray-900 uppercase tracking-tight">¿Enviar copia firmada al correo electrónico del paciente?</label>
+                </div>
+                <div id="emailInputContainer" class="hidden animate-in fade-in transition-all">
+                    <input type="email" name="email_destino" id="id_email_destino" class="w-full p-4 bg-slate-50 border border-gray-100 rounded-2xl focus:ring-4 focus:ring-primary/10 font-bold" placeholder="ejemplo@correo.com">
+                </div>
+            </div>
+        </div>
+
+        <!-- Content Viewer -->
+        <div class="bg-white rounded-3xl shadow-xl border border-gray-100 overflow-hidden">
+            <div class="bg-gray-50/50 p-4 border-b border-gray-100 flex items-center justify-between">
+                <span class="text-xs font-black text-gray-400 uppercase tracking-wider">Contenido del Consentimiento</span>
+            </div>
+            <div class="p-8 prose prose-blue max-w-none text-gray-700 leading-relaxed italic">
+                {{ form.initial.template.contenido_html|safe }}
+            </div>
+        </div>
+
+        <!-- Signature & Biometrics Section -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <!-- Patient Signature -->
+            <div class="bg-white rounded-3xl p-6 shadow-xl border border-gray-100 space-y-4">
+                <div class="flex justify-between items-center">
+                    <label class="text-sm font-black text-gray-400 uppercase tracking-wider">Firma del Paciente</label>
+                    <button type="button" id="clearPatient" class="text-xs font-black text-red-500 hover:text-red-700 transition-colors uppercase underline">Limpiar</button>
+                </div>
+                <div class="relative bg-gray-50 rounded-2xl border-2 border-dashed border-primary/20 h-48 overflow-hidden touch-none">
+                    <canvas id="patientPad" class="absolute inset-0 w-full h-full"></canvas>
+                </div>
+                <input type="hidden" name="firma_paciente" id="id_firma_paciente">
+            </div>
+
+            <!-- Professional Signature -->
+            <div class="bg-white rounded-3xl p-6 shadow-xl border border-gray-100 space-y-4">
+                <div class="flex justify-between items-center">
+                    <label class="text-sm font-black text-gray-400 uppercase tracking-wider">Firma del Profesional</label>
+                    <button type="button" id="clearProfessional" class="text-xs font-black text-red-500 hover:text-red-700 transition-colors uppercase underline">Limpiar</button>
+                </div>
+                <div class="relative bg-gray-50 rounded-2xl border-2 border-dashed border-primary/20 h-48 overflow-hidden touch-none">
+                    <canvas id="professionalPad" class="absolute inset-0 w-full h-full"></canvas>
+                </div>
+                <input type="hidden" name="firma_profesional" id="id_firma_profesional">
+            </div>
+
+            <!-- Patient Photo Capture -->
+            <div class="bg-white rounded-3xl p-6 shadow-xl border border-gray-100 space-y-4">
+                <div class="flex justify-between items-center">
+                    <label class="text-sm font-black text-gray-400 uppercase tracking-wider">Fotografía del Paciente</label>
+                    <button type="button" id="startCamera" class="px-3 py-1 bg-primary/10 text-primary rounded-lg text-[10px] font-black uppercase hover:bg-primary hover:text-white transition-all">Activar Cámara</button>
+                </div>
+                <div class="relative bg-gray-900 rounded-2xl aspect-[4/3] overflow-hidden group">
+                    <video id="videoElement" class="w-full h-full object-cover hidden" autoplay playsinline></video>
+                    <canvas id="photoCanvas" class="hidden"></canvas>
+                    <img id="photoPreview" class="w-full h-full object-cover hidden">
+                    <div id="cameraPlaceholder" class="absolute inset-0 flex flex-col items-center justify-center text-gray-500 gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
+                        <span class="text-[10px] font-black uppercase tracking-widest">Previsualización</span>
+                    </div>
+                </div>
+                <button type="button" id="captureBtn" class="w-full py-2 bg-gray-100 text-gray-400 font-bold rounded-xl cursor-not-allowed transition-all" disabled>Capturar Foto</button>
+                <input type="hidden" name="foto_paciente" id="id_foto_paciente">
+            </div>
+
+            <!-- Fingerprint Photo Capture -->
+            <div class="bg-white rounded-3xl p-6 shadow-xl border border-gray-100 space-y-4">
+                <div class="flex justify-between items-center">
+                    <label class="text-sm font-black text-gray-400 uppercase tracking-wider">Foto de Huella (Dedo Índice)</label>
+                    <button type="button" id="startFingerprintCamera" class="px-3 py-1 bg-primary/10 text-primary text-xs font-black rounded-lg hover:bg-primary/20 transition-all uppercase">Activar Cámara Huella</button>
+                </div>
+                <div class="relative bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200 h-48 overflow-hidden flex items-center justify-center">
+                    <video id="fingerprintVideo" class="absolute inset-0 w-full h-full object-cover hidden" autoplay playsinline></video>
+                    <canvas id="fingerprintCanvas" class="hidden"></canvas>
+                    <img id="fingerprintPreview" class="absolute inset-0 w-full h-full object-cover hidden">
+                    <div id="fingerprintPlaceholder" class="flex flex-col items-center text-gray-400 gap-3">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 10a2 2 0 0 0-2 2c0 1.02-.1 2.02-.1 3"/><path d="M7 10a5 5 0 0 1 10 0"/><path d="M12 17c0-2-2-5-2-7"/><path d="M12 17c0 2 2 5 2 7"/><path d="M12 7c-4.5 0-8 3.5-8 8"/><path d="M12 3a12 12 0 0 0-9 4"/><path d="M12 3a12 12 0 0 1 9 4"/><path d="M20 15a8 8 0 0 0-8-8"/></svg>
+                        <span class="text-[10px] font-black uppercase tracking-widest">Previsualización Huella</span>
+                    </div>
+                </div>
+                <button type="button" id="captureFingerprintBtn" class="w-full py-2 bg-gray-100 text-gray-400 font-bold rounded-xl cursor-not-allowed transition-all" disabled>Capturar Huella</button>
+                <input type="hidden" name="huella_paciente" id="id_huella_paciente">
+            </div>
+        </div>
+
+        <!-- Submit -->
+        <div class="flex justify-center pt-8">
+            <button type="submit" class="group relative px-12 py-4 bg-primary text-white font-black text-lg rounded-2xl shadow-2xl shadow-primary/30 hover:scale-105 active:scale-95 transition-all duration-300">
+                <span class="flex items-center gap-3">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                    Finalizar y Guardar Consentimiento
+                </span>
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/signature_pad@4.1.7/dist/signature_pad.umd.min.js"></script>
+<script>
+    $(document).ready(function() {
+        // Patient Search AJAX
+        $('#pacienteSelect').select2({
+            theme: 'default',
+            ajax: {
+                url: "{% url 'consentimientos:api_buscar_pacientes' %}",
+                dataType: 'json',
+                delay: 250,
+                data: function (params) {
+                    return { q: params.term };
+                },
+                processResults: function (data) {
+                    return { results: data.results.map(p => ({ id: p.oid, text: p.text })) };
+                },
+                cache: true
+            },
+            minimumInputLength: 3,
+            placeholder: 'Nombre o Documento del Paciente'
+        });
+
+        $('#profesionalSelect').select2({
+            theme: 'default',
+            ajax: {
+                url: "{% url 'mezclas:api_buscar_personal_hudn' %}",
+                dataType: 'json',
+                delay: 250,
+                data: function (params) {
+                    return { q: params.term };
+                },
+                processResults: function (data) {
+                    return { results: data.results.map(p => ({ id: p.id, text: p.text })) };
+                },
+                cache: true
+            },
+            minimumInputLength: 3,
+            placeholder: 'Nombre o Cédula del Profesional'
+        });
+
+        $('#id_email_enviar').on('change', function() {
+            if ($(this).is(':checked')) {
+                $('#emailInputContainer').removeClass('hidden');
+            } else {
+                $('#emailInputContainer').addClass('hidden');
+            }
+        });
+
+        // Initialize Signature Pads
+        const canvasP = document.getElementById('patientPad');
+        const canvasPro = document.getElementById('professionalPad');
+        
+        function resizeCanvas(canvas) {
+            if (!canvas) return;
+            const ratio =  Math.max(window.devicePixelRatio || 1, 1);
+            canvas.width = canvas.offsetWidth * ratio;
+            canvas.height = canvas.offsetHeight * ratio;
+            canvas.getContext("2d").scale(ratio, ratio);
+        }
+
+        window.onresize = () => { 
+            resizeCanvas(canvasP); resizeCanvas(canvasPro); 
+        };
+        resizeCanvas(canvasP);
+        resizeCanvas(canvasPro);
+
+        const padP = new SignaturePad(canvasP, { backgroundColor: 'rgba(255, 255, 255, 0)', penColor: 'rgb(30, 41, 59)' });
+        const padPro = new SignaturePad(canvasPro, { backgroundColor: 'rgba(255, 255, 255, 0)', penColor: 'rgb(30, 41, 59)' });
+        
+        $('#clearPatient').on('click', () => padP.clear());
+        $('#clearProfessional').on('click', () => padPro.clear());
+
+        // Camera Handling - Patient Photo
+        const video = document.getElementById('videoElement');
+        const photoCanvas = document.getElementById('photoCanvas');
+        const photoPreview = document.getElementById('photoPreview');
+        const placeholder = document.getElementById('cameraPlaceholder');
+        const captureBtn = document.getElementById('captureBtn');
+
+        // Camera Handling - Fingerprint Photo
+        const fingerprintVideo = document.getElementById('fingerprintVideo');
+        const fingerprintCanvas = document.getElementById('fingerprintCanvas');
+        const fingerprintPreview = document.getElementById('fingerprintPreview');
+        const fingerprintPlaceholder = document.getElementById('fingerprintPlaceholder');
+        const captureFingerprintBtn = document.getElementById('captureFingerprintBtn');
+
+        let activeStream = null;
+
+        async function getCameraStream() {
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                const getUserMedia = navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia;
+                if (!getUserMedia) {
+                    if (!window.isSecureContext) {
+                        throw new Error("El acceso a la cámara requiere una conexión segura (HTTPS o localhost).");
+                    }
+                    throw new Error("Su navegador no soporta el acceso a la cámara.");
+                }
+                return new Promise((resolve, reject) => {
+                    getUserMedia.call(navigator, { video: { facingMode: "environment" } }, resolve, reject);
+                });
+            }
+            return await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+        }
+
+        async function startCamera(videoElem, placeholderElem, previewElem, btnBtn) {
+            try {
+                if (activeStream) {
+                    activeStream.getTracks().forEach(track => track.stop());
+                }
+                const stream = await getCameraStream();
+                activeStream = stream;
+                videoElem.srcObject = stream;
+                $(videoElem).removeClass('hidden');
+                $(placeholderElem).addClass('hidden');
+                $(previewElem).addClass('hidden');
+                $(btnBtn).prop('disabled', false).removeClass('bg-gray-100 text-gray-400').addClass('bg-primary text-white');
+            } catch (err) {
+                console.error("Camera Error:", err);
+                alert("Error al acceder a la cámara: " + err.message);
+            }
+        }
+
+        function capturePhoto(videoElem, canvasElem, previewElem, inputId) {
+            canvasElem.width = videoElem.videoWidth;
+            canvasElem.height = videoElem.videoHeight;
+            canvasElem.getContext('2d').drawImage(videoElem, 0, 0);
+            
+            const dataUrl = canvasElem.toDataURL('image/jpeg');
+            $(inputId).val(dataUrl);
+            previewElem.src = dataUrl;
+            
+            $(previewElem).removeClass('hidden');
+            $(videoElem).addClass('hidden');
+            
+            if (activeStream) {
+                activeStream.getTracks().forEach(track => track.stop());
+                activeStream = null;
+            }
+        }
+
+        $('#startCamera').on('click', () => startCamera(video, placeholder, photoPreview, captureBtn));
+        $(captureBtn).on('click', () => capturePhoto(video, photoCanvas, photoPreview, '#id_foto_paciente'));
+
+        $('#startFingerprintCamera').on('click', () => startCamera(fingerprintVideo, fingerprintPlaceholder, fingerprintPreview, captureFingerprintBtn));
+        $(captureFingerprintBtn).on('click', () => {
+            capturePhoto(fingerprintVideo, fingerprintCanvas, fingerprintPreview, '#id_huella_paciente');
+            // Fingerprint specific logic
+            // (We no longer use fingerCaptured variable as it was for SignaturePad)
+        });
+
+        // Handle form submit
+        $('#consentForm').on('submit', function(e) {
+            if (padP.isEmpty() || padPro.isEmpty()) {
+                alert("Las firmas del paciente y profesional son obligatorias.");
+                e.preventDefault();
+                return;
+            }
+            if ($('#id_foto_paciente').val() === "") {
+                alert("La fotografía del paciente es obligatoria.");
+                e.preventDefault();
+                return;
+            }
+            if ($('#id_huella_paciente').val() === "") {
+                alert("La fotografía de la huella es obligatoria.");
+                e.preventDefault();
+                return;
+            }
+
+            $('#id_firma_paciente').val(padP.toDataURL());
+            $('#id_firma_profesional').val(padPro.toDataURL());
+        });
+    });
+</script>
+<style>
+    .select2-container--default .select2-selection--single {
+        border: 2px solid rgba(37, 99, 235, 0.2) !important;
+        border-radius: 1rem !important;
+        height: 52px !important;
+    }
+    .select2-container--default .select2-selection--single .select2-selection__rendered {
+        line-height: 48px !important;
+        font-weight: 800 !important;
+        padding-left: 1rem !important;
+    }
+    .select2-selection__arrow { height: 48px !important; }
+</style>
+{% endblock %}

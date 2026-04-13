@@ -1,0 +1,91 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto py-12 px-4">
+    <!-- Breadcrumb -->
+    <nav class="flex mb-8 text-sm font-bold text-slate-500 animate-in fade-in duration-500">
+        <a href="{% url 'horas_extras:dashboard' %}" class="hover:text-blue-600">Talento Humano</a>
+        <span class="mx-2 text-slate-300">/</span>
+        <span class="text-slate-900">Informes</span>
+    </nav>
+
+    <div class="mb-12 animate-in fade-in slide-in-from-left-4 duration-700">
+        <h1 class="text-4xl font-black text-slate-900 mb-2">Panel de Informes</h1>
+        <p class="text-lg text-slate-600">Consulte los reportes maestros generados desde la base de datos de nómina.</p>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <!-- Reporte Personal Activo -->
+        <a href="{% url 'horas_extras:reporte_personal_activo' %}" class="group">
+            <div class="glass-card p-6 h-full flex flex-col border-2 border-transparent hover:border-blue-600 transition-all">
+                <div class="w-14 h-14 bg-blue-100 rounded-2xl flex items-center justify-center text-blue-600 mb-5 group-hover:bg-blue-600 group-hover:text-white transition-all duration-300">
+                    <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                </div>
+                <h3 class="text-xl font-black text-slate-900 mb-3">Personal Activo de Planta</h3>
+                <p class="text-slate-500 text-sm mb-6 flex-grow">Conteo consolidado de empelados con vinculación directa y contrato vigente.</p>
+                <div class="text-blue-600 font-black text-sm uppercase tracking-widest flex items-center">
+                    Cargar Reporte
+                    <svg class="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M13 7l5 5m0 0l-5 5m5-5H6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                </div>
+            </div>
+        </a>
+
+        <!-- Reporte Personal Por Area -->
+        <a href="{% url 'horas_extras:reporte_personal_area' %}" class="group">
+            <div class="glass-card p-6 h-full flex flex-col border-2 border-transparent hover:border-emerald-600 transition-all">
+                <div class="w-14 h-14 bg-emerald-100 rounded-2xl flex items-center justify-center text-emerald-600 mb-5 group-hover:bg-emerald-600 group-hover:text-white transition-all duration-300">
+                    <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011-1v5m-4 0h4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                </div>
+                <h3 class="text-xl font-black text-slate-900 mb-3">Personal por Área</h3>
+                <p class="text-slate-500 text-sm mb-6 flex-grow">Distribución de colaboradores por Centros de Costos oficiales.</p>
+                <div class="text-emerald-600 font-black text-sm uppercase tracking-widest flex items-center">
+                    Cargar Reporte
+                    <svg class="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M13 7l5 5m0 0l-5 5m5-5H6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                </div>
+            </div>
+        </a>
+
+        <!-- Reporte Personal Temporal -->
+        <a href="{% url 'horas_extras:reporte_personal_temporal' %}" class="group">
+            <div class="glass-card p-6 h-full flex flex-col border-2 border-transparent hover:border-purple-600 transition-all">
+                <div class="w-14 h-14 bg-purple-100 rounded-2xl flex items-center justify-center text-purple-600 mb-5 group-hover:bg-purple-600 group-hover:text-white transition-all duration-300">
+                    <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                </div>
+                <h3 class="text-xl font-black text-slate-900 mb-3">Planta Temporal</h3>
+                <p class="text-slate-500 text-sm mb-6 flex-grow">Reportes específicos del personal vinculado bajo la modalidad de planta temporal.</p>
+                <div class="text-purple-600 font-black text-sm uppercase tracking-widest flex items-center">
+                    Cargar Reporte
+                    <svg class="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M13 7l5 5m0 0l-5 5m5-5H6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                </div>
+            </div>
+        </a>
+
+        <!-- Buscador Individual -->
+        <a href="{% url 'horas_extras:buscar_funcionario' %}" class="group">
+            <div class="glass-card p-6 h-full flex flex-col border-2 border-transparent hover:border-blue-600 transition-all">
+                <div class="w-14 h-14 bg-blue-100 rounded-2xl flex items-center justify-center text-blue-600 mb-5 group-hover:bg-blue-600 group-hover:text-white transition-all duration-300">
+                    <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                </div>
+                <h3 class="text-xl font-black text-slate-900 mb-3">Búsqueda Individual</h3>
+                <p class="text-slate-500 text-sm mb-6 flex-grow">Localice un funcionario específico por cédula para consultar su cargo, área y estado actual.</p>
+                <div class="text-blue-600 font-black text-sm uppercase tracking-widest flex items-center">
+                    Buscar Ahora
+                    <svg class="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M13 7l5 5m0 0l-5 5m5-5H6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                </div>
+            </div>
+        </a>
+
+        <!-- Placeholder -->
+        <div class="relative group">
+            <div class="glass-card p-6 h-full flex flex-col border-2 border-dashed border-slate-200 opacity-50 bg-slate-50">
+                <div class="w-14 h-14 bg-slate-100 rounded-2xl flex items-center justify-center text-slate-400 mb-5">
+                    <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                </div>
+                <h3 class="text-xl font-black text-slate-400 mb-3">Próximos Reportes</h3>
+                <p class="text-slate-400 text-sm italic">Nuevas métricas de rotación e indicadores financieros próximamente.</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

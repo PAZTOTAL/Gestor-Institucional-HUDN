@@ -1,0 +1,74 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Alistamiento {{ alistamiento.numero_orden }} | FRFAR-162{% endblock %}
+
+{% block content %}
+<div class="space-y-6 animate-in fade-in duration-500">
+    <div class="bg-white rounded-3xl p-8 border border-gray-100 shadow-xl flex flex-col md:flex-row justify-between items-start gap-4">
+        <div>
+            <div class="flex items-center gap-2 mb-2">
+                <a href="{% url 'mezclas:onco_alistamiento_list' %}" class="p-2 rounded-xl bg-gray-50 text-gray-400 hover:bg-gray-100">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg>
+                </a>
+                <span class="text-xs font-black text-green-500 uppercase tracking-widest">FRFAR-162</span>
+            </div>
+            <h1 class="text-3xl font-black text-gray-900 uppercase">Alistamiento y Conciliación</h1>
+            <p class="text-gray-500">No. Orden: <strong>{{ alistamiento.numero_orden|default:"—" }}</strong> | Fecha: {{ alistamiento.fecha }} | Área: {{ alistamiento.area }}</p>
+        </div>
+        <a href="{% url 'mezclas:onco_alistamiento_item_crear' alistamiento.pk %}" class="px-5 py-3 bg-green-600 text-white rounded-2xl font-black text-sm flex items-center gap-2 hover:scale-105 transition-all shadow-lg shadow-green-600/25">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+            AGREGAR MATERIAL
+        </a>
+    </div>
+
+    <div class="bg-white rounded-3xl border border-gray-100 shadow-2xl overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse text-sm">
+                <thead>
+                    <tr class="bg-green-50/40 border-b border-green-100">
+                        <th class="px-5 py-3 text-[10px] font-black text-green-500 uppercase tracking-widest">Material de Partida</th>
+                        <th class="px-5 py-3 text-[10px] font-black text-green-500 uppercase tracking-widest">Lote Fabricante</th>
+                        <th class="px-5 py-3 text-[10px] font-black text-green-500 uppercase tracking-widest">F. Vencimiento</th>
+                        <th class="px-5 py-3 text-[10px] font-black text-green-500 uppercase tracking-widest">Cant. Solicitada</th>
+                        <th class="px-5 py-3 text-[10px] font-black text-green-500 uppercase tracking-widest">Cant. Ingresada</th>
+                        <th class="px-5 py-3 text-[10px] font-black text-green-500 uppercase tracking-widest">Aprovechamiento</th>
+                        <th class="px-5 py-3 text-[10px] font-black text-green-500 uppercase tracking-widest">Producto Terminado</th>
+                        <th class="px-5 py-3 text-[10px] font-black text-green-500 uppercase tracking-widest">Acc.</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-50">
+                    {% for item in items %}
+                    <tr class="hover:bg-green-50/10 transition-colors group">
+                        <td class="px-5 py-3 font-bold text-gray-900">{{ item.material }}</td>
+                        <td class="px-5 py-3 text-gray-700">{{ item.lote_fabricante|default:"—" }}</td>
+                        <td class="px-5 py-3 text-gray-700">{{ item.fecha_vencimiento|default:"—" }}</td>
+                        <td class="px-5 py-3 text-center font-bold">{{ item.cantidad_solicitada|default:"—" }}</td>
+                        <td class="px-5 py-3 text-center font-bold text-green-700">{{ item.cantidad_ingresada|default:"—" }}</td>
+                        <td class="px-5 py-3 text-center">
+                            {% if item.aprovechamiento is not None %}
+                                {% if item.aprovechamiento == 0 %}
+                                    <span class="px-2 py-1 rounded bg-red-50 text-red-600 text-xs font-black">{{ item.aprovechamiento }}</span>
+                                {% else %}
+                                    <span class="px-2 py-1 rounded bg-green-50 text-green-600 text-xs font-black">{{ item.aprovechamiento }}</span>
+                                {% endif %}
+                            {% else %}—{% endif %}
+                        </td>
+                        <td class="px-5 py-3 text-gray-600">{{ item.producto_terminado|default:"—" }}</td>
+                        <td class="px-5 py-3">
+                            <a href="{% url 'mezclas:onco_alistamiento_item_eliminar' item.pk %}" class="p-1.5 text-red-300 hover:bg-red-50 hover:text-red-500 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity inline-block">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/></svg>
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="8" class="px-6 py-8 text-center text-sm text-gray-400">Sin materiales. Haga clic en "AGREGAR MATERIAL".</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,208 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Matríz Unidosis | {{ periodo.orden_produccion }}{% endblock %}
+
+{% block content %}
+<div class="space-y-6 animate-in fade-in duration-500">
+    
+    <!-- Spreadsheet Style Header -->
+    <div class="bg-white rounded-3xl border-2 border-slate-200 overflow-hidden shadow-2xl">
+        <div class="grid grid-cols-12 text-[10px] font-black uppercase text-slate-600">
+            <!-- Row 1 -->
+            <div class="col-span-2 bg-slate-50 p-3 border-r-2 border-b-2 border-slate-200 flex items-center justify-center text-center">FECHA:</div>
+            <div class="col-span-2 p-3 border-r-2 border-b-2 border-slate-200 flex items-center justify-center font-bold text-slate-900">{{ periodo.fecha|date:"d-m-Y" }}</div>
+            
+            <div class="col-span-2 bg-slate-50 p-3 border-r-2 border-b-2 border-slate-200 flex items-center justify-center text-center">JEFE DE PRODUCCIÓN:</div>
+            <div class="col-span-2 p-3 border-r-2 border-b-2 border-slate-200 flex items-center justify-center font-bold text-slate-900">{{ periodo.jefe_produccion.nombre_completo }}</div>
+            
+            <div class="col-span-2 bg-slate-50 p-3 border-r-2 border-b-2 border-slate-200 flex items-center justify-center text-center">QF PREPARADOR:</div>
+            <div class="col-span-2 p-3 border-b-2 border-slate-200 flex items-center justify-center font-bold text-slate-900">{{ periodo.qf_preparador.nombre_completo }}</div>
+
+            <!-- Row 2 -->
+            <div class="col-span-2 bg-slate-100 p-4 border-r-2 border-b-2 border-slate-200 flex items-center justify-center text-center font-black">ORDEN DE PRODUCCION:</div>
+            <div class="col-span-2 p-4 border-r-2 border-b-2 border-slate-200 flex items-center justify-center font-black text-lg text-primary">{{ periodo.orden_produccion }}</div>
+            
+            <div class="col-span-2 bg-slate-50 p-3 border-r-2 border-b-2 border-slate-200 flex items-center justify-center text-center leading-tight">JEFE DE CONTROL DE CALIDAD:</div>
+            <div class="col-span-2 p-3 border-r-2 border-b-2 border-slate-200 flex items-center justify-center font-bold text-slate-900">{{ periodo.jefe_calidad.nombre_completo }}</div>
+            
+            <div class="col-span-2 bg-slate-50 p-3 border-r-2 border-b-2 border-slate-200 flex items-center justify-center text-center">REGISTRADO POR:</div>
+            <div class="col-span-2 p-3 border-b-2 border-slate-200 flex items-center justify-center font-bold text-slate-900">{{ periodo.registrado_por.nombre_completo }}</div>
+
+            <!-- Row 3 -->
+            <div class="col-span-2 bg-slate-50 p-3 border-r-2 border-slate-200 flex items-center justify-center text-center">ALISTAMIENTO:</div>
+            <div class="col-span-2 p-3 border-r-2 border-slate-200 flex items-center justify-center font-bold text-slate-900 text-[9px]">{{ periodo.alistamiento.nombre_completo }}</div>
+            
+            <div class="col-span-2 bg-slate-50 p-3 border-r-2 border-slate-200 flex items-center justify-center text-center leading-tight">DIRECTOR TÉCNICO:</div>
+            <div class="col-span-2 p-3 border-r-2 border-slate-200 flex items-center justify-center font-bold text-slate-900">{{ periodo.director_tecnico.nombre_completo }}</div>
+            
+            <div class="col-span-2 bg-slate-50 p-3 border-r-2 border-slate-200 flex items-center justify-center text-center">DIGITADOR:</div>
+            <div class="col-span-2 p-3 flex items-center justify-center font-bold text-slate-900">{{ periodo.digitador.nombre_completo }}</div>
+        </div>
+    </div>
+
+    <!-- Controls -->
+    <div class="flex flex-col md:flex-row justify-between items-end gap-6 bg-slate-50 p-6 rounded-[2rem] border-2 border-slate-100">
+        <div class="flex flex-wrap items-end gap-4">
+            <div class="w-32">
+                <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Cama Desde</label>
+                <input type="text" id="cama_desde" class="w-full bg-white border-2 border-slate-200 rounded-xl px-4 py-2 font-bold uppercase focus:border-primary outline-none transition-all" placeholder="Ejem: 101">
+            </div>
+            <div class="w-32">
+                <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Cama Hasta</label>
+                <input type="text" id="cama_hasta" class="w-full bg-white border-2 border-slate-200 rounded-xl px-4 py-2 font-bold uppercase focus:border-primary outline-none transition-all" placeholder="Ejem: 210">
+            </div>
+            <button onclick="cargarMatrizAutomatica()" id="btn_cargar" class="px-6 py-2.5 bg-primary text-white rounded-xl font-black flex items-center gap-2 hover:scale-105 transition-all shadow-lg shadow-primary/25 group">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="group-hover:rotate-180 transition-transform duration-500"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg>
+                CARGAR PACIENTES ACTIVOS
+            </button>
+        </div>
+        
+        <div class="flex gap-2">
+            <a href="{% url 'mezclas:unidosis_orden_crear' periodo.pk %}" class="px-6 py-2.5 bg-green-600 text-white rounded-xl font-black flex items-center gap-2 hover:scale-105 transition-all shadow-lg shadow-green-600/25">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+                AGREGAR FILA MANUAL
+            </a>
+        </div>
+    </div>
+
+    <!-- The Matrix Table -->
+    <div class="bg-white rounded-3xl border-2 border-slate-100 shadow-xl overflow-x-auto">
+        <table class="w-full border-collapse text-[10px] font-bold">
+            <thead>
+                <tr class="bg-slate-800 text-white uppercase">
+                    <th class="p-3 border-r border-slate-700 whitespace-nowrap">LOTE INTERNO</th>
+                    <th class="p-3 border-r border-slate-700 min-w-[150px]">NOMBRE DEL PACIENTE</th>
+                    <th class="p-3 border-r border-slate-700 whitespace-nowrap">IDENTIFICACION</th>
+                    <th class="p-3 border-r border-slate-700">CAMA</th>
+                    <th class="p-3 border-r border-slate-700">SERVICIO</th>
+                    <th class="p-3 border-r border-slate-700">COD</th>
+                    <th class="p-3 border-r border-slate-700 min-w-[200px]">MEDICAMENTO+DOSIS ESTANDAR PME</th>
+                    <th class="p-3 border-r border-slate-700">DOSIS Y FRECUENCIA</th>
+                    <th class="p-3 border-r border-slate-700">SLN DILUYENTE</th>
+                    <th class="p-3 border-r border-slate-700">VOL. DILUCION</th>
+                    <th class="p-3 border-r border-slate-700">VEHÍCULO Y VOL. FINAL</th>
+                    <th class="p-3 border-r border-slate-700">VIA</th>
+                    <th class="p-3 border-r border-slate-700">FRECUENCIA</th>
+                    <th class="p-3 border-r border-slate-700">CANT. NEC.</th>
+                    <th class="p-3 border-r border-slate-700">VOL. DOSIS</th>
+                    <th class="p-3 border-r border-slate-700 text-red-300">FECHA EXPIRA</th>
+                    <th class="p-3 border-r border-slate-700 bg-slate-900 border-b border-slate-700" colspan="2">ALMACENAMIENTO</th>
+                </tr>
+                <tr class="bg-slate-700 text-white text-[8px]">
+                    <td colspan="16" class="p-1 border-r border-slate-600"></td>
+                    <td class="p-2 border-r border-slate-600 text-center">T°</td>
+                    <td class="p-2 text-center">LUZ</td>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-200">
+                {% for orden in ordenes %}
+                <tr class="hover:bg-slate-50 transition-colors uppercase">
+                    <td class="p-3 border-r border-slate-100 font-black text-primary">{{ orden.lote_interno }}</td>
+                    <td class="p-3 border-r border-slate-100 font-black">{{ orden.paciente_nombre }}</td>
+                    <td class="p-3 border-r border-slate-100">{{ orden.paciente_identificacion }}</td>
+                    <td class="p-3 border-r border-slate-100 text-center">{{ orden.cama }}</td>
+                    <td class="p-3 border-r border-slate-100">{{ orden.servicio }}</td>
+                    <td class="p-3 border-r border-slate-100 text-center">{{ orden.medicamento_base.codigo }}</td>
+                    <td class="p-3 border-r border-slate-100 text-[9px] leading-tight">{{ orden.dosis_estandar_pme }}</td>
+                    <td class="p-3 border-r border-slate-100">{{ orden.dosis_frecuencia }}</td>
+                    <td class="p-3 border-r border-slate-100">{{ orden.sln_diluyente }}</td>
+                    <td class="p-3 border-r border-slate-100 text-center">{{ orden.volumen_dilucion }}</td>
+                    <td class="p-3 border-r border-slate-100">{{ orden.vehiculo_volumen_final }}</td>
+                    <td class="p-3 border-r border-slate-100 text-center">{{ orden.via }}</td>
+                    <td class="p-3 border-r border-slate-100 text-center">{{ orden.frecuencia }}</td>
+                    <td class="p-3 border-r border-slate-100 text-center">{{ orden.cantidad_necesaria }}</td>
+                    <td class="p-3 border-r border-slate-100 text-center">{{ orden.volumen_dosis }}</td>
+                    <td class="p-3 border-r border-slate-100 text-red-600 font-black">{{ orden.fecha_expiracion|date:"d/m/Y H:i" }}</td>
+                    <td class="p-3 border-r border-slate-100 text-center">{{ orden.temp_almacenamiento }}</td>
+                    <td class="p-3 text-center">{{ orden.luz_almacenamiento }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="18" class="p-12 text-center bg-slate-50">
+                        <div class="flex flex-col items-center">
+                            <div class="w-16 h-16 bg-white rounded-2xl flex items-center justify-center text-slate-200 shadow-sm mb-4">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/></svg>
+                            </div>
+                            <h3 class="font-black text-slate-400 uppercase tracking-widest text-xs">No hay registros en esta matríz</h3>
+                            <p class="text-[10px] text-slate-400 mt-1">Haga clic en el botón verde para agregar el primer paciente.</p>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+async function cargarMatrizAutomatica() {
+    const desde = document.getElementById('cama_desde').value;
+    const hasta = document.getElementById('cama_hasta').value;
+    const btn = document.getElementById('btn_cargar');
+
+    if(!desde || !hasta) {
+        alert("Por favor ingrese el rango de camas (Desde / Hasta)");
+        return;
+    }
+
+    btn.disabled = true;
+    btn.innerHTML = '<svg class="animate-spin h-5 w-5 mr-3" viewBox="0 0 24 24">...</svg> CARGANDO...';
+    
+    try {
+        const response = await fetch(`{% url 'mezclas:api_cargar_matriz' %}?desde=${desde}&hasta=${hasta}`);
+        const data = await response.json();
+
+        if(data.error) {
+            alert(data.error);
+            return;
+        }
+
+        if(data.count === 0) {
+            alert("No se encontraron pacientes con mezclas estériles vigentes en ese rango de camas.");
+        } else {
+            // Aquí podríamos o bien refrescar la página si hiciéramos un guardado automático,
+            // o mostrar un preview para confirmar la importación.
+            // Para este caso, vamos a simular que se agregan.
+            alert(`Se detectaron ${data.count} medicamentos estériles prescritos. Procediendo a pre-poblar la matriz...`);
+            
+            // TODO: Podríamos enviar un POST para guardar estas órdenes automáticamente
+            // Por ahora, recargaremos con un mensaje de éxito si implementamos el guardado en el backend
+            // o simplemente mostraremos los datos en consola para validar.
+            console.table(data.results);
+            
+            // Redirigir o refrescar para ver cambios si el backend guardara los datos.
+            // Como el requerimiento pide "Cargar", implementaré una lógica simplificada de guardado masivo.
+            guardarMasivo(data.results);
+        }
+    } catch (e) {
+        console.error(e);
+        alert("Error al conectar con la base de datos de Consultas Externas.");
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = 'CARGAR PACIENTES ACTIVOS';
+    }
+}
+
+async function guardarMasivo(results) {
+    // Esta función guardará los resultados en el periodo actual
+    const response = await fetch("{% url 'mezclas:api_cargar_matriz' %}", {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token }}'
+        },
+        body: JSON.stringify({
+            periodo_id: "{{ periodo.pk }}",
+            items: results
+        })
+    });
+    
+    if(response.ok) {
+        window.location.reload();
+    } else {
+        alert("Error al guardar la matriz en la base de datos local.");
+    }
+}
+</script>
+{% endblock %}

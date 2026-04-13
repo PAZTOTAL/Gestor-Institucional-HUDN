@@ -1,0 +1,37 @@
+{% extends 'core/base.html' %}
+{% block title %}Norma MIL-STD-105E | Central de Mezclas{% endblock %}
+{% block content %}
+<div class="max-w-4xl mx-auto space-y-8 animate-in slide-in-from-bottom-8 duration-700">
+    <div class="bg-white rounded-3xl border border-gray-100 p-12 text-center shadow-2xl">
+        <div class="w-20 h-20 bg-slate-100 text-slate-600 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-inner">
+            <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+        </div>
+        <h1 class="text-3xl font-black text-gray-900 uppercase tracking-tight">NORMA MIL-STD-105E</h1>
+        <p class="text-xs font-black text-slate-500 tracking-[0.3em] mt-2 italic">CÓDIGO PTFAR-005-AN-02</p>
+        
+        <div class="mt-8 text-left space-y-6">
+            <div class="p-6 bg-slate-50 rounded-2xl border border-slate-100">
+                <h3 class="font-black text-slate-800 uppercase text-sm mb-2 italic">Propósito de la Norma</h3>
+                <p class="text-gray-600 text-sm leading-relaxed">Establece los planes de muestreo y procedimientos para la inspección por atributos. Esta norma es la base para el control de calidad de medicamentos reempacados en el HU de Nariño.</p>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="p-4 border border-gray-100 rounded-xl">
+                    <span class="text-[10px] font-black text-slate-400 uppercase">Nivel de Inspección</span>
+                    <p class="font-bold text-gray-800">Nivel II (Normal)</p>
+                </div>
+                <div class="p-4 border border-gray-100 rounded-xl">
+                    <span class="text-[10px] font-black text-slate-400 uppercase">AQL Sugerido</span>
+                    <p class="font-bold text-gray-800">1.0% para defectos críticos</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-12">
+            <a href="{% url 'mezclas:main' %}" class="px-8 py-4 rounded-2xl bg-gray-900 text-white font-black hover:scale-105 transition-all inline-block shadow-xl shadow-gray-900/20">
+                Regresar al Menú Principal
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

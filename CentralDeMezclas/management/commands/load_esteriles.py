@@ -1,0 +1,190 @@
+from django.core.management.base import BaseCommand
+from CentralDeMezclas.models import MedicamentoEsteril
+
+class Command(BaseCommand):
+    help = 'Carga el Maestro Técnico de Preparaciones Estériles'
+
+    def handle(self, *args, **kwargs):
+        data = [
+            {
+                'codigo': '1',
+                'medicamento_1': 'AMIODARONA 150 mg / 3 ml SOLUCION INYECTABLE',
+                'concentracion_1': '150.0 mg',
+                'dosis_frecuencia': '150 mg cada 24 h',
+                'dosis_med_1': '150.0 mg',
+                'vol_reconstitucion_1': '3 ml',
+                'cantidad_necesaria': '1',
+                'diluyente': 'SG 5%',
+                'via': 'IV',
+                'vehiculo_final': 'SOLUCION GLUCOSADA 5% - 250 ML BOLSA 250 mg',
+                'jeringa': 'JERINGAS DESECHABLES',
+                'agua_hipodermica': 'AGUA HIPODERMICA',
+                'almacenamiento': '2-8 °C',
+                'fecha_preparacion': '01/10/2025',
+                'cod_med_1': 'J01CA042702',
+                'lasa': False,
+                'alto_riesgo': False
+            },
+            {
+                'codigo': '2',
+                'medicamento_1': 'AMIKACINA 500 mg / 2 ml SOLUCION INYECTABLE',
+                'concentracion_1': '500.0 mg',
+                'dosis_frecuencia': '1 g cada 24 h',
+                'dosis_med_1': '1000.0 mg',
+                'vol_reconstitucion_1': '4 ml',
+                'cantidad_necesaria': '2',
+                'diluyente': 'SS 0.9%',
+                'via': 'IV',
+                'vehiculo_final': 'SOLUCION SALINA 0.9% - 100 ML BOLSA 100 mg',
+                'jeringa': 'JERINGAS DESECHABLES',
+                'agua_hipodermica': 'AGUA HIPODERMICA',
+                'almacenamiento': '2-8 °C',
+                'fecha_preparacion': '22/05/2025',
+                'cod_med_1': 'J01AA010702',
+                'lasa': False,
+                'alto_riesgo': False
+            },
+            {
+                'codigo': '3',
+                'medicamento_1': 'CEFAZOLINA 1 g POLVO PARA RECONSTITUIR',
+                'concentracion_1': '1000.0 mg',
+                'dosis_frecuencia': '1 g cada 8 h',
+                'dosis_med_1': '1000.0 mg',
+                'vol_reconstitucion_1': '5 ml',
+                'cantidad_necesaria': '1',
+                'diluyente': 'SS 0.9%',
+                'via': 'IV',
+                'vehiculo_final': 'SOLUCION SALINA 0.9% - 100 ML BOLSA 100 mg',
+                'jeringa': 'JERINGAS DESECHABLES',
+                'agua_hipodermica': 'AGUA HIPODERMICA',
+                'almacenamiento': '2-8 °C',
+                'fecha_preparacion': '06/05/2025',
+                'cod_med_1': 'J01DD043722',
+                'lasa': True,
+                'alto_riesgo': False
+            },
+            {
+                'codigo': '4',
+                'medicamento_1': 'CEFTRIAXONA 1 g POLVO PARA RECONSTITUIR',
+                'concentracion_1': '1000.0 mg',
+                'dosis_frecuencia': '1 g cada 12 h',
+                'dosis_med_1': '1000.0 mg',
+                'vol_reconstitucion_1': '5 ml',
+                'cantidad_necesaria': '1',
+                'diluyente': 'SS 0.9%',
+                'via': 'IV',
+                'vehiculo_final': 'SOLUCION SALINA 0.9% - 100 ML BOLSA 100 mg',
+                'jeringa': 'JERINGAS DESECHABLES',
+                'agua_hipodermica': 'AGUA HIPODERMICA',
+                'almacenamiento': '2-8 °C',
+                'fecha_preparacion': '06/05/2025',
+                'cod_med_1': 'J01DD043722',
+                'lasa': True,
+                'alto_riesgo': False
+            },
+            {
+                'codigo': '10',
+                'medicamento_1': 'CIPROFLOXACINO 200 mg / 100 ml SOLUCION INYECTABLE',
+                'concentracion_1': '200.0 mg',
+                'dosis_frecuencia': '400 mg cada 12 h',
+                'dosis_med_1': '400.0 mg',
+                'vol_reconstitucion_1': '200 ml',
+                'cantidad_necesaria': '2',
+                'diluyente': 'DIRECTO',
+                'via': 'IV',
+                'vehiculo_final': 'FRASCO ORIGINAL 200 mg / 100 ml',
+                'jeringa': 'SISTEMA CERRADO',
+                'agua_hipodermica': 'N/A',
+                'almacenamiento': 'T. AMBIENTE',
+                'fecha_preparacion': '26/05/2025',
+                'cod_med_1': 'J01DE015701',
+                'lasa': False,
+                'alto_riesgo': False
+            },
+            {
+                'codigo': '18',
+                'medicamento_1': 'DIPIRONA 1 g SOLUCION INYECTABLE',
+                'concentracion_1': '1000.0 mg',
+                'dosis_frecuencia': '1 g cada 6 h',
+                'dosis_med_1': '1000.0 mg',
+                'vol_reconstitucion_1': '2 ml',
+                'cantidad_necesaria': '1',
+                'diluyente': 'SS 0.9%',
+                'via': 'IV',
+                'vehiculo_final': 'SOLUCION SALINA 0.9% - 100 ML BOLSA 100 mg',
+                'jeringa': 'JERINGAS DESECHABLES',
+                'agua_hipodermica': 'AGUA HIPODERMICA',
+                'almacenamiento': 'T. AMBIENTE',
+                'fecha_preparacion': '03/05/2025',
+                'cod_med_1': 'J01AA010702',
+                'lasa': False,
+                'alto_riesgo': False
+            },
+            {
+                'codigo': '25',
+                'medicamento_1': 'OXACILINA 1 g POLVO PARA RECONSTITUIR',
+                'concentracion_1': '1000.0 mg',
+                'dosis_frecuencia': '2 g cada 4 h',
+                'dosis_med_1': '2000.0 mg',
+                'vol_reconstitucion_1': '5 ml',
+                'cantidad_necesaria': '2',
+                'diluyente': 'SS 0.9%',
+                'via': 'IV',
+                'vehiculo_final': 'SOLUCION SALINA 0.9% - 100 ML BOLSA 100 mg',
+                'jeringa': 'JERINGAS DESECHABLES',
+                'agua_hipodermica': 'AGUA HIPODERMICA',
+                'almacenamiento': '2-8 °C',
+                'fecha_preparacion': '07/05/2025',
+                'cod_med_1': 'J01DD043722',
+                'lasa': True,
+                'alto_riesgo': False
+            },
+            {
+                'codigo': '181',
+                'medicamento_1': 'BICARBONATO SODIO 10 mEq/10ml SOLUCION INYECTABLE',
+                'concentracion_1': '10 mEq',
+                'dosis_frecuencia': '15 mEq cada 24 h',
+                'dosis_med_1': '15.0 mEq',
+                'vol_reconstitucion_1': '15 ml',
+                'cantidad_necesaria': '1.5',
+                'diluyente': 'SG 5%',
+                'via': 'IV',
+                'vehiculo_final': 'SOLUCION GLUCOSADA 5% - 250 ML BOLSA 250 mg',
+                'jeringa': 'JERINGAS DESECHABLES',
+                'agua_hipodermica': 'AGUA HIPODERMICA',
+                'almacenamiento': 'T. AMBIENTE',
+                'fecha_preparacion': '27/05/2025',
+                'cod_med_1': 'B05CB010701',
+                'lasa': False,
+                'alto_riesgo': True
+            },
+            {
+                'codigo': '102',
+                'medicamento_1': 'SODIO CLORURO 20mEq/10ml SOLUCION INYECTABLE',
+                'concentracion_1': '20 mEq',
+                'dosis_frecuencia': '20 mEq cada 24 h',
+                'dosis_med_1': '20.0 mEq',
+                'vol_reconstitucion_1': '10 ml',
+                'cantidad_necesaria': '1',
+                'diluyente': 'SG 5%',
+                'via': 'IV',
+                'vehiculo_final': 'SOLUCION GLUCOSADA 5% - 500 ML BOLSA 500 mg',
+                'jeringa': 'JERINGAS DESECHABLES',
+                'agua_hipodermica': 'AGUA HIPODERMICA',
+                'almacenamiento': 'T. AMBIENTE',
+                'fecha_preparacion': '27/05/2025',
+                'cod_med_1': 'B05CB010702',
+                'lasa': True,
+                'alto_riesgo': True
+            }
+        ]
+
+        for item in data:
+            obj, created = MedicamentoEsteril.objects.update_or_create(
+                codigo=item['codigo'],
+                defaults=item
+            )
+            if created:
+                self.stdout.write(self.style.SUCCESS(f'Creado: {item["medicamento_1"]}'))
+            else:
+                self.stdout.write(self.style.SUCCESS(f'Actualizado: {item["medicamento_1"]}'))

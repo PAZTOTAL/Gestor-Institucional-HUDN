@@ -1,0 +1,86 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Detalle Orden {{ orden.numero_orden }} | FRFAR-178{% endblock %}
+
+{% block content %}
+<div class="space-y-6 animate-in fade-in duration-500">
+    <div class="bg-white rounded-3xl p-8 border border-gray-100 shadow-xl flex flex-col md:flex-row justify-between items-start gap-4">
+        <div>
+            <div class="flex items-center gap-2 mb-2">
+                <a href="{% url 'mezclas:onco_orden_list' %}" class="p-2 rounded-xl bg-gray-50 text-gray-400 hover:bg-gray-100">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg>
+                </a>
+                <span class="text-xs font-black text-blue-500 uppercase tracking-widest">FRFAR-178</span>
+            </div>
+            <h1 class="text-3xl font-black text-gray-900 uppercase">Orden {{ orden.numero_orden }}</h1>
+            <p class="text-gray-500">Fecha: {{ orden.fecha }}</p>
+        </div>
+        <a href="{% url 'mezclas:onco_orden_item_crear' orden.pk %}" class="px-5 py-3 bg-blue-600 text-white rounded-2xl font-black text-sm flex items-center gap-2 hover:scale-105 transition-all shadow-lg shadow-blue-600/25">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+            AGREGAR ÍTEM
+        </a>
+    </div>
+
+    <div class="bg-white rounded-3xl border border-gray-100 shadow-2xl overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse text-sm">
+                <thead>
+                    <tr class="bg-blue-50/40 border-b border-blue-100">
+                        <th class="px-4 py-3 text-[10px] font-black text-blue-400 uppercase tracking-widest">Lote Interno</th>
+                        <th class="px-4 py-3 text-[10px] font-black text-blue-400 uppercase tracking-widest">Paciente</th>
+                        <th class="px-4 py-3 text-[10px] font-black text-blue-400 uppercase tracking-widest">Cama</th>
+                        <th class="px-4 py-3 text-[10px] font-black text-blue-400 uppercase tracking-widest">Medicamento</th>
+                        <th class="px-4 py-3 text-[10px] font-black text-blue-400 uppercase tracking-widest">Vía</th>
+                        <th class="px-4 py-3 text-[10px] font-black text-blue-400 uppercase tracking-widest">Reconstitución</th>
+                        <th class="px-4 py-3 text-[10px] font-black text-blue-400 uppercase tracking-widest">Dosis</th>
+                        <th class="px-4 py-3 text-[10px] font-black text-blue-400 uppercase tracking-widest">Vol. Final</th>
+                        <th class="px-4 py-3 text-[10px] font-black text-blue-400 uppercase tracking-widest">Cant.</th>
+                        <th class="px-4 py-3 text-[10px] font-black text-blue-400 uppercase tracking-widest">Recibido</th>
+                        <th class="px-4 py-3 text-[10px] font-black text-blue-400 uppercase tracking-widest">Acc.</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-50">
+                    {% for item in items %}
+                    <tr class="hover:bg-blue-50/10 transition-colors group">
+                        <td class="px-4 py-3 font-bold text-blue-500">{{ item.lote_interno }}</td>
+                        <td class="px-4 py-3">
+                            <div class="font-bold text-gray-900">{{ item.paciente_nombre }}</div>
+                            <div class="text-[10px] text-gray-400">{{ item.identificacion }}</div>
+                        </td>
+                        <td class="px-4 py-3 text-gray-700">{{ item.cama }}</td>
+                        <td class="px-4 py-3 font-bold text-gray-900 uppercase">{{ item.medicamento }}</td>
+                        <td class="px-4 py-3"><span class="px-2 py-1 rounded bg-blue-50 text-blue-600 text-xs font-black">{{ item.via_administracion|default:"—" }}</span></td>
+                        <td class="px-4 py-3 text-gray-600">
+                            {{ item.viales_ampollas|default:"—" }} viales<br>
+                            <span class="text-[10px] text-gray-400">{{ item.vehiculo_reconstitucion|default:"" }} {{ item.volumen_reconstitucion|default:"" }}</span>
+                        </td>
+                        <td class="px-4 py-3 text-gray-700">{{ item.dosis|default:"—" }}</td>
+                        <td class="px-4 py-3 font-bold text-gray-900">{{ item.vol_final|default:"—" }}<br>
+                            <span class="text-[10px] text-gray-400">{{ item.concentracion_final|default:"" }}</span>
+                        </td>
+                        <td class="px-4 py-3 font-bold text-center">{{ item.cantidad }}</td>
+                        <td class="px-4 py-3 text-center">
+                            {% if item.recibido %}
+                                <span class="w-6 h-6 inline-flex items-center justify-center bg-green-100 text-green-600 rounded-full">✓</span>
+                            {% else %}
+                                <span class="w-6 h-6 inline-flex items-center justify-center bg-gray-100 text-gray-400 rounded-full">—</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-4 py-3">
+                            <a href="{% url 'mezclas:onco_orden_item_eliminar' item.pk %}" class="p-1.5 text-red-300 hover:bg-red-50 hover:text-red-500 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity inline-block">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/></svg>
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="11" class="px-6 py-8 text-center text-sm text-gray-400">Sin ítems. Haga clic en "AGREGAR ÍTEM".</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

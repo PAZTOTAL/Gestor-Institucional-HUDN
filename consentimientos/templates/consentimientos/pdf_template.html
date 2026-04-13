@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: 'Helvetica', 'Arial', sans-serif; font-size: 10px; line-height: 1.2; color: #000; margin: 0; padding: 0; }
+        @page { size: letter; margin: 1cm; @bottom-center { content: "Hoja " counter(page) " de " counter(pages); font-size: 8pt; } }
+        
+        .header-table { width: 100%; border-collapse: collapse; margin-bottom: 15px; table-layout: fixed; }
+        .header-table td { border: 1px solid #000; padding: 2px; text-align: center; vertical-align: middle; }
+        
+        .col-logo { width: 15%; }
+        .col-title { width: 35%; font-weight: bold; font-size: 11px; text-transform: uppercase; }
+        .col-meta { width: 15%; font-size: 8px; text-align: left; }
+        .col-values { width: 20%; font-size: 8px; font-weight: bold; }
+        
+        .row-label { font-weight: bold; text-align: left; padding-left: 3px; border-bottom: 0.5px solid #ccc; height: 12px; }
+        .row-value { text-align: center; border-bottom: 0.5px solid #ccc; height: 12px; }
+        
+        .content { margin-top: 5px; text-align: justify; font-size: 11px; }
+        .signature-section { margin-top: 25px; }
+        .signature-table { width: 100%; border-collapse: collapse; margin-top: 15px; table-layout: fixed; }
+        .signature-table td { width: 50%; padding: 5px; vertical-align: bottom; }
+        .signature-line { border-top: 1px solid #000; margin-top: 50px; text-align: center; font-size: 8px; }
+        .signature-img { max-width: 150px; max-height: 60px; display: block; margin: 0 auto; }
+        
+        .footer { position: fixed; bottom: 0; width: 100%; text-align: center; font-size: 7px; color: #666; }
+    </style>
+</head>
+<body>
+    <!-- Cabecera Institucional HUDN Estilo Tabla Rígida (Fidelidad 1:1) -->
+    <table style="width: 100%; border-collapse: collapse; border: 1.5px solid #000; margin-bottom: 15px; table-layout: fixed;">
+        <tr>
+            <!-- Col 1: Logo Hospital -->
+            <td rowspan="4" style="width: 15%; border: 1px solid #000; text-align: center; padding: 5px; vertical-align: middle;">
+                <img src="e:\HospitalManagement\staticfiles\img\logo_hospital.png" style="width: 60px;">
+            </td>
+            <!-- Col 2: Nombre del Consentimiento -->
+            <td rowspan="4" style="width: 35%; border: 1px solid #000; text-align: center; font-weight: bold; font-size: 11px; padding: 5px; text-transform: uppercase; vertical-align: middle;">
+                {{ documento.titulo }}
+            </td>
+            <!-- Col 3: Etiquetas Calidad -->
+            <td style="width: 15%; border: 1px solid #000; padding: 2px; font-weight: bold; font-size: 8px;">CÓDIGO:</td>
+            <!-- Col 4: Valores Calidad -->
+            <td style="width: 25%; border: 1px solid #000; padding: 2px; font-weight: bold; font-size: 8px;">{{ documento.codigo_formato|default:"S/C" }}</td>
+            <!-- Col 5: Logo Acreditación -->
+            <td rowspan="4" style="width: 10%; border: 1px solid #000; text-align: center; padding: 5px; vertical-align: middle;">
+                <img src="e:\HospitalManagement\staticfiles\img\logo_acreditacion.png" style="width: 50px;">
+            </td>
+        </tr>
+        <tr>
+            <td style="border: 1px solid #000; padding: 2px; font-weight: bold; font-size: 8px;">FECHA ELAB:</td>
+            <td style="border: 1px solid #000; padding: 2px; font-size: 8px;">{{ documento.fecha_elaboracion|default:"13/03/2020" }}</td>
+        </tr>
+        <tr>
+            <td style="border: 1px solid #000; padding: 2px; font-weight: bold; font-size: 8px;">FECHA ACT:</td>
+            <td style="border: 1px solid #000; padding: 2px; font-size: 8px;">{{ documento.fecha_actualizacion|default:"06/11/2020" }}</td>
+        </tr>
+        <tr>
+            <td style="border: 1px solid #000; padding: 2px; font-weight: bold; font-size: 8px;">VERSIÓN / HOJA:</td>
+            <td style="border: 1px solid #000; padding: 2px; font-size: 8px;">{{ documento.version|default:"01" }} / HOJA 1 DE 1</td>
+        </tr>
+    </table>
+
+    <div class="content">
+        {{ contenido_final|safe }}
+    </div>
+
+    <!-- Sección de Firmas Principal -->
+    <table class="signature-table">
+        <tr>
+            <td>
+                <div style="height: 60px; text-align: center;">
+                    <img src="{{ firma.firma_data }}" class="signature-img">
+                </div>
+                <div class="signature-line">
+                    FIRMA O HUELLA DEL PACIENTE O REPRESENTANTE LEGAL<br>
+                    C.C. N° {{ datos.identificacion_paciente|default:"________________" }}
+                </div>
+            </td>
+            <td>
+                <div style="height: 60px; text-align: center;">
+                    <!-- Espacio para huella o nota -->
+                </div>
+            </td>
+        </tr>
+    </table>
+
+    <table class="signature-table" style="margin-top: 30px;">
+        <tr>
+            <td>
+                <div style="height: 60px; text-align: center;">
+                    {% if firma.firma_medico_data %}
+                    <img src="{{ firma.firma_medico_data }}" class="signature-img">
+                    {% endif %}
+                </div>
+                <div class="signature-line">
+                    ANESTESIOLOGO- CONSULTA PREANESTESICA<br>
+                    REGISTRO N° ________________
+                </div>
+            </td>
+            <td>
+                <div style="height: 60px; text-align: center;">
+                    {% if firma.firma_medico_data %}
+                    <img src="{{ firma.firma_medico_data }}" class="signature-img">
+                    {% endif %}
+                </div>
+                <div class="signature-line">
+                    ANESTESIOLOGO- PROCEDIMIENTOS QUIRURGICOS<br>
+                    REGISTRO N° ________________
+                </div>
+            </td>
+        </tr>
+    </table>
+
+    {% if firma.firma_testigo_data %}
+    <!-- Sección de Firmas Rechazo -->
+    <div style="page-break-inside: avoid; margin-top: 30px; border: 1px dashed #000; padding: 10px;">
+        <div style="text-align: center; font-weight: bold; margin-bottom: 10px;">SECCIÓN DE RECHAZO</div>
+        <table class="signature-table">
+            <tr>
+                <td>
+                    <div style="height: 50px; text-align: center;">
+                        <img src="{{ firma.firma_data }}" class="signature-img">
+                    </div>
+                    <div class="signature-line">FIRMA PACIENTE (RECHAZO)</div>
+                </td>
+                <td>
+                    <div style="height: 50px; text-align: center;">
+                        <img src="{{ firma.firma_testigo_data }}" class="signature-img">
+                    </div>
+                    <div class="signature-line">FIRMA DEL TESTIGO<br>C.C. N° ________________</div>
+                </td>
+            </tr>
+        </table>
+    </div>
+    {% endif %}
+    
+    <div style="margin-top: 10px; font-size: 7px; color: #666; text-align: right;">
+        Identificador Único: {{ firma.id }} | Fecha: {{ firma.timestamp|date:"d/m/Y H:i" }} | Usuario: {{ firma.user.username }}
+    </div>
+
+    <div class="footer">
+        Documento generado electrónicamente por AlexaTotal - Hospital Management System.
+        Identificador único legal: {{ firma.id }}-{{ firma.timestamp|date:"U" }}
+    </div>
+</body>
+</html>

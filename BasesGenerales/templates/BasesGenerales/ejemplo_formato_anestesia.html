@@ -1,0 +1,148 @@
+{% extends "BasesGenerales/formato_base.html" %}
+
+{% block title %}Registro de Anestesia - HUDN{% endblock %}
+
+{% block titulo_formato %}REGISTRO DE ANESTESIA{% endblock %}
+
+{% block codigo_formato %}FRQUI-032{% endblock %}
+
+{% block fecha_elaboracion %}15 DE SEPTIEMBRE DE 2009{% endblock %}
+
+{% block version %}02{% endblock %}
+
+{% block fecha_actualizacion %}06 DE NOVIEMBRE DE 2020{% endblock %}
+
+{% block numero_hoja %}1{% endblock %}
+{% block total_hojas %}2{% endblock %}
+
+{% block content %}
+<!-- Sección 1: Información del Paciente -->
+<div class="section-title">1. INFORMACIÓN DEL PACIENTE</div>
+
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+    <div class="form-group">
+        <label class="form-label">Nombre Completo:</label>
+        <input type="text" class="form-input" placeholder="Nombre del paciente">
+    </div>
+
+    <div class="form-group">
+        <label class="form-label">Documento de Identidad:</label>
+        <input type="text" class="form-input" placeholder="Número de documento">
+    </div>
+
+    <div class="form-group">
+        <label class="form-label">Edad:</label>
+        <input type="text" class="form-input" placeholder="Edad">
+    </div>
+
+    <div class="form-group">
+        <label class="form-label">Sexo:</label>
+        <select class="form-input">
+            <option value="">Seleccione...</option>
+            <option value="M">Masculino</option>
+            <option value="F">Femenino</option>
+        </select>
+    </div>
+</div>
+
+<!-- Sección 2: Datos de la Intervención -->
+<div class="section-title">2. DATOS DE LA INTERVENCIÓN</div>
+
+<div class="form-group">
+    <label class="form-label">Procedimiento Quirúrgico:</label>
+    <textarea class="form-input" rows="3" placeholder="Descripción del procedimiento"></textarea>
+</div>
+
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+    <div class="form-group">
+        <label class="form-label">Fecha de Intervención:</label>
+        <input type="date" class="form-input">
+    </div>
+
+    <div class="form-group">
+        <label class="form-label">Hora de Inicio:</label>
+        <input type="time" class="form-input">
+    </div>
+</div>
+
+<!-- Sección 3: Signos Vitales -->
+<div class="section-title">3. SIGNOS VITALES</div>
+
+<table class="data-table">
+    <thead>
+        <tr>
+            <th>Hora</th>
+            <th>TA (mmHg)</th>
+            <th>FC (lpm)</th>
+            <th>FR (rpm)</th>
+            <th>Temp (°C)</th>
+            <th>SpO2 (%)</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><input type="time" style="width: 100%; border: none;"></td>
+            <td><input type="text" style="width: 100%; border: none;"></td>
+            <td><input type="text" style="width: 100%; border: none;"></td>
+            <td><input type="text" style="width: 100%; border: none;"></td>
+            <td><input type="text" style="width: 100%; border: none;"></td>
+            <td><input type="text" style="width: 100%; border: none;"></td>
+        </tr>
+        <tr>
+            <td><input type="time" style="width: 100%; border: none;"></td>
+            <td><input type="text" style="width: 100%; border: none;"></td>
+            <td><input type="text" style="width: 100%; border: none;"></td>
+            <td><input type="text" style="width: 100%; border: none;"></td>
+            <td><input type="text" style="width: 100%; border: none;"></td>
+            <td><input type="text" style="width: 100%; border: none;"></td>
+        </tr>
+    </tbody>
+</table>
+
+<!-- Sección 4: Observaciones -->
+<div class="section-title">4. OBSERVACIONES</div>
+
+<div class="form-group">
+    <textarea class="form-input" rows="5" placeholder="Observaciones generales del procedimiento anestésico"></textarea>
+</div>
+
+<!-- Firmas -->
+<div style="margin-top: 40px; display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
+    <div style="text-align: center;">
+        <div style="border-top: 1px solid #000; padding-top: 5px; margin-top: 60px;">
+            <strong>Anestesiólogo</strong><br>
+            Nombre y Firma
+        </div>
+    </div>
+
+    <div style="text-align: center;">
+        <div style="border-top: 1px solid #000; padding-top: 5px; margin-top: 60px;">
+            <strong>Cirujano</strong><br>
+            Nombre y Firma
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    input[type="text"],
+    input[type="date"],
+    input[type="time"],
+    select,
+    textarea {
+        font-family: Arial, sans-serif;
+        font-size: 12px;
+    }
+
+    @media print {
+
+        input,
+        select,
+        textarea {
+            border: none !important;
+            background: transparent !important;
+        }
+    }
+</style>
+{% endblock %}

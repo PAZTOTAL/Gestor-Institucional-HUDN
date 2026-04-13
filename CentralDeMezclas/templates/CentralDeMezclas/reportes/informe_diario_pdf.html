@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body { font-family: Helvetica, Arial, sans-serif; font-size: 10px; color: #333; }
+        .header { text-align: center; margin-bottom: 20px; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+        .title { font-size: 16px; font-weight: bold; margin-bottom: 5px; }
+        .subtitle { font-size: 12px; color: #666; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        th { background-color: #f5f5f5; border: 1px solid #ddd; padding: 6px; font-weight: bold; text-align: left; text-transform: uppercase; font-size: 8px; }
+        td { border: 1px solid #ddd; padding: 6px; }
+        .section-title { background-color: #eee; font-weight: bold; padding: 5px; margin-top: 20px; text-transform: uppercase; }
+        .footer { margin-top: 50px; text-align: center; font-size: 8px; }
+        .signature-box { margin-top: 40px; display: flex; justify-content: space-around; }
+        .signature-line { border-top: 1px solid #000; width: 200px; text-align: center; padding-top: 5px; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="title">CENTRAL DE MEZCLAS - INFORME DIARIO DE PROCESOS</div>
+        <div class="subtitle">FECHA DE REGISTRO: {{ fecha|date:"d/m/Y" }}</div>
+    </div>
+
+    <div class="section-title">1. MEDICAMENTOS ESTÉRILES / UNIDOSIS</div>
+    <table>
+        <thead>
+            <tr>
+                <th>Lote Interno</th>
+                <th>Paciente</th>
+                <th>Cama</th>
+                <th>Medicamento</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in esteriles %}
+            <tr>
+                <td>{{ item.lote_interno }}</td>
+                <td>{{ item.paciente_nombre }}</td>
+                <td>{{ item.cama }}</td>
+                <td>{{ item.dosis_estandar_pme }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="4">No se registraron procesos en esta área.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="section-title">2. MEDICAMENTOS ONCOLÓGICOS</div>
+    <table>
+        <thead>
+            <tr>
+                <th>Lote Interno</th>
+                <th>Paciente</th>
+                <th>Medicamento</th>
+                <th>Concentración</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in oncologicos %}
+            <tr>
+                <td>{{ item.lote_interno }}</td>
+                <td>{{ item.paciente_nombre }}</td>
+                <td>{{ item.medicamento }}</td>
+                <td>{{ item.concentracion }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="4">No se registraron procesos en esta área.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="section-title">3. NEONATOS / MEZCLAS PEDIÁTRICAS</div>
+    <table>
+        <thead>
+            <tr>
+                <th>Lote Interno</th>
+                <th>Paciente</th>
+                <th>Medicamento</th>
+                <th>Volumen Final</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in neonatos %}
+            <tr>
+                <td>{{ item.lote_interno }}</td>
+                <td>{{ item.paciente_nombre }}</td>
+                <td>{{ item.medicamento }}</td>
+                <td>{{ item.volumen_final }} mL</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="4">No se registraron procesos en esta área.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="section-title">4. UNIDOSIS PRODUCCIÓN</div>
+    <table>
+        <thead>
+            <tr>
+                <th>Lote Interno</th>
+                <th>Medicamento / Mezcla</th>
+                <th>Cantidad</th>
+                <th>Volumen Ind.</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in unidosis_prod %}
+            <tr>
+                <td>{{ item.lote_interno }}</td>
+                <td>{{ item.medicamento }}</td>
+                <td>{{ item.cantidad_unidades }}</td>
+                <td>{{ item.volumen_individual }} mL</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="4">No se registraron procesos en esta área.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="section-title">5. REEMPAQUE Y REENVASE</div>
+    <table>
+        <thead>
+            <tr>
+                <th>Lote Interno</th>
+                <th>Tipo</th>
+                <th>Medicamento</th>
+                <th>Lote Fab.</th>
+                <th>Cant.</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in reempaque %}
+            <tr>
+                <td>{{ item.lote_interno }}</td>
+                <td>{{ item.get_tipo_display }}</td>
+                <td>{{ item.medicamento.nombre }}</td>
+                <td>{{ item.lote_fabricante }}</td>
+                <td>{{ item.cantidad_a_reempacar }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="5">No se registraron procesos en esta área.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="footer">
+        <p>Este informe es un registro oficial de la Central de Mezclas. Generado automáticamente por el Sistema HospitalManagement.</p>
+        <div style="margin-top: 40px;">
+            <table style="border: none;">
+                <tr style="border: none;">
+                    <td style="border: none; width: 50%; text-align: center;">
+                        <div style="border-top: 1px solid black; width: 80%; margin: 0 auto; margin-top: 40px;"></div>
+                        QF Responsable del Turno
+                    </td>
+                    <td style="border: none; width: 50%; text-align: center;">
+                        <div style="border-top: 1px solid black; width: 80%; margin: 0 auto; margin-top: 40px;"></div>
+                        Control de Calidad (Revisado)
+                    </td>
+                </tr>
+            </table>
+        </div>
+    </div>
+</body>
+</html>

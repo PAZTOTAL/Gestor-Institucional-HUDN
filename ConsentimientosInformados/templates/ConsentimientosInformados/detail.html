@@ -1,0 +1,142 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Detalle del Consentimiento | Gestor Institucional Digital  HUDN{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto space-y-8 animate-in fade-in duration-700">
+    <!-- Header -->
+    <div class="flex items-center justify-between">
+        <div>
+            <nav class="flex mb-2" aria-label="Breadcrumb">
+                <ol class="flex items-center space-x-2 text-sm text-gray-400 font-bold">
+                    <li><a href="{% url 'consentimientos:list' %}" class="hover:text-primary transition-colors">Consentimientos</a></li>
+                    <li><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></li>
+                    <li class="text-primary">Registro #{{ registro.id }}</li>
+                </ol>
+            </nav>
+            <h1 class="text-3xl font-black text-gray-900 italic">Documento <span class="text-primary underline decoration-primary/20">Firmado</span></h1>
+        </div>
+        <div class="flex gap-3">
+            <button onclick="window.print()" class="px-5 py-2.5 rounded-xl bg-gray-800 text-white font-bold shadow-lg hover:bg-black transition-all flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+                Imprimir
+            </button>
+        </div>
+    </div>
+
+    <!-- Info Card -->
+    <div class="bg-white rounded-3xl p-8 shadow-2xl border border-gray-100 grid grid-cols-1 md:grid-cols-2 gap-8 ring-1 ring-black/5">
+        <div class="space-y-6">
+            <div>
+                <span class="text-xs font-black text-primary uppercase tracking-widest block mb-2">Información del Paciente</span>
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                    </div>
+                    <div>
+                        <p class="font-black text-gray-900 text-lg">
+                            {% if paciente %}{{ paciente }}{% else %}OID: {{ registro.paciente_oid }}{% endif %}
+                        </p>
+                        <p class="text-sm text-gray-500 font-medium">Paciente Registrado</p>
+                    </div>
+                </div>
+            </div>
+            <div>
+                <span class="text-xs font-black text-primary uppercase tracking-widest block mb-1">Formato de Consentimiento</span>
+                <p class="font-bold text-gray-800">{{ registro.template.nombre }}</p>
+            </div>
+        </div>
+        
+        <div class="space-y-6 md:border-l md:pl-8 border-gray-100">
+            <div>
+                <span class="text-xs font-black text-primary uppercase tracking-widest block mb-2">Validación del Profesional</span>
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-2xl bg-secondary/10 flex items-center justify-center text-secondary">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.8 2.3A.3.3 0 1 0 5 2H4a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h1a.3.3 0 1 0 .2-.3"/><path d="M13 15h8"/><path d="M15 11h6"/><path d="M17 7h4"/><path d="M3 13v2c0 1.1.9 2 2 2"/><path d="M9 13v2c0 1.1-.9 2-2 2"/><path d="M7 17v4"/><path d="M9 21H5"/><path d="M22 10V4a2 2 0 0 0-2-2h-7a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h7a2 2 0 0 0 2-2z"/></svg>
+                    </div>
+                    <div>
+                        <p class="font-black text-gray-900">OID Profesional: {{ registro.profesional_oid }}</p>
+                        <p class="text-sm text-gray-500 font-medium italic">Firma Electrónica Verificada</p>
+                    </div>
+                </div>
+            </div>
+            <div>
+                <span class="text-xs font-black text-primary uppercase tracking-widest block mb-1">Fecha de Emisión</span>
+                <p class="font-bold text-gray-800">{{ registro.fecha_firma|date:"d \d\e F \d\e Y, H:i" }}</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Document Content -->
+    <div class="bg-white rounded-3xl shadow-xl border border-gray-100 overflow-hidden">
+        <div class="bg-primary/5 p-4 border-b border-primary/10 text-center">
+            <span class="text-xs font-black text-primary uppercase tracking-widest">Declaración de Consentimiento</span>
+        </div>
+        <div class="p-12 prose prose-slate max-w-none text-gray-700 leading-relaxed italic">
+            {{ registro.template.contenido_html|safe }}
+        </div>
+    </div>
+
+    <!-- Signatures & Biometrics Display -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+        <!-- Patient Photo -->
+        <div class="bg-white rounded-3xl p-6 shadow-xl border border-gray-100 text-center space-y-3 lg:col-span-1">
+            <span class="text-xs font-black text-gray-400 uppercase tracking-widest block border-b border-gray-50 pb-2">Fotografía</span>
+            {% if registro.foto_paciente %}
+            <img src="{{ registro.foto_paciente }}" alt="Foto Paciente" class="w-full aspect-square object-cover bg-gray-50 rounded-2xl shadow-inner">
+            {% else %}
+            <div class="w-full aspect-square flex items-center justify-center bg-gray-50 rounded-2xl text-red-300 italic text-xs">No disponible</div>
+            {% endif %}
+        </div>
+
+        <!-- Fingerprint -->
+        <div class="bg-white rounded-3xl p-6 shadow-xl border border-gray-100 text-center space-y-3 lg:col-span-1">
+            <span class="text-xs font-black text-gray-400 uppercase tracking-wider block border-b border-gray-50 pb-2">Huella Digital</span>
+            {% if registro.huella_paciente %}
+            <img src="{{ registro.huella_paciente }}" alt="Huella Paciente" class="w-full aspect-square object-contain p-2 bg-blue-50/30 rounded-2xl">
+            {% else %}
+            <div class="w-full aspect-square flex items-center justify-center bg-gray-50 rounded-2xl text-red-300 italic text-xs">No capturada</div>
+            {% endif %}
+        </div>
+
+        <!-- Patient Signature -->
+        <div class="bg-white rounded-3xl p-6 shadow-xl border border-gray-100 text-center space-y-3 lg:col-span-1">
+            <span class="text-xs font-black text-gray-400 uppercase tracking-widest block border-b border-gray-50 pb-2">Firma Paciente</span>
+            {% if registro.firma_paciente %}
+            <img src="{{ registro.firma_paciente }}" alt="Firma Paciente" class="w-full aspect-video object-contain bg-gray-50 rounded-2xl">
+            {% else %}
+            <div class="w-full aspect-video flex items-center justify-center bg-gray-50 rounded-2xl text-red-300 italic text-xs">No capturada</div>
+            {% endif %}
+        </div>
+
+        <!-- Professional Signature -->
+        <div class="bg-white rounded-3xl p-6 shadow-xl border border-gray-100 text-center space-y-3 lg:col-span-1">
+            <span class="text-xs font-black text-gray-400 uppercase tracking-widest block border-b border-gray-50 pb-2">Firma Profesional</span>
+            {% if registro.firma_profesional %}
+            <img src="{{ registro.firma_profesional }}" alt="Firma Profesional" class="w-full aspect-video object-contain bg-gray-50 rounded-2xl">
+            {% else %}
+            <div class="w-full aspect-video flex items-center justify-center bg-gray-50 rounded-2xl text-red-300 italic text-xs">No capturada</div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Back Action -->
+    <div class="flex justify-center pb-12">
+        <a href="{% url 'consentimientos:list' %}" class="px-8 py-3 rounded-2xl bg-gray-100 text-gray-600 font-black hover:bg-gray-200 transition-all flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+            Volver al Listado
+        </a>
+    </div>
+</div>
+
+<style>
+    @media print {
+        .nav-link, header, footer, .breadcrumb, button, a { display: none !important; }
+        .max-w-4xl { max-width: 100% !important; margin: 0 !important; }
+        .shadow-xl, .shadow-2xl { box-shadow: none !important; }
+        .border { border: 1px solid #eee !important; }
+        body { background: white !important; }
+    }
+</style>
+{% endblock %}

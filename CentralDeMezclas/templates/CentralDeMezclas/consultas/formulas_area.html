@@ -1,0 +1,420 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Consulta de Fórmulas | Sincronizado Externo{% endblock %}
+
+{% block content %}
+<div class="px-4 py-3">
+    <a href="{% url 'mezclas:main' %}" class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-100 text-slate-500 text-[10px] font-black uppercase tracking-widest mb-4 hover:bg-slate-200 transition-all shadow-sm border border-slate-200 decoration-none">
+        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+        Regresar al Menú Principal
+    </a>
+</div>
+<!-- Bootstrap 5 CSS (Required for Modal) -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+<!-- Active Patients Modal (IDENTICAL TO ANESTHESIA) -->
+<div class="modal fade" id="activePatientsModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
+    aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header bg-light pb-0">
+                <div class="w-100">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h5 class="modal-title text-primary font-black uppercase tracking-tighter"><i class="fas fa-hospital-user me-2"></i> Pacientes Activos en Hospitalización</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="d-flex gap-2 mb-2">
+                        <div class="input-group flex-grow-1">
+                            <span class="input-group-text bg-white border-end-0"><i class="fas fa-search text-muted"></i></span>
+                            <input type="text" id="modal-patient-search" class="form-control border-start-0 ps-0 text-xs font-bold" placeholder="Buscar por nombre o documento...">
+                        </div>
+                        <button type="button" id="btn-load-all-global" class="btn btn-primary font-black uppercase text-[9px] px-4 rounded-2xl shadow-sm">
+                            <i class="fas fa-layer-group me-1"></i> Cargar Todos
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-body">
+                <div id="modal-loading" class="text-center py-5 text-muted">
+                    <i class="fas fa-circle-notch fa-spin fa-2x mb-2 text-primary"></i>
+                    <p class="font-bold uppercase tracking-widest text-[10px]">Consultando camas ocupadas...</p>
+                </div>
+                <div id="modal-content-area" class="d-none">
+                    <!-- Results injected here -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
+    
+    <!-- Header -->
+    <div class="flex items-center justify-between bg-white p-8 rounded-[2.5rem] shadow-xl border-2 border-slate-50 relative overflow-hidden">
+        <div class="relative z-10">
+            <h1 class="text-4xl font-black text-slate-900 tracking-tighter uppercase mb-1">Monitoreo de Prescripciones</h1>
+            <p class="text-primary font-bold uppercase tracking-widest text-[10px]">Panel Técnico de Central de Mezclas - Sincronizado Externo</p>
+        </div>
+        <div class="flex items-center gap-4 relative z-10">
+             <button type="button" id="btn-open-modal" class="bg-primary hover:bg-primary-dark text-white font-black px-8 py-4 rounded-2xl shadow-lg shadow-primary/20 transition-all flex items-center justify-center gap-3 active:scale-95">
+                <i class="fas fa-users-viewfinder text-xl"></i>
+                VER ACTIVOS
+            </button>
+            <div class="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center text-primary">
+                <i class="fas fa-prescription text-2xl"></i>
+            </div>
+        </div>
+        <div class="absolute top-0 right-0 -mr-12 -mt-12 w-64 h-64 bg-primary/5 rounded-full blur-3xl"></div>
+    </div>
+
+    <!-- Main Content Area -->
+    <div id="formula-detail-container">
+        <!-- Initial empty state -->
+        <div id="selection-placeholder" class="py-32 flex flex-col items-center justify-center bg-white rounded-[3rem] border-4 border-dashed border-slate-100 shadow-sm">
+            <div class="w-32 h-32 bg-slate-50 rounded-full flex items-center justify-center text-slate-200 mb-8 animate-pulse">
+                <i class="fas fa-id-card-alt text-5xl"></i>
+            </div>
+            <h2 class="text-slate-400 font-black uppercase tracking-widest text-xl">Esperando Selección de Paciente</h2>
+            <p class="text-slate-300 text-xs font-bold mt-2 text-center max-w-sm">Haga clic en el botón <b>"VER ACTIVOS"</b> para consultar el censo hospitalario y visualizar las fórmulas médicas del paciente.</p>
+        </div>
+
+        <!-- Loading State -->
+        <div id="detail-loading" class="hidden py-32 flex flex-col items-center justify-center">
+            <div class="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mb-6"></div>
+            <p class="text-slate-400 font-black uppercase tracking-widest text-[10px]">Cargando prescripciones médicas...</p>
+        </div>
+
+        <!-- Results Column (Full Width) -->
+        <div id="detail-results" class="hidden animate-in fade-in zoom-in-95 duration-500">
+            <!-- Patient formulas injected here via JS -->
+        </div>
+    </div>
+
+</div>
+
+<style>
+    /* Mimic the Manual Accordion style from Anesthesia */
+    .manual-accordion-item {
+        border-radius: 1rem !important;
+        margin-bottom: 0.75rem !important;
+    }
+    .manual-accordion-header {
+        background-color: #f8fafc !important;
+        border: none !important;
+        transition: background-color 0.2s;
+    }
+    .manual-accordion-header:hover {
+        background-color: #f1f5f9 !important;
+    }
+    .transition-icon {
+        transition: transform 0.3s ease;
+        transform: rotate(180deg);
+    }
+    .list-group-item-action:hover {
+        background-color: #f0f7ff !important;
+        border-left: 4px solid #3b82f6 !important;
+    }
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+$(document).ready(function() {
+    let isModalLoading = false;
+    const $contentArea = $('#modal-content-area');
+    const $loading = $('#modal-loading');
+
+    // Forzar apertura de modal por JS si el atributo de datos falla
+    $('#btn-open-modal').on('click', function() {
+        const modalEl = document.getElementById('activePatientsModal');
+        let myModal = bootstrap.Modal.getInstance(modalEl);
+        if (!myModal) myModal = new bootstrap.Modal(modalEl);
+        myModal.show();
+    });
+
+    // MODAL LOGIC (IDENTICAL TO ANESTHESIA)
+    $(document).on('shown.bs.modal', '#activePatientsModal', function () {
+        if (isModalLoading) return;
+        isModalLoading = true;
+
+        $loading.removeClass('d-none');
+        $contentArea.addClass('d-none').empty();
+
+        $.ajax({
+            url: '/api/lookup-paciente-enhanced/',
+            data: { term: '', limit: 500 },
+            dataType: 'json',
+            success: function (data) {
+                if (data.results && data.results.length > 0) {
+                    const groups = {};
+                    data.results.forEach(p => {
+                        const sala = p.sala || "Sin Ubicación Definida";
+                        if (!groups[sala]) groups[sala] = [];
+                        groups[sala].push(p);
+                    });
+
+                    const accordionContainer = $('<div class="manual-accordion" id="patientAccordion"></div>');
+                    let groupIdx = 0;
+
+                    for (const [salaName, patients] of Object.entries(groups)) {
+                        groupIdx++;
+                        const collapseId = `manual-collapse-${groupIdx}`;
+
+                        const section = $(`
+                            <div class="manual-accordion-item mb-2 border rounded-3xl shadow-sm overflow-hidden bg-white border-slate-100">
+                                <div class="manual-accordion-header p-4 d-flex justify-content-between align-items-center cursor-pointer" 
+                                        style="cursor: pointer;" data-target="#${collapseId}">
+                                    <span class="font-black text-slate-800 uppercase tracking-tight text-sm">
+                                        <i class="fas fa-door-open me-2 text-primary"></i> 
+                                        ${salaName}
+                                    </span>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <button type="button" class="btn btn-outline-primary btn-sm font-black uppercase text-[8px] px-3 py-1 rounded-pill load-area-btn" data-ids="${patients.map(p=>p.ingreso_id).join(',')}">
+                                            <i class="fas fa-sync-alt me-1"></i> Cargar Área
+                                        </button>
+                                        <span class="badge bg-primary rounded-pill px-3 py-1 font-black text-[10px]">${patients.length}</span>
+                                        <i class="fas fa-chevron-down text-slate-400 transition-icon ms-2"></i>
+                                    </div>
+                                </div>
+                                <div id="${collapseId}" class="manual-accordion-body" style="display: none; border-top: 1px solid #f1f5f9;">
+                                    <div class="list-group list-group-flush"></div>
+                                </div>
+                            </div>
+                        `);
+
+                        const listGroup = section.find('.list-group');
+                        patients.forEach(p => {
+                            const jsonStr = JSON.stringify(p).replace(/'/g, "&#39;").replace(/"/g, "&quot;");
+                            const item = $(`
+                                <a href="#" class="list-group-item list-group-item-action py-4 px-4 border-0 select-from-modal" data-json='${jsonStr}'>
+                                    <div class="d-flex w-100 justify-content-between align-items-center">
+                                        <div class="flex-grow-1">
+                                            <h6 class="mb-1 text-slate-900 font-black uppercase text-xs tracking-tight">${p.nombre}</h6>
+                                            <div class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                                                <i class="fas fa-id-card me-1"></i> ${p.documento} | 
+                                                <i class="fas fa-calendar-alt me-1 text-primary/40"></i> ${p.edad} AÑOS
+                                            </div>
+                                        </div>
+                                        <div class="text-end">
+                                            <div class="bg-primary/5 text-primary border-2 border-primary/20 px-4 py-2 rounded-2xl flex flex-col items-center min-w-[3.5rem] shadow-sm">
+                                                <span class="text-[7px] font-black uppercase tracking-tighter leading-none mb-1">Cama</span>
+                                                <span class="text-xl font-black leading-none">${p.cama || 'S/C'}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </a>
+                            `);
+                            listGroup.append(item);
+                        });
+                        accordionContainer.append(section);
+                    }
+                    $contentArea.append(accordionContainer);
+                } else {
+                    $contentArea.html('<div class="alert alert-info border-0 rounded-3xl font-bold uppercase text-[10px] text-center p-12"><i class="fas fa-info-circle me-2"></i>No se encontraron pacientes activos actualmente.</div>');
+                }
+            },
+            complete: function () {
+                $loading.addClass('d-none');
+                $contentArea.removeClass('d-none');
+                isModalLoading = false;
+            }
+        });
+    });
+
+    // Delegación para los headers del acordeón
+    $(document).on('click', '.manual-accordion-header', function (e) {
+        const targetSelector = $(this).attr('data-target');
+        const $target = $(targetSelector);
+        const $icon = $(this).find('.transition-icon');
+        $target.slideToggle(300);
+        if ($target.is(':visible')) {
+            $icon.css('transform', 'rotate(180deg)');
+        } else {
+            $icon.css('transform', 'rotate(0deg)');
+        }
+    });
+
+    // Filtro de búsqueda en tiempo real (Idéntico)
+    $('#modal-patient-search').on('keyup', function() {
+        var value = $(this).val().toLowerCase();
+        $('#modal-content-area .list-group-item').filter(function() {
+            var text = $(this).text().toLowerCase();
+            $(this).toggle(text.indexOf(value) > -1);
+        });
+        $('.manual-accordion-item').each(function() {
+            var visibleChildren = $(this).find('.list-group-item:visible').length;
+            $(this).toggle(visibleChildren > 0);
+            if (value.length > 0 && visibleChildren > 0) {
+                $(this).find('.manual-accordion-body').show();
+                $(this).find('.transition-icon').css('transform', 'rotate(0deg)');
+            }
+        });
+    });
+
+    // Acción: Cargar TODOS (Global)
+    $(document).on('click', '#btn-load-all-global', function() {
+        const modalEl = document.getElementById('activePatientsModal');
+        bootstrap.Modal.getInstance(modalEl).hide();
+        loadPatientFormulas({ type: 'global' });
+    });
+
+    // Acción: Cargar Área (Por Sala)
+    $(document).on('click', '.load-area-btn', function(e) {
+        e.stopPropagation(); // Evitar colapso del acordeón
+        const ids = $(this).data('ids');
+        const modalEl = document.getElementById('activePatientsModal');
+        bootstrap.Modal.getInstance(modalEl).hide();
+        loadPatientFormulas({ type: 'multiple', ids: ids });
+    });
+
+    // SELECCIÓN INDIVIDUAL
+    $(document).on('click', '.select-from-modal', function (e) {
+        e.preventDefault();
+        const p = $(this).data('json');
+        const modalEl = document.getElementById('activePatientsModal');
+        bootstrap.Modal.getInstance(modalEl).hide();
+        loadPatientFormulas({ type: 'single', id: p.ingreso_id });
+    });
+});
+
+function loadPatientFormulas(config) {
+    const $placeholder = $('#selection-placeholder');
+    const $loading = $('#detail-loading');
+    const $results = $('#detail-results');
+
+    $placeholder.addClass('hidden');
+    $results.addClass('hidden').empty();
+    $loading.removeClass('hidden');
+
+    let url = "";
+    if (config.type === 'global') {
+        url = '/central-mezclas/api/formulas-area/all/?single=global';
+    } else if (config.type === 'multiple') {
+        url = `/central-mezclas/api/formulas-area/${config.ids}/?single=false`;
+    } else {
+        url = `/central-mezclas/api/formulas-area/${config.id}/?single=true`;
+    }
+
+    $.ajax({
+        url: url,
+        dataType: 'json',
+        success: function(data) {
+            $loading.addClass('hidden');
+            $results.removeClass('hidden');
+
+            if (!data.results || data.results.length === 0) {
+                $results.html(`
+                    <div class="bg-white p-12 rounded-[3.5rem] shadow-xl text-center border-4 border-slate-50">
+                        <div class="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center text-slate-300 mx-auto mb-6">
+                            <i class="fas fa-comment-slash text-3xl"></i>
+                        </div>
+                        <h3 class="text-slate-500 font-black uppercase text-xl">Sin Datos Disponibles</h3>
+                        <p class="text-slate-400 font-bold text-xs mt-2">No se encontraron fórmulas para la selección realizada.</p>
+                    </div>
+                `);
+                return;
+            }
+
+            // Mapear cada paciente en data.results
+            const fullContent = data.results.map(p => {
+                let medsHtml = "";
+                if (p.medicamentos && p.medicamentos.length > 0) {
+                    medsHtml = p.medicamentos.map(m => `
+                        <tr class="border-b border-slate-50 last:border-0 hover:bg-slate-50/50 transition-colors">
+                            <td class="p-6 font-black text-slate-400 text-[10px] w-32 border-r border-slate-50">${m.codigo}</td>
+                            <td class="p-6 font-bold text-slate-800 uppercase text-xs">${m.nombre}</td>
+                            <td class="p-6 text-center">
+                                <span class="px-5 py-2 bg-primary/10 text-primary rounded-full font-black text-[10px] shadow-sm tracking-[0.2em]">${m.dosis}</span>
+                            </td>
+                            <td class="p-6 text-center font-bold text-slate-500 uppercase text-[10px] bg-slate-50/50">${m.via}</td>
+                            <td class="p-6 text-center font-black text-slate-900 border-l border-slate-50 text-xl">${m.cantidad}</td>
+                        </tr>
+                    `).join('');
+                } else {
+                    medsHtml = `
+                        <tr>
+                            <td colspan="5" class="p-20 text-center">
+                                <div class="flex flex-col items-center justify-center text-slate-300">
+                                    <i class="fas fa-prescription-bottle text-5xl mb-4 opacity-20"></i>
+                                    <span class="font-black uppercase tracking-widest text-[10px]">Sin Fórmulas Farmacéuticas Activas</span>
+                                    <p class="text-[9px] font-bold mt-1">Este paciente no registra medicamentos vigentes en el folio ${p.folio}</p>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                }
+
+                return `
+                    <div class="bg-white rounded-[4rem] shadow-2xl border-4 border-slate-50 overflow-hidden mb-12 last:mb-0 animate-in fade-in slide-in-from-bottom-8">
+                        <div class="p-10 bg-slate-900 text-white flex flex-wrap justify-between items-center gap-6 relative">
+                            <div class="absolute top-0 right-0 w-64 h-64 bg-primary/10 rounded-full blur-3xl -mr-32 -mt-32"></div>
+                            
+                            <div class="flex items-center gap-8 relative z-10">
+                                <div class="w-24 h-24 bg-primary/20 rounded-[2rem] flex flex-col items-center justify-center border-4 border-primary/30 shadow-2xl">
+                                    <span class="text-[10px] font-black text-primary uppercase tracking-[0.2em] mb-1 leading-none">Cama</span>
+                                    <span class="text-4xl font-black text-white leading-none">${p.cama}</span>
+                                </div>
+                                <div>
+                                    <h1 class="text-4xl font-black tracking-tighter uppercase leading-none mb-3 text-white">${p.paciente_nombre}</h1>
+                                    <div class="flex flex-wrap gap-4">
+                                        <span class="px-4 py-1.5 bg-slate-800 rounded-2xl text-[10px] font-black text-slate-400 border border-slate-700 tracking-widest uppercase">
+                                            <i class="fas fa-id-card me-2 text-primary"></i>ID: ${p.paciente_id}
+                                        </span>
+                                        <span class="px-4 py-1.5 bg-slate-800 rounded-2xl text-[10px] font-black text-slate-400 border border-slate-700 tracking-widest uppercase">
+                                            <i class="fas fa-file-medical me-2 text-primary"></i>FOLIO: ${p.folio}
+                                        </span>
+                                        <span class="px-4 py-1.5 bg-slate-800 rounded-2xl text-[10px] font-black text-slate-400 border border-slate-700 tracking-widest uppercase">
+                                            <i class="fas fa-calendar-alt me-2 text-primary"></i>NACIMIENTO: ${p.fecha_nacimiento}
+                                        </span>
+                                        <span class="px-4 py-1.5 bg-slate-800 rounded-2xl text-[10px] font-black text-slate-400 border border-slate-700 tracking-widest uppercase">
+                                            <i class="fas fa-user-clock me-2 text-primary"></i>EDAD: ${p.edad} AÑOS
+                                        </span>
+                                        <span class="px-4 py-1.5 bg-primary/20 rounded-2xl text-[10px] font-black text-primary border border-primary/30 tracking-widest uppercase">
+                                            <i class="fas fa-shield-alt me-2"></i> ${p.aseguradora}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="p-0 overflow-x-auto">
+                            <table class="w-full text-left">
+                                <thead>
+                                    <tr class="bg-slate-50 text-slate-400 text-[10px] font-black uppercase tracking-[0.3em] border-b-2 border-slate-100">
+                                        <th class="p-8 border-r border-slate-100">Código Pharmacy</th>
+                                        <th class="p-8">Medicamento / Forma Farmacéutica</th>
+                                        <th class="p-8 text-center">Dosis y Frecuencia</th>
+                                        <th class="p-8 text-center">Vía</th>
+                                        <th class="p-8 text-center border-l border-slate-100">Cant.</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-100">
+                                    ${medsHtml}
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <div class="p-10 bg-slate-50 border-t-2 border-slate-100 flex justify-end gap-4">
+                            <button class="bg-white border-2 border-slate-200 text-slate-500 font-black px-10 py-4 rounded-3xl hover:bg-slate-100 transition-all text-xs uppercase tracking-widest shadow-sm">
+                                <i class="fas fa-file-pdf me-2 text-red-500"></i>Reporte Técnico
+                            </button>
+                            <button class="bg-primary text-white font-black px-12 py-4 rounded-3xl shadow-2xl shadow-primary/30 hover:scale-[1.05] active:scale-95 transition-all text-xs uppercase tracking-widest">
+                                <i class="fas fa-clipboard-check me-2"></i>Añadir a Matriz
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            $results.html(fullContent);
+        },
+        error: function() {
+            $loading.addClass('hidden');
+            alert("Error crítico al obtener fórmulas del paciente.");
+        }
+    });
+}
+</script>
+{% endblock %}

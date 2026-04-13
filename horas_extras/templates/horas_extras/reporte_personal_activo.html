@@ -1,0 +1,69 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto py-12 px-4">
+    <!-- Breadcrumb -->
+    <nav class="flex mb-8 text-sm font-bold text-slate-500 animate-in fade-in duration-500">
+        <a href="{% url 'horas_extras:dashboard' %}" class="hover:text-blue-600">Talento Humano</a>
+        <span class="mx-2 text-slate-300">/</span>
+        <a href="{% url 'horas_extras:informes_dashboard' %}" class="hover:text-blue-600">Informes</a>
+        <span class="mx-2 text-slate-300">/</span>
+        <span class="text-slate-900">Personal Activo</span>
+    </nav>
+
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-12 gap-6 animate-in fade-in slide-in-from-top-4 duration-700">
+        <div>
+            <h1 class="text-4xl font-black text-slate-900 mb-2">Personal Activo de Planta</h1>
+            <p class="text-lg text-slate-600">Consolidado en tiempo real de la fuerza laboral institucional.</p>
+        </div>
+        <div class="bg-white px-6 py-4 rounded-3xl border border-slate-200 shadow-sm flex items-center gap-4">
+            <div class="w-10 h-10 bg-blue-50 rounded-full flex items-center justify-center text-blue-600">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+            </div>
+            <div>
+                <div class="text-xs font-black text-slate-400 uppercase tracking-widest">Fecha de Corte</div>
+                <div class="font-bold text-slate-900">{{ fecha_corte|date:"d/m/Y H:i" }}</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
+        <!-- Planta Stats -->
+        <div class="bg-gradient-to-br from-blue-600 to-blue-800 rounded-3xl p-8 text-white shadow-2xl shadow-blue-200 relative overflow-hidden group animate-in zoom-in duration-1000">
+            <div class="relative z-10">
+                <p class="text-blue-100 font-bold uppercase tracking-widest mb-2">Personal Planta</p>
+                <div class="flex items-baseline gap-2">
+                    <h2 class="text-7xl font-black">{{ total_planta }}</h2>
+                    <span class="text-2xl font-bold opacity-75">Colaboradores</span>
+                </div>
+            </div>
+            <svg class="absolute -right-12 -bottom-12 w-64 h-64 text-white opacity-10 group-hover:scale-110 transition-transform duration-700" fill="currentColor" viewBox="0 0 24 24"><path d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+        </div>
+
+        <!-- Total Stats -->
+        <div class="bg-white rounded-3xl p-8 border border-slate-200 shadow-xl relative overflow-hidden group animate-in zoom-in duration-1000 delay-200">
+            <div class="relative z-10">
+                <p class="text-slate-400 font-bold uppercase tracking-widest mb-2">Total Activos General</p>
+                <div class="flex items-baseline gap-2 text-slate-900">
+                    <h2 class="text-7xl font-black">{{ total_activos }}</h2>
+                    <span class="text-2xl font-bold text-slate-400">Registros</span>
+                </div>
+            </div>
+            <svg class="absolute -right-12 -bottom-12 w-64 h-64 text-slate-100 group-hover:scale-110 transition-transform duration-700" fill="currentColor" viewBox="0 0 24 24"><path d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+        </div>
+    </div>
+
+    <!-- Technical Note -->
+    <div class="bg-slate-900 rounded-3xl p-8 text-white flex items-center gap-8 animate-in fade-in duration-1000">
+        <div class="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center shrink-0 shadow-lg shadow-blue-900/50">
+            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+        </div>
+        <div>
+            <h4 class="text-xl font-bold mb-1">Nota del Administrador de Nómina</h4>
+            <p class="text-slate-400">Este informe extrae datos directos de la tabla <b>NMEMPLEA</b> filtrando por estado activo (1). El personal de planta se identifica mediante la vinculación departamental oficial.</p>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,73 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto py-12 px-4 text-black">
+    <!-- Breadcrumb -->
+    <nav class="flex mb-8 text-sm font-bold text-slate-500 animate-in fade-in duration-500">
+        <a href="{% url 'horas_extras:dashboard' %}" class="hover:text-blue-600">Talento Humano</a>
+        <span class="mx-2 text-slate-300">/</span>
+        <a href="{% url 'horas_extras:informes_dashboard' %}" class="hover:text-blue-600">Informes</a>
+        <span class="mx-2 text-slate-300">/</span>
+        <span class="text-slate-900">Personal por Área</span>
+    </nav>
+
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-12 gap-6 animate-in fade-in slide-in-from-top-4 duration-700">
+        <div>
+            <h1 class="text-4xl font-black text-slate-900 mb-2">Distribución por Áreas</h1>
+            <p class="text-lg text-slate-600">Distribución de colaboradores por Centros de Costos oficiales.</p>
+        </div>
+        <div class="bg-white px-6 py-4 rounded-3xl border border-slate-200 shadow-sm flex items-center gap-4">
+            <div class="w-10 h-10 bg-emerald-50 rounded-full flex items-center justify-center text-emerald-600">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+            </div>
+            <div>
+                <div class="text-xs font-black text-slate-400 uppercase tracking-widest">Total Funcionarios</div>
+                <div class="font-bold text-slate-900">{{ total_empleados }}</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Table Section -->
+    <div class="bg-white rounded-[2.5rem] border border-slate-200 shadow-2xl overflow-hidden animate-in fade-in slide-in-from-bottom-8 duration-1000">
+        <div class="p-8 border-b border-slate-100 bg-slate-50/50">
+            <h2 class="text-xl font-black text-slate-900">Listado de Áreas / Centros de Costos</h2>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="bg-slate-50 text-slate-400 text-xs font-black uppercase tracking-widest">
+                        <th class="px-8 py-5">Código</th>
+                        <th class="px-8 py-5">Nombre del Área</th>
+                        <th class="px-8 py-5 text-center">N° Empleados</th>
+                        <th class="px-8 py-5 text-right">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    {% for area in areas %}
+                    <tr class="hover:bg-blue-50/30 transition-colors group">
+                        <td class="px-8 py-6 font-bold text-slate-500">{{ area.area_code }}</td>
+                        <td class="px-8 py-6 font-black text-slate-900">{{ area.area_name }}</td>
+                        <td class="px-8 py-6 text-center">
+                            <span class="inline-flex items-center px-4 py-1 rounded-full text-sm font-black {% if area.total > 20 %}bg-blue-100 text-blue-700{% else %}bg-slate-100 text-slate-600{% endif %}">
+                                {{ area.total }}
+                            </span>
+                        </td>
+                        <td class="px-8 py-6 text-right font-black">
+                            <a href="{% url 'horas_extras:reporte_personal_area_detalle' area.area_code %}" class="inline-flex items-center px-4 py-2 bg-slate-100 hover:bg-black hover:text-white rounded-xl text-xs transition-all">
+                                Ver Funcionarios
+                                <svg class="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M17 8l4 4m0 0l-4 4m4-4H3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="4" class="px-8 py-20 text-center text-slate-400 italic">No se encontraron centros de costos con personal activo.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

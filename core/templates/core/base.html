@@ -1,0 +1,213 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Hospital Management{% endblock %}</title>
+    <link rel="stylesheet" href="{% static 'core/css/index.css' %}?v=5">
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <style>
+        {% if perfil %}
+        :root {
+            --theme-primary: {{ perfil.color_primario }};
+            --theme-secondary: {{ perfil.color_secundario }};
+            --theme-bg: {{ perfil.color_fondo }};
+
+            {% if perfil.estilo_fondo == 'gradient' %}
+                --theme-bg-full: linear-gradient(135deg, {{ perfil.color_fondo }} 0%, #ffffff 100%);
+                --theme-pattern: none;
+            {% elif perfil.estilo_fondo == 'pattern' %}
+                --theme-bg-full: {{ perfil.color_fondo }};
+                --theme-pattern: radial-gradient({{ perfil.color_primario }} 0.5px, transparent 0.5px);
+            {% else %}
+                --theme-bg-full: {{ perfil.color_fondo }};
+                --theme-pattern: none;
+            {% endif %}
+        }
+        {% else %}
+        :root {
+            --theme-primary: #2563eb;
+            --theme-secondary: #1e40af;
+            --theme-bg: #f8fafc;
+            --theme-bg-full: #f8fafc;
+            --theme-pattern: none;
+        }
+        {% endif %}
+    </style>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: 'var(--theme-primary)',
+                        secondary: 'var(--theme-secondary)',
+                        themebg: 'var(--theme-bg)',
+                        blue: {
+                            50: '#eff6ff', 100: '#dbeafe', 200: '#bfdbfe', 300: '#93c5fd',
+                            400: 'var(--theme-primary)', 500: 'var(--theme-primary)', 600: 'var(--theme-primary)',
+                            700: 'var(--theme-primary)', 800: 'var(--theme-secondary)', 900: 'var(--theme-secondary)',
+                        },
+                        green: {
+                            500: 'var(--theme-secondary)', 600: 'var(--theme-secondary)', 700: 'var(--theme-secondary)',
+                        }
+                    }
+                }
+            }
+        };
+    </script>
+
+    <!-- Select2 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <style>
+        .select2-container--default .select2-selection--single {
+            background-color: #ffffff !important;
+            border: 2px solid #7dd3fc !important;
+            border-radius: 0.75rem !important;
+            height: 50px !important;
+            display: flex;
+            align-items: center;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .select2-container--default .select2-selection--single:hover {
+            background-color: #bfdbfe !important;
+        }
+
+        .select2-container--default .select2-selection--single .select2-selection__rendered {
+            color: #000000 !important;
+            font-weight: 800 !important;
+        }
+    </style>
+</head>
+
+<body>
+    {% if not readonly_db_available %}
+    <div class="bg-red-600 text-white text-center py-2 px-4 font-bold sticky top-0 z-50 animate-pulse shadow-lg">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 inline-block mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+        </svg>
+        SIN CONECCION A CONSULTA - REVISE BLOQUEO DEL ADMINISTRADOR SQL - EL ADMINISTRADOR BLOQUEO OTRA VEZ - 
+    </div>
+    {% endif %}
+    <div class="flex flex-col min-h-screen">
+        <!-- Header -->
+        <header>
+            <div class="container flex justify-between items-center">
+                <a href="{% url 'home' %}" class="flex items-center gap-2">
+                    <span class="text-2xl font-bold text-gradient">Gestor Institucional Digital  HUDN</span>
+                </a>
+                <nav class="flex gap-4">
+                    <a href="{% url 'home' %}"
+                        class="nav-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}">Inicio</a>
+
+                    {% if permisos_apps_global == 'ALL' or 'CertificadosDIAN' not in permisos_apps_global or permisos_apps_global|length > 1 %}
+                    <!-- Menú Asistencial -->
+                    <a href="{% url 'home' %}?section=asistencial" class="nav-link flex items-center gap-1">
+                        Asistencial
+                    </a>
+
+                    <!-- Menú Administrativo -->
+                    <a href="{% url 'home' %}?section=administrativo" class="nav-link flex items-center gap-1">
+                        Administrativo
+                    </a>
+
+                    <!-- Menú Varios -->
+                    <a href="{% url 'home' %}?section=varios" class="nav-link flex items-center gap-1">
+                        Varios
+                    </a>
+
+                    <!-- Menú Consultas -->
+                    {% if permisos_apps_global == 'ALL' or 'consultas' in permisos_apps_global %}
+                    <a href="{% url 'home' %}?section=consultas" class="nav-link flex items-center gap-1">
+                        Consultas
+                    </a>
+                    {% endif %}
+
+                    {% if is_admin %}
+                    <a href="{% url 'home' %}?section=config" class="nav-link flex items-center gap-1">
+                        Configuración
+                    </a>
+                    {% endif %}
+                    {% endif %}
+
+                    <!-- Autenticación -->
+                    <div class="flex items-center space-x-4 ml-4 pl-4 border-l-2 border-blue-400">
+                        {% if user.is_authenticated %}
+                        <div class="flex items-center space-x-2">
+                            <div
+                                class="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center border-2 border-blue-800">
+                                <span class="text-xs font-black text-white">{{ user.username|slice:":1"|upper }}</span>
+                            </div>
+                            <span class="text-sm font-black text-black">{{ user.username }}</span>
+                        </div>
+                        <div class="flex items-center space-x-3">
+                            <a href="{% url 'config_perfil' %}"
+                                class="text-xs font-black text-blue-600 hover:text-blue-800 transition-colors uppercase underline">Apariencia</a>
+                            <form action="{% url 'logout' %}" method="post" class="inline">
+                                {% csrf_token %}
+                                <button type="submit"
+                                    class="text-sm font-black text-red-700 hover:text-red-900 transition-colors underline">Salir</button>
+                            </form>
+                        </div>
+                        {% else %}
+                        <a href="{% url 'login' %}"
+                            class="text-sm font-black text-black hover:text-blue-700 transition-colors">Entrar</a>
+                        <a href="{% url 'registro' %}"
+                            class="px-3 py-1.5 rounded-lg bg-blue-700 hover:bg-blue-800 text-white text-xs font-black shadow-lg shadow-blue-500/40 transition-all duration-300 transform hover:scale-105 active:scale-95">Registro</a>
+                        {% endif %}
+                    </div>
+                </nav>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="container flex-grow p-8">
+            {% block content %}{% endblock %}
+        </main>
+
+        <!-- Footer -->
+        <footer class="bg-blue-200 border-t-2 border-blue-400 py-8">
+            <div class="container text-center">
+                <p class="text-black font-bold">&copy; {% now "Y" %} APP - desarrollo System. Todos los derechos
+                    reservados.</p>
+                <!-- DEBUG INFO -->
+                <div class="text-xs text-gray-500 mt-2 italic">
+                    Usuario: {{ request.user.username }}
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            $('select').select2({
+                width: '100%',
+                placeholder: "Seleccione una opción...",
+                allowClear: true
+            });
+
+            $('.dropdown > .nav-link').on('click', function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+                const parent = $(this).parent();
+                const wasActive = parent.hasClass('active');
+                $('.dropdown').removeClass('active');
+                if (!wasActive) parent.addClass('active');
+            });
+
+            $(document).on('click', function () { $('.dropdown').removeClass('active'); });
+            $('.dropdown-content').on('click', function (e) { e.stopPropagation(); });
+        });
+    </script>
+    {% block scripts %}{% endblock %}
+</body>
+
+</html>

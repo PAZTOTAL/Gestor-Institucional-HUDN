@@ -1,0 +1,112 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Nuevo Medicamento | Reempaque{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto animate-in slide-in-from-bottom-8 duration-700">
+    <!-- Breadcrumb -->
+    <nav class="flex mb-8 text-sm font-bold uppercase tracking-widest text-gray-400 gap-2 items-center">
+        <a href="{% url 'mezclas:reempaque_panel' %}" class="hover:text-primary transition-colors">Reempaque</a>
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+        <a href="{% url 'mezclas:reempaque_med_list' %}" class="hover:text-primary transition-colors">Catálogo Reempaque</a>
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+        <span class="text-gray-900">Nuevo Medicamento</span>
+    </nav>
+
+    <div class="bg-white rounded-3xl border border-gray-100 shadow-2xl overflow-hidden">
+        <div class="bg-indigo-600 p-8 text-white relative overflow-hidden">
+            <div class="absolute top-0 right-0 p-8 opacity-10">
+                <svg xmlns="http://www.w3.org/2000/svg" width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v10"/><path d="m16 8-4 4-4-4"/><path d="M12 22v-7"/><path d="m9 18 3 3 3-3"/></svg>
+            </div>
+            <h2 class="text-3xl font-black tracking-tight">Registro de Medicamento</h2>
+            <p class="text-indigo-100 font-medium mt-1">Definición técnica para procesos de reempaque (FRFAR-089).</p>
+        </div>
+
+        <form method="post" class="p-8 space-y-8">
+            {% csrf_token %}
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <!-- Nombre -->
+                <div class="md:col-span-2 space-y-2">
+                    <label class="text-xs font-black text-gray-400 uppercase tracking-wider">Medicamento (Nombre Genérico)</label>
+                    <input type="text" name="nombre" value="{{ form.nombre.value|default:'' }}" required class="w-full px-6 py-4 rounded-xl bg-gray-50 border-transparent focus:bg-white focus:border-indigo-600 focus:ring-4 focus:ring-indigo-100 transition-all font-black text-gray-900 shadow-inner text-lg">
+                </div>
+
+                <!-- Concentración -->
+                <div class="space-y-2">
+                    <label class="text-xs font-black text-gray-400 uppercase tracking-wider">Concentración</label>
+                    <input type="text" name="concentracion" value="{{ form.concentracion.value|default:'' }}" required class="w-full px-6 py-4 rounded-xl bg-gray-50 border-transparent focus:bg-white focus:border-indigo-600 focus:ring-4 focus:ring-indigo-100 transition-all font-bold text-gray-900 shadow-inner">
+                </div>
+
+                <!-- Convención FF/Via -->
+                <div class="space-y-2">
+                    <label class="text-xs font-black text-gray-400 uppercase tracking-wider">Forma Farmacéutica y Vía (Convención)</label>
+                    <select name="convencion" required class="w-full px-6 py-4 rounded-xl bg-gray-50 border-transparent focus:bg-white focus:border-indigo-600 focus:ring-4 focus:ring-indigo-100 transition-all font-bold text-gray-900 shadow-inner">
+                        <option value="">Seleccione una convención...</option>
+                        {% for choice in form.fields.convencion.queryset %}
+                            <option value="{{ choice.pk }}" {% if form.convencion.value|stringformat:"s" == choice.pk|stringformat:"s" %}selected{% endif %}>{{ choice }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Señalización -->
+                <div class="space-y-2">
+                    <label class="text-xs font-black text-gray-400 uppercase tracking-wider">Señalización / Alerta</label>
+                    <div class="relative">
+                        <select name="alerta" id="id_alerta" required class="w-full px-6 py-4 rounded-xl bg-gray-50 border-transparent focus:bg-white focus:border-indigo-600 focus:ring-4 focus:ring-indigo-100 transition-all font-bold text-gray-900 shadow-inner">
+                            <option value="">Seleccione una alerta...</option>
+                            {% for choice in form.fields.alerta.queryset %}
+                                <option value="{{ choice.pk }}" data-color="{{ choice.color }}" {% if form.alerta.value|stringformat:"s" == choice.pk|stringformat:"s" %}selected{% endif %}>
+                                    {{ choice.codigo }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                        <div id="alerta-preview" class="absolute right-12 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full border border-white shadow-sm transition-all duration-300"></div>
+                    </div>
+                </div>
+
+                <script>
+                    const alertaSelect = document.getElementById('id_alerta');
+                    const preview = document.getElementById('alerta-preview');
+
+                    function updateAlertaPreview() {
+                        const selectedOption = alertaSelect.options[alertaSelect.selectedIndex];
+                        const color = selectedOption.getAttribute('data-color');
+                        if (color) {
+                            preview.style.backgroundColor = color;
+                            preview.style.opacity = '1';
+                        } else {
+                            preview.style.backgroundColor = 'transparent';
+                            preview.style.opacity = '0';
+                        }
+                    }
+
+                    alertaSelect.addEventListener('change', updateAlertaPreview);
+                    window.addEventListener('DOMContentLoaded', updateAlertaPreview);
+                </script>
+
+                <!-- Condiciones -->
+                <div class="space-y-2">
+                    <label class="text-xs font-black text-gray-400 uppercase tracking-wider">Temperatura Y Humedad</label>
+                    <input type="text" name="condiciones_almacenamiento" value="{{ form.condiciones_almacenamiento.value|default:'' }}" required class="w-full px-6 py-4 rounded-xl bg-gray-50 border-transparent focus:bg-white focus:border-indigo-600 focus:ring-4 focus:ring-indigo-100 transition-all font-bold text-gray-900 shadow-inner">
+                </div>
+
+                <!-- Fotosensibilidad -->
+                <div class="space-y-2">
+                    <label class="text-xs font-black text-gray-400 uppercase tracking-wider">Fotosensibilidad (SI/NO)</label>
+                    <select name="fotosensibilidad" class="w-full px-6 py-4 rounded-xl bg-gray-50 border-transparent focus:bg-white focus:border-indigo-600 focus:ring-4 focus:ring-indigo-100 transition-all font-bold text-gray-900 shadow-inner">
+                        <option value="NO" {% if form.fotosensibilidad.value == 'NO' %}selected{% endif %}>NO</option>
+                        <option value="SI" {% if form.fotosensibilidad.value == 'SI' %}selected{% endif %}>SI</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="pt-8 border-t border-gray-50 flex justify-end gap-4">
+                <a href="{% url 'mezclas:reempaque_med_list' %}" class="px-8 py-4 rounded-2xl bg-gray-50 text-gray-400 font-black hover:bg-gray-100 transition-all">Cancelar</a>
+                <button type="submit" class="px-12 py-4 rounded-2xl bg-indigo-600 text-white font-black shadow-xl shadow-indigo-500/30 hover:scale-105 active:scale-95 transition-all">Guardar Medicamento</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

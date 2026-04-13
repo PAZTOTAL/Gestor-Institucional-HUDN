@@ -1,0 +1,223 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Nueva Orden de Reempaque | Central de Mezclas{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto animate-in slide-in-from-bottom-8 duration-700">
+    <!-- Breadcrumb -->
+    <nav class="flex mb-8 text-sm font-bold uppercase tracking-widest text-gray-400 gap-2 items-center">
+        <a href="{% url 'mezclas:reempaque_panel' %}" class="hover:text-primary transition-colors">Reempaque</a>
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+        <a href="{% url 'mezclas:reempaque_matriz' %}" class="hover:text-primary transition-colors">Matriz Reempaque</a>
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+        <span class="text-gray-900">{% if form.instance.pk %}Editar{% else %}Nueva{% endif %} OP (FRFAR-184)</span>
+    </nav>
+
+    <div class="bg-white rounded-3xl border border-gray-100 shadow-2xl overflow-hidden">
+        <div class="bg-gradient-to-r from-blue-600 to-indigo-600 p-8 text-white relative overflow-hidden">
+            <div class="absolute top-0 right-0 p-8 opacity-10">
+                <svg xmlns="http://www.w3.org/2000/svg" width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v10"/><path d="m16 8-4 4-4-4"/><rect width="20" height="14" x="2" y="6" rx="2"/></svg>
+            </div>
+            <h2 class="text-3xl font-black tracking-tight">Orden de Producción</h2>
+            <p class="text-blue-100 font-medium mt-1">Inicie un nuevo lote de reempaque o reenvase de sólidos.</p>
+        </div>
+
+        <form method="post" class="p-8 space-y-8">
+            {% csrf_token %}
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <!-- Medicamento -->
+                <div class="md:col-span-2 space-y-4">
+                    <div class="space-y-2">
+                        <label class="text-xs font-black text-gray-400 uppercase tracking-wider">Medicamento del Catálogo (Base Madre)</label>
+                        <select name="medicamento" id="id_medicamento" required class="w-full px-6 py-4 rounded-xl bg-gray-50 border-transparent focus:bg-white focus:border-blue-600 transition-all font-black text-gray-900 shadow-inner">
+                            <option value="">Seleccione un medicamento...</option>
+                            {% for med in form.fields.medicamento.queryset %}
+                                <option value="{{ med.id }}" {% if form.medicamento.value|stringformat:"s" == med.id|stringformat:"s" %}selected{% endif %}>{{ med.nombre }} ({{ med.concentracion }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- Panel de Datos Maestros (Base Madre) -->
+                    <div id="master-data-panel" class="hidden animate-in fade-in slide-in-from-top-4 duration-500 bg-indigo-50/50 rounded-2xl border border-indigo-100 p-6">
+                        <div class="flex items-center gap-3 mb-4">
+                            <div class="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center text-white">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v10"/><path d="m16 8-4 4-4-4"/><rect width="20" height="14" x="2" y="6" rx="2"/></svg>
+                            </div>
+                            <h3 class="font-black text-indigo-900 text-sm tracking-tight uppercase">Datos Maestros (FRFAR-089)</h3>
+                        </div>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            <div>
+                                <p class="text-[10px] font-black text-indigo-400 uppercase tracking-widest">Forma</p>
+                                <p id="master-forma" class="font-bold text-gray-700 text-xs">-</p>
+                            </div>
+                            <div>
+                                <p class="text-[10px] font-black text-indigo-400 uppercase tracking-widest">Via</p>
+                                <p id="master-via" class="font-bold text-gray-700 text-xs">-</p>
+                            </div>
+                            <div>
+                                <p class="text-[10px] font-black text-indigo-400 uppercase tracking-widest">Temp / Humedad</p>
+                                <p id="master-condiciones" class="font-bold text-gray-700 text-xs">-</p>
+                            </div>
+                            <div>
+                                <p class="text-[10px] font-black text-indigo-400 uppercase tracking-widest">Fotosensible</p>
+                                <p id="master-foto" class="font-bold text-gray-700 text-xs">-</p>
+                            </div>
+                            <div class="col-span-2 md:col-span-4 mt-2 pt-2 border-t border-indigo-100">
+                                <p class="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-1">Señalización de Seguridad</p>
+                                <span id="master-alerta" class="inline-flex px-4 py-1.5 rounded-lg text-white font-black text-[10px] uppercase tracking-wider shadow-sm transition-all duration-300">
+                                    -
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <script>
+                    const medSelect = document.getElementById('id_medicamento');
+                    const dataPanel = document.getElementById('master-data-panel');
+
+                    function fetchMasterData(medId) {
+                        if (!medId) {
+                            dataPanel.classList.add('hidden');
+                            return;
+                        }
+                        fetch(`/mezclas/api/medicamento/${medId}/`)
+                            .then(response => response.json())
+                            .then(data => {
+                                document.getElementById('master-forma').textContent = data.forma_farmaceutica;
+                                document.getElementById('master-via').textContent = data.via;
+                                document.getElementById('master-condiciones').textContent = data.condiciones_almacenamiento;
+                                document.getElementById('master-foto').textContent = data.fotosensibilidad;
+                                
+                                const alertaElement = document.getElementById('master-alerta');
+                                alertaElement.textContent = data.alerta_codigo;
+                                
+                                if (data.alerta_codigo === '1') {
+                                    alertaElement.style.backgroundColor = '#FFFFFF';
+                                    alertaElement.style.color = '#111827';
+                                    alertaElement.classList.add('border', 'border-gray-200');
+                                } else {
+                                    alertaElement.style.backgroundColor = data.alerta_color;
+                                    alertaElement.style.color = '#FFFFFF';
+                                    alertaElement.classList.remove('border', 'border-gray-200');
+                                }
+                                
+                                // Auto-fill semaforizacion input
+                                const semaforoInput = document.querySelector('input[name="semaforizacion"]');
+                                if (semaforoInput) {
+                                    semaforoInput.value = data.alerta_codigo;
+                                }
+                                
+                                dataPanel.classList.remove('hidden');
+                            })
+                            .catch(error => console.error('Error fetching master data:', error));
+                    }
+
+                    medSelect.addEventListener('change', function() {
+                        fetchMasterData(this.value);
+                    });
+
+                    // Trigger initial load if editing
+                    window.addEventListener('DOMContentLoaded', () => {
+                        if (medSelect.value) {
+                            fetchMasterData(medSelect.value);
+                        }
+                    });
+                </script>
+
+                <!-- Tipo de Proceso (RR Unificado) -->
+                <div class="md:col-span-2 space-y-2">
+                    <label class="text-xs font-black text-gray-400 uppercase tracking-wider">Tipo de Proceso (Unificado RR)</label>
+                    <div class="grid grid-cols-2 gap-4">
+                        <label class="cursor-pointer group">
+                            <input type="radio" name="tipo" value="REEMPAQUE" {% if form.tipo.value == 'REEMPAQUE' or not form.tipo.value %}checked{% endif %} class="hidden peer">
+                            <div class="p-4 rounded-xl border-2 border-gray-100 bg-gray-50 peer-checked:border-blue-600 peer-checked:bg-blue-50 transition-all font-black text-xs text-center uppercase tracking-widest text-gray-400 peer-checked:text-blue-600">
+                                Reempaque (Sólidos)
+                            </div>
+                        </label>
+                        <label class="cursor-pointer group">
+                            <input type="radio" name="tipo" value="REENVASE" {% if form.tipo.value == 'REENVASE' %}checked{% endif %} class="hidden peer">
+                            <div class="p-4 rounded-xl border-2 border-gray-100 bg-gray-50 peer-checked:border-blue-600 peer-checked:bg-blue-50 transition-all font-black text-xs text-center uppercase tracking-widest text-gray-400 peer-checked:text-blue-600">
+                                Reenvase (Líquidos)
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Lote Fabricante -->
+                <div class="space-y-2">
+                    <label class="text-xs font-black text-gray-400 uppercase tracking-wider">Lote del Fabricante</label>
+                    <input type="text" name="lote_fabricante" value="{{ form.lote_fabricante.value|default:'' }}" required class="w-full px-6 py-4 rounded-xl bg-gray-50 border-transparent focus:bg-white focus:border-blue-600 transition-all font-bold text-gray-900 shadow-inner">
+                </div>
+
+                <!-- Laboratorio -->
+                <div class="space-y-2">
+                    <label class="text-xs font-black text-gray-400 uppercase tracking-wider">Laboratorio</label>
+                    <input type="text" name="laboratorio" value="{{ form.laboratorio.value|default:'' }}" required class="w-full px-6 py-4 rounded-xl bg-gray-50 border-transparent focus:bg-white focus:border-blue-600 transition-all font-bold text-gray-900 shadow-inner">
+                </div>
+
+                <!-- Registro INVIMA -->
+                <div class="space-y-2">
+                    <label class="text-xs font-black text-gray-400 uppercase tracking-wider">Registro INVIMA</label>
+                    <input type="text" name="registro_invima" value="{{ form.registro_invima.value|default:'' }}" required class="w-full px-6 py-4 rounded-xl bg-gray-50 border-transparent focus:bg-white focus:border-blue-600 transition-all font-bold text-gray-900 shadow-inner">
+                </div>
+
+                <!-- Vencimiento Original -->
+                <div class="space-y-2">
+                    <label class="text-xs font-black text-gray-400 uppercase tracking-wider">Fecha Vencimiento Original</label>
+                    <input type="date" name="fecha_vencimiento" value="{{ form.fecha_vencimiento.value|date:'Y-m-d'|default:'' }}" required class="w-full px-6 py-4 rounded-xl bg-gray-50 border-transparent focus:bg-white focus:border-blue-600 transition-all font-bold text-gray-900 shadow-inner">
+                </div>
+
+                <!-- Cantidad Inicial -->
+                <div class="space-y-2">
+                    <label class="text-xs font-black text-gray-400 uppercase tracking-wider">Cantidad Unidades</label>
+                    <input type="number" name="cantidad_a_reempacar" value="{{ form.cantidad_a_reempacar.value|default:'' }}" required class="w-full px-6 py-4 rounded-xl bg-gray-50 border-transparent focus:bg-white focus:border-blue-600 transition-all font-black text-gray-900 shadow-inner text-xl">
+                </div>
+
+                <!-- Semaforización -->
+                <div class="space-y-2">
+                    <label class="text-xs font-black text-gray-400 uppercase tracking-wider">Semaforización</label>
+                    <input type="text" name="semaforizacion" value="{{ form.semaforizacion.value|default:'' }}" placeholder="- - -" class="w-full px-6 py-4 rounded-xl bg-gray-50 border-transparent focus:bg-white focus:border-blue-600 transition-all font-black text-gray-900 shadow-inner">
+                </div>
+
+                <!-- Responsable -->
+                <div class="space-y-2">
+                    <label class="text-xs font-black text-gray-400 uppercase tracking-wider">Responsable Técnico</label>
+                    <select name="responsable_reempaque" id="id_responsable_reempaque" required class="w-full px-6 py-4 rounded-xl bg-gray-50 border-transparent focus:bg-white focus:border-blue-600 transition-all font-bold text-gray-900 shadow-inner">
+                        <option value="">Seleccione responsable...</option>
+                        {% for funcionario in form.fields.responsable_reempaque.queryset %}
+                            <option value="{{ funcionario.id }}" {% if form.responsable_reempaque.value|stringformat:"s" == funcionario.id|stringformat:"s" %}selected{% endif %}>{{ funcionario.nombre_completo }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Validador -->
+                <div class="space-y-2">
+                    <label class="text-xs font-black text-gray-400 uppercase tracking-wider">Químico Farmacéutico (Validador)</label>
+                    <select name="farmaceutico_validador" id="id_farmaceutico_validador" required class="w-full px-6 py-4 rounded-xl bg-blue-50 border-transparent focus:bg-white focus:border-blue-600 transition-all font-black text-blue-900 shadow-inner">
+                        <option value="">Seleccione validador...</option>
+                        {% for funcionario in form.fields.farmaceutico_validador.queryset %}
+                            <option value="{{ funcionario.id }}" {% if form.farmaceutico_validador.value|stringformat:"s" == funcionario.id|stringformat:"s" %}selected{% endif %}>{{ funcionario.nombre_completo }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <div class="bg-blue-50/50 p-6 rounded-2xl border border-blue-100/50 text-blue-800 flex items-start gap-4">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mt-1 flex-shrink-0"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                <div class="text-sm">
+                    <p class="font-black uppercase tracking-tight">Nota de Trazabilidad REEHUDN1:</p>
+                    <p class="font-medium opacity-80">El sistema generará automáticamente un lote interno con el prefijo <strong>REEHUDN1</strong> basado en el mes y año actual. El vencimiento del producto reempacado se calculará según la normativa institucional.</p>
+                </div>
+            </div>
+
+            <div class="pt-8 border-t border-gray-50 flex justify-end gap-4">
+                <a href="{% url 'mezclas:reempaque_matriz' %}" class="px-8 py-4 rounded-2xl bg-gray-50 text-gray-400 font-black hover:bg-gray-100 transition-all">Cancelar</a>
+                <button type="submit" class="px-12 py-4 rounded-2xl bg-blue-600 text-white font-black shadow-xl shadow-blue-500/30 hover:scale-105 active:scale-95 transition-all">Generar Orden de Producción</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

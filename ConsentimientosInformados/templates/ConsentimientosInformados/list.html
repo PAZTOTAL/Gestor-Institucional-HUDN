@@ -1,0 +1,125 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Consentimientos Informados | Gestor Institucional Digital  HUDN{% endblock %}
+
+{% block content %}
+<div class="space-y-8 animate-in fade-in duration-700">
+    <!-- Header Section with Glassmorphism -->
+    <div class="relative overflow-hidden rounded-3xl bg-white/40 backdrop-blur-xl border border-white/20 p-8 shadow-2xl shadow-blue-500/10">
+        <div class="absolute -top-24 -right-24 w-64 h-64 bg-primary/10 rounded-full blur-3xl"></div>
+        <div class="absolute -bottom-24 -left-24 w-64 h-64 bg-secondary/10 rounded-full blur-3xl"></div>
+        
+        <div class="relative flex flex-col md:flex-row justify-between items-center gap-6">
+            <div>
+                <h1 class="text-4xl font-black tracking-tight text-gray-900 mb-2">
+                    Consentimientos <span class="text-primary italic">Informados</span>
+                </h1>
+                <p class="text-gray-600 font-medium">Gestión de autorizaciones y firmas electrónicas para procedimientos.</p>
+            </div>
+            <div class="flex gap-4">
+                {% if user.is_staff %}
+                <a href="{% url 'consentimientos:template_create' %}" class="px-6 py-3 rounded-2xl bg-primary text-white font-black text-xs uppercase tracking-widest shadow-xl shadow-primary/20 hover:scale-105 active:scale-95 transition-all flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v12L12 5z"/><path d="M12 12h7"/></svg>
+                    Nuevo Formato
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <!-- Templates Column -->
+        <div class="lg:col-span-1 space-y-6">
+            <a href="{% url 'consentimientos_v2:lista' %}" class="group text-xl font-bold text-gray-800 flex items-center gap-2 px-2 hover:text-primary transition-colors no-underline">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-primary"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                Ver Plantillas Disponibles (v2)
+            </a>
+            
+            <div class="space-y-4">
+                {% for template in templates %}
+                <div class="group relative overflow-hidden rounded-2xl bg-white border border-gray-100 p-5 shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+                    <div class="absolute inset-0 bg-gradient-to-r from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                    <div class="relative flex justify-between items-start">
+                        <div>
+                            <h3 class="font-black text-gray-900 mb-1">{{ template.nombre }}</h3>
+                            <p class="text-sm text-gray-500 line-clamp-2">{{ template.descripcion|default:"Sin descripción disponible." }}</p>
+                        </div>
+                        <a href="{% url 'consentimientos:create' template.id %}" class="shrink-0 p-2 rounded-xl bg-primary/10 text-primary group-hover:bg-primary group-hover:text-white transition-all duration-300">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                        </a>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="text-center py-12 rounded-2xl bg-gray-50 border-2 border-dashed border-gray-200">
+                    <p class="text-gray-400 font-medium">No hay plantillas creadas todavía.</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Recent Registrations Column -->
+        <div class="lg:col-span-2 space-y-6">
+            <h2 class="text-xl font-bold text-gray-800 flex items-center gap-2 px-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-primary"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                Registros Recientes
+            </h2>
+
+            <div class="overflow-hidden rounded-3xl bg-white border border-gray-100 shadow-xl">
+                <table class="w-full text-left">
+                    <thead class="bg-gray-50/50 border-b border-gray-100">
+                        <tr>
+                            <th class="px-6 py-4 text-xs font-black text-gray-400 uppercase tracking-wider">Documento / Paciente</th>
+                            <th class="px-6 py-4 text-xs font-black text-gray-400 uppercase tracking-wider">Formato</th>
+                            <th class="px-6 py-4 text-xs font-black text-gray-400 uppercase tracking-wider">Fecha</th>
+                            <th class="px-6 py-4 text-xs font-black text-gray-400 uppercase tracking-wider text-right">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-50">
+                        {% for registro in registros_recientes %}
+                        <tr class="hover:bg-primary/5 transition-colors group">
+                            <td class="px-6 py-4">
+                                <div class="flex flex-col">
+                                    <span class="font-black text-gray-900">{{ registro.paciente_oid }}</span>
+                                    <span class="text-xs text-gray-500 font-medium">OID Paciente</span>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4">
+                                <span class="px-3 py-1 rounded-full bg-blue-50 text-blue-600 text-xs font-bold">{{ registro.template.nombre }}</span>
+                            </td>
+                            <td class="px-6 py-4 text-sm text-gray-600 font-medium">
+                                {{ registro.fecha_firma|date:"d/m/Y H:i" }}
+                            </td>
+                            <td class="px-6 py-4 text-right">
+                                <a href="{% url 'consentimientos:detail' registro.id %}" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-gray-100 text-gray-700 font-bold hover:bg-gray-200 transition-all">
+                                    Ver
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+                                </a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" class="px-6 py-12 text-center text-gray-400 font-medium italic">
+                                No se han encontrado registros recientes.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    @keyframes fade-in {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    .text-gradient {
+        background: linear-gradient(135deg, var(--theme-primary) 0%, var(--theme-secondary) 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+</style>
+{% endblock %}
