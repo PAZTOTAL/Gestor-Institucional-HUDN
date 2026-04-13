@@ -1,0 +1,104 @@
+{% extends 'base.html' %}
+
+{% block title %}Nuevo proceso extrajudicial | DEFENJUR{% endblock %}
+{% block breadcrumb %}<a href="{% url 'extrajudiciales' %}" style="color:#6c757d;text-decoration:none;">Extrajudiciales</a> / <strong>Nuevo</strong>{% endblock %}
+{% block header_title %}Nuevo proceso extrajudicial{% endblock %}
+
+{% block header_actions %}
+<a href="{% url 'extrajudiciales' %}" class="btn-premium" style="background:rgba(255,255,255,0.1);text-decoration:none;font-size:0.9rem;padding:0.5rem 1rem;">
+    ← Volver al listado
+</a>
+{% endblock %}
+
+{% block content %}
+<p style="color:var(--text-muted);margin:0 0 1.5rem;max-width:48rem;line-height:1.5;">
+    Registre conciliaciones, mediaciones u otros trámites fuera de la vía judicial. La <strong>clasificación</strong> ayuda a filtrar en el listado (conciliado / no conciliado).
+</p>
+
+{% if form.non_field_errors %}
+<div class="card animate-fade" role="alert" style="border-left:4px solid var(--accent);margin-bottom:1rem;">
+    {{ form.non_field_errors }}
+</div>
+{% endif %}
+
+<div class="card animate-fade">
+    <form method="post" enctype="multipart/form-data" novalidate>
+        {% csrf_token %}
+
+        <div style="margin-bottom:2rem;">
+            <h3 style="color:var(--text-muted);font-size:0.8rem;text-transform:uppercase;letter-spacing:2px;margin:0 0 1rem;display:flex;align-items:center;gap:0.5rem;">
+                <i data-lucide="users" style="width:18px;height:18px;"></i> Partes
+            </h3>
+            <div class="form-grid">
+                {% for field in form %}
+                    {% if field.name in 'demandante,demandado,apoderado' %}
+                    <div class="form-group" style="margin-bottom:0;">
+                        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                        {{ field }}
+                        {% if field.help_text %}<p style="color:var(--text-muted);font-size:0.75rem;margin:0.35rem 0 0;">{{ field.help_text }}</p>{% endif %}
+                        {% if field.errors %}<div style="color:var(--accent);font-size:0.8rem;margin-top:0.35rem;">{{ field.errors }}</div>{% endif %}
+                    </div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+
+        <div style="margin-bottom:2rem;padding-top:1.5rem;border-top:1px solid var(--glass-border);">
+            <h3 style="color:var(--text-muted);font-size:0.8rem;text-transform:uppercase;letter-spacing:2px;margin:0 0 1rem;display:flex;align-items:center;gap:0.5rem;">
+                <i data-lucide="scale" style="width:18px;height:18px;"></i> Trámite y despacho
+            </h3>
+            <div class="form-grid">
+                {% for field in form %}
+                    {% if field.name == 'medio_control' %}
+                    <div class="form-group" style="margin-bottom:0;">
+                        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                        {{ field }}
+                        {% if field.errors %}<div style="color:var(--accent);font-size:0.8rem;margin-top:0.35rem;">{{ field.errors }}</div>{% endif %}
+                    </div>
+                    {% endif %}
+                {% endfor %}
+                {% for field in form %}
+                    {% if field.name == 'despacho_conocimiento' %}
+                    <div class="form-group full-width" style="margin-bottom:0;grid-column:1 / -1;">
+                        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                        {{ field }}
+                        {% if field.errors %}<div style="color:var(--accent);font-size:0.8rem;margin-top:0.35rem;">{{ field.errors }}</div>{% endif %}
+                    </div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+
+        <div style="margin-bottom:2rem;padding-top:1.5rem;border-top:1px solid var(--glass-border);">
+            <h3 style="color:var(--text-muted);font-size:0.8rem;text-transform:uppercase;letter-spacing:2px;margin:0 0 1rem;display:flex;align-items:center;gap:0.5rem;">
+                <i data-lucide="tag" style="width:18px;height:18px;"></i> Estado y clasificación
+            </h3>
+            <div class="form-grid">
+                {% for field in form %}
+                    {% if field.name in 'estado,clasificacion' %}
+                    <div class="form-group" style="margin-bottom:0;">
+                        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                        {{ field }}
+                        {% if field.help_text %}<p style="color:var(--text-muted);font-size:0.75rem;margin:0.35rem 0 0;">{{ field.help_text }}</p>{% endif %}
+                        {% if field.errors %}<div style="color:var(--accent);font-size:0.8rem;margin-top:0.35rem;">{{ field.errors }}</div>{% endif %}
+                    </div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="card" style="margin:0;border-style:dashed;border-color:#a855f7;background:rgba(168,85,247,0.06);">
+            <h3 style="margin:0 0 0.5rem;display:flex;align-items:center;gap:0.5rem;color:#c4b5fd;">
+                <i data-lucide="paperclip" style="width:20px;height:20px;"></i> Documentos adjuntos
+            </h3>
+            <p style="color:var(--text-muted);font-size:0.9rem;margin:0 0 1rem;">Opcional. PDF, imágenes u otros archivos relacionados con el proceso.</p>
+            <input type="file" name="adjuntos" multiple class="premium-input" style="padding:1rem;border-style:dashed;">
+        </div>
+
+        <div style="margin-top:2rem;display:flex;flex-wrap:wrap;gap:1rem;justify-content:flex-end;align-items:center;">
+            <a href="{% url 'extrajudiciales' %}" class="btn-premium" style="background:rgba(255,255,255,0.1);text-decoration:none;">Cancelar</a>
+            <button type="submit" class="btn-premium">Guardar proceso</button>
+        </div>
+    </form>
+</div>
+{% endblock %}
