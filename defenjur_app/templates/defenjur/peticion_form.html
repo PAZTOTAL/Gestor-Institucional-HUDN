@@ -1,0 +1,104 @@
+{% extends 'defenjur/base.html' %}
+{% block title %}Nueva Petición | DEFENJUR{% endblock %}
+{% block header_title %}Registrar Nuevo Derecho de Petición{% endblock %}
+
+{% block legal_content %}
+
+{% if messages %}
+{% for msg in messages %}
+<div class="card animate-fade" style="border-left:4px solid #10b981; background:rgba(16,185,129,0.1); margin-bottom:1rem; padding:1rem;">
+    ✅ {{ msg }}
+</div>
+{% endfor %}
+{% endif %}
+
+<div class="card animate-fade">
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+
+        <!-- Columnas alineadas al Excel (ID se asigna al guardar) -->
+        <div style="margin-bottom:2rem;">
+            <h3 style="color:var(--text-muted); font-size:0.8rem; text-transform:uppercase; letter-spacing:2px; margin-bottom:1rem;">
+                📋 Datos principales (N° Reparto, Fecha correo, Solicitante, Peticionario, Causa, Abogado)
+            </h3>
+            <div class="form-grid">
+                {% for field in form %}
+                    {% if field.name in 'num_reparto,fecha_correo,nombre_persona_solicitante,peticionario,causa_peticion,abogado_responsable' %}
+                    <div class="form-group {% if field.name == 'causa_peticion' %}full-width{% endif %}">
+                        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                        {{ field }}
+                        {% if field.errors %}<div style="color:var(--accent); font-size:0.8rem;">{{ field.errors }}</div>{% endif %}
+                    </div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Radicado y comunicaciones -->
+        <div style="margin-bottom:2rem; padding-top:1.5rem; border-top:1px solid var(--glass-border);">
+            <h3 style="color:var(--text-muted); font-size:0.8rem; text-transform:uppercase; letter-spacing:2px; margin-bottom:1rem;">
+                📧 Radicado y comunicación
+            </h3>
+            <div class="form-grid">
+                {% for field in form %}
+                    {% if field.name in 'correo_remitente_peticion,fecha_reparto,num_rad_interno,fecha_remitente_peticion' %}
+                    <div class="form-group">
+                        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                        {{ field }}
+                        {% if field.errors %}<div style="color:var(--accent); font-size:0.8rem;">{{ field.errors }}</div>{% endif %}
+                    </div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Identificación adicional del solicitante -->
+        <div style="margin-bottom:2rem; padding-top:1.5rem; border-top:1px solid var(--glass-border);">
+            <h3 style="color:var(--text-muted); font-size:0.8rem; text-transform:uppercase; letter-spacing:2px; margin-bottom:1rem;">
+                👤 Identificación adicional
+            </h3>
+            <div class="form-grid">
+                {% for field in form %}
+                    {% if field.name in 'cedula_persona_solicitante,peticionario_int_ext' %}
+                    <div class="form-group">
+                        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                        {{ field }}
+                        {% if field.errors %}<div style="color:var(--accent); font-size:0.8rem;">{{ field.errors }}</div>{% endif %}
+                    </div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Trámite y seguimiento -->
+        <div style="margin-bottom:2rem; padding-top:1.5rem; border-top:1px solid var(--glass-border);">
+            <h3 style="color:var(--text-muted); font-size:0.8rem; text-transform:uppercase; letter-spacing:2px; margin-bottom:1rem;">
+                ⚙️ Trámite y seguimiento
+            </h3>
+            <div class="form-grid">
+                {% for field in form %}
+                    {% if field.name not in 'num_reparto,fecha_correo,nombre_persona_solicitante,peticionario,causa_peticion,abogado_responsable,correo_remitente_peticion,fecha_reparto,num_rad_interno,fecha_remitente_peticion,cedula_persona_solicitante,peticionario_int_ext' %}
+                    <div class="form-group {% if field.name in 'tramite_impartido,observaciones' %}full-width{% endif %}">
+                        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                        {{ field }}
+                        {% if field.errors %}<div style="color:var(--accent); font-size:0.8rem;">{{ field.errors }}</div>{% endif %}
+                    </div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Archivos Adjuntos -->
+        <div class="card" style="border-style:dashed; border-color:#2dd4bf; background:rgba(45,212,191,0.05);">
+            <h3 style="margin-top:0; color:#2dd4bf;"><i data-lucide="paperclip"></i> Archivos Adjuntos</h3>
+            <p style="color:var(--text-muted); font-size:0.9rem;">Adjunta los documentos correspondientes a la petición</p>
+            <input type="file" name="adjuntos" multiple class="premium-input" style="padding:1rem; border-style:dashed;">
+        </div>
+
+        <div style="margin-top:2rem; display:flex; gap:1rem; justify-content:flex-end;">
+            <a href="{% url 'defenjur:peticiones' %}" class="btn-premium" style="background:rgba(255,255,255,0.1); text-decoration:none;">Cancelar</a>
+            <button type="submit" class="btn-premium" style="background:var(--secondary-gradient);">💾 Guardar Registro</button>
+        </div>
+    </form>
+</div>
+{% endblock %}

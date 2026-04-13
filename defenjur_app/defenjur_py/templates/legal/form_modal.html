@@ -1,0 +1,31 @@
+<form method="post" enctype="multipart/form-data" 
+      {% if is_update %} hx-post="{{ request.path }}" hx-encoding="multipart/form-data" hx-target="this" hx-swap="outerHTML" {% endif %}>
+    {% csrf_token %}
+    <div class="form-grid">
+        {% for field in form %}
+        <div class="form-group {% if field.name in 'pretensiones,hechos_relevantes,enfoque_defensa,estado_actual,observaciones,ultima_actuacion,objeto_requerimiento,causa,asunto,tramite_impartido,despacho_conocimiento,imputacion_costo' %}full-width{% endif %}">
+            <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+            {{ field }}
+            {% if field.errors %}
+            <div style="color:var(--accent);font-size:0.8rem;">{{ field.errors }}</div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Se ocultó el campo de archivos adjuntos en la edición si no se soportan en este flujo simplificado, 
+         o podemos dejarlo si se maneja correctamente con HX-encoding. Django by default uses File fields, HTMX requires hx-encoding="multipart/form-data" -->
+    
+    <div style="margin-top:2rem;display:flex;gap:1rem;justify-content:flex-end;">
+        <button type="button" class="btn-premium" style="background:rgba(255,255,255,0.1);" onclick="document.getElementById('premiumModal').close()">Cancelar</button>
+        <button type="submit" class="btn-premium">💾 Guardar Cambios</button>
+    </div>
+</form>
+
+{% if success %}
+    <script>
+        // Si el formulario fue procesado con éxito, cerrar modal y recargar página para ver cambios
+        document.getElementById('premiumModal').close();
+        window.location.reload();
+    </script>
+{% endif %}

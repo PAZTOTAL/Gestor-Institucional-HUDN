@@ -57,6 +57,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'core',
+    'defenjur_app',
 
     'A_00_Organigrama',
     'usuarios',

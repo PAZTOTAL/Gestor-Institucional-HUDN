@@ -1,0 +1,108 @@
+{% extends 'defenjur/base.html' %}
+{% load static %}
+
+{% block title %}Ayuda y manual | DEFENJUR{% endblock %}
+{% block header_title %}Ayuda y manual de usuario{% endblock %}
+
+{% block legal_content %}
+<div class="animate-fade" style="display: grid; gap: 1.5rem;">
+    <div class="card" style="max-width: 900px;">
+        <h2 style="margin-top: 0; font-size: 1.15rem;">Introducción</h2>
+        <p style="color: var(--text-muted); line-height: 1.65;">
+            DEFENJUR es el sistema de información web del <strong>Hospital Universitario Departamental de Nariño (HUDN)</strong> para la administración,
+            control y seguimiento de los procesos jurídicos institucionales. Centraliza la información jurídica, el manejo documental y el control de estados procesales
+            de forma organizada, segura y trazable.
+        </p>
+    </div>
+
+    <div class="card" style="max-width: 900px;">
+        <h2 style="margin-top: 0; font-size: 1.15rem;">Objetivo del sistema</h2>
+        <ul style="color: var(--text-muted); line-height: 1.7; margin: 0; padding-left: 1.25rem;">
+            <li>Centralizar los procesos jurídicos en una única plataforma.</li>
+            <li>Garantizar control, trazabilidad y seguimiento de cada proceso.</li>
+            <li>Facilitar la gestión documental asociada a los procesos.</li>
+            <li>Mejorar tiempos de respuesta y la organización de la información legal.</li>
+            <li>Asegurar acceso controlado mediante autenticación de usuarios autorizados.</li>
+        </ul>
+    </div>
+
+    <div class="card" style="max-width: 900px;">
+        <h2 style="margin-top: 0; font-size: 1.15rem;">Alcance: módulos disponibles</h2>
+        <p style="color: var(--text-muted); line-height: 1.65;">Desde el menú lateral puede acceder a:</p>
+        <ul style="color: var(--text-muted); line-height: 1.7; margin: 0; padding-left: 1.25rem;">
+            <li>Acciones de tutela</li>
+            <li>Derechos de petición</li>
+            <li>Procesos extrajudiciales (conciliados y no conciliados)</li>
+            <li>Procesos judiciales por activa, pasiva y terminados</li>
+            <li>Peritajes</li>
+            <li>Pagos de sentencias judiciales</li>
+            <li>Procesos administrativos sancionatorios</li>
+            <li>Requerimientos de entes de control</li>
+        </ul>
+    </div>
+
+    <div class="card" style="max-width: 900px;">
+        <h2 style="margin-top: 0; font-size: 1.15rem;">Uso de cada módulo</h2>
+        <p style="color: var(--text-muted); line-height: 1.65;">
+            En cada módulo encontrará un <strong>listado</strong> con <strong>búsqueda</strong>, botón para <strong>crear</strong> un registro y, por fila,
+            acciones para <strong>ver adjuntos</strong>, <strong>editar</strong> y <strong>eliminar</strong>. Puede adjuntar <strong>varios documentos</strong> al crear o editar un proceso, según el formulario.
+            La eliminación es <strong>permanente</strong>; confirme solo si está seguro.
+        </p>
+    </div>
+
+    <div class="card" style="max-width: 900px;">
+        <h2 style="margin-top: 0; font-size: 1.15rem;">Roles y permisos</h2>
+        <p style="color: var(--text-muted); line-height: 1.65;">
+            Los roles definen qué procesos puede ver y qué acciones puede realizar. Son asignados por el <strong>administrador del sistema</strong>.
+            Si no ve un módulo o una acción, debe solicitar el permiso correspondiente.
+        </p>
+    </div>
+
+    <div class="card" style="max-width: 900px;">
+        <h2 style="margin-top: 0; font-size: 1.15rem;">Errores comunes y solución</h2>
+        <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem; color: var(--text-muted);">
+            <thead>
+                <tr style="text-align: left; border-bottom: 1px solid var(--glass-border);">
+                    <th style="padding: 0.75rem 0;">Situación</th>
+                    <th style="padding: 0.75rem 0;">Qué hacer</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                    <td style="padding: 0.75rem 0.5rem 0.75rem 0;"><strong>Acceso denegado</strong></td>
+                    <td style="padding: 0.75rem 0;">Contacte al administrador del sistema.</td>
+                </tr>
+                <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                    <td style="padding: 0.75rem 0.5rem 0.75rem 0;"><strong>Sesión expirada</strong></td>
+                    <td style="padding: 0.75rem 0;">Vuelva a iniciar sesión. Evite dejar la sesión inactiva por periodos prolongados.</td>
+                </tr>
+                <tr>
+                    <td style="padding: 0.75rem 0.5rem 0.75rem 0;"><strong>Error al guardar</strong></td>
+                    <td style="padding: 0.75rem 0;">Revise los campos obligatorios y los mensajes en rojo del formulario.</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="card" style="max-width: 900px;">
+        <h2 style="margin-top: 0; font-size: 1.15rem;">Preguntas frecuentes</h2>
+        <dl style="margin: 0; color: var(--text-muted); line-height: 1.65;">
+            <dt style="font-weight: 600; color: #e2e8f0; margin-top: 1rem;">¿Quién puede acceder a DEFENJUR?</dt>
+            <dd style="margin: 0.35rem 0 0 0;">Solo funcionarios autorizados; no hay registro público de usuarios.</dd>
+            <dt style="font-weight: 600; color: #e2e8f0; margin-top: 1rem;">¿Puedo recuperar un proceso eliminado?</dt>
+            <dd style="margin: 0.35rem 0 0 0;">No. La eliminación es definitiva.</dd>
+            <dt style="font-weight: 600; color: #e2e8f0; margin-top: 1rem;">¿Puedo adjuntar varios documentos?</dt>
+            <dd style="margin: 0.35rem 0 0 0;">Sí, puede cargar múltiples archivos cuando el formulario lo permita.</dd>
+            <dt style="font-weight: 600; color: #e2e8f0; margin-top: 1rem;">¿Desde qué dispositivos?</dt>
+            <dd style="margin: 0.35rem 0 0 0;">Desde computador con navegador actualizado (Chrome, Firefox o Edge). Resolución recomendada mínima 1366×768.</dd>
+        </dl>
+    </div>
+
+    <div class="card" style="max-width: 900px;">
+        <h2 style="margin-top: 0; font-size: 1.15rem;">Soporte</h2>
+        <p style="color: var(--text-muted); line-height: 1.65; margin: 0;">
+            Para soporte técnico o solicitud de acceso, comuníquese con el <strong>área de sistemas del HUDN</strong>.
+        </p>
+    </div>
+</div>
+{% endblock %}

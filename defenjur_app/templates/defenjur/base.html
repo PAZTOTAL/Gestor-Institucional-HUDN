@@ -1,0 +1,66 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block extra_head %}
+<!-- DEFENJUR Specific Styles -->
+<link rel="stylesheet" href="{% static 'defenjur/css/legal_styles.css' %}">
+<style>
+    .legal-card {
+        background: rgba(255, 255, 255, 0.8);
+        backdrop-filter: blur(10px);
+        border-radius: 15px;
+        padding: 20px;
+        margin-bottom: 20px;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    }
+    .btn-premium {
+        background: linear-gradient(135deg, #1a365d 0%, #2b6cb0 100%);
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 10px;
+        transition: all 0.3s;
+    }
+    .btn-premium:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(44, 82, 130, 0.3);
+        color: #fff;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Navbar interno del módulo (opcional) -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-white rounded-pill shadow-sm mb-4">
+        <div class="container-fluid">
+            <a class="navbar-brand fw-bold text-primary" href="{% url 'defenjur:home' %}">
+                <i class="fas fa-balance-scale me-2"></i> Defensa Jurídica
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#legalNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="legalNav">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'defenjur:tutelas' %}">Tutelas</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'defenjur:peticiones' %}">Peticiones</a>
+                    </li>
+                    <li class="nav-item">
+                         <a class="nav-link" href="{% url 'defenjur:procesos_activos' %}">Judiciales</a>
+                    </li>
+                    <li class="nav-item">
+                         <a class="nav-link" href="{% url 'defenjur:peritajes' %}">Peritajes</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    {% block legal_content %}
+    {% endblock %}
+</div>
+{% endblock %}

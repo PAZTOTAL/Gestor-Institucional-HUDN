@@ -19,6 +19,11 @@ class PerfilUsuario(models.Model):
     estilo_fondo = models.CharField(max_length=20, default='solid') # solid, gradient, pattern
     telefono = models.CharField(max_length=20, null=True, blank=True)
 
+    # ─── Campos para DEFENJUR (Defensa Jurídica) ───
+    legal_rol = models.CharField(max_length=120, default='INVITADO', help_text="Rol dentro del módulo DEFENJUR")
+    legal_nick = models.CharField(max_length=120, null=True, blank=True, help_text="Nombre de usuario legacy para DEFENJUR")
+
+
     def __str__(self):
         return f"{self.user.username} - {self.get_categoria_display()}"
 
