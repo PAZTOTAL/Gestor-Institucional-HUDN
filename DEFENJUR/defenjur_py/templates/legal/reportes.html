@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+
+{% block title %}Reportes | DEFENJUR{% endblock %}
+{% block breadcrumb %}<span style="color:#6c757d;">Home</span> / <strong>Reportes</strong>{% endblock %}
+{% block header_title %}Reportes e indicadores{% endblock %}
+
+{% block content %}
+<p style="color:#495057;margin:0 0 1.25rem;">Consolidado de cargas por tipo de proceso y tendencia mensual de procesos judiciales activa y pasiva (año {{ chart_year }}).</p>
+
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1rem;margin-bottom:1.5rem;">
+    <div class="card" style="margin:0;"><strong>Tutelas</strong><div style="font-size:1.75rem;font-weight:800;">{{ count_tutelas }}</div></div>
+    <div class="card" style="margin:0;"><strong>Derechos de petición</strong><div style="font-size:1.75rem;font-weight:800;">{{ count_peticiones }}</div></div>
+    <div class="card" style="margin:0;"><strong>Extrajudiciales</strong><div style="font-size:1.75rem;font-weight:800;">{{ count_extrajudiciales }}</div></div>
+    <div class="card" style="margin:0;"><strong>Req. entes control</strong><div style="font-size:1.75rem;font-weight:800;">{{ count_requerimientos }}</div></div>
+    <div class="card" style="margin:0;"><strong>Peritajes</strong><div style="font-size:1.75rem;font-weight:800;">{{ count_peritajes }}</div></div>
+    <div class="card" style="margin:0;"><strong>Pagos sentencias</strong><div style="font-size:1.75rem;font-weight:800;">{{ count_pagos }}</div></div>
+    <div class="card" style="margin:0;"><strong>Proc. sancionatorios</strong><div style="font-size:1.75rem;font-weight:800;">{{ count_sancionatorios }}</div></div>
+</div>
+
+<div class="card" style="margin:0;">
+    <h2 style="margin:0 0 1rem;font-size:1.1rem;">Distribución por tipo de proceso</h2>
+    <div style="max-width:520px;height:280px;margin:0 auto;">
+        <canvas id="chartDonutRep"></canvas>
+    </div>
+</div>
+<div class="card" style="margin-top:1rem;">
+    <h2 style="margin:0 0 1rem;font-size:1.1rem;">Registros por mes (activa / pasiva)</h2>
+    <div style="height:300px;">
+        <canvas id="chartBarRep"></canvas>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{{ chart_config|json_script:"reportes-chart-cfg" }}
+<script>
+(function() {
+    const cfg = JSON.parse(document.getElementById('reportes-chart-cfg').textContent);
+    const d = cfg.donut, b = cfg.bar;
+    new Chart(document.getElementById('chartDonutRep'), {
+        type: 'doughnut',
+        data: {
+            labels: d.labels,
+            datasets: [{ data: d.data, backgroundColor: ['#6c757d','#fd7e14','#6f42c1','#0d6efd','#20c997','#0dcaf0','#6610f2','#198754','#dc3545'] }]
+        },
+        options: { plugins: { legend: { position: 'bottom' } }, maintainAspectRatio: false }
+    });
+    new Chart(document.getElementById('chartBarRep'), {
+        type: 'bar',
+        data: {
+            labels: b.labels,
+            datasets: [
+                { label: 'Pasiva', data: b.pasiva, backgroundColor: 'rgba(108,117,125,0.75)' },
+                { label: 'Activa', data: b.activa, backgroundColor: 'rgba(13,110,253,0.85)' }
+            ]
+        },
+        options: {
+            maintainAspectRatio: false,
+            scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
+        }
+    });
+})();
+</script>
+{% endblock %}

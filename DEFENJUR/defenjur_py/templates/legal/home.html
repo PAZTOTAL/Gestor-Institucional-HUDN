@@ -1,0 +1,100 @@
+{% extends 'base.html' %}
+
+{% block title %}Home | DEFENJUR{% endblock %}
+{% block breadcrumb %}<strong>Home</strong>{% endblock %}
+{% block header_title %}Sistema de Defensa Judicial{% endblock %}
+
+{% block content %}
+<p style="text-align:center;color:#495057;font-size:1.05rem;margin:0 0 1.5rem;line-height:1.5;">
+    Bienvenido al Sistema de Defensa Judicial del Hospital Universitario Departamental de Nariño. <strong>DEFENJUR</strong>
+</p>
+
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:1.25rem;margin-bottom:1.25rem;">
+    <div class="card" style="margin:0;">
+        <div style="background:#dc3545;color:#fff;padding:0.5rem 1rem;font-weight:600;border-radius:8px 8px 0 0;margin:-1.5rem -1.5rem 1rem -1.5rem;">Procesos Judiciales</div>
+        <div style="height:260px;position:relative;">
+            <canvas id="chartDonut"></canvas>
+        </div>
+    </div>
+    <div class="card" style="margin:0;">
+        <div style="background:#198754;color:#fff;padding:0.5rem 1rem;font-weight:600;border-radius:8px 8px 0 0;margin:-1.5rem -1.5rem 1rem -1.5rem;">Estadísticas (activa vs pasiva por mes)</div>
+        <div style="height:260px;position:relative;">
+            <canvas id="chartBar"></canvas>
+        </div>
+    </div>
+</div>
+
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:1rem;">
+    <a href="{% url 'procesos_pasivos' %}" class="card" style="margin:0;text-decoration:none;background:linear-gradient(135deg,#17a2b8,#138496);color:#fff;border:none;">
+        <div style="font-size:2rem;font-weight:800;">{{ count_procesos_pasiva }}</div>
+        <div style="opacity:0.95;">Procesos Judiciales (pasiva)</div>
+        <div style="margin-top:0.75rem;font-size:0.9rem;text-decoration:underline;">Ver detalle</div>
+    </a>
+    <a href="{% url 'procesos_activos' %}" class="card" style="margin:0;text-decoration:none;background:linear-gradient(135deg,#28a745,#1e7e34);color:#fff;border:none;">
+        <div style="font-size:2rem;font-weight:800;">{{ count_procesos_activa }}</div>
+        <div style="opacity:0.95;">Procesos Judiciales (activa)</div>
+        <div style="margin-top:0.75rem;font-size:0.9rem;text-decoration:underline;">Ver detalle</div>
+    </a>
+    <a href="{% url 'procesos_terminados' %}" class="card" style="margin:0;text-decoration:none;background:linear-gradient(135deg,#ffc107,#e0a800);color:#212529;border:none;">
+        <div style="font-size:2rem;font-weight:800;">{{ count_terminados }}</div>
+        <div>Procesos Judiciales terminados</div>
+        <div style="margin-top:0.75rem;font-size:0.9rem;text-decoration:underline;">Ver detalle</div>
+    </a>
+</div>
+
+<footer style="margin-top:2rem;padding-top:1rem;border-top:1px solid #dee2e6;display:flex;justify-content:space-between;flex-wrap:wrap;gap:0.5rem;font-size:0.8rem;color:#6c757d;">
+    <span>Copyright © 2026 Hospital Universitario Departamental de Nariño E.S.E.</span>
+    <span>Versión 1.0.0</span>
+</footer>
+{% endblock %}
+
+{% block extra_js %}
+{{ chart_config|json_script:"dashboard-chart-cfg" }}
+<script>
+(function() {
+    const el = document.getElementById('dashboard-chart-cfg');
+    if (!el) return;
+    const cfg = JSON.parse(el.textContent);
+    const d = cfg.donut;
+    const b = cfg.bar;
+    new Chart(document.getElementById('chartDonut'), {
+        type: 'doughnut',
+        data: {
+            labels: d.labels,
+            datasets: [{ data: d.data, backgroundColor: ['#6c757d','#fd7e14','#6f42c1','#0d6efd','#20c997','#0dcaf0','#6610f2','#198754','#dc3545'] }]
+        },
+        options: {
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'right', labels: { boxWidth: 10, font: { size: 10 } } },
+                tooltip: {
+                    callbacks: {
+                        label: function(ctx) {
+                            const n = Number(ctx.raw) || 0;
+                            const sum = ctx.dataset.data.reduce(function(a, b) { return a + (Number(b) || 0); }, 0);
+                            const pct = sum ? ((n / sum) * 100).toFixed(1) : '0.0';
+                            return ' ' + n + ' registro(s) · ' + pct + '% del total';
+                        }
+                    }
+                }
+            }
+        }
+    });
+    new Chart(document.getElementById('chartBar'), {
+        type: 'bar',
+        data: {
+            labels: b.labels,
+            datasets: [
+                { label: 'Procesos jurídicos (pasiva)', data: b.pasiva, backgroundColor: 'rgba(108,117,125,0.75)' },
+                { label: 'Procesos jurídicos (activa)', data: b.activa, backgroundColor: 'rgba(13,110,253,0.85)' }
+            ]
+        },
+        options: {
+            maintainAspectRatio: false,
+            scales: { x: { stacked: false }, y: { beginAtZero: true, ticks: { precision: 0 } } },
+            plugins: { legend: { position: 'top' } }
+        }
+    });
+})();
+</script>
+{% endblock %}
