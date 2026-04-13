@@ -1,0 +1,122 @@
+DICCIONARIO DE DATOS
+Sistema: MVP - Generador de Certificados Laborales
+
+1. Contexto
+El sistema consulta tablas anuales de contratos con patron contratos_YYYY en SQL Server.
+Las tablas pueden variar en nombres de columnas, por eso el backend aplica mapeos de equivalencia.
+
+2. Entidad principal: contratos_YYYY
+Descripcion:
+Tabla anual de contratos por vigencia.
+Ejemplos: contratos_2019, contratos_2020, contratos_2021.
+
+Clave funcional:
+- No se define una PK fija en el codigo.
+- La identificacion para consulta se hace por cedula_nit (normalizada).
+
+3. Campos esperados en base de datos
+3.1 Campos minimos obligatorios (para que una tabla sea utilizable)
+
+1) razon_social
+- Tipo esperado: texto (NVARCHAR/VARCHAR)
+- Nulo: permitido por BD, no recomendado
+- Uso en sistema: nombre del titular/contratista
+- Equivalencias detectadas: "RAZON SOCIAL", "razon_social"
+
+2) cedula_nit
+- Tipo esperado: texto o numerico convertible a texto
+- Nulo: permitido por BD, no recomendado
+- Uso en sistema: busqueda por cedula/NIT
+- Equivalencias detectadas: "CEDULA", "cedula_nit"
+
+3) no_contrato
+- Tipo esperado: texto o numerico convertible a texto
+- Nulo: permitido por BD, no recomendado
+- Uso en sistema: numero de contrato mostrado en UI y certificado
+- Equivalencias detectadas: "NO", "NO CONTRATO", "no_contrato"
+
+4) valor_cto
+- Tipo esperado: numerico o texto convertible a numerico
+- Nulo: permitido por BD, no recomendado
+- Uso en sistema: valor del contrato formateado en es-CO
+- Equivalencias detectadas: "VALOR CTO", "valor_cto"
+
+3.2 Campos opcionales (enriquecen salida)
+
+5) objeto_ctto
+- Tipo esperado: texto
+- Uso: construccion de cargo/objeto consolidado
+- Equivalencias: "OBJETO CTTO", "objeto_ctto"
+
+6) tipo_vinculacion
+- Tipo esperado: texto
+- Uso: fallback de cargo cuando no hay objeto_ctto
+- Equivalencias: "TIPO VINCULACION", "TIPO VINCULACION ", "tipo_vinculacion"
+
+7) fecha_firma
+- Tipo esperado: fecha o texto de fecha
+- Uso: fecha de firma en UI/certificado
+- Equivalencias: "FIRMA CONTRATO", "FECHA FIRMA", "fecha_firma"
+- Normalizacion: salida a YYYY-MM-DD cuando es posible
+
+8) fecha_inicio
+- Tipo esperado: fecha o texto de fecha
+- Uso: fecha inicio en UI/certificado
+- Equivalencias: "F. INICIO", "FECHA INICIO", "fecha_inicio"
+- Normalizacion: salida a YYYY-MM-DD cuando es posible
+
+9) fecha_term
+- Tipo esperado: fecha o texto de fecha
+- Uso: fecha terminacion en UI/certificado
+- Equivalencias: "F.TERM.", "FECHA TERM", "fecha_term"
+- Normalizacion: salida a YYYY-MM-DD cuando es posible
+
+10) valorejecutado / valor_ejecutado
+- Tipo esperado: numerico o texto convertible a numerico
+- Uso: filtro de registros (si existe y es 0, el contrato se excluye)
+- Equivalencias: "VALOREJECUTADO", "valorejecutado", "valor_ejecutado"
+
+11) cedula_nit_digits (columna calculada recomendada)
+- Tipo esperado: texto de solo digitos
+- Uso: acelerar busqueda por cedula normalizada
+- Creacion automatica por script: npm run db:index-cedula
+- Indice asociado: IX_<tabla>_cedula_nit_digits
+
+4. Reglas de transformacion aplicadas por backend
+- Cedula de entrada: se eliminan caracteres no numericos.
+- Cedula alternativa: se evalua tambien sin ceros iniciales.
+- Fechas: se intenta convertir a formato YYYY-MM-DD.
+- Valores monetarios: se normalizan y formatean con locale es-CO.
+- Deduplicacion de objeto_ctto: sin tildes/signos para evitar repetidos semanticos.
+
+5. Estructura de salida consolidada (objeto empleado)
+{
+  "nombre": "string",
+  "cedula": "string",
+  "cargo": "string",
+  "objeto_ctto": "string",
+  "contratos": [
+    {
+      "contratoNo": "string",
+      "firmaContrato": "YYYY-MM-DD|string",
+      "fechaInicio": "YYYY-MM-DD|string",
+      "fechaTerminacion": "YYYY-MM-DD|string",
+      "valor": "string",
+      "no_contrato": "string",
+      "fecha_firma": "YYYY-MM-DD|string",
+      "fecha_inicio": "YYYY-MM-DD|string",
+      "fecha_terminacion": "YYYY-MM-DD|string",
+      "valor_cto": "string"
+    }
+  ]
+}
+
+Nota:
+Se entregan llaves en camelCase y snake_case para compatibilidad con frontend y plantillas Word.
+
+6. Reglas de calidad de datos recomendadas
+- Mantener consistencia anual de nombres de columnas.
+- Evitar valores vacios en cedula_nit, no_contrato y valor_cto.
+- Estandarizar fechas a tipo DATE/DATETIME cuando sea posible.
+- Cargar texto en UTF-8 para minimizar problemas de codificacion.
+- Verificar integridad de valores monetarios antes de importacion.
