@@ -169,73 +169,72 @@ def process_excel_import(request, model, file, preview=False):
     created_count = 0
     
     try:
-        with transaction.atomic():
-            sid = transaction.savepoint()
+        for row_idx, row in enumerate(rows, start=2):
+            if not any(row): continue
             
-            for row_idx, row in enumerate(rows, start=2):
-                if not any(row): continue
+            row_data = {}
+            row_errors = []
+            
+            for col_idx, field_name in valid_map.items():
+                val = row[col_idx]
+                field = model_fields[field_name]
                 
-                row_data = {}
-                row_errors = []
-                
-                for col_idx, field_name in valid_map.items():
-                    val = row[col_idx]
-                    field = model_fields[field_name]
+                if isinstance(val, str):
+                    val = val.strip()
+                if val == "":
+                    val = None
                     
-                    if isinstance(val, str):
-                        val = val.strip()
-                    if val == "":
-                        val = None
-                        
-                    # FK Resolving logic
-                    if val is not None and field.is_relation and field.many_to_one:
-                        related = field.related_model
-                        fk_obj = None
-                        
-                        # Try 'codigo'
-                        if hasattr(related, 'codigo'):
-                            try:
-                                fk_obj = related.objects.get(codigo=val)
-                            except related.DoesNotExist:
-                                pass
-                        
-                        # Try PK
-                        if not fk_obj:
-                            try:
-                                fk_obj = related.objects.get(pk=val)
-                            except (related.DoesNotExist, ValueError):
-                                pass
-                                
-                        if fk_obj:
-                            val = fk_obj
-                        else:
-                            row_errors.append(f"No se halló '{field_name}' con valor '{val}'")
-                            continue
+                # FK Resolving logic
+                if val is not None and field.is_relation and field.many_to_one:
+                    related = field.related_model
+                    fk_obj = None
                     
-                    row_data[field_name] = val
+                    # Try 'codigo'
+                    if hasattr(related, 'codigo'):
+                        try:
+                            fk_obj = related.objects.get(codigo=val)
+                        except related.DoesNotExist:
+                            pass
+                    
+                    # Try PK
+                    if not fk_obj:
+                        try:
+                            fk_obj = related.objects.get(pk=val)
+                        except (related.DoesNotExist, ValueError):
+                            pass
+                            
+                    if fk_obj:
+                        val = fk_obj
+                    else:
+                        row_errors.append(f"No se halló '{field_name}' con valor '{val}'")
+                        continue
                 
-                # Auto-fill defaults logic
-                if 'descripcion' in row_data and row_data.get('descripcion') and not row_data.get('nombre'):
-                    row_data['nombre'] = row_data['descripcion'][:200] # Truncate to max_length
-                
-                if row_errors:
-                    errors.append({'fila': row_idx, 'error': "; ".join(row_errors)})
-                    continue
+                # Truncate strings if they exceed CharField max_length
+                if val and isinstance(val, str) and isinstance(field, models.CharField):
+                    if field.max_length and len(val) > field.max_length:
+                        print(f"TRUNCADO: Fila {row_idx}, Campo {field_name} ({len(val)} -> {field.max_length})")
+                        val = val[:field.max_length]
 
-                try:
+                row_data[field_name] = val
+            
+            # Auto-fill defaults logic
+            if 'descripcion' in row_data and row_data.get('descripcion') and not row_data.get('nombre'):
+                row_data['nombre'] = row_data['descripcion'][:200] # Truncate to max_length
+            
+            if row_errors:
+                errors.append({'fila': row_idx, 'error': "; ".join(row_errors)})
+                continue
+
+            try:
+                with transaction.atomic():
                     instance = model(**row_data)
                     if hasattr(instance, 'usuario') and request.user.is_authenticated:
                         instance.usuario = request.user
                     instance.full_clean()
                     instance.save()
                     created_count += 1
-                except Exception as e:
-                    errors.append({'fila': row_idx, 'error': str(e)})
-
-            if errors or preview:
-                transaction.savepoint_rollback(sid)
-            else:
-                transaction.savepoint_commit(sid)
+            except Exception as e:
+                errors.append({'fila': row_idx, 'error': str(e)})
 
     except Exception as e:
         return {'success': False, 'message': f"Error crítico: {e}", 'errors': []}

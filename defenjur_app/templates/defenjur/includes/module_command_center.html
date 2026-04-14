@@ -1,0 +1,83 @@
+<div class="card animate-fade" style="margin-bottom: 1.5rem; background: var(--glass-bg); backdrop-filter: blur(10px); border: 1px solid var(--glass-border); padding: 1rem;">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+        <div style="display: flex; gap: 0.75rem; align-items: center;">
+            <div style="width: 42px; height: 42px; border-radius: 10px; background: var(--primary-gradient); display: flex; align-items: center; justify-content: center; color: #fff;">
+                <i data-lucide="{{ icon|default:'box' }}" style="width: 24px;"></i>
+            </div>
+            <div>
+                <h3 style="margin: 0; font-size: 1.15rem; font-weight: 700; color: var(--text-main);">Centro de Mando</h3>
+                <p style="margin: 0; font-size: 0.8rem; color: var(--text-muted);">Gestión analítica de {{ titulo }}</p>
+            </div>
+        </div>
+
+        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+            <!-- REPARTO ICON -->
+            <button class="btn-premium" style="background: rgba(99, 102, 241, 0.1); border-color: rgba(99, 102, 241, 0.3); color: #fff; padding: 0.6rem 1rem;" 
+                    onclick="const s = document.getElementById('reparto-summary'); s.style.display = s.style.display === 'none' ? 'block' : 'none'; lucide.createIcons();">
+                <i data-lucide="users" style="width: 18px;"></i>
+                <span>Reparto</span>
+            </button>
+
+            <!-- EN CURSO ICON -->
+            <a href="?status=en_curso" class="btn-premium {% if request.GET.status == 'en_curso' %}active{% endif %}" 
+               style="background: rgba(16, 185, 129, 0.1); border-color: rgba(16, 185, 129, 0.3); color: #fff; padding: 0.6rem 1rem; text-decoration: none;">
+                <i data-lucide="clock" style="width: 18px;"></i>
+                <span>En Curso</span>
+            </a>
+
+            <!-- TRAMITADOS ICON -->
+            <a href="?status=tramitados" class="btn-premium {% if request.GET.status == 'tramitados' %}active{% endif %}" 
+               style="background: rgba(245, 158, 11, 0.1); border-color: rgba(245, 158, 11, 0.3); color: #fff; padding: 0.6rem 1rem; text-decoration: none;">
+                <i data-lucide="check-circle" style="width: 18px;"></i>
+                <span>Tramitados</span>
+            </a>
+
+            <!-- TODOS (Reset) -->
+            {% if request.GET.status %}
+            <a href="?" class="btn-premium" style="background: rgba(148, 163, 184, 0.1); border-color: rgba(148, 163, 184, 0.3); color: #fff; padding: 0.6rem 1rem; text-decoration: none;">
+                <i data-lucide="list" style="width: 18px;"></i>
+                <span>Ver Todos</span>
+            </a>
+            {% endif %}
+
+            <!-- REPORTES ICON -->
+            <div style="position: relative; display: inline-block;">
+                <button class="btn-premium" style="background: rgba(236, 72, 153, 0.1); border-color: rgba(236, 72, 153, 0.3); color: #fff; padding: 0.6rem 1rem;">
+                    <i data-lucide="bar-chart-2" style="width: 18px;"></i>
+                    <span>Analítica</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- REPARTO SUMMARY (Hidden by default) -->
+    <div id="reparto-summary" style="display: none; margin-top: 1.5rem; padding-top: 1rem; border-top: 1px dashed var(--glass-border);">
+        <h4 style="font-size: 0.9rem; color: var(--text-main); margin-bottom: 1rem; display: flex; align-items: center; gap: 8px;">
+            <i data-lucide="pie-chart" style="width: 16px;"></i> Distribución de Carga por Abogado
+        </h4>
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem;">
+            {% for item in reparto_data %}
+            <div style="background: rgba(255,255,255,0.03); padding: 0.75rem; border-radius: 8px; border: 1px solid var(--glass-border);">
+                <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">{{ item.abogado|default:"Sin Asignar" }}</div>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.25rem;">
+                    <span style="font-size: 1.25rem; font-weight: 700; color: #fff;">{{ item.total }}</span>
+                    <span style="font-size: 0.7rem; background: var(--primary-gradient); padding: 2px 6px; border-radius: 4px;">{{ item.percent }}%</span>
+                </div>
+                <div style="width: 100%; height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; margin-top: 0.5rem; overflow: hidden;">
+                    <div style="width: {{ item.percent }}%; height: 100%; background: #6366f1;"></div>
+                </div>
+            </div>
+            {% empty %}
+            <p style="color: var(--text-muted); font-size: 0.85rem;">No hay datos de reparto registrados.</p>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<style>
+    .btn-premium.active {
+        background: var(--primary-gradient) !important;
+        border-color: transparent !important;
+        box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+    }
+</style>
