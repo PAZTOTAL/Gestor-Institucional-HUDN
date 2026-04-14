@@ -3,11 +3,16 @@
 {% block header_title %}Requerimientos de Entes de Control{% endblock %}
 {% block legal_content %}
 <div class="card animate-fade">
+    {% include 'defenjur/includes/import_excel_section.html' with modulo='requerimientos' %}
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2rem;flex-wrap:wrap;gap:1rem;">
         {% include 'defenjur/includes/search_bar.html' with placeholder="Buscar N° reparto, N° proceso, entidad, asunto, responsable..." %}
         <div style="display:flex;gap:1rem;align-items:center;flex-wrap:wrap;">
             <span style="color:var(--text-muted);font-size:0.9rem;">{% if is_paginated %}Total {{ paginator.count }} · {% endif %}Pág. {{ page_obj.number|default:1 }}</span>
             {% include 'defenjur/includes/export_excel_btn.html' with modulo='requerimientos' %}
+            <button class="btn-premium" style="background:rgba(99, 102, 241, 0.1); border-color:rgba(99, 102, 241, 0.3); color:#fff; text-decoration:none; display:flex; align-items:center; gap:6px;"
+                    onclick="const s = document.getElementById('import-excel-section'); s.style.display = s.style.display === 'none' ? 'block' : 'none'; lucide.createIcons();">
+                <i data-lucide="upload" style="width:16px;"></i> Carga Masiva
+            </button>
             <a href="{% url 'defenjur:requerimiento_crear' %}" class="btn-premium" style="text-decoration:none;display:flex;align-items:center;gap:6px;background:linear-gradient(135deg,#0891b2,#0e7490);">
                 <i data-lucide="plus" style="width:16px;height:16px;"></i> Nuevo Requerimiento
             </a>

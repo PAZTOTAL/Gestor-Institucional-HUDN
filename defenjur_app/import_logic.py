@@ -27,7 +27,7 @@ def importar_entidad_view(request, slug):
         messages.error(request, "Entidad de importación no válida.")
         return redirect('defenjur:home')
         
-    model = apps.get_model('defenjur', model_name)
+    model = apps.get_model('defenjur_app', model_name)
     
     if request.method == 'POST' and request.FILES.get('archivo_excel'):
         file = request.FILES['archivo_excel']
@@ -67,7 +67,7 @@ def descargar_plantilla_view(request, slug):
     }
     
     model_name = model_map.get(slug)
-    model = apps.get_model('defenjur', model_name)
+    model = apps.get_model('defenjur_app', model_name)
     
     template_io = generate_excel_template(model)
     response = HttpResponse(

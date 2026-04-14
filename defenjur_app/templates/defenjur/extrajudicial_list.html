@@ -5,10 +5,15 @@
 
 {% block legal_content %}
 <div class="card animate-fade">
+    {% include 'defenjur/includes/import_excel_section.html' with modulo='extrajudiciales' %}
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;">
         <div style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
             {% include 'defenjur/includes/search_bar.html' with placeholder="Buscar demandante, demandado, apoderado..." %}
             {% include 'defenjur/includes/export_excel_btn.html' with modulo=excel_export_modulo %}
+            <button class="btn-premium" style="background:rgba(99, 102, 241, 0.1); border-color:rgba(99, 102, 241, 0.3); color:#fff; text-decoration:none; display:flex; align-items:center; gap:6px;"
+                    onclick="const s = document.getElementById('import-excel-section'); s.style.display = s.style.display === 'none' ? 'block' : 'none'; lucide.createIcons();">
+                <i data-lucide="upload" style="width:16px;"></i> Carga Masiva
+            </button>
             <a href="{% url 'defenjur:extrajudicial_crear' %}" class="btn-premium"><i data-lucide="plus"></i> Nuevo Proceso</a>
         </div>
         <div style="color: var(--text-muted);">

@@ -10,11 +10,16 @@
 
 {% block legal_content %}
 <div class="card animate-fade">
+    {% include 'defenjur/includes/import_excel_section.html' with modulo='tutelas' %}
     <div style="display:flex;flex-wrap:wrap;gap:0.75rem;align-items:center;margin-bottom:1rem;">
         <a href="{% url 'defenjur:tutela_crear' %}" class="btn-premium" style="text-decoration:none;display:inline-flex;align-items:center;gap:6px;background:#198754;">
             <i data-lucide="plus" style="width:18px;"></i> Nueva Tutela
         </a>
         {% include 'defenjur/includes/export_excel_btn.html' with modulo='tutelas' %}
+        <button class="btn-premium" style="background:rgba(99, 102, 241, 0.1); border-color:rgba(99, 102, 241, 0.3); color:#fff; text-decoration:none; display:flex; align-items:center; gap:6px;"
+                onclick="const s = document.getElementById('import-excel-section'); s.style.display = s.style.display === 'none' ? 'block' : 'none'; lucide.createIcons();">
+            <i data-lucide="upload" style="width:16px;"></i> Carga Masiva
+        </button>
     </div>
 
     <details style="margin-bottom:1rem;" {% if fecha_desde or fecha_hasta or mes or anio %}open{% endif %}>

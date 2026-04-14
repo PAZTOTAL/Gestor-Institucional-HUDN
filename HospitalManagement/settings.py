@@ -137,9 +137,9 @@ DATABASES = {
     },
     'readonly': {
         'ENGINE': 'mssql',
-        'NAME': 'DGEMPRES_NEXUS',
-        'USER': 'apantoja',
-        'PASSWORD': 'ConsultasPantojaHUDN_2026$', 
+        'NAME': 'DGEMPRES01',
+        'USER': 'DSOLARTE',
+        'PASSWORD': 'ConsultaHUDN2026*/$', 
         'HOST': '172.20.100.209',
         'PORT': '',
         'OPTIONS': {

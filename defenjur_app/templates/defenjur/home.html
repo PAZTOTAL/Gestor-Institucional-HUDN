@@ -40,6 +40,11 @@
         <div>Procesos Judiciales terminados</div>
         <div style="margin-top:0.75rem;font-size:0.9rem;text-decoration:underline;">Ver detalle</div>
     </a>
+    <a href="{% url 'defenjur:peritajes' %}" class="card animate-fade" style="margin:0;text-decoration:none;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;border:none;">
+        <div style="font-size:2rem;font-weight:800;">{{ count_peritajes }}</div>
+        <div>Peritajes en trámite</div>
+        <div style="margin-top:0.75rem;font-size:0.9rem;text-decoration:underline;">Ver detalle</div>
+    </a>
 </div>
 
 <footer style="margin-top:2rem;padding-top:1rem;border-top:1px solid var(--glass-border);display:flex;justify-content:space-between;flex-wrap:wrap;gap:0.5rem;font-size:0.8rem;color:var(--text-muted);">

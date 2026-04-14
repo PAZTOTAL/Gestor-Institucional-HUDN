@@ -76,7 +76,8 @@ def process_excel_import(request, model, file, preview=False):
 
     # Map headers to fields (Case Insensitive)
     valid_map = {} # col_idx -> field_name
-    normalized_fields = {f.name.lower(): f.name for f in model._meta.get_fields()}
+    normalized_fields = {f.name.lower(): f.name for f in model._meta.get_fields() if hasattr(f, 'name')}
+    model_fields = {f.name: f for f in model._meta.get_fields() if hasattr(f, 'name')}
     
     for idx, h in enumerate(headers):
         if not h: continue
