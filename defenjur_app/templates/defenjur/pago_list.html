@@ -3,7 +3,8 @@
 {% block header_title %}Pagos de Sentencias Judiciales{% endblock %}
 {% block legal_content %}
 <div class="card animate-fade">
-    {% include 'defenjur/includes/import_excel_section.html' with modulo='pagos' %}
+    {% include 'defenjur/includes/module_command_center.html' with titulo='Pagos de Sentencias' icon='dollar-sign' %}
+    
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem;flex-wrap:wrap;gap:1rem;">
         {% include 'defenjur/includes/search_bar.html' with placeholder="Buscar N° proceso, fecha pago, despacho, medio, demandante…" %}
         <div style="display:flex;gap:1rem;align-items:center;flex-wrap:wrap;">
@@ -18,6 +19,7 @@
             </a>
         </div>
     </div>
+    {% include 'defenjur/includes/import_excel_section.html' with modulo='pagos' %}
     <div style="overflow-x:auto;">
         <table class="hudn-table">
             <thead>

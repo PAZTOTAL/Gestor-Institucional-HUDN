@@ -73,6 +73,47 @@ class RoleFilteringMixin:
         qs = super().get_queryset()
         return filter_queryset_by_role(qs, self.request.user, self.model)
 
+class CommandCenterMixin:
+    """Adds analytical data and status filtering to ListViews."""
+    def get_queryset(self):
+        qs = super().get_queryset()
+        status = self.request.GET.get('status')
+        model_name = self.model._meta.model_name
+        
+        if status:
+            if model_name == 'acciontutela':
+                if status == 'en_curso': qs = qs.filter(Q(fecha_respuesta_tramite="") | Q(fecha_respuesta_tramite__isnull=True))
+                elif status == 'tramitados': qs = qs.exclude(Q(fecha_respuesta_tramite="") | Q(fecha_respuesta_tramite__isnull=True))
+            elif model_name == 'derechopeticion':
+                if status == 'en_curso': qs = qs.filter(Q(fecha_respuesta_peticion="") | Q(fecha_respuesta_peticion__isnull=True))
+                elif status == 'tramitados': qs = qs.exclude(Q(fecha_respuesta_peticion="") | Q(fecha_respuesta_peticion__isnull=True))
+            elif model_name == 'peritaje':
+                if status == 'en_curso': qs = qs.filter(Q(pago_honorarios="") | Q(pago_honorarios__isnull=True))
+                elif status == 'tramitados': qs = qs.exclude(Q(pago_honorarios="") | Q(pago_honorarios__isnull=True))
+            elif model_name == 'requerimientoentecontrol':
+                if status == 'en_curso': qs = qs.filter(Q(fecha_respuesta_tramite="") | Q(fecha_respuesta_tramite__isnull=True))
+                elif status == 'tramitados': qs = qs.exclude(Q(fecha_respuesta_tramite="") | Q(fecha_respuesta_tramite__isnull=True))
+        return qs
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        # Calculate Reparto Data (Distribution)
+        reparto = (
+            self.model.objects.values('abogado_responsable')
+            .annotate(total=Count('id'))
+            .order_by('-total')
+        )
+        total_rows = sum(item['total'] for item in reparto) or 1
+        reparto_list = []
+        for item in reparto:
+            reparto_list.append({
+                'abogado': item['abogado_responsable'],
+                'total': item['total'],
+                'percent': round((item['total'] / total_rows) * 100)
+            })
+        ctx['reparto_data'] = reparto_list
+        return ctx
+
 # ─── Core Views ───────────────────────────────────────────────────────────────
 class HomeView(LoginRequiredMixin, TemplateView):
     template_name = 'defenjur/home.html'
@@ -94,7 +135,7 @@ class ReportesView(LoginRequiredMixin, TemplateView):
         return ctx
 
 # ─── Entity Views (Simplified Examples) ───────────────────────────────────────
-class TutelaListView(LoginRequiredMixin, RoleFilteringMixin, ListView):
+class TutelaListView(LoginRequiredMixin, RoleFilteringMixin, CommandCenterMixin, ListView):
     model = AccionTutela
     template_name = 'defenjur/tutela_list.html'
     context_object_name = 'tutelas'
@@ -114,7 +155,7 @@ class TutelaUpdateView(LoginRequiredMixin, RoleFilteringMixin, UpdateView):
 
 # ... Repetir para otras entidades se haría de forma similar ...
 # Agregando placeholders para que el urls.py no rompa
-class ExtrajudicialListView(LoginRequiredMixin, RoleFilteringMixin, ListView):
+class ExtrajudicialListView(LoginRequiredMixin, RoleFilteringMixin, CommandCenterMixin, ListView):
     model = ProcesoExtrajudicial
     template_name = 'defenjur/extrajudicial_list.html'
     context_object_name = 'items'
@@ -138,9 +179,11 @@ class ExtrajudicialUpdateView(UpdateView):
     success_url = reverse_lazy('defenjur:extrajudiciales')
 
 # Sigo con las demás clases requeridas por urls.py...
-class PeticionListView(LoginRequiredMixin, RoleFilteringMixin, ListView):
+class PeticionListView(LoginRequiredMixin, RoleFilteringMixin, CommandCenterMixin, ListView):
     model = DerechoPeticion
     template_name = 'defenjur/peticion_list.html'
+    context_object_name = 'peticiones'
+    paginate_by = 10
 
 class PeticionCreateView(CreateView):
     model = DerechoPeticion
@@ -154,31 +197,31 @@ class PeticionUpdateView(UpdateView):
     template_name = 'defenjur/peticion_form.html'
     success_url = reverse_lazy('defenjur:peticiones')
 
-class ProcesoActivaListView(ListView): model = ProcesoJudicialActiva; template_name = 'defenjur/proceso_activa_list.html'
+class ProcesoActivaListView(LoginRequiredMixin, RoleFilteringMixin, CommandCenterMixin, ListView): model = ProcesoJudicialActiva; template_name = 'defenjur/proceso_activa_list.html'; context_object_name = 'procesos'
 class ProcesoActivaCreateView(CreateView): model = ProcesoJudicialActiva; form_class = ProcesoJudicialActivaForm; template_name = 'defenjur/proceso_activa_form.html'; success_url = reverse_lazy('defenjur:procesos_activos')
 class ProcesoActivaUpdateView(UpdateView): model = ProcesoJudicialActiva; form_class = ProcesoJudicialActivaForm; template_name = 'defenjur/proceso_activa_form.html'; success_url = reverse_lazy('defenjur:procesos_activos')
 
-class ProcesoPasivaListView(ListView): model = ProcesoJudicialPasiva; template_name = 'defenjur/proceso_pasiva_list.html'
+class ProcesoPasivaListView(LoginRequiredMixin, RoleFilteringMixin, CommandCenterMixin, ListView): model = ProcesoJudicialPasiva; template_name = 'defenjur/proceso_pasiva_list.html'; context_object_name = 'procesos'
 class ProcesoPasivaCreateView(CreateView): model = ProcesoJudicialPasiva; form_class = ProcesoJudicialPasivaForm; template_name = 'defenjur/proceso_pasiva_form.html'; success_url = reverse_lazy('defenjur:procesos_pasivos')
 class ProcesoPasivaUpdateView(UpdateView): model = ProcesoJudicialPasiva; form_class = ProcesoJudicialPasivaForm; template_name = 'defenjur/proceso_pasiva_form.html'; success_url = reverse_lazy('defenjur:procesos_pasivos')
 
-class ProcesoTerminadoListView(ListView): model = ProcesoJudicialTerminado; template_name = 'defenjur/proceso_terminado_list.html'
+class ProcesoTerminadoListView(LoginRequiredMixin, RoleFilteringMixin, CommandCenterMixin, ListView): model = ProcesoJudicialTerminado; template_name = 'defenjur/proceso_terminado_list.html'; context_object_name = 'procesos'
 class ProcesoTerminadoCreateView(CreateView): model = ProcesoJudicialTerminado; form_class = ProcesoJudicialTerminadoForm; template_name = 'defenjur/proceso_terminado_form.html'; success_url = reverse_lazy('defenjur:procesos_terminados')
 class ProcesoTerminadoUpdateView(UpdateView): model = ProcesoJudicialTerminado; form_class = ProcesoJudicialTerminadoForm; template_name = 'defenjur/proceso_terminado_form.html'; success_url = reverse_lazy('defenjur:procesos_terminados')
 
-class PeritajeListView(ListView): model = Peritaje; template_name = 'defenjur/peritaje_list.html'
+class PeritajeListView(LoginRequiredMixin, RoleFilteringMixin, CommandCenterMixin, ListView): model = Peritaje; template_name = 'defenjur/peritaje_list.html'; context_object_name = 'peritajes'
 class PeritajeCreateView(CreateView): model = Peritaje; form_class = PeritajeForm; template_name = 'defenjur/peritaje_form.html'; success_url = reverse_lazy('defenjur:peritajes')
 class PeritajeUpdateView(UpdateView): model = Peritaje; form_class = PeritajeForm; template_name = 'defenjur/peritaje_form.html'; success_url = reverse_lazy('defenjur:peritajes')
 
-class PagoListView(ListView): model = PagoSentenciaJudicial; template_name = 'defenjur/pago_list.html'
+class PagoListView(LoginRequiredMixin, RoleFilteringMixin, CommandCenterMixin, ListView): model = PagoSentenciaJudicial; template_name = 'defenjur/pago_list.html'; context_object_name = 'pagos'
 class PagoCreateView(CreateView): model = PagoSentenciaJudicial; form_class = PagoSentenciaJudicialForm; template_name = 'defenjur/pago_form.html'; success_url = reverse_lazy('defenjur:pagos')
 class PagoUpdateView(UpdateView): model = PagoSentenciaJudicial; form_class = PagoSentenciaJudicialForm; template_name = 'defenjur/pago_form.html'; success_url = reverse_lazy('defenjur:pagos')
 
-class SancionatorioListView(ListView): model = ProcesoAdministrativoSancionatorio; template_name = 'defenjur/sancionatorio_list.html'
+class SancionatorioListView(LoginRequiredMixin, RoleFilteringMixin, CommandCenterMixin, ListView): model = ProcesoAdministrativoSancionatorio; template_name = 'defenjur/sancionatorio_list.html'; context_object_name = 'items'
 class SancionatorioCreateView(CreateView): model = ProcesoAdministrativoSancionatorio; form_class = ProcesoAdministrativoSancionatorioForm; template_name = 'defenjur/sancionatorio_form.html'; success_url = reverse_lazy('defenjur:sancionatorios')
 class SancionatorioUpdateView(UpdateView): model = ProcesoAdministrativoSancionatorio; form_class = ProcesoAdministrativoSancionatorioForm; template_name = 'defenjur/sancionatorio_form.html'; success_url = reverse_lazy('defenjur:sancionatorios')
 
-class RequerimientoListView(ListView): model = RequerimientoEnteControl; template_name = 'defenjur/requerimiento_list.html'
+class RequerimientoListView(LoginRequiredMixin, RoleFilteringMixin, CommandCenterMixin, ListView): model = RequerimientoEnteControl; template_name = 'defenjur/requerimiento_list.html'; context_object_name = 'requerimientos'
 class RequerimientoCreateView(CreateView): model = RequerimientoEnteControl; form_class = RequerimientoEnteControlForm; template_name = 'defenjur/requerimiento_form.html'; success_url = reverse_lazy('defenjur:requerimientos')
 class RequerimientoUpdateView(UpdateView): model = RequerimientoEnteControl; form_class = RequerimientoEnteControlForm; template_name = 'defenjur/requerimiento_form.html'; success_url = reverse_lazy('defenjur:requerimientos')
 

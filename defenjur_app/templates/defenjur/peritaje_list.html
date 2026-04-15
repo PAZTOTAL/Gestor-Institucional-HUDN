@@ -3,7 +3,8 @@
 {% block header_title %}Peritajes{% endblock %}
 {% block legal_content %}
 <div class="card animate-fade">
-    {% include 'defenjur/includes/import_excel_section.html' with modulo='peritajes' %}
+    {% include 'defenjur/includes/module_command_center.html' with titulo='Peritajes' icon='file-search' %}
+    
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2rem;flex-wrap:wrap;gap:1rem;">
         {% include 'defenjur/includes/search_bar.html' with placeholder="Buscar N° proceso, fecha correo, entidad, demandante, abogado…" %}
         <div style="display:flex;gap:1rem;align-items:center;flex-wrap:wrap;">
@@ -18,6 +19,7 @@
             </a>
         </div>
     </div>
+    {% include 'defenjur/includes/import_excel_section.html' with modulo='peritajes' %}
     <div style="overflow-x:auto;">
         <table style="width:100%;border-collapse:separate;border-spacing:0 10px;">
             <thead>

@@ -3,7 +3,8 @@
 {% block header_title %}Procesos Judiciales Terminados{% endblock %}
 {% block legal_content %}
 <div class="card animate-fade">
-    {% include 'defenjur/includes/import_excel_section.html' with modulo='procesos_terminados' %}
+    {% include 'defenjur/includes/module_command_center.html' with titulo='Procesos Terminados' icon='check-square' %}
+    
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2rem;flex-wrap:wrap;gap:1rem;">
         {% include 'defenjur/includes/search_bar.html' with placeholder="Buscar N° proceso, demandante, demandado, apoderado, despacho…" %}
         <div style="display:flex;gap:1rem;align-items:center;flex-wrap:wrap;">
@@ -18,6 +19,7 @@
             </a>
         </div>
     </div>
+    {% include 'defenjur/includes/import_excel_section.html' with modulo='procesos_terminados' %}
     <div style="overflow-x:auto;">
         <table style="width:100%;border-collapse:separate;border-spacing:0 10px;">
             <thead>

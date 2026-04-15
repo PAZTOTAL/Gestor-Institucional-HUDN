@@ -5,52 +5,107 @@
 {% block header_title %}Sistema de Defensa Judicial{% endblock %}
 
 {% block legal_content %}
-<p style="text-align:center;color:#94a3b8;font-size:1.05rem;margin:0 0 1.5rem;line-height:1.5;">
-    Bienvenido al Sistema de Defensa Judicial del Hospital Universitario Departamental de Nariño. <strong>DEFENJUR</strong>
-</p>
+<div class="card animate-fade" style="margin-bottom: 2rem; background: var(--glass-bg); padding: 2rem; border: 1px solid var(--glass-border);">
+    <h2 style="margin: 0 0 1rem; font-size: 1.5rem; font-weight: 800; color: #fff; display: flex; align-items: center; gap: 10px;">
+        <i data-lucide="layout-grid" style="width: 28px; color: var(--accent);"></i> Centro de Distribución
+    </h2>
+    <p style="color: var(--text-muted); margin-bottom: 2rem;">Seleccione el módulo que desea gestionar para acceder a su centro de mando específico.</p>
 
-<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:1.25rem;margin-bottom:1.25rem;">
-    <div class="card animate-fade" style="margin:0;">
-        <div style="background:var(--accent);color:#fff;padding:0.5rem 1rem;font-weight:600;border-radius:8px 8px 0 0;margin:-1.5rem -1.5rem 1rem -1.5rem;">Procesos Judiciales</div>
-        <div style="height:260px;position:relative;">
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.25rem;">
+        <!-- MODULE: TUTELAS -->
+        <a href="{% url 'defenjur:tutelas' %}" class="btn-premium-module" style="background: rgba(99, 102, 241, 0.05); border: 1px solid rgba(99, 102, 241, 0.2);">
+            <i data-lucide="shield" style="width: 32px; color: #6366f1;"></i>
+            <span>Tutelas</span>
+            <small>{{ count_tutelas }} registros</small>
+        </a>
+
+        <!-- MODULE: PETICIONES -->
+        <a href="{% url 'defenjur:peticiones' %}" class="btn-premium-module" style="background: rgba(16, 185, 129, 0.05); border: 1px solid rgba(16, 185, 129, 0.2);">
+            <i data-lucide="mail" style="width: 32px; color: #10b981;"></i>
+            <span>Peticiones</span>
+            <small>{{ count_peticiones }} registros</small>
+        </a>
+
+        <!-- MODULE: JUDICIALES -->
+        <a href="{% url 'defenjur:procesos_pasivos' %}" class="btn-premium-module" style="background: rgba(245, 158, 11, 0.05); border: 1px solid rgba(245, 158, 11, 0.2);">
+            <i data-lucide="gavel" style="width: 32px; color: #f59e0b;"></i>
+            <span>Judiciales</span>
+            <small>{{ count_procesos_pasiva|add:count_procesos_activa }} registros</small>
+        </a>
+
+        <!-- MODULE: PERITAJES -->
+        <a href="{% url 'defenjur:peritajes' %}" class="btn-premium-module" style="background: rgba(139, 92, 246, 0.05); border: 1px solid rgba(139, 92, 246, 0.2);">
+            <i data-lucide="file-search" style="width: 32px; color: #8b5cf6;"></i>
+            <span>Peritajes</span>
+            <small>{{ count_peritajes }} registros</small>
+        </a>
+
+        <!-- MODULE: PAGOS -->
+        <a href="{% url 'defenjur:pagos' %}" class="btn-premium-module" style="background: rgba(236, 72, 153, 0.05); border: 1px solid rgba(236, 72, 153, 0.2);">
+            <i data-lucide="dollar-sign" style="width: 32px; color: #ec4899;"></i>
+            <span>Pagos</span>
+            <small>{{ count_pagos }} registros</small>
+        </a>
+
+        <!-- MODULE: REQUERIMIENTOS -->
+        <a href="{% url 'defenjur:requerimientos' %}" class="btn-premium-module" style="background: rgba(6, 182, 212, 0.05); border: 1px solid rgba(6, 182, 212, 0.2);">
+            <i data-lucide="alert-circle" style="width: 32px; color: #06b6d4;"></i>
+            <span>Requerimientos</span>
+            <small>{{ count_requerimientos }} registros</small>
+        </a>
+    </div>
+</div>
+
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 2rem;">
+    <!-- ANALYTICS: WORKLOAD -->
+    <div class="card animate-fade" style="margin: 0; background: var(--glass-bg);">
+        <h3 style="margin: 0 0 1rem; font-size: 1rem; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 8px;">
+            <i data-lucide="users" style="width: 18px; color: #6366f1;"></i> Carga Global de Trabajo
+        </h3>
+        <div style="height: 200px;">
             <canvas id="chartDonut"></canvas>
         </div>
     </div>
-    <div class="card animate-fade" style="margin:0;">
-        <div style="background:#10b981;color:#fff;padding:0.5rem 1rem;font-weight:600;border-radius:8px 8px 0 0;margin:-1.5rem -1.5rem 1rem -1.5rem;">Estadísticas (activa vs pasiva por mes)</div>
-        <div style="height:260px;position:relative;">
+
+    <!-- ANALYTICS: TRENDS -->
+    <div class="card animate-fade" style="margin: 0; background: var(--glass-bg);">
+        <h3 style="margin: 0 0 1rem; font-size: 1rem; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 8px;">
+            <i data-lucide="trending-up" style="width: 18px; color: #10b981;"></i> Tendencia Mensual
+        </h3>
+        <div style="height: 200px;">
             <canvas id="chartBar"></canvas>
         </div>
     </div>
 </div>
 
-<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:1rem;">
-    <a href="{% url 'defenjur:procesos_pasivos' %}" class="card animate-fade" style="margin:0;text-decoration:none;background:var(--secondary-gradient);color:#fff;border:none;">
-        <div style="font-size:2rem;font-weight:800;">{{ count_procesos_pasiva }}</div>
-        <div style="opacity:0.95;">Procesos Judiciales (pasiva)</div>
-        <div style="margin-top:0.75rem;font-size:0.9rem;text-decoration:underline;">Ver detalle</div>
-    </a>
-    <a href="{% url 'defenjur:procesos_activos' %}" class="card animate-fade" style="margin:0;text-decoration:none;background:var(--primary-gradient);color:#fff;border:none;">
-        <div style="font-size:2rem;font-weight:800;">{{ count_procesos_activa }}</div>
-        <div style="opacity:0.95;">Procesos Judiciales (activa)</div>
-        <div style="margin-top:0.75rem;font-size:0.9rem;text-decoration:underline;">Ver detalle</div>
-    </a>
-    <a href="{% url 'defenjur:procesos_terminados' %}" class="card animate-fade" style="margin:0;text-decoration:none;background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;border:none;">
-        <div style="font-size:2rem;font-weight:800;">{{ count_terminados }}</div>
-        <div>Procesos Judiciales terminados</div>
-        <div style="margin-top:0.75rem;font-size:0.9rem;text-decoration:underline;">Ver detalle</div>
-    </a>
-    <a href="{% url 'defenjur:peritajes' %}" class="card animate-fade" style="margin:0;text-decoration:none;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;border:none;">
-        <div style="font-size:2rem;font-weight:800;">{{ count_peritajes }}</div>
-        <div>Peritajes en trámite</div>
-        <div style="margin-top:0.75rem;font-size:0.9rem;text-decoration:underline;">Ver detalle</div>
-    </a>
-</div>
-
-<footer style="margin-top:2rem;padding-top:1rem;border-top:1px solid var(--glass-border);display:flex;justify-content:space-between;flex-wrap:wrap;gap:0.5rem;font-size:0.8rem;color:var(--text-muted);">
-    <span>Copyright © 2026 Hospital Universitario Departamental de Nariño E.S.E.</span>
-    <span>Versión 1.0.0 · Módulo Integrado</span>
-</footer>
+<style>
+    .btn-premium-module {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem 1rem;
+        border-radius: 16px;
+        text-decoration: none;
+        transition: all 0.3s ease;
+        text-align: center;
+        gap: 0.75rem;
+    }
+    .btn-premium-module:hover {
+        transform: translateY(-5px);
+        background: rgba(255,255,255,0.08) !important;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    }
+    .btn-premium-module span {
+        font-weight: 700;
+        color: #fff;
+        font-size: 1.1rem;
+    }
+    .btn-premium-module small {
+        color: var(--text-muted);
+        font-size: 0.75rem;
+    }
+</style>
 {% endblock %}
 
 {% block extra_js %}

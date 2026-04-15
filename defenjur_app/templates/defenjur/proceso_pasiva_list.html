@@ -4,7 +4,8 @@
 
 {% block legal_content %}
 <div class="card animate-fade">
-    {% include 'defenjur/includes/import_excel_section.html' with modulo='procesos_pasivos' %}
+    {% include 'defenjur/includes/module_command_center.html' with titulo='Procesos Judiciales Pasivos' icon='gavel' %}
+    
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:2rem; flex-wrap:wrap; gap:1rem;">
         <div style="display:flex; gap:1rem; align-items:center; flex-wrap:wrap;">
             {% include 'defenjur/includes/search_bar.html' with placeholder="Buscar N° proceso, demandante, demandado, apoderado, despacho…" %}
@@ -21,6 +22,7 @@
             </a>
         </div>
     </div>
+    {% include 'defenjur/includes/import_excel_section.html' with modulo='procesos_pasivos' %}
 
     <div style="overflow-x:auto;">
         <table style="width:100%; border-collapse:separate; border-spacing:0 10px;">
