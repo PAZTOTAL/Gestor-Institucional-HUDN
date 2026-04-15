@@ -1,6 +1,9 @@
 from django.db import connections
 from django.db.utils import OperationalError
 from django.core.cache import cache
+import logging
+
+logger = logging.getLogger(__name__)
 
 class DatabaseCheckMiddleware:
     def __init__(self, get_response):
@@ -16,15 +19,16 @@ class DatabaseCheckMiddleware:
             readonly_available = True
             if 'readonly' in connections:
                 try:
-                    # Attempt to get a connection and a cursor
-                    with connections['readonly'].cursor() as cursor:
-                        cursor.execute("SELECT 1")
+                    conn = connections['readonly']
+                    # Use ensure_connection for a faster check
+                    conn.ensure_connection()
+                    readonly_available = True
                 except (OperationalError, Exception) as e:
-                    print(f"[ERROR] Fallo al conectar a la base de datos Hospital (readonly): {e}")
+                    logger.error(f"Fallo al conectar a la base de datos Hospital (readonly): {e}")
                     readonly_available = False
             
-            # Cache the result for 1 minute
-            cache.set(cache_key, readonly_available, 60)
+            # Cache the result for 5 minutes (was 1 minute - too aggressive for a health check)
+            cache.set(cache_key, readonly_available, 300)
         
         request.readonly_db_available = readonly_available
         

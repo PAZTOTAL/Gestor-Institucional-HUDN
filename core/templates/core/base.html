@@ -7,8 +7,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Hospital Management{% endblock %}</title>
     <link rel="stylesheet" href="{% static 'core/css/index.css' %}?v=5">
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Tailwind CSS - loaded early but non-blocking -->
+    <script src="https://cdn.tailwindcss.com" defer></script>
 
     <style>
         {% if perfil %}
@@ -61,8 +61,9 @@
         };
     </script>
 
-    <!-- Select2 CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <!-- Select2 CSS - preloaded -->
+    <link rel="preload" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" /></noscript>
     <style>
         .select2-container--default .select2-selection--single {
             background-color: #ffffff !important;
@@ -185,27 +186,30 @@
     </div>
 
     <!-- Scripts -->
-    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js" defer></script>
     <script>
-        $(document).ready(function () {
-            $('select').select2({
-                width: '100%',
-                placeholder: "Seleccione una opción...",
-                allowClear: true
-            });
+        // Wait for deferred jQuery to load before initializing Select2
+        window.addEventListener('load', function() {
+            if (typeof $ !== 'undefined') {
+                $('select').select2({
+                    width: '100%',
+                    placeholder: "Seleccione una opción...",
+                    allowClear: true
+                });
 
-            $('.dropdown > .nav-link').on('click', function (e) {
-                e.preventDefault();
-                e.stopPropagation();
-                const parent = $(this).parent();
-                const wasActive = parent.hasClass('active');
-                $('.dropdown').removeClass('active');
-                if (!wasActive) parent.addClass('active');
-            });
+                $('.dropdown > .nav-link').on('click', function (e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const parent = $(this).parent();
+                    const wasActive = parent.hasClass('active');
+                    $('.dropdown').removeClass('active');
+                    if (!wasActive) parent.addClass('active');
+                });
 
-            $(document).on('click', function () { $('.dropdown').removeClass('active'); });
-            $('.dropdown-content').on('click', function (e) { e.stopPropagation(); });
+                $(document).on('click', function () { $('.dropdown').removeClass('active'); });
+                $('.dropdown-content').on('click', function (e) { e.stopPropagation(); });
+            }
         });
     </script>
     {% block scripts %}{% endblock %}

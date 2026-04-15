@@ -209,24 +209,21 @@ class HomeView(AccessControlMixin, TemplateView):
     def dispatch(self, request, *args, **kwargs):
         # Bloquear navegación a Home si solo tienen 1 permiso (su app dedicada)
         if request.user.is_authenticated and not request.user.is_superuser:
-            user_apps = PermisoApp.objects.filter(user=request.user, permitido=True)
-            if user_apps.count() == 1:
-                unica_app = user_apps.first().app_label
+            # Single query to get all allowed apps for redirect check
+            allowed_apps = set(
+                PermisoApp.objects.filter(user=request.user, permitido=True)
+                .values_list('app_label', flat=True)
+            )
+            if len(allowed_apps) == 1:
+                unica_app = next(iter(allowed_apps))
                 if unica_app == 'CertificadosDIAN':
                     return redirect('certificados_dian:dashboard')
+            # Store for reuse in get_context_data to avoid re-querying
+            request._allowed_apps = allowed_apps
         return super().dispatch(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        
-        # 1. AUTO-REDIRECT logic: Si el usuario solo tiene 1 app permitida y no es admin, lo forzamos allá
-        if not self.request.user.is_superuser:
-            user_apps = PermisoApp.objects.filter(user=self.request.user, permitido=True)
-            if user_apps.count() == 1:
-                unica_app = user_apps.first().app_label
-                if unica_app == 'CertificadosDIAN':
-                    # Podríamos usar raise para interrumpir o atrapar esto en dispatch
-                    pass # En Django CBVs, no puedes retornar un redirect desde get_context_data
                     
         # Categorize modules into Healthcare and Administrative groups
         asistenciales = [
@@ -266,21 +263,23 @@ class HomeView(AccessControlMixin, TemplateView):
             {'name': 'Trazabilidad de Pacientes', 'url': '/consultas/pacientes-urgencias/', 'description': 'Seguimiento de pacientes activos en todo el hospital'},
         ]
         
-        # Filter based on permissions
+        # Filter based on permissions - OPTIMIZED: single query instead of N+1
         if not self.request.user.is_superuser:
-            # Helper to check permission
-            def has_access(slug):
-                return PermisoApp.objects.filter(
-                    user=self.request.user, 
-                    app_label=slug, 
-                    permitido=True
-                ).exists()
+            # Reuse the set from dispatch if available, otherwise fetch once
+            allowed_apps = getattr(self.request, '_allowed_apps', None)
+            if allowed_apps is None:
+                allowed_apps = set(
+                    PermisoApp.objects.filter(
+                        user=self.request.user, permitido=True
+                    ).values_list('app_label', flat=True)
+                )
 
-            asistenciales = [m for m in asistenciales if has_access(m['slug'])]
-            administrativos = [m for m in administrativos if has_access(m['slug'])]
+            # Filter in Python using the pre-fetched set (0 extra queries)
+            asistenciales = [m for m in asistenciales if m['slug'] in allowed_apps]
+            administrativos = [m for m in administrativos if m['slug'] in allowed_apps]
             
-            # Filter Consultas (Check app permission for 'consultas')
-            if not has_access('consultas'):
+            # Filter Consultas
+            if 'consultas' not in allowed_apps:
                 consultas = []
                 admin_reports = []
                 salud_reports = []

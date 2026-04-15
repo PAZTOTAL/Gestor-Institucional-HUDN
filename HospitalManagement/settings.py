@@ -129,6 +129,7 @@ DATABASES = {
         'PASSWORD': 'ConsultasPantojaHUDN_2026$', 
         'HOST': '172.20.100.209',
         'PORT': '',
+        'CONN_MAX_AGE': 600,  # Reusar conexiones por 10 minutos (evita reconexión en cada request)
         'OPTIONS': {
             'driver': 'ODBC Driver 17 for SQL Server',
             'host_is_server': True,
@@ -142,10 +143,12 @@ DATABASES = {
         'PASSWORD': 'ConsultaHUDN2026*/$', 
         'HOST': '172.20.100.209',
         'PORT': '',
+        'CONN_MAX_AGE': 600,  # Reusar conexiones por 10 minutos
         'OPTIONS': {
             'driver': 'ODBC Driver 17 for SQL Server',
             'host_is_server': True,
-            'timeout': 10,
+            'timeout': 5,  # Timeout reducido para consultas de lectura
+            'connection_timeout': 3,  # Timeout de conexión rápido
         },
     }
 }
