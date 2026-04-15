@@ -57,7 +57,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'core',
-    'defenjur_app',
+    'defenjur_py.legal',
 
     'A_00_Organigrama',
     'usuarios',
@@ -65,8 +65,8 @@ INSTALLED_APPS = [
     'BasesGenerales',
     'consultas_externas',
     'registro_anestesia',
-    'meows',  # Sistema de Alerta Temprana Obstétrico
-    'trabajoparto',
+    # 'meows',  # Sistema de Alerta Temprana Obstétrico
+    # 'trabajoparto',
     'consultas',
     'presupuesto',
     'ConsentimientosInformados',
@@ -100,7 +100,7 @@ ROOT_URLCONF = 'HospitalManagement.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR / 'defenjur_py' / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -169,7 +169,7 @@ DATABASES = {
 
 
 # Database Routers
-DATABASE_ROUTERS = ['HospitalManagement.routers.HospitalRouter', 'trabajoparto.db_router.ClinicoRouter']
+DATABASE_ROUTERS = ['HospitalManagement.routers.HospitalRouter'] # , 'trabajoparto.db_router.ClinicoRouter']
 
 # Password validation
 # https://docs.djangoproject.com/en/5.0/ref/settings/#auth-password-validators
@@ -209,6 +209,7 @@ STATIC_URL = 'static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_DIRS = [
     BASE_DIR / 'static',
+    BASE_DIR / 'defenjur_py' / 'static',
 ]
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'

@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+{% block title %}{% if object %}Editar usuario{% else %}Nuevo usuario{% endif %} | DEFENJUR{% endblock %}
+{% block breadcrumb %}
+<a href="{% url 'defenjur_home' %}" style="color:#6c757d;text-decoration:none;">Home</a> /
+<a href="{% url 'usuarios' %}" style="color:#6c757d;text-decoration:none;">Usuarios</a> /
+<strong>{% if object %}Editar{% else %}Nuevo{% endif %}</strong>
+{% endblock %}
+{% block header_title %}{% if object %}Editar usuario{% else %}Nuevo usuario{% endif %}{% endblock %}
+
+{% block content %}
+<div class="card animate-fade" style="max-width:560px;">
+    <form method="post">
+        {% csrf_token %}
+        {% for field in form %}
+        <div class="form-group" style="margin-bottom:1rem;">
+            <label for="{{ field.id_for_label }}" style="display:block;font-size:0.85rem;color:#495057;margin-bottom:0.35rem;">{{ field.label }}</label>
+            {{ field }}
+            {% if field.help_text %}<small style="color:#6c757d;">{{ field.help_text }}</small>{% endif %}
+            {% if field.errors %}<div style="color:#dc3545;font-size:0.8rem;">{{ field.errors }}</div>{% endif %}
+        </div>
+        {% endfor %}
+        <div style="display:flex;gap:0.75rem;margin-top:1.5rem;">
+            <button type="submit" class="btn-premium">Guardar</button>
+            <a href="{% url 'usuarios' %}" class="btn-premium" style="text-decoration:none;background:#6c757d;">Cancelar</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

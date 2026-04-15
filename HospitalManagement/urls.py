@@ -29,8 +29,8 @@ urlpatterns = [
     path('', include('usuarios.urls')),
     path('consultas-externas/', include('consultas_externas.urls')),
     path('registro-anestesia/', include('registro_anestesia.urls')),
-    path('meows/', include('meows.urls')),  # Sistema MEOWS
-    path('parto/', include('trabajoparto.urls')),  # Sistema Parto
+    # path('meows/', include('meows.urls')),  # Sistema MEOWS
+    # path('parto/', include('trabajoparto.urls')),  # Sistema Parto
     path('consultas/', include('consultas.urls')),
     path('presupuesto/', include('presupuesto.urls')),
     path('consentimientos/', include('ConsentimientosInformados.urls')),
@@ -41,7 +41,7 @@ urlpatterns = [
     path('certificados-dian/', include('CertificadosDIAN.urls')),
     path('horas-extras/', include('horas_extras.urls')),
     path('certificados-laborales/', include('certificados_laborales.urls')),
-    path('defenjur/', include('defenjur_app.urls')),
+    path('defenjur/', include('defenjur_py.legal.urls')),
     path('organigrama/', include('A_00_Organigrama.urls')),
     path('visor-soportes/', include('visor_soportes.urls')),
 ]
