@@ -235,6 +235,7 @@ class HomeView(AccessControlMixin, TemplateView):
         ]
         
         administrativos = [
+            {'name': 'Organigrama', 'slug': 'A_00_Organigrama', 'description': 'Estructura Jerárquica Institucional (6 Niveles)', 'url': '/organigrama/', 'icon': 'M4 5a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM14 5a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1V5zM4 15a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1v-4zM14 15a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z'},
             {'name': 'Generales y Seguridad', 'slug': 'usuarios', 'description': 'Configuración general y seguridad'},
             {'name': 'Consultas Base Externa', 'slug': 'consultas_externas', 'description': 'Consulta de datos GENTERCER y otros', 'url': '/consultas-externas/'},
             {'name': 'Talento Humano', 'slug': 'horas_extras', 'description': 'Gestión de Personal: Horas Extras e Informes', 'url': '/horas-extras/', 'icon': 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z'},
