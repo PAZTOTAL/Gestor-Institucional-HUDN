@@ -43,4 +43,5 @@ urlpatterns = [
     path('certificados-laborales/', include('certificados_laborales.urls')),
     path('defenjur/', include('defenjur_app.urls')),
     path('organigrama/', include('A_00_Organigrama.urls')),
+    path('visor-soportes/', include('visor_soportes.urls')),
 ]

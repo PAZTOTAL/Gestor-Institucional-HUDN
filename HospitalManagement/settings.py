@@ -81,6 +81,7 @@ INSTALLED_APPS = [
     'frecuenciafetal',
     'obstetriciaunificador',
     'certificados_laborales',
+    'visor_soportes',
 ]
 
 MIDDLEWARE = [

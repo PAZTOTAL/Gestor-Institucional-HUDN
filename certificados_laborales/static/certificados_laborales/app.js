@@ -52,7 +52,7 @@
         if (actionText === "generar") btnGenerar.textContent = "Generando...";
     } else {
         btnBuscar.textContent = "Visualizar Datos";
-        btnGenerar.textContent = "Generar Word";
+        btnGenerar.textContent = "Generar documento";
     }
   };
 
@@ -114,7 +114,7 @@
       }
       data = payload;
       renderResults(data);
-      setMessage("Datos cargados correctamente. Ahora puede generar el Word.", "info");
+      setMessage("Datos cargados correctamente. Ahora puede generar el documento.", "info");
     } catch (error) {
       data = null;
       renderResults(null);
@@ -135,7 +135,7 @@
     }
 
     setLoading(true, "generar");
-    setMessage("Generando documento Word...", "info");
+    setMessage("Generando documento...", "info");
     
     try {
       const response = await fetch("api/generar-certificado/", {
