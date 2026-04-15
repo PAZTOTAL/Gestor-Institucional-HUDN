@@ -132,8 +132,7 @@ DATABASES = {
         'CONN_MAX_AGE': 600,  # Reusar conexiones por 10 minutos (evita reconexión en cada request)
         'OPTIONS': {
             'driver': 'ODBC Driver 17 for SQL Server',
-            'host_is_server': True,
-            'timeout': 60, # Mayor timeout para migraciones iniciales
+            'timeout': 60,
         },
     },
     'readonly': {
