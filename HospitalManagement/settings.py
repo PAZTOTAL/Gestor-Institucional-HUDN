@@ -12,10 +12,18 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 
 from pathlib import Path
 import os
+import sys
 from dotenv import load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+# Apps obstétricas (meows, trabajoparto) viven bajo UNIFICADOR-V1 en este monorepo.
+_SISTEMA_OBST = BASE_DIR / 'UNIFICADOR-V1' / 'sistema_obstetrico'
+if _SISTEMA_OBST.is_dir():
+    _obst_path = str(_SISTEMA_OBST)
+    if _obst_path not in sys.path:
+        sys.path.insert(0, _obst_path)
 
 load_dotenv(BASE_DIR / '.env')
 
@@ -57,15 +65,14 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'core',
-
     'A_00_Organigrama',
-    'usuarios',
-    # Apps migradas desde AdmonAlexaTotal
+    'usuarios',# Apps migradas desde AdmonAlexaTotal
     'BasesGenerales',
     'consultas_externas',
     'registro_anestesia',
-    'meows',  # Sistema de Alerta Temprana Obstétrico
-    'parto',  # Sistema Parto
+    'obstetriciaunificador', 
+    'DEFENJUR',
+    'UNIFICADOR-V1',
     'consultas',
     'presupuesto',
     'ConsentimientosInformados',
@@ -161,7 +168,10 @@ else:
 
 
 # Database Routers
-DATABASE_ROUTERS = ['HospitalManagement.routers.HospitalRouter', 'parto.db_router.PartoRouter']
+DATABASE_ROUTERS = [
+    'HospitalManagement.routers.HospitalRouter',
+    'trabajoparto.db_router.ClinicoRouter',
+]
 
 # Password validation
 # https://docs.djangoproject.com/en/5.0/ref/settings/#auth-password-validators
