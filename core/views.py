@@ -228,8 +228,7 @@ class HomeView(AccessControlMixin, TemplateView):
         # Categorize modules into Healthcare and Administrative groups
         asistenciales = [
             {'name': 'Registro de Anestesia', 'slug': 'registro_anestesia', 'description': 'Registro Clínico de Anestesia (FRQUI-032)', 'url': '/registro-anestesia/create/', 'icon': 'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z M14 2 14 8 20 8 M16 13H8 M16 17H8 M10 9H9H8'},
-            {'name': 'Sistema MEOWS', 'slug': 'meows', 'description': 'Sistema de Alerta Temprana Obstétrico', 'url': '/meows/nuevo/0/', 'icon': 'M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z'},
-            {'name': 'Gestión de Partos', 'slug': 'trabajoparto', 'description': 'Historia Clínico y Partograma', 'url': '/parto/', 'icon': 'M9 12h.01 M15 12h.01 M10 16a2.5 2.5 0 0 0 4 0 M12 22a7 7 0 1 0 0-14 7 7 0 0 0 0 14z M12 8V2 M5.88 10.9a3.5 3.5 0 1 1 5.24 4.77 M18.12 10.9a3.5 3.5 0 1 0-5.24 4.77'},
+            {'name': 'Obstetricia unificada', 'slug': 'obstetriciaunificador', 'description': 'MEOWS, control fetal y trabajo de parto en un solo flujo', 'url': '/atencion/sala-de-partos/', 'icon': 'M12 2a7 7 0 0 1 7 7c0 4-7 13-7 13S5 13 5 9a7 7 0 0 1 7-7z M12 11v4 M12 7h.01'},
             {'name': 'Consentimientos Informados', 'slug': 'ConsentimientosInformados', 'description': 'Autorizaciones y Firmas Electrónicas', 'url': '/consentimientos/', 'icon': 'M12 20h9 M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z'},
             {'name': 'Central de Mezclas', 'slug': 'CentralDeMezclas', 'description': 'Laboratorio de Preparaciones Estériles', 'url': '/central-mezclas/', 'icon': 'M16.3 3.4 12 10V2M11 10.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5z M5.5 15.5l1.5-2 M17 15.5l-1.5-2 M2 22h20 M7 22l1-4.5 M17 22l-1-4.5'},
         ]

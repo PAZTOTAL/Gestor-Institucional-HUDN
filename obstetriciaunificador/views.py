@@ -13,13 +13,22 @@ from reportlab.lib.pagesizes import letter
 
 import logging
 
-from meows.models import Medicion, Paciente as MeowsPaciente  # noqa: F401
 from frecuenciafetal.models import (
     ControlFetocardia,
     ControlPostpartoInmediato,
     RegistroParto,
 )
-from trabajoparto.models import Formulario, Paciente as TrabajoPartoPaciente
+from .deps import (
+    Formulario,
+    HAVE_MEOWS,
+    HAVE_TRABAJOPARTO,
+    Medicion,
+    MeowsPaciente,
+    TrabajoPartoPaciente,
+    estado_global_meows_for_documento,
+    formulario_count_for_documento,
+    medicion_count_for_documento,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -70,6 +79,8 @@ def _variantes_documento(doc):
 
 
 def _meows_por_documento(doc):
+    if not HAVE_MEOWS:
+        return None
     for did in _variantes_documento(doc):
         p = MeowsPaciente.objects.filter(numero_documento=did).first()
         if p:
@@ -197,10 +208,11 @@ def _enriquecer_card_demografia(payload, doc):
 
     # Paciente de Trabajo de Parto (a menudo tiene FN / grupo sanguíneo aunque MEOWS esté incompleto)
     tp = None
-    for did in dids:
-        tp = TrabajoPartoPaciente.objects.filter(num_identificacion=did).first()
-        if tp:
-            break
+    if HAVE_TRABAJOPARTO:
+        for did in dids:
+            tp = TrabajoPartoPaciente.objects.filter(num_identificacion=did).first()
+            if tp:
+                break
     if tp:
         if _vacío(payload.get("fecha_nacimiento")) and tp.fecha_nacimiento:
             payload["fecha_nacimiento"] = tp.fecha_nacimiento.strftime("%Y-%m-%d")
@@ -281,11 +293,13 @@ def _enriquecer_card_demografia(payload, doc):
         if cpp and (cpp.responsable or "").strip():
             payload["responsable"] = cpp.responsable.strip()
 
-    forms_recientes = list(
-        Formulario.objects.filter(paciente__num_identificacion__in=dids)
-        .select_related("aseguradora")
-        .order_by("-fecha_actualizacion")[:25]
-    )
+    forms_recientes = []
+    if HAVE_TRABAJOPARTO:
+        forms_recientes = list(
+            Formulario.objects.filter(paciente__num_identificacion__in=dids)
+            .select_related("aseguradora")
+            .order_by("-fecha_actualizacion")[:25]
+        )
     for form in forms_recientes:
         if _vacío(payload.get("responsable")) and (form.responsable or "").strip():
             payload["responsable"] = form.responsable.strip()
@@ -440,6 +454,9 @@ def _upsert_meows_desde_payload_unificado(doc_canon, nombre_completo_str, payloa
     """Persiste en MEOWS los datos del hospital/card para reutilizarlos en los módulos."""
     from datetime import datetime
 
+    if not HAVE_MEOWS:
+        return
+
     partes = (nombre_completo_str or "").strip().split(None, 1)
     nom0 = partes[0] or "Paciente"
     ape0 = partes[1] if len(partes) > 1 else "-"
@@ -520,16 +537,16 @@ def get_patient_timeline(documento):
     Construye la línea de vida cronológica cruzando datos de MEOWS, Fetal y Parto.
     Se basa en el número de identificación del paciente.
     """
-    from meows.models import Medicion
-    from frecuenciafetal.models import RegistroParto
-    from trabajoparto.models import Formulario
-    from django.db.models import Q
-    from django.utils import timezone
-
     # Consultar datos de todas las fuentes
-    meows = Medicion.objects.filter(paciente__numero_documento=documento).order_by("-fecha_hora")
+    if HAVE_MEOWS:
+        meows = Medicion.objects.filter(paciente__numero_documento=documento).order_by("-fecha_hora")
+    else:
+        meows = []
     fetal = RegistroParto.objects.filter(identificacion=documento).order_by("-created_at")
-    parto = Formulario.objects.filter(paciente__num_identificacion=documento).order_by("-created_at")
+    if HAVE_TRABAJOPARTO:
+        parto = Formulario.objects.filter(paciente__num_identificacion=documento).order_by("-created_at")
+    else:
+        parto = []
 
     timeline = []
 
@@ -643,12 +660,15 @@ def atencion_detalle(request, id):
     identificador = (atencion.paciente or "").strip()
 
     # 1. MEOWS: Buscar por atención, y si no hay, por identificación
-    meows = Medicion.objects.filter(atencion=atencion).select_related("paciente", "formulario")
-    if not meows.exists() and identificador:
-        if identificador.isdigit():
-            meows = Medicion.objects.filter(paciente__numero_documento=identificador).select_related("paciente", "formulario")
-        else:
-            meows = Medicion.objects.filter(Q(paciente__nombres__icontains=identificador) | Q(paciente__apellidos__icontains=identificador)).select_related("paciente", "formulario")
+    if HAVE_MEOWS:
+        meows = Medicion.objects.filter(atencion=atencion).select_related("paciente", "formulario")
+        if not meows.exists() and identificador:
+            if identificador.isdigit():
+                meows = Medicion.objects.filter(paciente__numero_documento=identificador).select_related("paciente", "formulario")
+            else:
+                meows = Medicion.objects.filter(Q(paciente__nombres__icontains=identificador) | Q(paciente__apellidos__icontains=identificador)).select_related("paciente", "formulario")
+    else:
+        meows = []
 
     # 2. FETAL: Buscar por atención, y si no hay, por identificación
     fetal = RegistroParto.objects.filter(atencion=atencion)
@@ -659,18 +679,22 @@ def atencion_detalle(request, id):
             fetal = RegistroParto.objects.filter(nombre_paciente__icontains=identificador)
 
     # 3. PARTO: Buscar por atención, y si no hay, por identificación
-    parto = Formulario.objects.filter(atencion=atencion).select_related("paciente")
-    if not parto.exists() and identificador:
-        if identificador.isdigit():
-            parto = Formulario.objects.filter(paciente__num_identificacion=identificador).select_related("paciente")
-        else:
-            parto = Formulario.objects.filter(paciente__nombres__icontains=identificador).select_related("paciente")
+    if HAVE_TRABAJOPARTO:
+        parto = Formulario.objects.filter(atencion=atencion).select_related("paciente")
+        if not parto.exists() and identificador:
+            if identificador.isdigit():
+                parto = Formulario.objects.filter(paciente__num_identificacion=identificador).select_related("paciente")
+            else:
+                parto = Formulario.objects.filter(paciente__nombres__icontains=identificador).select_related("paciente")
+    else:
+        parto = []
 
     # CONSTRUCCIÓN DE LA LÍNEA DE TIEMPO UNIFICADA
     timeline = []
 
     # 1. Agregar MEOWS
-    for m in meows:
+    meows_iter = meows if HAVE_MEOWS else []
+    for m in meows_iter:
         # Color dinámico según el riesgo MEOWS
         color_map = {
             "BLANCO": "#3b82f6",     # Azul
@@ -699,7 +723,8 @@ def atencion_detalle(request, id):
         })
 
     # 3. Agregar PARTO (Formulario)
-    for p in parto:
+    parto_iter = parto if HAVE_TRABAJOPARTO else []
+    for p in parto_iter:
         timeline.append({
             "tipo": "PARTO",
             "fecha": p.created_at,
@@ -713,7 +738,10 @@ def atencion_detalle(request, id):
 
     # Calcular Estado Global según el riesgo MEOWS más alto encontrado
     estado_global = "ESTABLE"
-    riesgos_encontrados = set(meows.values_list("meows_riesgo", flat=True))
+    if HAVE_MEOWS and meows:
+        riesgos_encontrados = set(meows.values_list("meows_riesgo", flat=True))
+    else:
+        riesgos_encontrados = set()
     if "ROJO" in riesgos_encontrados:
         estado_global = "CRÍTICO"
     elif "AMARILLO" in riesgos_encontrados:
@@ -749,7 +777,9 @@ def api_datos_paciente_unificado(request):
     from datetime import date
 
     # 1. Buscar en meows.Paciente
-    meows_p = MeowsPaciente.objects.filter(numero_documento=doc).first()
+    meows_p = None
+    if HAVE_MEOWS:
+        meows_p = MeowsPaciente.objects.filter(numero_documento=doc).first()
     if meows_p:
         edad = None
         if meows_p.fecha_nacimiento:
@@ -783,17 +813,19 @@ def api_datos_paciente_unificado(request):
             "gestas": meows_p.gestas,
             "n_controles_prenatales": meows_p.n_controles_prenatales,
             "atencion_id": AtencionParto.objects.filter(paciente=doc_m).order_by("-fecha_inicio").values_list("id", flat=True).first(),
-            "mediciones_count": Medicion.objects.filter(paciente__numero_documento=doc_m).count(),
+            "mediciones_count": medicion_count_for_documento(doc_m),
             "fetal_count": RegistroParto.objects.filter(identificacion=doc_m).count(),
-            "parto_count": Formulario.objects.filter(paciente__num_identificacion=doc_m).count(),
-            "estado_global": "CRÍTICO" if Medicion.objects.filter(paciente__numero_documento=doc_m, meows_riesgo="ROJO").exists() else "ALERTA" if Medicion.objects.filter(paciente__numero_documento=doc_m, meows_riesgo="AMARILLO").exists() else "ESTABLE",
+            "parto_count": formulario_count_for_documento(doc_m),
+            "estado_global": estado_global_meows_for_documento(doc_m),
             "timeline": get_patient_timeline(doc_m),
         }
         _enriquecer_card_demografia(payload, doc_m)
         return JsonResponse(payload)
 
     # 2. Fallback: trabajoparto.Paciente
-    tp_p = TrabajoPartoPaciente.objects.filter(num_identificacion=doc).first()
+    tp_p = None
+    if HAVE_TRABAJOPARTO:
+        tp_p = TrabajoPartoPaciente.objects.filter(num_identificacion=doc).first()
     if tp_p:
         edad = None
         if tp_p.fecha_nacimiento:
@@ -827,10 +859,10 @@ def api_datos_paciente_unificado(request):
             "gestas": None,
             "n_controles_prenatales": None,
             "atencion_id": AtencionParto.objects.filter(paciente=doc_tp).order_by("-fecha_inicio").values_list("id", flat=True).first(),
-            "mediciones_count": Medicion.objects.filter(paciente__numero_documento=doc_tp).count(),
+            "mediciones_count": medicion_count_for_documento(doc_tp),
             "fetal_count": RegistroParto.objects.filter(identificacion=doc_tp).count(),
-            "parto_count": Formulario.objects.filter(paciente__num_identificacion=doc_tp).count(),
-            "estado_global": "CRÍTICO" if Medicion.objects.filter(paciente__numero_documento=doc_tp, meows_riesgo="ROJO").exists() else "ALERTA" if Medicion.objects.filter(paciente__numero_documento=doc_tp, meows_riesgo="AMARILLO").exists() else "ESTABLE",
+            "parto_count": formulario_count_for_documento(doc_tp),
+            "estado_global": estado_global_meows_for_documento(doc_tp),
             "timeline": get_patient_timeline(doc_tp),
         }
         _enriquecer_card_demografia(payload, doc_tp)
@@ -907,10 +939,10 @@ def api_datos_paciente_unificado(request):
             "n_controles_prenatales": ext.get("n_controles_prenatales"),
             "num_historia_clinica": hosp_p.num_historia_clinica or "",
             "atencion_id": AtencionParto.objects.filter(paciente=doc_canon).order_by("-fecha_inicio").values_list("id", flat=True).first(),
-            "mediciones_count": Medicion.objects.filter(paciente__numero_documento=doc_canon).count(),
+            "mediciones_count": medicion_count_for_documento(doc_canon),
             "fetal_count": RegistroParto.objects.filter(identificacion=doc_canon).count(),
-            "parto_count": Formulario.objects.filter(paciente__num_identificacion=doc_canon).count(),
-            "estado_global": "CRÍTICO" if Medicion.objects.filter(paciente__numero_documento=doc_canon, meows_riesgo="ROJO").exists() else "ALERTA" if Medicion.objects.filter(paciente__numero_documento=doc_canon, meows_riesgo="AMARILLO").exists() else "ESTABLE",
+            "parto_count": formulario_count_for_documento(doc_canon),
+            "estado_global": estado_global_meows_for_documento(doc_canon),
             "timeline": get_patient_timeline(doc_canon),
             "fuente_datos": "hospital_readonly",
         }
@@ -947,6 +979,15 @@ def guardar_datos_paciente_card(request, atencion_id):
     num_identificacion = (data.get("num_identificacion") or "").strip()
     if not num_identificacion:
         return JsonResponse({"ok": False, "error": "Identificación es requerida"}, status=400)
+
+    if not HAVE_MEOWS:
+        return JsonResponse(
+            {
+                "ok": False,
+                "error": "La app MEOWS no está instalada en el proyecto. Copie el paquete `meows` y añádalo a INSTALLED_APPS.",
+            },
+            status=503,
+        )
 
     nombres_completos = (data.get("nombres") or "").strip()
     partes = nombres_completos.split(maxsplit=1) if nombres_completos else ["", ""]
@@ -1017,25 +1058,26 @@ def guardar_datos_paciente_card(request, atencion_id):
         return JsonResponse({"ok": False, "error": "Error al guardar paciente (documento duplicado)"}, status=400)
 
     # Sincronizar también en trabajoparto.Paciente (para Frecuencia Fetal y Trabajo de Parto)
-    nombres_tp = f"{nombres} {apellidos}".strip() or "N/A"
-    tipo_sangre = (data.get("tipo_sangre") or "")[:3] or None
-    try:
-        tp_paciente, created = TrabajoPartoPaciente.objects.get_or_create(
-            num_identificacion=num_identificacion,
-            defaults={
-                "num_historia_clinica": num_hc[:255],
-                "nombres": nombres_tp[:255],
-                "fecha_nacimiento": paciente.fecha_nacimiento,
-                "tipo_sangre": tipo_sangre,
-            }
-        )
-        if not created:
-            tp_paciente.nombres = nombres_tp[:255]
-            tp_paciente.fecha_nacimiento = paciente.fecha_nacimiento
-            tp_paciente.tipo_sangre = tipo_sangre or tp_paciente.tipo_sangre
-            tp_paciente.save()
-    except IntegrityError:
-        pass
+    if HAVE_TRABAJOPARTO:
+        nombres_tp = f"{nombres} {apellidos}".strip() or "N/A"
+        tipo_sangre = (data.get("tipo_sangre") or "")[:3] or None
+        try:
+            tp_paciente, created = TrabajoPartoPaciente.objects.get_or_create(
+                num_identificacion=num_identificacion,
+                defaults={
+                    "num_historia_clinica": num_hc[:255],
+                    "nombres": nombres_tp[:255],
+                    "fecha_nacimiento": paciente.fecha_nacimiento,
+                    "tipo_sangre": tipo_sangre,
+                }
+            )
+            if not created:
+                tp_paciente.nombres = nombres_tp[:255]
+                tp_paciente.fecha_nacimiento = paciente.fecha_nacimiento
+                tp_paciente.tipo_sangre = tipo_sangre or tp_paciente.tipo_sangre
+                tp_paciente.save()
+        except IntegrityError:
+            pass
 
     atencion.paciente = num_identificacion
     atencion.save(update_fields=["paciente"])
@@ -1057,16 +1099,17 @@ def pdf_atencion(request, id):
     import io
     from django.http import HttpResponse
     from obstetriciaunificador.models import AtencionParto
-    
-    # Importar generadores originales
-    from meows.generador_pdf_meows import generar_pdf_meows
-    from frecuenciafetal.pdf_generator import generar_pdf_registro
-    from trabajoparto.pdf_utils import generar_pdf_formulario_clinico
-    
-    # Modelos para búsqueda
-    from meows.models import Medicion
     from frecuenciafetal.models import RegistroParto
-    from trabajoparto.models import Formulario
+    from frecuenciafetal.pdf_generator import generar_pdf_registro
+
+    try:
+        from meows.generador_pdf_meows import generar_pdf_meows
+    except ImportError:
+        generar_pdf_meows = None
+    try:
+        from trabajoparto.pdf_utils import generar_pdf_formulario_clinico
+    except ImportError:
+        generar_pdf_formulario_clinico = None
 
     atencion = get_object_or_404(AtencionParto, id=id)
     doc_override = (request.GET.get("doc") or "").strip()
@@ -1081,31 +1124,32 @@ def pdf_atencion(request, id):
     has_content = False
 
     # 1. --- MÓDULO MEOWS ---
-    from meows.models import Paciente as PacienteMeows
-    # Si llega doc por querystring, filtrar EXCLUSIVAMENTE por documento para evitar
-    # mezclar registros de otra atención/paciente (caso crítico reportado).
-    if doc_override:
-        mediciones_qs = Medicion.objects.filter(
-            paciente__numero_documento=documento_objetivo
-        ).order_by("fecha_hora")
-    else:
-        mediciones_qs = Medicion.objects.filter(
-            atencion=atencion
-        ).order_by("fecha_hora")
+    mediciones_qs = None
+    if HAVE_MEOWS and generar_pdf_meows is not None and Medicion is not None:
+        from meows.models import Paciente as PacienteMeows
 
-    if mediciones_qs.exists():
-        try:
-            paciente_meows = PacienteMeows.objects.get(numero_documento=documento_objetivo)
-        except (PacienteMeows.DoesNotExist, PacienteMeows.MultipleObjectsReturned):
-            paciente_meows = mediciones_qs.first().paciente
+        if doc_override:
+            mediciones_qs = Medicion.objects.filter(
+                paciente__numero_documento=documento_objetivo
+            ).order_by("fecha_hora")
+        else:
+            mediciones_qs = Medicion.objects.filter(
+                atencion=atencion
+            ).order_by("fecha_hora")
 
-        response_meows = generar_pdf_meows(paciente_meows, list(mediciones_qs))
-        if isinstance(response_meows, HttpResponse):
-            pdf_file = io.BytesIO(response_meows.content)
-            reader = PdfReader(pdf_file)
-            for page in reader.pages:
-                writer.add_page(page)
-            has_content = True
+        if mediciones_qs.exists():
+            try:
+                paciente_meows = PacienteMeows.objects.get(numero_documento=documento_objetivo)
+            except (PacienteMeows.DoesNotExist, PacienteMeows.MultipleObjectsReturned):
+                paciente_meows = mediciones_qs.first().paciente
+
+            response_meows = generar_pdf_meows(paciente_meows, list(mediciones_qs))
+            if isinstance(response_meows, HttpResponse):
+                pdf_file = io.BytesIO(response_meows.content)
+                reader = PdfReader(pdf_file)
+                for page in reader.pages:
+                    writer.add_page(page)
+                has_content = True
 
     # 2. --- MÓDULO CONTROL FETAL ---
     if doc_override:
@@ -1127,14 +1171,17 @@ def pdf_atencion(request, id):
             has_content = True
 
     # 3. --- MÓDULO TRABAJO DE PARTO ---
-    if doc_override:
-        formularios_parto = Formulario.objects.filter(
-            paciente__num_identificacion=documento_objetivo
-        ).order_by("fecha_actualizacion")
+    if HAVE_TRABAJOPARTO and generar_pdf_formulario_clinico is not None:
+        if doc_override:
+            formularios_parto = Formulario.objects.filter(
+                paciente__num_identificacion=documento_objetivo
+            ).order_by("fecha_actualizacion")
+        else:
+            formularios_parto = Formulario.objects.filter(
+                atencion=atencion
+            ).order_by("fecha_actualizacion")
     else:
-        formularios_parto = Formulario.objects.filter(
-            atencion=atencion
-        ).order_by("fecha_actualizacion")
+        formularios_parto = []
 
     for form in formularios_parto:
         response_parto = generar_pdf_formulario_clinico(form)
