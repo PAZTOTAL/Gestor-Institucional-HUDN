@@ -3,6 +3,8 @@ from django.conf import settings
 from django.http import HttpResponse, Http404
 from django.template.loader import get_template
 from django.views import View
+from django.views.generic import ListView
+from django.contrib.auth.mixins import LoginRequiredMixin
 from xhtml2pdf import pisa
 from .models import *
 
@@ -16,6 +18,16 @@ def render_to_pdf(template_src, context_dict={}):
     if pisa_status.err:
        return HttpResponse('Error al generar PDF: %s' % pisa_status.err, status=500)
     return response
+
+
+class EstudioListView(LoginRequiredMixin, ListView):
+    """Vista principal: Listado de Estudios de Conveniencia"""
+    model = opsComponenteTecnico
+    template_name = 'estudio_conveniencia/dashboard.html'
+    context_object_name = 'estudios'
+    ordering = ['-pk']
+    paginate_by = 25
+
 
 class GenerarEstudioPDFView(View):
     def get(self, request, *args, **kwargs):

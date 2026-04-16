@@ -74,30 +74,45 @@ class GestionPermisosView(AccessControlMixin, TemplateView):
             if str(app_config.path).startswith(str(settings.BASE_DIR))
         ]
         
+        # Get and merge with dynamic DashboardModules (External links or custom shortcuts)
+        from core.models import DashboardModule
+        db_modules = DashboardModule.objects.filter(is_active=True)
+        
+        # We'll use a set to avoid duplicates with django app labels
+        all_app_slugs = set(local_apps)
+        for db_mod in db_modules:
+            all_app_slugs.add(db_mod.slug)
+            
         app_permissions = []
-        for app in local_apps:
+        for app in sorted(list(all_app_slugs)):
             perm_app = PermisoApp.objects.filter(user=target_user, app_label=app).first()
             
-            # Get models for this app
-            try:
-                app_config = apps.get_app_config(app)
-                app_models = []
-                for model in app_config.get_models():
-                    model_name = model.__name__
-                    perm_mod = PermisoModelo.objects.filter(user=target_user, app_label=app, model_name=model_name).first()
-                    app_models.append({
-                        'name': model_name,
-                        'verbose_name': model._meta.verbose_name.title(),
-                        'permitido': perm_mod.permitido if perm_mod else False # Cambiado a False por defecto (Zero Trust)
-                    })
-            except LookupError:
-                app_models = []
+            # Get models for this slug if it's a Django App
+            app_models = []
+            if app in local_apps:
+                try:
+                    app_config = apps.get_app_config(app)
+                    for model in app_config.get_models():
+                        model_name = model.__name__
+                        perm_mod = PermisoModelo.objects.filter(user=target_user, app_label=app, model_name=model_name).first()
+                        app_models.append({
+                            'name': model_name,
+                            'verbose_name': model._meta.verbose_name.title(),
+                            'permitido': perm_mod.permitido if perm_mod else False
+                        })
+                except LookupError:
+                    pass
+
+            # Find display name (if in DB use name, else use slug)
+            db_mod_info = db_modules.filter(slug=app).first()
+            display_name = db_mod_info.name if db_mod_info else app.replace('_', ' ').title()
 
             app_permissions.append({
-                'label': app.replace('_', ' ').title(),
+                'label': display_name,
                 'slug': app,
                 'permitido': perm_app.permitido if perm_app else False,
-                'models': app_models
+                'models': app_models,
+                'is_db': db_mod_info is not None
             })
             
         context['target_user'] = target_user

@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Consulta externa de contratos</title>
+  <link rel="stylesheet" href="./styles.css">
+  <script src="./assets/pdf-lib.min.js"></script>
+</head>
+<body>
+  <main class="container">
+    <h1>Consulta de contrato y soportes</h1>
+    <p class="hint">Formulario independiente para consultar por cédula y visualizar soportes existentes.</p>
+
+    <form id="form-consulta" class="form">
+      <label>
+        Cédula
+        <input id="cedula" type="text" placeholder="Ingrese la cédula" required>
+      </label>
+      <label>
+        Mes
+        <select id="mes" required>
+          <option value="">Seleccione...</option>
+          <option value="1">Enero</option>
+          <option value="2">Febrero</option>
+          <option value="3">Marzo</option>
+          <option value="4">Abril</option>
+          <option value="5">Mayo</option>
+          <option value="6">Junio</option>
+          <option value="7">Julio</option>
+          <option value="8">Agosto</option>
+          <option value="9">Septiembre</option>
+          <option value="10">Octubre</option>
+          <option value="11">Noviembre</option>
+          <option value="12">Diciembre</option>
+        </select>
+      </label>
+      <label>
+        Año
+        <input id="anio" type="number" min="2000" max="2100" placeholder="2026" required>
+      </label>
+      <button type="submit">Buscar</button>
+    </form>
+
+    <section id="estado" class="estado" aria-live="polite"></section>
+    <section id="resultados"></section>
+  </main>
+
+  <dialog id="visor-modal">
+    <div class="modal-header">
+      <strong id="visor-titulo">Documento</strong>
+      <button id="cerrar-modal" type="button">Cerrar</button>
+    </div>
+    <label class="selector-wrap">
+      Contrato
+      <select id="selector-contrato"></select>
+    </label>
+    <iframe id="visor-pdf" title="Visor de documento"></iframe>
+    <a id="descargar-pdf" href="#" download>Descargar PDF</a>
+  </dialog>
+
+  <script type="module" src="./app.js"></script>
+</body>
+</html>

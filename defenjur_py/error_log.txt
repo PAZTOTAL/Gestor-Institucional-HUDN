@@ -1,0 +1,1 @@
+InterfaceError('IM002', '[IM002] [Microsoft][Administrador de controladores ODBC] No se encuentra el nombre del origen de datos y no se especificó ningún controlador predeterminado (0) (SQLDriverConnect)')

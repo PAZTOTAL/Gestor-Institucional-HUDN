@@ -35,9 +35,8 @@ class HospitalRouter:
 
     def allow_migrate(self, db, app_label, model_name=None, **hints):
         """
-        Make sure the auth and contenttypes apps only appear in the
-        'auth_db' database.
+        Do not allow migrations for external apps (consultas_externas, consultas)
         """
         if app_label in self.route_app_labels:
-            return db == 'readonly'
-        return None
+            return False
+        return db == 'default'

@@ -40,4 +40,8 @@ urlpatterns = [
     path('trasplantes-donacion/', include('trasplantes_donacion.urls')),
     path('certificados-dian/', include('CertificadosDIAN.urls')),
     path('horas-extras/', include('horas_extras.urls')),
+    path('certificados-laborales/', include('certificados_laborales.urls')),
+    path('defenjur/', include('defenjur_py.legal.urls')),
+    path('organigrama/', include('A_00_Organigrama.urls')),
+    path('visor-soportes/', include('visor_soportes.urls')),
 ]

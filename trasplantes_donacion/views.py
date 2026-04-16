@@ -9,7 +9,7 @@ from datetime import timedelta
 from django.utils import timezone
 from consultas_externas.models import Adningreso, Genpacien, Hcninterr, Hcnfolio
 import pandas as pd
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from io import BytesIO
 
 class DashboardView(LoginRequiredMixin, ListView):
@@ -24,7 +24,7 @@ class DashboardView(LoginRequiredMixin, ListView):
         # Estadísticas rápidas
         context['total_pacientes'] = PacienteNeurocritico.objects.count()
         context['alertados'] = PacienteNeurocritico.objects.filter(
-            glasgow_ingreso__in=[3, 4, 5]
+            glasgow_ingreso__gte=1, glasgow_ingreso__lte=5
         ).count()
         context['donantes_efectivos'] = PacienteNeurocritico.objects.filter(donante_efectivo='SI').count()
         return context
@@ -37,7 +37,7 @@ class AlertasView(LoginRequiredMixin, ListView):
     def get_queryset(self):
         # Criterios de alerta: Glasgow 1, 2, 3 o 5
         return PacienteNeurocritico.objects.filter(
-            glasgow_ingreso__in=[3, 4, 5]
+            glasgow_ingreso__gte=1, glasgow_ingreso__lte=5
         ).order_by('-fecha_identificacion')
 
 def sync_excel(request):
@@ -47,8 +47,8 @@ def sync_excel(request):
     """
     try:
         # 1. Consultar registros de historia clínica con Glasgow requerido
-        evaluaciones = Hcninterr.objects.only('oid', 'hcnfolio', 'hciglasgow').filter(
-            hciglasgow__in=[3, 4, 5]
+        evaluaciones = Hcninterr.objects.using('readonly').only('oid', 'hcnfolio', 'hciglasgow').filter(
+            hciglasgow__gte=1, hciglasgow__lte=5
         ).order_by('-oid')[:500] 
         
         data = []
@@ -142,7 +142,7 @@ def sync_excel(request):
             data.append(row)
 
         if not data:
-            messages.warning(request, "No se encontraron pacientes que cumplan con los criterios de Glasgow (1, 2, 3, 5) en los registros recientes.")
+            messages.warning(request, "No se encontraron pacientes que cumplan con los criterios de Glasgow (1-5) en los registros recientes.")
             return redirect('trasplantes_donacion:dashboard')
 
         # Crear DataFrame
@@ -181,68 +181,267 @@ def sync_excel(request):
         return redirect('trasplantes_donacion:dashboard')
 def sync_husn(request):
     """
-    Sincroniza los pacientes ACTIVOS del hospital que cumplen con el criterio
-    de Glasgow (3-5) para trasplantes y donación.
+    Sincroniza los pacientes ACTIVOS del hospital con diagnósticos
+    neurocerebrales (CIE10: G9x, I6x, S06, R40, G40, G41) relevantes
+    para el seguimiento de trasplantes y donación.
     """
+    from django.db import connections
+
     try:
-        # 1. Obtener admisiones activas (pacientes que no han egresado)
-        admisiones_activas = Adningreso.objects.filter(ainfecegre__isnull=True).select_related('genpacien')
-        
+        cursor = connections['readonly'].cursor()
+
+        # Buscar pacientes activos con diagnósticos neurocerebrales
+        # CIE10: G9x (cerebro), I6x (cerebrovascular), S06 (trauma craneal),
+        #        R40 (coma/somnolencia), G40-G41 (epilepsia)
+        cursor.execute("""
+            SELECT TOP 10
+                dp.GENDIAGNO,
+                dg.DIACODIGO,
+                dg.DIANOMBRE,
+                f.ADNINGRESO,
+                f.GENPACIEN,
+                a.AINFECING,
+                a.AINMOTCON,
+                p.PACNUMDOC,
+                p.PACTIPDOC,
+                p.PACPRINOM,
+                p.PACSEGNOM,
+                p.PACPRIAPE,
+                p.PACSEGAPE,
+                p.GPAFECNAC,
+                p.GPASEXPAC
+            FROM HCNDIAPAC dp
+            INNER JOIN GENDIAGNO dg ON dp.GENDIAGNO = dg.OID
+            INNER JOIN HCNFOLIO f ON dp.HCNFOLIO = f.OID
+            INNER JOIN ADNINGRESO a ON f.ADNINGRESO = a.OID
+            INNER JOIN GENPACIEN p ON f.GENPACIEN = p.OID
+            WHERE a.AINFECEGRE IS NULL
+              AND (
+                dg.DIACODIGO LIKE 'G9[0-9]%'
+                OR dg.DIACODIGO LIKE 'I6[0-9]%'
+                OR dg.DIACODIGO LIKE 'S06%'
+                OR dg.DIACODIGO LIKE 'R40%'
+                OR dg.DIACODIGO LIKE 'G4[0-1]%'
+              )
+              AND p.PACNUMDOC IS NOT NULL
+            ORDER BY dp.OID DESC
+        """)
+
+        rows = cursor.fetchall()
         count = 0
-        for ing in admisiones_activas:
-            # 2. Buscar folios asociados a esta admisión
-            folios_ids = Hcnfolio.objects.filter(adningreso=ing.oid).values_list('oid', flat=True)
-            if not folios_ids:
-                continue
-            
-            # 3. Buscar la evaluación de Glasgow más reciente que esté en el rango 3-5
-            ev_reciente = Hcninterr.objects.filter(
-                hcnfolio__in=folios_ids,
-                hciglasgow__in=[3, 4, 5]
-            ).order_by('-oid').first()
+        errores = 0
+        procesados = set()
 
-            if not ev_reciente:
-                continue
-                
-            pac = ing.genpacien
-            if not pac:
-                continue
-                
-            # Calcular edad
-            edad = None
-            if pac.gpafecnac:
-                diff = timezone.now().date() - pac.gpafecnac.date()
-                edad = diff.days // 365
-            
-            sexo_str = "M" if pac.gpasexpac == 1 else "F" if pac.gpasexpac == 2 else "Indefinido"
+        for row in rows:
+            try:
+                (diag_oid, cie10_code, cie10_nombre, ing_oid, pac_oid,
+                 fecha_ing, motivo, numdoc, tipdoc, prinom, segnom,
+                 priape, segape, fecnac, sexpac) = row
 
-            # 4. Crear o actualizar en la base de datos local
-            PacienteNeurocritico.objects.update_or_create(
-                numero_documento=pac.pacnumdoc,
-                defaults={
-                    'tipo_identificacion': str(pac.pactipdoc or ''),
-                    'primer_nombre': pac.pacprinom or '',
-                    'segundo_nombre': pac.pacsegnom or '',
-                    'primer_apellido': pac.pacpriape or '',
-                    'segundo_apellido': pac.pacsegape or '',
-                    'fecha_nacimiento': pac.gpafecnac,
-                    'sexo': sexo_str,
-                    'edad': edad,
-                    'fecha_ingreso': ing.ainfecing,
-                    'glasgow_ingreso': int(ev_reciente.hciglasgow),
-                    'diagnostico': ing.ainmotcon or 'Ingreso automático HUSN',
-                    'fecha_identificacion': timezone.now(),
-                    'busqueda_activa': 'SI',
-                }
-            )
-            count += 1
-            
+                numdoc_str = str(numdoc).strip()
+                if numdoc_str in procesados:
+                    continue
+                procesados.add(numdoc_str)
+
+                # Calcular edad
+                edad = None
+                if fecnac:
+                    try:
+                        fec = fecnac.date() if hasattr(fecnac, 'date') else fecnac
+                        diff = timezone.now().date() - fec
+                        edad = diff.days // 365
+                    except Exception:
+                        pass
+
+                sexo_str = "M" if sexpac == 1 else "F" if sexpac == 2 else "Indefinido"
+                cie10_str = f"{(cie10_code or '').strip()}"
+                diag_str = f"{(cie10_nombre or motivo or 'Diagnóstico neurocrítico').strip()}"
+
+                # Guardar en la base de datos local
+                PacienteNeurocritico.objects.update_or_create(
+                    numero_documento=numdoc_str,
+                    defaults={
+                        'tipo_identificacion': str(tipdoc or ''),
+                        'primer_nombre': (prinom or '').strip(),
+                        'segundo_nombre': (segnom or '').strip(),
+                        'primer_apellido': (priape or '').strip(),
+                        'segundo_apellido': (segape or '').strip(),
+                        'fecha_nacimiento': fecnac,
+                        'sexo': sexo_str,
+                        'edad': edad,
+                        'fecha_ingreso': fecha_ing,
+                        'glasgow_ingreso': 0,
+                        'codigo_cie10': cie10_str,
+                        'diagnostico': diag_str,
+                        'fecha_identificacion': timezone.now(),
+                        'busqueda_activa': 'SI',
+                    }
+                )
+                count += 1
+
+            except Exception:
+                errores += 1
+                continue
+
         if count > 0:
-            messages.success(request, f'Sincronización Exitosa: Se encontraron {count} pacientes activos con Glasgow 3-5.')
+            msg = f'✅ Sincronización Exitosa: {count} pacientes neurocríticos activos cargados.'
+            if errores > 0:
+                msg += f' ({errores} omitidos por errores)'
+            messages.success(request, msg)
         else:
-            messages.info(request, 'No se encontraron nuevos pacientes activos con Glasgow 3-5 en la base de datos del hospital.')
-            
+            msg = 'No se encontraron pacientes activos con diagnósticos neurocerebrales.'
+            if errores > 0:
+                msg += f' ({errores} registros con errores)'
+            messages.warning(request, msg)
+
     except Exception as e:
-        messages.error(request, f'Error al sincronizar con el Hospital: {e}')
-    
+        import traceback
+        tb = traceback.format_exc()
+        messages.error(request, f'Error al sincronizar: {e}')
+        messages.info(request, f'Detalle: {tb[-500:]}')
+
     return redirect('trasplantes_donacion:dashboard')
+
+
+def historia_clinica_api(request, pk):
+    """
+    Retorna datos de historia clínica del paciente desde la base hospitalaria.
+    Incluye: diagnósticos, evaluaciones, notas de enfermería, medicamentos.
+    """
+    from django.db import connections
+
+    paciente = PacienteNeurocritico.objects.filter(pk=pk).first()
+    if not paciente:
+        return JsonResponse({'error': 'Paciente no encontrado'}, status=404)
+
+    data = {
+        'paciente': {
+            'nombre': f"{paciente.primer_nombre} {paciente.segundo_nombre or ''} {paciente.primer_apellido} {paciente.segundo_apellido or ''}".strip(),
+            'documento': f"{paciente.tipo_identificacion} {paciente.numero_documento}",
+            'sexo': paciente.sexo,
+            'edad': paciente.edad,
+            'fecha_nacimiento': paciente.fecha_nacimiento.strftime('%d/%m/%Y') if paciente.fecha_nacimiento else '-',
+            'fecha_ingreso': paciente.fecha_ingreso.strftime('%d/%m/%Y %H:%M') if paciente.fecha_ingreso else '-',
+            'glasgow': paciente.glasgow_ingreso,
+            'cie10': paciente.codigo_cie10 or '-',
+            'diagnostico_principal': paciente.diagnostico or '-',
+            'servicio': paciente.servicio or '-',
+            'busqueda_activa': paciente.busqueda_activa or '-',
+        },
+        'diagnosticos': [],
+        'evaluaciones': [],
+        'notas_enfermeria': [],
+        'medicamentos': [],
+    }
+
+    try:
+        cursor = connections['readonly'].cursor()
+
+        # Buscar el ingreso activo de este paciente
+        cursor.execute("""
+            SELECT TOP 1 a.OID
+            FROM ADNINGRESO a
+            INNER JOIN GENPACIEN p ON a.GENPACIEN = p.OID
+            WHERE p.PACNUMDOC = %s AND a.AINFECEGRE IS NULL
+            ORDER BY a.AINFECING DESC
+        """, [paciente.numero_documento])
+        ing_row = cursor.fetchone()
+
+        if not ing_row:
+            return JsonResponse(data)
+
+        ing_oid = ing_row[0]
+
+        # Obtener folios del ingreso
+        cursor.execute("""
+            SELECT OID FROM HCNFOLIO WHERE ADNINGRESO = %s ORDER BY OID DESC
+        """, [ing_oid])
+        folios = [r[0] for r in cursor.fetchall()]
+
+        if not folios:
+            return JsonResponse(data)
+
+        folio_ids = ','.join([str(f) for f in folios])
+
+        # 1. DIAGNÓSTICOS
+        cursor.execute(f"""
+            SELECT dg.DIACODIGO, dg.DIANOMBRE, dp.HCPDIAPRIN
+            FROM HCNDIAPAC dp
+            LEFT JOIN GENDIAGNO dg ON dp.GENDIAGNO = dg.OID
+            WHERE dp.HCNFOLIO IN ({folio_ids})
+            ORDER BY dp.HCPDIAPRIN DESC, dp.OID DESC
+        """)
+        seen_diag = set()
+        for r in cursor.fetchall():
+            codigo = (r[0] or '').strip()
+            nombre = (r[1] or '').strip()
+            key = f"{codigo}-{nombre}"
+            if key in seen_diag:
+                continue
+            seen_diag.add(key)
+            data['diagnosticos'].append({
+                'codigo': codigo,
+                'nombre': nombre,
+                'principal': bool(r[2]),
+            })
+
+        # 2. EVALUACIONES / INTERCONSULTAS
+        cursor.execute(f"""
+            SELECT OID, HCIGLASGOW, HCIFRCCRD, HCIFRCRES, HCITEMPER, HCISATURA,
+                   CAST(HCIDETRES AS NVARCHAR(MAX)),
+                   CAST(HCITRATAM AS NVARCHAR(MAX)),
+                   CAST(HCIANAOBJ AS NVARCHAR(MAX))
+            FROM HCNINTERR
+            WHERE HCNFOLIO IN ({folio_ids})
+            ORDER BY OID DESC
+        """)
+        for r in cursor.fetchall():
+            data['evaluaciones'].append({
+                'glasgow': float(r[1]) if r[1] else None,
+                'fc': float(r[2]) if r[2] else None,
+                'fr': float(r[3]) if r[3] else None,
+                'temperatura': float(r[4]) if r[4] else None,
+                'saturacion': float(r[5]) if r[5] else None,
+                'detalle': (r[6] or '')[:500].strip(),
+                'tratamiento': (r[7] or '')[:500].strip(),
+                'analisis': (r[8] or '')[:500].strip(),
+            })
+
+        # 3. NOTAS DE ENFERMERÍA
+        cursor.execute(f"""
+            SELECT n.HCRHORREG, n.HCNTITULO,
+                   CAST(n.HCNSUBOBJ AS NVARCHAR(MAX)),
+                   CAST(n.HCNANAPLAN AS NVARCHAR(MAX))
+            FROM HCNNOTENF n
+            INNER JOIN HCNFOLIO f ON n.HCNREGENF = f.OID
+            WHERE f.ADNINGRESO = %s
+            ORDER BY n.OID DESC
+        """, [ing_oid])
+        for r in cursor.fetchall():
+            data['notas_enfermeria'].append({
+                'fecha': r[0].strftime('%d/%m/%Y %H:%M') if r[0] else '-',
+                'titulo': (r[1] or '').strip(),
+                'contenido': (r[2] or '')[:500].strip(),
+                'plan': (r[3] or '')[:500].strip(),
+            })
+
+        # 4. MEDICAMENTOS
+        cursor.execute(f"""
+            SELECT cm.HCRHORREG, cm.HCDOSIS, cm.HCOBSERVA, cm.HCCANTIDAD
+            FROM HCNCONMED cm
+            INNER JOIN HCNFOLIO f ON cm.HCNMEDPAC = f.OID
+            WHERE f.ADNINGRESO = %s
+            ORDER BY cm.OID DESC
+        """, [ing_oid])
+        for r in cursor.fetchall():
+            data['medicamentos'].append({
+                'fecha': r[0].strftime('%d/%m/%Y %H:%M') if r[0] else '-',
+                'dosis': (r[1] or '').strip() if r[1] else '-',
+                'observacion': (r[2] or '').strip() if r[2] else '-',
+                'cantidad': float(r[3]) if r[3] else None,
+            })
+
+    except Exception as e:
+        data['error_detalle'] = str(e)
+
+    return JsonResponse(data)

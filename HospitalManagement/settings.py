@@ -65,6 +65,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'core',
+    'defenjur_py.legal',
+
     'A_00_Organigrama',
     'usuarios',# Apps migradas desde AdmonAlexaTotal
     'BasesGenerales',
@@ -84,6 +86,10 @@ INSTALLED_APPS = [
     'trasplantes_donacion',
     'CertificadosDIAN',
     'horas_extras',
+    'frecuenciafetal',
+    'obstetriciaunificador',
+    'certificados_laborales',
+    'visor_soportes',
 ]
 
 MIDDLEWARE = [
@@ -102,7 +108,7 @@ ROOT_URLCONF = 'HospitalManagement.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR / 'defenjur_py' / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -123,34 +129,37 @@ WSGI_APPLICATION = 'HospitalManagement.wsgi.application'
  
 
 # CONFIGURACION DE ENTORNO
-# Opciones: 'CASA', 'OFICINA'
-UBICACION = os.getenv('UBICACION', 'CASA')  # <--- SE TOMA DEL ARCHIVO .env
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
-}
-
-if UBICACION == 'OFICINA':
-    # La conexión MSSQL solo se activa si el servidor está disponible
-    DATABASES['readonly'] = {
         'ENGINE': 'mssql',
-        'NAME': 'DGEMPRES_NEXUS',
+        'NAME': 'GestorInstitucional',
         'USER': 'apantoja',
         'PASSWORD': 'ConsultasPantojaHUDN_2026$', 
         'HOST': '172.20.100.209',
         'PORT': '',
+        'CONN_MAX_AGE': 600,  # Reusar conexiones por 10 minutos (evita reconexión en cada request)
+        'OPTIONS': {
+            'driver': 'ODBC Driver 17 for SQL Server',
+            'timeout': 60,
+        },
+    },
+    'readonly': {
+        'ENGINE': 'mssql',
+        'NAME': 'DGEMPRES01',
+        'USER': 'DSOLARTE',
+        'PASSWORD': 'ConsultaHUDN2026*/$', 
+        'HOST': '172.20.100.209',
+        'PORT': '',
+        'CONN_MAX_AGE': 600,  # Reusar conexiones por 10 minutos
         'OPTIONS': {
             'driver': 'ODBC Driver 17 for SQL Server',
             'host_is_server': True,
-            'timeout': 5, # Timeout corto para no colgar la app
+            'timeout': 5,  # Timeout reducido para consultas de lectura
+            'connection_timeout': 3,  # Timeout de conexión rápido
         },
     }
-else:
-    # DESARROLLO LOCAL
-    DATABASES['readonly'] = DATABASES['default'].copy()
+}
 
 
 
@@ -211,6 +220,7 @@ STATIC_URL = 'static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_DIRS = [
     BASE_DIR / 'static',
+    BASE_DIR / 'defenjur_py' / 'static',
 ]
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
