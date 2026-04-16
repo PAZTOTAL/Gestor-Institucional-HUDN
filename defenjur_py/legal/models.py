@@ -1,24 +1,45 @@
 from django.db import models
 from django.utils import timezone as django_timezone
 
+# Diccionarios (Enums) para asegurar integridad en dashboard
+ESTADO_CHOICES = [
+    ('ACTIVO', 'Activo'),
+    ('INACTIVO', 'Inactivo'),
+    ('TERMINADO', 'Terminado'),
+    ('TRAMITE', 'En Trámite'),
+]
+
+MEDIO_CONTROL_CHOICES = [
+    ('REPARACION_DIRECTA', 'Reparación Directa'),
+    ('NULIDAD_RESTABLECIMIENTO', 'Nulidad y Restablecimiento del Derecho'),
+    ('ACCION_POPULAR', 'Acción Popular'),
+    ('ACCION_CUMPLIMIENTO', 'Acción de Cumplimiento'),
+    ('ACCION_TUTELA', 'Acción de Tutela'),
+    ('OTROS', 'Otros'),
+]
+
 class ProcesoExtrajudicial(models.Model):
     demandante = models.CharField(max_length=255)
     demandado = models.CharField(max_length=255)
     apoderado = models.CharField(max_length=255)
-    medio_control = models.CharField(max_length=255)
+    medio_control = models.CharField(max_length=255, choices=MEDIO_CONTROL_CHOICES, default='OTROS')
     despacho_conocimiento = models.TextField()
-    estado = models.CharField(max_length=120)
+    estado = models.CharField(max_length=120, choices=ESTADO_CHOICES, default='TRAMITE')
     clasificacion = models.CharField(max_length=120, null=True, blank=True)
     fecha_registro = models.DateTimeField(auto_now_add=True)
 
     class Meta:
+        db_table = 'defenjur_app_procesoextrajudicial'
         verbose_name_plural = "Procesos Extrajudiciales"
+        indexes = [
+            models.Index(fields=['apoderado']),
+        ]
 
 class ProcesoJudicialActiva(models.Model):
     num_proceso = models.CharField('N° proceso', max_length=255, null=True, blank=True)
     fecha_registro = models.DateTimeField('Fecha registro', auto_now_add=True)
     medio_control = models.CharField(
-        'Medio de control', max_length=255, null=True, blank=True,
+        'Medio de control', max_length=255, null=True, blank=True, choices=MEDIO_CONTROL_CHOICES
     )
     demandante = models.CharField('Demandante', max_length=255, null=True, blank=True)
     demandado = models.CharField('Demandado', max_length=255, null=True, blank=True)
@@ -36,14 +57,19 @@ class ProcesoJudicialActiva(models.Model):
     estado_actual = models.TextField('Estado actual', null=True, blank=True)
 
     class Meta:
+        db_table = 'defenjur_app_procesojudicialactiva'
         verbose_name = 'Proceso judicial activo'
         verbose_name_plural = 'Procesos Judiciales Activos'
+        indexes = [
+            models.Index(fields=['num_proceso']),
+            models.Index(fields=['apoderado']),
+        ]
 
 class ProcesoJudicialPasiva(models.Model):
     num_proceso = models.CharField('N° proceso', max_length=255, null=True, blank=True)
     fecha_registro = models.DateTimeField('Fecha registro', auto_now_add=True)
     medio_control = models.CharField(
-        'Medio de control', max_length=255, null=True, blank=True,
+        'Medio de control', max_length=255, null=True, blank=True, choices=MEDIO_CONTROL_CHOICES
     )
     demandante = models.CharField('Demandante', max_length=255, null=True, blank=True)
     cc_demandante = models.CharField('C.C. demandante', max_length=255, null=True, blank=True)
@@ -73,8 +99,13 @@ class ProcesoJudicialPasiva(models.Model):
     observaciones = models.TextField('Observaciones', null=True, blank=True)
 
     class Meta:
+        db_table = 'defenjur_app_procesojudicialpasiva'
         verbose_name = 'Proceso judicial pasivo'
         verbose_name_plural = 'Procesos Judiciales Pasivos'
+        indexes = [
+            models.Index(fields=['num_proceso']),
+            models.Index(fields=['apoderado']),
+        ]
 
 class DerechoPeticion(models.Model):
     fecha_correo = models.CharField(
@@ -133,14 +164,18 @@ class DerechoPeticion(models.Model):
     observaciones = models.TextField('Observaciones', null=True, blank=True)
 
     class Meta:
+        db_table = 'defenjur_app_derechopeticion'
         verbose_name = 'Derecho de petición'
         verbose_name_plural = 'Derechos de Petición'
+        indexes = [
+            models.Index(fields=['num_reparto']),
+            models.Index(fields=['abogado_responsable']),
+        ]
 
 class AccionTutela(models.Model):
     fecha_llegada = models.CharField(max_length=255, null=True, blank=True)
     num_reparto = models.CharField(max_length=255, null=True, blank=True)
     fecha_reparto = models.CharField(max_length=255, null=True, blank=True)
-    # Alineados con el formato tipo “Derechos de Petición” (Excel / trazabilidad interna)
     fecha_correo = models.CharField(max_length=255, null=True, blank=True)
     solicitante = models.CharField(max_length=255, null=True, blank=True)
     peticionario = models.CharField(max_length=255, null=True, blank=True)
@@ -175,7 +210,13 @@ class AccionTutela(models.Model):
     fallo_desacato = models.TextField(null=True, blank=True)
 
     class Meta:
+        db_table = 'defenjur_app_acciontutela'
         verbose_name_plural = "Acciones de Tutela"
+        indexes = [
+            models.Index(fields=['num_proceso']),
+            models.Index(fields=['num_reparto']),
+            models.Index(fields=['abogado_responsable']),
+        ]
 
 class ArchivoAdjunto(models.Model):
     tipo_asociado = models.CharField(max_length=100)
@@ -184,10 +225,11 @@ class ArchivoAdjunto(models.Model):
     nombre_original = models.CharField(max_length=255)
     fecha_carga = models.DateTimeField(auto_now_add=True)
 
+    class Meta:
+        db_table = 'defenjur_app_archivoadjunto'
+
     def __str__(self):
         return f"{self.tipo_asociado} - {self.nombre_original}"
-
-# ─── Nuevos modelos ───────────────────────────────────────────────────────────
 
 class Peritaje(models.Model):
     fecha_correo_electronico = models.CharField(
@@ -214,8 +256,13 @@ class Peritaje(models.Model):
     fecha_registro = models.DateTimeField('Fecha registro', auto_now_add=True)
 
     class Meta:
+        db_table = 'defenjur_app_peritaje'
         verbose_name = 'Peritaje'
         verbose_name_plural = 'Peritajes'
+        indexes = [
+            models.Index(fields=['num_proceso']),
+            models.Index(fields=['abogado_responsable']),
+        ]
 
 class PagoSentenciaJudicial(models.Model):
     num_proceso = models.CharField('N° proceso', max_length=255, null=True, blank=True)
@@ -223,12 +270,12 @@ class PagoSentenciaJudicial(models.Model):
         'Despacho tramitante', max_length=255, null=True, blank=True,
     )
     medio_control = models.CharField(
-        'Medio de control', max_length=255, null=True, blank=True,
+        'Medio de control', max_length=255, null=True, blank=True, choices=MEDIO_CONTROL_CHOICES
     )
     demandante = models.CharField('Demandante', max_length=255, null=True, blank=True)
     demandado = models.CharField('Demandado', max_length=255, null=True, blank=True)
     valor_pagado = models.CharField('Valor pagado', max_length=255, null=True, blank=True)
-    estado = models.CharField('Estado', max_length=255, null=True, blank=True)
+    estado = models.CharField('Estado', max_length=255, null=True, blank=True, choices=ESTADO_CHOICES)
     tipo_pago = models.CharField('Tipo de pago', max_length=255, null=True, blank=True)
     abogado_responsable = models.CharField(
         'Abogado responsable', max_length=255, null=True, blank=True,
@@ -245,13 +292,17 @@ class PagoSentenciaJudicial(models.Model):
     )
 
     class Meta:
+        db_table = 'defenjur_app_pagosentenciajudicial'
         verbose_name = 'Pago de sentencia judicial'
         verbose_name_plural = 'Pagos de Sentencias Judiciales'
+        indexes = [
+            models.Index(fields=['num_proceso']),
+        ]
 
 class ProcesoJudicialTerminado(models.Model):
     num_proceso = models.CharField('N° proceso', max_length=255, null=True, blank=True)
     medio_control = models.CharField(
-        'Medio de control', max_length=255, null=True, blank=True,
+        'Medio de control', max_length=255, null=True, blank=True, choices=MEDIO_CONTROL_CHOICES
     )
     demandante = models.CharField('Demandante', max_length=255, null=True, blank=True)
     cc_demandante = models.CharField('C.C. demandante', max_length=255, null=True, blank=True)
@@ -287,14 +338,19 @@ class ProcesoJudicialTerminado(models.Model):
     fecha_registro = models.DateTimeField('Fecha registro', auto_now_add=True)
 
     class Meta:
+        db_table = 'defenjur_app_procesojudicialterminado'
         verbose_name = 'Proceso judicial terminado'
         verbose_name_plural = 'Procesos Judiciales Terminados'
+        indexes = [
+            models.Index(fields=['num_proceso']),
+            models.Index(fields=['apoderado']),
+        ]
 
 class ProcesoAdministrativoSancionatorio(models.Model):
     num_proceso = models.CharField('N° proceso', max_length=255, null=True, blank=True)
     entidad = models.CharField('Entidad', max_length=255, null=True, blank=True)
     causa = models.TextField('Causa', null=True, blank=True)
-    estado = models.CharField('Estado', max_length=120, null=True, blank=True)
+    estado = models.CharField(max_length=120, null=True, blank=True, choices=ESTADO_CHOICES)
     fecha_requerimiento = models.CharField(
         'Fecha requerimiento', max_length=255, null=True, blank=True,
     )
@@ -311,11 +367,14 @@ class ProcesoAdministrativoSancionatorio(models.Model):
     fecha_registro = models.DateTimeField('Fecha registro', auto_now_add=True)
 
     class Meta:
+        db_table = 'defenjur_app_procesoadministrativosancionatorio'
         verbose_name = 'Proceso administrativo sancionatorio'
         verbose_name_plural = 'Procesos Administrativos Sancionatorios'
+        indexes = [
+            models.Index(fields=['num_proceso']),
+        ]
 
 class RequerimientoEnteControl(models.Model):
-    """Orden de campos alineado a la grilla Excel (ID automático + columnas principales primero)."""
     num_reparto = models.CharField('N° reparto', max_length=255, null=True, blank=True)
     num_proceso = models.CharField('N° proceso', max_length=255, null=True, blank=True)
     fecha_correo_electronico = models.CharField(
@@ -346,5 +405,11 @@ class RequerimientoEnteControl(models.Model):
     fecha_registro = models.DateTimeField('Fecha registro', auto_now_add=True)
 
     class Meta:
+        db_table = 'defenjur_app_requerimientoentecontrol'
         verbose_name = 'Requerimiento de ente de control'
         verbose_name_plural = 'Requerimientos de Entes de Control'
+        indexes = [
+            models.Index(fields=['num_proceso']),
+            models.Index(fields=['num_reparto']),
+            models.Index(fields=['abogado_responsable']),
+        ]

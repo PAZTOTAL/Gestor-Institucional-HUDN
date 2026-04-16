@@ -10,107 +10,88 @@ from .models import (
 @admin.register(AccionTutela)
 class AccionTutelaAdmin(admin.ModelAdmin):
     list_display = [
-        'id', 'num_reparto', 'fecha_correo', 'solicitante', 'peticionario',
-        'accionante', 'abogado_responsable', 'fecha_llegada',
+        'id', 'num_proceso', 'fecha_llegada', 'despacho_judicial', 
+        'accionante', 'accionado', 'abogado_responsable'
     ]
-    search_fields = [
-        'accionante', 'solicitante', 'peticionario', 'causa',
-        'identificacion_accionante', 'num_proceso', 'num_reparto',
-    ]
-    list_filter = ['abogado_responsable', 'area_responsable']
-
-@admin.register(PagoSentenciaJudicial)
-class PagoSentenciaJudicialAdmin(admin.ModelAdmin):
-    list_display = [
-        'id', 'num_proceso', 'fecha_pago', 'despacho_tramitante',
-        'medio_control', 'demandante', 'demandado', 'valor_pagado', 'estado',
-    ]
-    search_fields = [
-        'num_proceso', 'fecha_pago', 'despacho_tramitante', 'medio_control',
-        'demandante', 'demandado', 'abogado_responsable',
-    ]
-    list_filter = ['estado']
-
-
-@admin.register(Peritaje)
-class PeritajeAdmin(admin.ModelAdmin):
-    list_display = [
-        'id', 'num_proceso', 'fecha_correo_electronico', 'entidad_remitente_requerimiento',
-        'demandante', 'demandado', 'abogado_responsable', 'perito_asignado',
-    ]
-    search_fields = [
-        'num_proceso', 'fecha_correo_electronico', 'entidad_remitente_requerimiento',
-        'demandante', 'demandado', 'abogado_responsable', 'asunto',
-    ]
-
+    search_fields = ['num_proceso', 'num_reparto', 'abogado_responsable', 'accionante', 'accionado']
+    list_filter = ['abogado_responsable']
 
 @admin.register(DerechoPeticion)
 class DerechoPeticionAdmin(admin.ModelAdmin):
     list_display = [
-        'id', 'num_reparto', 'fecha_correo', 'nombre_persona_solicitante',
-        'peticionario', 'abogado_responsable',
+        'id', 'num_reparto', 'fecha_correo', 'nombre_persona_solicitante', 
+        'peticionario', 'causa_peticion', 'abogado_responsable'
     ]
-    search_fields = [
-        'num_reparto', 'fecha_correo', 'nombre_persona_solicitante', 'peticionario',
-        'causa_peticion', 'abogado_responsable', 'cedula_persona_solicitante',
+    search_fields = ['num_reparto', 'abogado_responsable', 'nombre_persona_solicitante', 'peticionario']
+    list_filter = ['abogado_responsable']
+
+@admin.register(PagoSentenciaJudicial)
+class PagoSentenciaJudicialAdmin(admin.ModelAdmin):
+    list_display = [
+        'id', 'num_proceso', 'fecha_pago', 'despacho_tramitante', 
+        'medio_control', 'demandante', 'demandado'
     ]
+    search_fields = ['num_proceso', 'demandante', 'demandado']
+    list_filter = ['medio_control', 'estado']
+
+@admin.register(Peritaje)
+class PeritajeAdmin(admin.ModelAdmin):
+    list_display = [
+        'id', 'num_proceso', 'fecha_correo_electronico', 
+        'entidad_remitente_requerimiento', 'demandante', 'demandado', 'abogado_responsable'
+    ]
+    search_fields = ['num_proceso', 'abogado_responsable', 'demandante', 'demandado']
+    list_filter = ['abogado_responsable']
 
 @admin.register(ProcesoAdministrativoSancionatorio)
 class ProcesoAdministrativoSancionatorioAdmin(admin.ModelAdmin):
     list_display = [
-        'id', 'num_proceso', 'fecha_requerimiento', 'entidad',
-        'estado', 'entidad_solicitante_requerimiento',
+        'id', 'num_proceso', 'fecha_requerimiento', 'entidad', 
+        'causa', 'estado', 'entidad_solicitante_requerimiento'
     ]
-    search_fields = [
-        'num_proceso', 'fecha_requerimiento', 'entidad', 'causa', 'estado',
-        'entidad_solicitante_requerimiento', 'objeto_requerimiento',
-    ]
+    search_fields = ['num_proceso', 'entidad', 'entidad_solicitante_requerimiento']
     list_filter = ['estado']
 
+@admin.register(ProcesoExtrajudicial)
+class ProcesoExtrajudicialAdmin(admin.ModelAdmin):
+    list_display = [
+        'id', 'demandante', 'demandado', 'apoderado', 
+        'medio_control', 'despacho_conocimiento', 'estado'
+    ]
+    search_fields = ['demandante', 'demandado', 'apoderado']
+    list_filter = ['estado', 'medio_control']
 
 @admin.register(ProcesoJudicialActiva)
 class ProcesoJudicialActivaAdmin(admin.ModelAdmin):
     list_display = [
-        'id', 'num_proceso', 'demandante', 'demandado', 'apoderado', 'despacho_actual', 'medio_control',
+        'id', 'num_proceso', 'demandante', 'demandado', 'apoderado', 'despacho_actual'
     ]
-    search_fields = [
-        'num_proceso', 'demandante', 'demandado', 'apoderado', 'despacho_actual', 'medio_control',
-    ]
-
+    search_fields = ['num_proceso', 'apoderado', 'demandante', 'demandado']
+    list_filter = ['apoderado', 'medio_control']
 
 @admin.register(ProcesoJudicialPasiva)
 class ProcesoJudicialPasivaAdmin(admin.ModelAdmin):
     list_display = [
-        'id', 'num_proceso', 'demandante', 'demandado', 'apoderado', 'despacho_actual', 'medio_control',
+        'id', 'num_proceso', 'demandante', 'demandado', 'apoderado', 'despacho_actual'
     ]
-    search_fields = [
-        'num_proceso', 'demandante', 'demandado', 'cc_demandante', 'apoderado', 'despacho_actual',
-        'medio_control',
-    ]
-
+    search_fields = ['num_proceso', 'apoderado', 'demandante', 'demandado']
+    list_filter = ['apoderado', 'medio_control']
 
 @admin.register(ProcesoJudicialTerminado)
 class ProcesoJudicialTerminadoAdmin(admin.ModelAdmin):
     list_display = [
-        'id', 'num_proceso', 'demandante', 'demandado', 'apoderado', 'despacho_actual', 'medio_control',
+        'id', 'num_proceso', 'demandante', 'demandado', 'apoderado', 'despacho_actual'
     ]
-    search_fields = [
-        'num_proceso', 'demandante', 'demandado', 'cc_demandante', 'apoderado', 'despacho_actual',
-        'medio_control',
-    ]
-
+    search_fields = ['num_proceso', 'apoderado', 'demandante', 'demandado']
+    list_filter = ['apoderado', 'medio_control']
 
 @admin.register(RequerimientoEnteControl)
 class RequerimientoEnteControlAdmin(admin.ModelAdmin):
     list_display = [
-        'id', 'num_reparto', 'num_proceso', 'fecha_correo_electronico',
-        'entidad_remitente_requerimiento', 'asunto', 'abogado_responsable',
+        'id', 'num_reparto', 'num_proceso', 'fecha_correo_electronico', 
+        'entidad_remitente_requerimiento', 'asunto', 'abogado_responsable'
     ]
-    search_fields = [
-        'num_reparto', 'num_proceso', 'fecha_correo_electronico',
-        'entidad_remitente_requerimiento', 'asunto', 'abogado_responsable', 'tipo_tramite',
-    ]
+    search_fields = ['num_reparto', 'num_proceso', 'abogado_responsable', 'entidad_remitente_requerimiento']
+    list_filter = ['abogado_responsable']
 
-
-admin.site.register(ProcesoExtrajudicial)
 admin.site.register(ArchivoAdjunto)
