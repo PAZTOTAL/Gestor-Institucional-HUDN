@@ -19,16 +19,9 @@ class PremiumModelForm(forms.ModelForm):
 class AccionTutelaForm(PremiumModelForm):
     class Meta:
         model = AccionTutela
-        fields = '__all__'
+        fields = ['num_proceso', 'fecha_llegada', 'despacho_judicial', 'accionante', 'accionado', 'abogado_responsable']
         widgets = {
-            'fecha_correo': forms.DateInput(attrs={'type': 'date'}),
             'fecha_llegada': forms.DateInput(attrs={'type': 'date'}),
-            'fecha_reparto': forms.DateInput(attrs={'type': 'date'}),
-            'fecha_respuesta_tramite': forms.DateInput(attrs={'type': 'date'}),
-            'fecha_fallo_primera_instancia': forms.DateInput(attrs={'type': 'date'}),
-            'fecha_impugnacion': forms.DateInput(attrs={'type': 'date'}),
-            'fecha_fallo_segunda_instancia': forms.DateInput(attrs={'type': 'date'}),
-            'fecha_tramite_desacato': forms.DateInput(attrs={'type': 'date'}),
         }
 
 class DerechoPeticionForm(PremiumModelForm):

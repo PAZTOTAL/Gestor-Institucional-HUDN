@@ -173,41 +173,16 @@ class DerechoPeticion(models.Model):
         ]
 
 class AccionTutela(models.Model):
-    fecha_llegada = models.CharField(max_length=255, null=True, blank=True)
-    num_reparto = models.CharField(max_length=255, null=True, blank=True)
-    fecha_reparto = models.CharField(max_length=255, null=True, blank=True)
-    fecha_correo = models.CharField(max_length=255, null=True, blank=True)
-    solicitante = models.CharField(max_length=255, null=True, blank=True)
-    peticionario = models.CharField(max_length=255, null=True, blank=True)
-    causa = models.TextField(null=True, blank=True)
-    num_proceso = models.CharField(max_length=255, null=True, blank=True)
-    despacho_judicial = models.CharField(max_length=255, null=True, blank=True)
-    area_responsable = models.CharField(max_length=255, null=True, blank=True)
-    accionante = models.CharField(max_length=255, null=True, blank=True)
-    tipo_identificacion_accionante = models.CharField(max_length=120, null=True, blank=True)
-    identificacion_accionante = models.CharField(max_length=120, null=True, blank=True)
-    accionado = models.CharField(max_length=255, null=True, blank=True)
-    vinculados = models.TextField(null=True, blank=True)
-    objeto_tutela = models.TextField(null=True, blank=True)
-    asunto_tutela = models.TextField(null=True, blank=True)
-    abogado_responsable = models.CharField(max_length=255, null=True, blank=True)
-    tipo_tramite = models.CharField(max_length=255, null=True, blank=True)
-    termino_dar_tramite = models.CharField(max_length=255, null=True, blank=True)
-    observaciones = models.TextField(null=True, blank=True)
-    tramite_impartido = models.TextField(null=True, blank=True)
-    fecha_respuesta_tramite = models.CharField(max_length=255, null=True, blank=True)
-    rad_interno_arch_central = models.CharField(max_length=255, null=True, blank=True)
-    fecha_fallo_primera_instancia = models.CharField(max_length=255, null=True, blank=True)
-    fallo_primera_instancia = models.TextField(null=True, blank=True)
-    impugnacion = models.CharField(max_length=255, null=True, blank=True)
-    fecha_impugnacion = models.CharField(max_length=255, null=True, blank=True)
-    fecha_fallo_segunda_instancia = models.CharField(max_length=255, null=True, blank=True)
-    fallo_segunda_instancia = models.TextField(null=True, blank=True)
-    desacato = models.CharField(max_length=255, null=True, blank=True)
-    fecha_tramite_desacato = models.CharField(max_length=255, null=True, blank=True)
-    respuesta_incidente_desacato = models.TextField(null=True, blank=True)
-    rad_interno = models.CharField(max_length=255, null=True, blank=True)
-    fallo_desacato = models.TextField(null=True, blank=True)
+    # Campos obligatorios según esquema técnico y solicitud del usuario
+    num_proceso = models.CharField('NÚMERO DE PROCESO', max_length=255, db_column='num_proceso', null=True, blank=True)
+    fecha_llegada = models.CharField('FECHA DE LLEGADA', max_length=255, db_column='fecha_llegada', null=True, blank=True)
+    despacho_judicial = models.CharField('DESPACHO JUDICIAL', max_length=255, db_column='despacho_judicial', null=True, blank=True)
+    accionante = models.CharField('ACCIONANTE', max_length=255, db_column='accionante', null=True, blank=True)
+    accionado = models.CharField('ACCIONADO', max_length=255, db_column='accionado', null=True, blank=True)
+    abogado_responsable = models.CharField('ABOGADO RESPONSABLE', max_length=255, db_column='abogado_responsable', null=True, blank=True)
+    
+    # Campo para indexación obligatoria solicitada anteriormente
+    num_reparto = models.CharField('N° REPARTO', max_length=255, db_column='num_reparto', null=True, blank=True)
 
     class Meta:
         db_table = 'defenjur_app_acciontutela'
