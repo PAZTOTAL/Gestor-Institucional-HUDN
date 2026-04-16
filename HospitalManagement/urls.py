@@ -29,8 +29,7 @@ urlpatterns = [
     path('', include('usuarios.urls')),
     path('consultas-externas/', include('consultas_externas.urls')),
     path('registro-anestesia/', include('registro_anestesia.urls')),
-    path('meows/', include('meows.urls')),  # Sistema MEOWS
-    path('parto/', include('trabajoparto.urls')),  # Sistema Parto
+    path('atencion/', include('obstetriciaunificador.urls')),
     path('consultas/', include('consultas.urls')),
     path('presupuesto/', include('presupuesto.urls')),
     path('consentimientos/', include('ConsentimientosInformados.urls')),

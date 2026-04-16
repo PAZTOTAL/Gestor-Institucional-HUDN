@@ -68,13 +68,12 @@ INSTALLED_APPS = [
     'defenjur_py.legal',
 
     'A_00_Organigrama',
-    'usuarios',# Apps migradas desde AdmonAlexaTotal
+    'usuarios',
     'BasesGenerales',
     'consultas_externas',
     'registro_anestesia',
-    'obstetriciaunificador', 
-    'DEFENJUR',
-    'UNIFICADOR-V1',
+    'frecuenciafetal',
+    'obstetriciaunificador',
     'consultas',
     'presupuesto',
     'ConsentimientosInformados',
@@ -86,10 +85,11 @@ INSTALLED_APPS = [
     'trasplantes_donacion',
     'CertificadosDIAN',
     'horas_extras',
-    'frecuenciafetal',
-    'obstetriciaunificador',
     'certificados_laborales',
     'visor_soportes',
+    # Cuando integre el código completo de UNIFICADOR-V1 en la raíz del repo, descomente:
+    # 'meows',
+    # 'trabajoparto',
 ]
 
 MIDDLEWARE = [
@@ -179,7 +179,6 @@ DATABASES = {
 # Database Routers
 DATABASE_ROUTERS = [
     'HospitalManagement.routers.HospitalRouter',
-    'trabajoparto.db_router.ClinicoRouter',
 ]
 
 # Password validation
@@ -221,6 +220,7 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_DIRS = [
     BASE_DIR / 'static',
     BASE_DIR / 'defenjur_py' / 'static',
+    BASE_DIR / 'UNIFICADOR-V1' / 'sistema_obstetrico' / 'static',
 ]
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
