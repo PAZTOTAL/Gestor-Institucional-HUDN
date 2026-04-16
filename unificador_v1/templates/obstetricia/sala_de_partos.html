@@ -877,10 +877,7 @@
                 </div>
 
                 <div class="clinico-stats-row">
-                    <div class="stat-pill stat-meows">
-                        <span>MEOWS</span>
-                        <strong id="stat-meows">0</strong>
-                    </div>
+
                     <div class="stat-pill stat-fetal">
                         <span>FETAL</span>
                         <strong id="stat-fetal">0</strong>
@@ -893,25 +890,18 @@
             </div>
 
             <!-- Grid de Módulos (Visible si paciente existe) -->
-            <div class="modules-grid" id="modules-grid">
-                <a href="#" id="link-meows" class="module-card card-meows">
-                    <div class="card-icon"><i data-lucide="activity" size="32"></i></div>
-                    <h3>MODULO MEOWS</h3>
-                    <p>Monitoreo de signos vitales y alerta temprana obstétrica.</p>
-                </a>
-                
-                <a href="#" id="link-fetal" class="module-card card-fetal">
-                    <div class="card-icon"><i data-lucide="baby" size="32"></i></div>
-                    <h3>FRECUENCIA FETAL</h3>
-                    <p>Registro y seguimiento de latidos y bienestar fetal.</p>
-                </a>
-                
-                <a href="#" id="link-parto" class="module-card card-parto">
-                    <div class="card-icon"><i data-lucide="clipboard-list" size="32"></i></div>
-                    <h3>TRABAJO DE PARTO</h3>
-                    <p>Formulario clínico y partograma de evolución.</p>
-                </a>
+            <div class="modules-grid" id="modulesGrid">
+            <div class="module-card card-fetal" id="cardFetalLink">
+                <div class="card-icon"><i data-lucide="baby" size="32"></i></div>
+                <h3>Control Fetal</h3>
+                <p>Registro de monitoreo fetal y cardiografía.</p>
             </div>
+            <div class="module-card card-parto" id="cardPartoLink">
+                <div class="card-icon"><i data-lucide="clipboard-check" size="32"></i></div>
+                <h3>Trabajo de Parto</h3>
+                <p>Partograma y curvas de atención.</p>
+            </div>
+        </div>
 
             <!-- Card informativa (solo lectura) -->
             <div class="patient-info-card" id="patient-info-card">
@@ -1206,7 +1196,6 @@
             if (data.timeline && data.timeline.length > 0) {
                 timelineSection.style.display = 'block';
                 const grupos = {
-                    MEOWS: { titulo: 'MEOWS', icono: 'activity', color: '#2563eb', items: [] },
                     FETAL: { titulo: 'FETAL', icono: 'baby', color: '#be185d', items: [] },
                     PARTO: { titulo: 'PARTO', icono: 'clipboard-list', color: '#6d28d9', items: [] },
                 };
@@ -1265,9 +1254,8 @@
             }
 
             // Enlaces con documento canónico (BD hospital / MEOWS) para coincidir con PACNUMDOC
-            document.getElementById('link-meows').href = `/meows/crear/${encodeURIComponent(docLink)}/?atencion=${atencion_id}`;
-            document.getElementById('link-fetal').href = `/fetal/?doc=${encodeURIComponent(docLink)}&atencion=${atencion_id}`;
-            document.getElementById('link-parto').href = `/parto/?doc=${encodeURIComponent(docLink)}&atencion=${atencion_id}`;
+            if (document.getElementById('link-fetal')) document.getElementById('link-fetal').href = `/fetal/?doc=${encodeURIComponent(docLink)}&atencion=${atencion_id}`;
+            if (document.getElementById('link-parto')) document.getElementById('link-parto').href = `/parto/?doc=${encodeURIComponent(docLink)}&atencion=${atencion_id}`;
             
             lucide.createIcons();
 

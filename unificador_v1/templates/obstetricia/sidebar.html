@@ -14,7 +14,7 @@ Variables: is_panel (bool), atencion_id, documento, current_module (meows|fetal|
     <!-- Navegación de Módulos -->
     <!-- Navegación de Sistema -->
     <div class="sidebar-module">
-        <div class="sidebar-module-header expanded">
+        <a href="/atencion/" class="sidebar-module-header expanded" style="text-decoration: none; color: inherit;">
             <div class="icon-container">
                 <i data-lucide="monitor" class="nav-icon"></i>
             </div>
@@ -22,11 +22,11 @@ Variables: is_panel (bool), atencion_id, documento, current_module (meows|fetal|
                 <div class="sidebar-module-title">Sistema</div>
                 <div class="sidebar-module-name">Inicio</div>
             </div>
-        </div>
+        </a>
         <div class="sidebar-module-dropdown expanded" style="margin-top: 0; padding-top: 0;">
             <nav class="tabs">
-                <a href="/atencion/" class="tabs-link {% if is_dashboard %}active{% endif %}">
-                    <i data-lucide="layout-dashboard" class="nav-icon"></i> Dashboard
+                <a href="/" class="tabs-link">
+                    <i data-lucide="home" class="nav-icon"></i> Menú Principal
                 </a>
             </nav>
         </div>
