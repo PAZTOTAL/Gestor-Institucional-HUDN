@@ -8,7 +8,7 @@ from django.contrib import admin
 from django.urls import path, include
 from django.views.generic.base import RedirectView
 from django.shortcuts import redirect
-from obstetriciaunificador.models import AtencionParto
+from unificador_v1.models import AtencionParto
 
 
 def home(request):
@@ -30,7 +30,7 @@ urlpatterns = [
     path('meows/', include('meows.urls')),
     path('fetal/', include('frecuenciafetal.urls')),
     path('parto/', include('trabajoparto.urls')),
-    path('atencion/', include('obstetriciaunificador.urls')),
+    path('atencion/', include('unificador_v1.urls')),
 
     # Raíz: ÚNICA ruta que captura / → redirige a /atencion/1/
     path('', home, name='home'),
@@ -38,3 +38,5 @@ urlpatterns = [
 
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
+

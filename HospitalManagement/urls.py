@@ -29,8 +29,8 @@ urlpatterns = [
     path('', include('usuarios.urls')),
     path('consultas-externas/', include('consultas_externas.urls')),
     path('registro-anestesia/', include('registro_anestesia.urls')),
-    path('meows/', include('meows.urls')),  # Sistema MEOWS
-    path('parto/', include('trabajoparto.urls')),  # Sistema Parto
+    # path('meows/', include('meows.urls')),  # Módulo no encontrado
+    # path('parto/', include('trabajoparto.urls')),  # Módulo no encontrado
     path('consultas/', include('consultas.urls')),
     path('presupuesto/', include('presupuesto.urls')),
     path('consentimientos/', include('ConsentimientosInformados.urls')),
@@ -44,4 +44,8 @@ urlpatterns = [
     path('defenjur/', include('defenjur_py.legal.urls')),
     path('organigrama/', include('A_00_Organigrama.urls')),
     path('visor-soportes/', include('visor_soportes.urls')),
+    path('atencion/', include('unificador_v1.urls')),
 ]
+
+
+

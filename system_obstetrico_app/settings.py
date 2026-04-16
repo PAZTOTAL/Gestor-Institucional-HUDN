@@ -71,7 +71,7 @@ INSTALLED_APPS = [
     'meows',
     'frecuenciafetal',
     'trabajoparto',
-    'obstetriciaunificador',
+    'unificador_v1',
 ]
 
 MIDDLEWARE = [
@@ -188,3 +188,6 @@ MEDIA_ROOT = BASE_DIR / 'media'
 
 # Sin login: redirigir a home.
 LOGIN_URL = '/'
+
+
+
