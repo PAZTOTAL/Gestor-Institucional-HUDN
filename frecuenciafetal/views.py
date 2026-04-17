@@ -24,7 +24,7 @@ from .serializers import (
 )
 from .pdf_generator import generar_pdf_registro
 from .sala_partos_db import listar_pacientes_sala_partos
-from obstetriciaunificador.models import AtencionParto
+from unificador_v1.models import AtencionParto
 
 
 @method_decorator(never_cache, name='dispatch')
@@ -586,3 +586,6 @@ def ver_huella(request, documento):
     return render(request, "registros/huella.html", {
         "huella": huella
     })
+
+
+

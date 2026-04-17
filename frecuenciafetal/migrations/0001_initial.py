@@ -11,7 +11,7 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
-        ('obstetriciaunificador', '0001_initial'),
+        ('unificador_v1', '0001_initial'),
     ]
 
     operations = [
@@ -118,7 +118,7 @@ class Migration(migrations.Migration):
                 ('firma_profesional_base64', models.TextField(blank=True, null=True, verbose_name='Firma del Profesional (Base64)')),
                 ('created_at', models.DateTimeField(auto_now_add=True)),
                 ('updated_at', models.DateTimeField(auto_now=True)),
-                ('atencion', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='registros_fetal', to='obstetriciaunificador.atencionparto')),
+                ('atencion', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='registros_fetal', to='unificador_v1.atencionparto')),
             ],
             options={
                 'verbose_name': 'Registro de Parto',
@@ -183,3 +183,6 @@ class Migration(migrations.Migration):
             },
         ),
     ]
+
+
+

@@ -17,7 +17,17 @@ class PerfilUsuario(models.Model):
     color_secundario = models.CharField(max_length=7, default='#1e40af')
     color_fondo = models.CharField(max_length=7, default='#f8fafc')
     estilo_fondo = models.CharField(max_length=20, default='solid') # solid, gradient, pattern
+    
+    # ─── Datos Personales HUDN ───
+    cedula = models.CharField(max_length=20, unique=True, null=True, blank=True)
+    direccion = models.CharField(max_length=255, null=True, blank=True)
     telefono = models.CharField(max_length=20, null=True, blank=True)
+    fecha_nacimiento = models.DateField(null=True, blank=True)
+    email_institucional = models.EmailField(null=True, blank=True)
+    email_personal = models.EmailField(null=True, blank=True)
+    sexo = models.CharField(max_length=1, null=True, blank=True)
+    grupo_sanguineo = models.CharField(max_length=2, null=True, blank=True)
+    rh = models.CharField(max_length=1, null=True, blank=True)
 
     # ─── Campos para DEFENJUR (Defensa Jurídica) ───
     legal_rol = models.CharField(max_length=120, default='INVITADO', help_text="Rol dentro del módulo DEFENJUR")

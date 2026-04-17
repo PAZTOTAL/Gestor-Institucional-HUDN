@@ -20,7 +20,7 @@ registros_router.register(r'postparto', ControlPostpartoViewSet, basename='postp
 urlpatterns = [
     path('', FormularioRegistroView.as_view(), name='home'),
     # Puente para entornos donde este módulo queda montado en raíz.
-    path('meows/', include('meows.urls')),
+    # path('meows/', include('meows.urls')),
     path('captura-huella/', views.captura_huella, name='captura_huella'),
     path('api/', include(router.urls)),
     path('api/', include(registros_router.urls)),

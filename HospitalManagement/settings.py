@@ -72,8 +72,7 @@ INSTALLED_APPS = [
     'BasesGenerales',
     'consultas_externas',
     'registro_anestesia',
-    'frecuenciafetal',
-    'obstetriciaunificador',
+    'unificador_v1',
     'consultas',
     'presupuesto',
     'ConsentimientosInformados',
@@ -85,6 +84,7 @@ INSTALLED_APPS = [
     'trasplantes_donacion',
     'CertificadosDIAN',
     'horas_extras',
+    'frecuenciafetal',
     'certificados_laborales',
     'visor_soportes',
     # Cuando integre el código completo de UNIFICADOR-V1 en la raíz del repo, descomente:
@@ -179,6 +179,7 @@ DATABASES = {
 # Database Routers
 DATABASE_ROUTERS = [
     'HospitalManagement.routers.HospitalRouter',
+    # 'trabajoparto.db_router.ClinicoRouter',
 ]
 
 # Password validation
@@ -239,13 +240,12 @@ LOGOUT_REDIRECT_URL = 'login'
 DATA_UPLOAD_MAX_NUMBER_FIELDS = 10000
 
 # DIAN Certificates Configuration
-# 1. Origen de datos (Plantilla y Excel en la ubicación "Original")
-DIAN_SOURCE_ROOT = r'C:\Users\SISTEMAS\Documents\HospitalManagement\media\certificados_dian'
-DIAN_EXCEL_PATH = os.path.join(DIAN_SOURCE_ROOT, 'CertificadoIngresos2025.xlsm')
-DIAN_TEMPLATE_PATH = os.path.join(DIAN_SOURCE_ROOT, 'Formulario_220_2026.pdf')
+# 1. Origen de datos (Plantilla y Excel)
+DIAN_EXCEL_PATH = os.path.join(BASE_DIR, 'CertificadoIngresos2025.xlsm')
+DIAN_TEMPLATE_PATH = os.path.join(BASE_DIR, 'media', 'certificados_dian', 'Formulario_220_2026.pdf')
 
-# 2. Destino de los PDF generados (Carpeta que pediste)
-DIAN_OUTPUT_DIR = r'C:\Users\SISTEMAS\Documents\Dian2025'
+# 2. Destino de los PDF generados
+DIAN_OUTPUT_DIR = os.path.join(BASE_DIR.parent, 'Dian2025')
 if not os.path.exists(DIAN_OUTPUT_DIR):
     try:
         os.makedirs(DIAN_OUTPUT_DIR, exist_ok=True)
@@ -267,3 +267,6 @@ EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'True') == 'True'
 EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', '')
 EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')
 DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', EMAIL_HOST_USER)
+
+
+

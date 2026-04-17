@@ -5,39 +5,81 @@ from django.core.exceptions import ValidationError
 from django.db import connections
 
 class RegistroForm(UserCreationForm):
-    email = forms.EmailField(required=True, label="Correo Electrónico")
-    first_name = forms.CharField(max_length=100, required=True, label="Nombre")
-    last_name = forms.CharField(max_length=100, required=True, label="Apellido")
+    primer_nombre = forms.CharField(max_length=100, required=True, label="Primer Nombre")
+    segundo_nombre = forms.CharField(max_length=100, required=False, label="Segundo Nombre")
+    primer_apellido = forms.CharField(max_length=100, required=True, label="Primer Apellido")
+    segundo_apellido = forms.CharField(max_length=100, required=False, label="Segundo Apellido")
+    email_institucional = forms.EmailField(required=False, label="Correo Institucional")
+    email_personal = forms.EmailField(required=True, label="Correo Personal")
+    cedula = forms.CharField(max_length=20, required=True, label="Cédula")
+    direccion = forms.CharField(max_length=255, required=False, label="Dirección")
+    telefono = forms.CharField(max_length=20, required=False, label="Teléfono")
+    fecha_nacimiento = forms.DateField(required=False, label="Fecha de Nacimiento", widget=forms.DateInput(attrs={'type': 'date'}))
+    sexo = forms.ChoiceField(choices=[('', 'Seleccione'), ('M', 'Masculino'), ('F', 'Femenino'), ('O', 'Otro')], required=False)
+    grupo_sanguineo = forms.ChoiceField(choices=[('', 'Seleccione'), ('O', 'O'), ('A', 'A'), ('B', 'B'), ('AB', 'AB')], required=False)
+    rh = forms.ChoiceField(choices=[('', 'Seleccione'), ('+', '+'), ('-', '-')], required=False)
 
     class Meta:
         model = User
-        fields = ['username', 'first_name', 'last_name', 'email']
+        fields = ['username']
 
     def clean_username(self):
         username = self.cleaned_data.get('username')
+        cedula = self.cleaned_data.get('cedula')
         
-        # Validar contra Dinámica Nexus (GENUSUARIO)
+        # 1. Verificar si el usuario ya existe en nuestro sistema
+        if User.objects.filter(username=username).exists():
+            raise ValidationError("Este nombre de usuario ya está registrado en el Gestor Institucional.")
+
+        # 2. Validar contra Dinámica Nexus
         try:
             with connections['readonly'].cursor() as cursor:
-                # Se utiliza UPPER() si el sistema almacena en mayúsculas
-                cursor.execute("SELECT USUNOMBRE FROM GENUSUARIO WHERE UPPER(USUNOMBRE) = UPPER(%s)", [username])
-                row = cursor.fetchone()
-                if not row:
-                    raise ValidationError("El usuario proporcionado no existe en la base de datos de Dinámica (GENUSUARIO). Debe registrarse usando su usuario institucional.")
+                # Estrategia A: Por Cédula
+                cursor.execute("SELECT USUNOMBRE FROM GENUSUARIO WHERE NumeroDocumento = %s AND USUESTADO = 1", [cedula])
+                usu_row = cursor.fetchone()
+                
+                # Estrategia B: Por Médico
+                if not usu_row:
+                    sql_medico = """
+                    SELECT U.USUNOMBRE FROM GENUSUARIO U 
+                    INNER JOIN GENMEDICO M ON U.USUNOMBRE = M.GMECODIGO 
+                    INNER JOIN GENTERCER T ON M.GENTERCER = T.OID 
+                    WHERE T.TERNUMDOC = %s AND U.USUESTADO = 1
+                    """
+                    cursor.execute(sql_medico, [cedula])
+                    usu_row = cursor.fetchone()
+
+                if usu_row:
+                    usu_institucional = usu_row[0]
+                    if username.lower() != usu_institucional.lower():
+                        raise ValidationError(f"Para funcionarios del HUDN, el usuario debe ser exactamente: {usu_institucional}")
         except Exception as e:
             if isinstance(e, ValidationError):
                 raise e
-            # En caso de que falle la conexión a la bd readonly, registrar error y rechazar
-            print(f"Error verificando en Dinámica: {str(e)}")
-            raise ValidationError("Error al verificar el usuario con el sistema central. Intente más tarde.")
+            pass 
 
         return username
 
     def save(self, commit=True):
         user = super(RegistroForm, self).save(commit=False)
-        user.email = self.cleaned_data["email"]
-        user.first_name = self.cleaned_data["first_name"]
-        user.last_name = self.cleaned_data["last_name"]
+        # Combinar nombres para el User model estándar
+        user.first_name = f"{self.cleaned_data['primer_nombre']} {self.cleaned_data.get('segundo_nombre', '')}".strip()
+        user.last_name = f"{self.cleaned_data['primer_apellido']} {self.cleaned_data.get('segundo_apellido', '')}".strip()
+        # Usamos el personal como email principal de la cuenta
+        user.email = self.cleaned_data["email_personal"]
+        
         if commit:
             user.save()
+            from .models import PerfilUsuario
+            perfil, _ = PerfilUsuario.objects.get_or_create(user=user)
+            perfil.cedula = self.cleaned_data.get("cedula")
+            perfil.direccion = self.cleaned_data.get("direccion")
+            perfil.telefono = self.cleaned_data.get("telefono")
+            perfil.fecha_nacimiento = self.cleaned_data.get("fecha_nacimiento")
+            perfil.email_personal = self.cleaned_data.get("email_personal")
+            perfil.email_institucional = self.cleaned_data.get("email_institucional")
+            perfil.sexo = self.cleaned_data.get("sexo")
+            perfil.grupo_sanguineo = self.cleaned_data.get("grupo_sanguineo")
+            perfil.rh = self.cleaned_data.get("rh")
+            perfil.save()
         return user

@@ -8,6 +8,8 @@ from django.contrib.auth.models import User
 from django.db.models import Q
 from core.mixins import AccessControlMixin
 from django.apps import apps
+from django.db import connections
+from django.http import JsonResponse
 from .forms import RegistroForm
 from .models import PerfilUsuario, PermisoApp, PermisoModelo
 
@@ -180,3 +182,119 @@ class ConfigPerfilView(LoginRequiredMixin, TemplateView):
         perfil.estilo_fondo = request.POST.get('estilo_fondo', perfil.estilo_fondo)
         perfil.save()
         return redirect('config_perfil')
+
+def lookup_tercero_por_cedula(request):
+    cedula = request.GET.get('cedula', '').strip()
+    if not cedula:
+        return JsonResponse({'found': False, 'message': 'Cédula no proporcionada'})
+    
+    try:
+        Genpacien = apps.get_model('consultas_externas', 'Genpacien')
+        Gentercer = apps.get_model('consultas_externas', 'Gentercer')
+        
+        data = {
+            'found': False,
+            'cedula': cedula,
+            'primer_nombre': '',
+            'segundo_nombre': '',
+            'primer_apellido': '',
+            'segundo_apellido': '',
+            'direccion': '',
+            'telefono': '',
+            'fecha_nacimiento': '',
+            'email_personal': '',
+            'email_institucional': '',
+            'nombre_completo': '',
+            'sexo': '',
+            'grupo_sanguineo': '',
+            'rh': ''
+        }
+        
+        # 1. Search in GENTERCER (Source for names)
+        tercero = Gentercer.objects.using('readonly').filter(ternumdoc=cedula).first()
+        if tercero:
+            data['found'] = True
+            data['primer_nombre'] = tercero.terprinom or ''
+            data['segundo_nombre'] = tercero.tersegnom or ''
+            data['primer_apellido'] = tercero.terpriape or ''
+            data['segundo_apellido'] = tercero.tersegape or ''
+            data['nombre_completo'] = f"{data['primer_nombre']} {data['segundo_nombre']} {data['primer_apellido']} {data['segundo_apellido']}"
+            
+        # 2. Search in GENPACIEN (Source for contact/personal details)
+        paciente = Genpacien.objects.using('readonly').filter(pacnumdoc=cedula).first()
+        if paciente:
+            data['found'] = True
+            # Prefer paciente names if available/longer? Usually they are the same.
+            if not data['primer_nombre']:
+                data['primer_nombre'] = paciente.pacprinom or ''
+                data['segundo_nombre'] = paciente.pacsegnom or ''
+                data['primer_apellido'] = paciente.pacpriape or ''
+                data['segundo_apellido'] = paciente.pacsegape or ''
+            
+            if not data['nombre_completo'] and data['primer_nombre']:
+                data['nombre_completo'] = f"{data['primer_nombre']} {data['segundo_nombre']} {data['primer_apellido']} {data['segundo_apellido']}"
+            
+            data['direccion'] = paciente.gpadirrhab or paciente.gpadirresex or ''
+            data['telefono'] = paciente.gpatelresex or ''
+            data['fecha_nacimiento'] = paciente.gpafecnac.strftime('%Y-%m-%d') if paciente.gpafecnac else ''
+            data['email_personal'] = paciente.gpaemail or ''
+            data['sexo'] = 'M' if paciente.gpasexpac == 1 else 'F' if paciente.gpasexpac == 2 else ''
+        # 3. Buscar Usuario en GENUSUARIO (Dinámica Nexus)
+        username_institucional = None
+        es_cliente = True
+        
+        with connections['readonly'].cursor() as cursor:
+            # Estrategia A: Búsqueda Directa por NumeroDocumento
+            cursor.execute("SELECT USUNOMBRE, USUEMAIL FROM GENUSUARIO WHERE NumeroDocumento = %s AND USUESTADO = 1", [cedula])
+            usu_row = cursor.fetchone()
+            
+            if usu_row:
+                username_institucional = usu_row[0]
+                data['email_institucional'] = usu_row[1] or ''
+                es_cliente = False
+            else:
+                # Estrategia B: Búsqueda vía GENMEDICO / GENTERCER (Para personal médico/asistencial)
+                sql_medico = """
+                SELECT U.USUNOMBRE, U.USUEMAIL
+                FROM GENUSUARIO U
+                INNER JOIN GENMEDICO M ON U.USUNOMBRE = M.GMECODIGO
+                INNER JOIN GENTERCER T ON M.GENTERCER = T.OID
+                WHERE T.TERNUMDOC = %s AND U.USUESTADO = 1
+                """
+                cursor.execute(sql_medico, [cedula])
+                usu_row = cursor.fetchone()
+                if usu_row:
+                    username_institucional = usu_row[0]
+                    data['email_institucional'] = usu_row[1] or ''
+                    es_cliente = False
+                else:
+                    # Estrategia C: Búsqueda por Nombre (Para personal administrativo sin cédula en GENUSUARIO)
+                    if data['nombre_completo']:
+                        # Normalizar nombre para la búsqueda (quitar espacios extra y pasar a mayúsculas)
+                        nombre_limpio = " ".join(data['nombre_completo'].split()).upper()
+                        sql_nombre = """
+                        SELECT USUNOMBRE, USUEMAIL
+                        FROM GENUSUARIO 
+                        WHERE (UPPER(USUDESCRI) = %s OR UPPER(USUDESCRI) LIKE %s)
+                        AND USUESTADO = 1
+                        """
+                        cursor.execute(sql_nombre, [nombre_limpio, f"%{nombre_limpio}%"])
+                        usu_row = cursor.fetchone()
+                        if usu_row:
+                            username_institucional = usu_row[0]
+                            data['email_institucional'] = usu_row[1] or ''
+                            es_cliente = False
+
+        data['username_institucional'] = username_institucional
+        data['es_cliente'] = es_cliente
+
+        if data['found']:
+            return JsonResponse({'found': True, 'data': data})
+        else:
+            return JsonResponse({
+                'found': False, 
+                'message': 'No se encontró información para esta cédula en la base de datos institucional.'
+            })
+            
+    except Exception as e:
+        return JsonResponse({'found': False, 'message': f'Error en la búsqueda: {str(e)}'})

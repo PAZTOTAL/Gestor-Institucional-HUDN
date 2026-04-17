@@ -19,6 +19,9 @@ def modules_processor(request):
         
         asistenciales = []
         administrativos = []
+        juridica = []
+        talento_humano = []
+        financiera = []
         varios = []
         consultas = []
         
@@ -36,16 +39,23 @@ def modules_processor(request):
                 asistenciales.append(mod_dict)
             elif cat == 'administrativo':
                 administrativos.append(mod_dict)
+            elif cat == 'juridica':
+                juridica.append(mod_dict)
+            elif cat == 'talento_humano':
+                talento_humano.append(mod_dict)
+            elif cat == 'financiera':
+                financiera.append(mod_dict)
             elif cat == 'varios':
                 varios.append(mod_dict)
             elif cat == 'consultas':
                 consultas.append(mod_dict)
-            elif cat == 'talento_humano':
-                administrativos.append(mod_dict)
 
         cached = {
             'nav_asistenciales': asistenciales,
             'nav_administrativos': administrativos,
+            'nav_juridica': juridica,
+            'nav_talento_humano': talento_humano,
+            'nav_financiera': financiera,
             'nav_varios': varios,
             'nav_consultas': consultas,
         }
