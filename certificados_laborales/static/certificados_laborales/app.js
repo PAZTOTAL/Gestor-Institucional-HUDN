@@ -99,7 +99,7 @@
     setMessage("Consultando base de datos...", "info");
     
     try {
-      const response = await fetch("api/consultar-contratos/", {
+      const response = await fetch("./api/consultar-contratos/", {
         method: "POST",
         headers: { 
             "Content-Type": "application/json",
@@ -128,51 +128,37 @@
     const cedula = cedulaInput.value.trim();
     if (!cedula) return;
     
-    // Si no hemos buscado datos, intentamos buscar primero o avisamos
-    if (!data || data.cedula !== cedula) {
-        setMessage("Por favor visualice los datos antes de generar el documento.", "error");
-        return;
-    }
-
     setLoading(true, "generar");
     setMessage("Generando documento...", "info");
     
-    try {
-      const response = await fetch("api/generar-certificado/", {
-        method: "POST",
-        headers: { 
-            "Content-Type": "application/json",
-            "X-CSRFToken": getCookie('csrftoken')
-        },
-        body: JSON.stringify({ ...data, genero }),
-      });
+    // Usar un formulario oculto para una descarga más robusta (estilo clásico MVP)
+    const form = document.createElement("form");
+    form.method = "POST";
+    form.action = "./api/generar-certificado/";
+    form.style.display = "none";
 
-      if (!response.ok) {
-        const payload = await response.json();
-        throw new Error(payload.error || "No fue posible generar el certificado");
-      }
-      
-      const blob = await response.blob();
-      const disposition = response.headers.get("content-disposition") || "";
-      let filename = `certificado_${cedula}.docx`;
-      const match = disposition.match(/filename=(.+)/);
-      if (match && match[1]) filename = match[1];
+    const fields = {
+        "cedula": cedula,
+        "genero": genero,
+        "csrfmiddlewaretoken": getCookie("csrftoken")
+    };
 
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = filename;
-      a.style.display = "none";
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      setTimeout(() => URL.revokeObjectURL(url), 2000);
-      setMessage("Documento descargado con éxito.", "info");
-    } catch (error) {
-      setMessage(error.message || "No fue posible generar el certificado", "error");
-    } finally {
-      setLoading(false);
+    for (const [name, value] of Object.entries(fields)) {
+        const input = document.createElement("input");
+        input.type = "hidden";
+        input.name = name;
+        input.value = value;
+        form.appendChild(input);
     }
+
+    document.body.appendChild(form);
+    form.submit();
+    document.body.removeChild(form);
+    
+    setTimeout(() => {
+        setLoading(false);
+        setMessage("Documento generado.", "success");
+    }, 2000);
   };
 
   cedulaInput.addEventListener("input", () => setLoading(false));
