@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>FRRHU-030 V5 Reporte de Recargos</title>
+  <style>
+    /* ── Página ────────────────────────────────────────────────────── */
+    @page {
+      size: letter landscape;
+      margin: 8mm 10mm;
+    }
+    @media print {
+      * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+      body  { margin: 0; }
+      table { page-break-inside: avoid; }
+    }
+
+    /* ── Reset ─────────────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Franklin Gothic Medium', Arial Narrow, Arial, sans-serif;
+      font-size: 9pt;
+      background: white;
+      color: #000;
+    }
+
+    /* ── Tabla ──────────────────────────────────────────────────────── */
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      table-layout: fixed;
+      page-break-inside: avoid;
+    }
+    td {
+      padding: 0 2px;
+      vertical-align: middle;
+      overflow: hidden;
+      line-height: 1.1;
+    }
+
+    /* ── Bordes / fondos ────────────────────────────────────────────── */
+    .b-all  { border: 1px solid #000; }
+    .b-top  { border-top: 1px solid #000; }
+    .bg-gray { background-color: #C0C0C0; }
+
+    /* ── Texto ──────────────────────────────────────────────────────── */
+    .tc   { text-align: center; }
+    .tl   { text-align: left; }
+    .vt   { vertical-align: top; }
+    .vm   { vertical-align: middle; }
+    .bold { font-weight: bold; }
+
+    /* ── Campo inline: etiqueta + valor subrayado en la misma celda ─── */
+    /*    Evita el solapamiento de texto sobre la línea de borde-bottom  */
+    .field-inline {
+      display: flex;
+      align-items: flex-end;
+      gap: 3px;
+      width: 100%;
+      height: 100%;
+      padding-bottom: 1px;
+    }
+    .fi-label {
+      white-space: nowrap;
+      font-size: 8pt;
+      flex-shrink: 0;
+      padding-bottom: 1px;
+    }
+    .fi-value {
+      flex: 1;
+      border-bottom: 1px solid #000;
+      font-size: 10pt;
+      min-width: 10px;
+      padding-bottom: 0;
+    }
+
+    /* ── Celdas de cabecera del documento (bloque código/versión) ───── */
+    .info-label { border: 1px solid #000; text-align: center; vertical-align: middle; font-size: 8.5pt; }
+    .info-value { border: 1px solid #000; text-align: center; vertical-align: middle; font-size: 8.5pt; }
+
+    /* ── Celdas de encabezado de columnas (con fondo gris) ─────────── */
+    .col-hdr {
+      border: 1px solid #000;
+      background-color: #C0C0C0;
+      text-align: center;
+      vertical-align: middle;
+      font-size: 8pt;
+    }
+
+    /* ── Celdas de datos ────────────────────────────────────────────── */
+    .dc {
+      border: 1px solid #000;
+      text-align: center;
+      vertical-align: middle;
+      font-size: 9pt;
+    }
+    .dc-left {
+      border: 1px solid #000;
+      text-align: left;
+      vertical-align: middle;
+      font-size: 9pt;
+      padding-left: 2px;
+    }
+
+    /* ── Logo / título ──────────────────────────────────────────────── */
+    .logo-cell {
+      border: 1px solid #000;
+      text-align: center;
+      vertical-align: middle;
+      font-weight: bold;
+      font-size: 9pt;
+      padding: 1mm;
+    }
+    .title-cell {
+      border: 1px solid #000;
+      text-align: center;
+      vertical-align: middle;
+      font-size: 14pt;
+      font-weight: bold;
+      letter-spacing: 0.3px;
+    }
+  </style>
+</head>
+<body>
+
+<!--
+  Columnas (proporciones de las unidades Excel, cols 0-6 = 194.9 mm total):
+  C0  26.0 mm → 13.3 %   Cédula
+  C1  66.7 mm → 34.2 %   Nombre
+  C2  19.1 mm →  9.8 %   Nocturnos Ordinarios
+  C3  19.1 mm →  9.8 %   Diurnos Festivos
+  C4  19.1 mm →  9.8 %   Nocturnos Festivos
+  C5  27.4 mm → 14.1 %   Observaciones (parte 1)
+  C6  17.5 mm →  9.0 %   Observaciones (parte 2)
+
+  Altura total calculada ≈ 178 mm — cabe en Letter Landscape con márgenes 8/10 mm.
+-->
+
+<table>
+  <colgroup>
+    <col style="width:13.3%">
+    <col style="width:34.2%">
+    <col style="width: 9.8%">
+    <col style="width: 9.8%">
+    <col style="width: 9.8%">
+    <col style="width:14.1%">
+    <col style="width: 9.0%">
+  </colgroup>
+
+  <!-- ═══ BLOQUE DE CABECERA (filas 0-4) — 5 × 4.5 mm = 22.5 mm ═══ -->
+
+  <tr style="height:4.5mm">
+    <td rowspan="5" class="logo-cell">
+      {% if logo_hospital %}
+        <img src="{{ logo_hospital }}" alt="Logo Hospital"
+             style="max-width:100%; max-height:20mm; object-fit:contain;">
+      {% endif %}
+    </td>
+    <td rowspan="5" colspan="2" class="title-cell">REPORTE DE RECARGOS</td>
+    <td class="info-label">CÓDIGO:</td>
+    <td colspan="2" class="info-label">FECHA DE ELABORACIÓN:</td>
+    <td rowspan="5" class="b-all tc vm">
+      {% if logo_acreditacion %}
+        <img src="{{ logo_acreditacion }}" alt="Logo Acreditación"
+             style="max-width:100%; max-height:20mm; object-fit:contain;">
+      {% endif %}
+    </td>
+  </tr>
+  <tr style="height:4.5mm">
+    <td rowspan="2" class="info-value">FRRHU-030</td>
+    <td colspan="2" class="info-value">27 DE FEBRERO DE 2015</td>
+  </tr>
+  <tr style="height:4.5mm">
+    <td colspan="2" class="info-label">FECHA DE ACTUALIZACIÓN:</td>
+  </tr>
+  <tr style="height:4.5mm">
+    <td class="info-label">VERSIÓN:</td>
+    <td colspan="2" class="info-value">7 DE JUNIO DE 2019</td>
+  </tr>
+  <tr style="height:4.5mm">
+    <td class="info-value bold">05</td>
+    <td colspan="2" class="info-label">HOJA: 1&nbsp;&nbsp;DE:&nbsp;&nbsp;1</td>
+  </tr>
+
+  <!-- ═══ SEPARADOR — 2.5 mm ═══ -->
+  <tr style="height:2.5mm"><td colspan="7"></td></tr>
+
+  <!-- ═══ ÁREA / RESPONSABLE (fila 6) — 5 mm ═══
+       Usando .field-inline: etiqueta + línea subrayada en la misma celda,
+       sin posibilidad de solapamiento. -->
+  <tr style="height:5mm">
+    <td colspan="2" style="padding-left:10px">
+      <div class="field-inline">
+        <span class="fi-label">ÁREA DE SERVICIO:</span>
+        <span class="fi-value" style="padding-left:10px">{{ area_nombre }}</span>
+      </div>
+    </td>
+    <td colspan="5" style="padding-left:10px">
+      <div class="field-inline">
+        <span class="fi-label">RESPONSABLE DEL REPORTE:</span>
+        <span class="fi-value" style="padding-left:10px">{{ responsable }}</span>
+      </div>
+    </td>
+  </tr>
+
+  <!-- ═══ MES / FECHA DE EXPEDICIÓN (fila 7) — 5 mm ═══ -->
+  <tr style="height:5mm">
+    <td colspan="2">
+      <div class="field-inline">
+        <span class="fi-label">MES RELACIONADO:</span>
+        <span class="fi-value" style="padding-left:10px">{{ mes_anio }}</span>
+      </div>
+    </td>
+    <td colspan="5" style="padding-left:10px">
+      <div class="field-inline">
+        <span class="fi-label">FECHA DE EXPEDICIÓN:</span>
+        <span class="fi-value" style="padding-left:10px">{{ fecha_expedicion }}</span>
+      </div>
+    </td>
+  </tr>
+
+  <!-- ═══ SEPARADOR — 1.5 mm ═══ -->
+  <tr style="height:1.5mm"><td colspan="7"></td></tr>
+
+  <!-- ═══ TIPO DE PLANTA CON CHECKBOX (fila 9) — 4 mm ═══
+       ☑ (&#9745;) = seleccionado   ☐ (&#9744;) = sin seleccionar -->
+  <tr style="height:4.5mm">
+    <td></td>
+    <td colspan="2" style="text-align:right; font-size:10pt; padding-right:10px">
+      {% if tipo == 'temporal' %}&#9745;{% else %}&#9744;{% endif %}&nbsp;PLANTA TEMPORAL
+    </td>
+    <td colspan="2" style="text-align:center; font-size:10pt">
+      {% if tipo == 'permanente' %}&#9745;{% else %}&#9744;{% endif %}&nbsp;PLANTA PERMANENTE
+    </td>
+    <td colspan="2"></td>
+  </tr>
+
+  <!-- ═══ SEPARADOR — 1.5 mm ═══ -->
+  <tr style="height:1.5mm"><td colspan="7"></td></tr>
+
+  <!-- ═══ ENCABEZADOS DE COLUMNA (filas 11-12) ═══ -->
+  <tr style="height:4mm">
+    <td rowspan="2" class="col-hdr">CÉDULA DEL<br>FUNCIONARIO</td>
+    <td rowspan="2" class="col-hdr">NOMBRE DEL FUNCIONARIO</td>
+    <td colspan="3" class="col-hdr">RECARGOS</td>
+    <td colspan="2" rowspan="2" class="col-hdr">OBSERVACIONES</td>
+  </tr>
+  <tr style="height:8mm">
+    <td class="col-hdr" style="font-size:7.5pt">NOCTURNOS<br>ORDINARIOS</td>
+    <td class="col-hdr" style="font-size:7.5pt">DIURNOS<br>FESTIVOS</td>
+    <td class="col-hdr" style="font-size:7.5pt">NOCTURNOS<br>FESTIVOS</td>
+  </tr>
+
+  <!-- ═══ FILAS DE DATOS — 16 empleados × 6 mm = 96 mm ═══
+       Placeholders Jinja2:
+         emp.documento  emp.nombre  emp.hon  emp.hdf  emp.hnf  emp.observaciones -->
+  {% for emp in empleados %}
+  <tr style="height:6mm">
+    <td class="dc">{{ emp.documento }}</td>
+    <td class="dc-left">{{ emp.nombre }}</td>
+    <td class="dc">{% if emp.hon %}{{ emp.hon }}{% endif %}</td>
+    <td class="dc">{% if emp.hdf %}{{ emp.hdf }}{% endif %}</td>
+    <td class="dc">{% if emp.hnf %}{{ emp.hnf }}{% endif %}</td>
+    <td colspan="2" class="dc-left">{{ emp.observaciones }}</td>
+  </tr>
+  {% endfor %}
+  {% for i in range(16 - empleados|length) %}
+  <tr style="height:6mm">
+    <td class="dc"></td><td class="dc"></td><td class="dc"></td>
+    <td class="dc"></td><td class="dc"></td><td colspan="2" class="dc"></td>
+  </tr>
+  {% endfor %}
+
+  <!-- ═══ FILA DE TOTALES — 6 mm ═══ -->
+  <tr style="height:6mm">
+    <td colspan="2" class="b-all tc vm bold bg-gray" style="font-size:9pt">TOTAL</td>
+    <td class="b-all tc vm bold" style="font-size:9pt">{{ total_hon }}</td>
+    <td class="b-all tc vm bold" style="font-size:9pt">{{ total_hdf }}</td>
+    <td class="b-all tc vm bold" style="font-size:9pt">{{ total_hnf }}</td>
+    <td colspan="2" class="b-all"></td>
+  </tr>
+
+  <!-- ═══ SEPARADOR — 1.5 mm ═══ -->
+  <tr style="height:1.5mm"><td colspan="7"></td></tr>
+
+  <!-- ═══ NOTA DE PIE — 2 × 3.5 mm ═══ -->
+  <tr style="height:3.5mm">
+    <td colspan="7" style="font-size:8pt; font-weight:bold; white-space:nowrap; overflow:visible">
+      FECHA LIMITE PARA EL REPORTE: LOS CINCO (5) PRIMEROS DIAS HÁBILES DE CADA MES
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      Diligenciarlo con la firma respectiva y radicar en la oficina de archivo central
+    </td>
+  </tr>
+  <tr style="height:3.5mm"><td colspan="7"></td></tr>
+
+  <!-- ═══ ESPACIO EXTRA PARA FIRMAS — 6 mm ═══ -->
+  <tr style="height:10mm"><td colspan="7"></td></tr>
+
+  <!-- ═══ ETIQUETAS DE FIRMA — 10 mm ═══ -->
+  <tr style="height:10mm">
+    <td colspan="2" class="b-top tc vt bold" style="font-size:10pt; padding-top:3px">
+      COORDINADOR DEL SERVICIO
+    </td>
+    <td></td>
+    <td colspan="4" class="b-top tc vt bold" style="font-size:10pt; padding-top:3px">
+      SUBGERENTE ADMINISTRATIVO Y FINANCIERO<br>Y/O DE PRESTACIÓN DE SERVICIOS
+    </td>
+  </tr>
+
+  <!-- ═══ CAMPOS DE NOMBRE — 3.5 mm ═══ -->
+  <tr style="height:3.5mm">
+    <td colspan="2" class="tc" style="font-size:9.5pt">NOMBRE: {{ coordinador_nombre }}</td>
+    <td></td>
+    <td colspan="4" class="tc" style="font-size:9.5pt">NOMBRE:</td>
+  </tr>
+
+</table>
+</body>
+</html>

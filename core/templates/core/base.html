@@ -138,18 +138,19 @@
                     {% endif %}
 
                     <!-- Autenticación -->
-                    <div class="flex items-center space-x-4 ml-4 pl-4 border-l-2 border-blue-400">
+                    <div class="flex items-center space-x-4 ml-4 pl-4 border-l-2" style="border-color:#93c5fd">
                         {% if user.is_authenticated %}
                         <div class="flex items-center space-x-2">
-                            <div
-                                class="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center border-2 border-blue-800">
+                            <div class="w-8 h-8 rounded-full flex items-center justify-center border-2"
+                                 style="background:#1e3a5f;border-color:#1e40af">
                                 <span class="text-xs font-black text-white">{{ user.username|slice:":1"|upper }}</span>
                             </div>
                             <span class="text-sm font-black text-black">{{ user.username }}</span>
                         </div>
                         <div class="flex items-center space-x-3">
                             <a href="{% url 'config_perfil' %}"
-                                class="text-xs font-black text-blue-600 hover:text-blue-800 transition-colors uppercase underline">Apariencia</a>
+                                class="text-xs font-black hover:opacity-70 transition-colors uppercase underline"
+                                style="color:#1e3a5f">Apariencia</a>
                             <form action="{% url 'logout' %}" method="post" class="inline">
                                 {% csrf_token %}
                                 <button type="submit"
@@ -173,7 +174,7 @@
         </main>
 
         <!-- Footer -->
-        <footer class="bg-blue-200 border-t-2 border-blue-400 py-8">
+        <footer class="border-t-2 py-8" style="background:#dbeafe;border-color:#93c5fd">
             <div class="container text-center">
                 <p class="text-black font-bold">&copy; {% now "Y" %} APP - desarrollo System. Todos los derechos
                     reservados.</p>

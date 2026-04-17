@@ -1,0 +1,743 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto py-6 px-4">
+
+  <!-- Cabecera + nav -->
+  <div class="flex items-center justify-between mb-6">
+    <div>
+      <h1 class="text-3xl font-black text-slate-900">Turnos y Recargos</h1>
+      <p class="text-slate-500 text-sm mt-1">Gestión mensual de turnos por servicio</p>
+    </div>
+    <div class="flex gap-2">
+      {% if es_admin %}
+      <a href="{% url 'horas_extras:configuracion_recargos' %}"
+         style="background:#334155;color:white;text-decoration:none"
+         class="px-4 py-2 rounded-xl text-sm font-bold hover:opacity-80 transition">
+        ⚙ Configuración
+      </a>
+      {% endif %}
+      <a href="{% url 'horas_extras:reporte_recargos' %}"
+         style="background:#15803d;color:white;text-decoration:none"
+         class="px-4 py-2 rounded-xl text-sm font-bold hover:opacity-80 transition">
+        📊 Reportes
+      </a>
+    </div>
+  </div>
+
+  <!-- Barra de pasos -->
+  <div class="flex items-center gap-2 mb-6" id="step-bar">
+    <div id="step1-item" class="flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-sm" style="background:#1e3a5f;color:white">
+      <span id="step1-num" class="w-6 h-6 rounded-full flex items-center justify-center font-black text-xs" style="background:white;color:#1e3a5f">1</span>
+      Área y Mes
+    </div>
+    <span class="text-slate-400 font-black">›</span>
+    <div id="step2-item" class="flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-sm bg-slate-200 text-slate-500">
+      <span id="step2-num" class="w-6 h-6 rounded-full bg-slate-400 text-white flex items-center justify-center font-black text-xs">2</span>
+      Empleados
+    </div>
+    <span class="text-slate-400 font-black">›</span>
+    <div id="step3-item" class="flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-sm bg-slate-200 text-slate-500">
+      <span id="step3-num" class="w-6 h-6 rounded-full bg-slate-400 text-white flex items-center justify-center font-black text-xs">3</span>
+      Turnos
+    </div>
+  </div>
+
+  <!-- ── PASO 1: Área + Mes ─────────────────────────────────────────────── -->
+  <div id="paso1" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+    <!-- Panel Áreas -->
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
+      <div class="flex justify-between items-center mb-4">
+        <h2 class="font-black text-slate-800 text-lg">Selecciona el Área</h2>
+        <button onclick="cargarAreas()" class="text-slate-500 hover:text-blue-600 text-xl font-bold" title="Recargar">↻</button>
+      </div>
+      <div id="areas-container">
+        <p class="text-slate-400 text-sm">Cargando áreas...</p>
+      </div>
+    </div>
+
+    <!-- Panel Mes -->
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
+      <div class="flex justify-between items-center mb-4">
+        <h2 class="font-black text-slate-800 text-lg">Selecciona el Mes</h2>
+        <div class="flex items-center gap-2">
+          <button onclick="yearVista--; renderMeses()" class="px-2 py-1 bg-slate-100 rounded-lg text-sm font-bold hover:bg-slate-200">◀</button>
+          <span id="year-label" class="font-black text-slate-700 min-w-[50px] text-center"></span>
+          <button onclick="yearVista++; renderMeses()" class="px-2 py-1 bg-slate-100 rounded-lg text-sm font-bold hover:bg-slate-200">▶</button>
+        </div>
+      </div>
+      <div class="flex gap-4 mb-3 text-xs">
+        <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-emerald-400 inline-block"></span> Editable</span>
+        <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-amber-400 inline-block"></span> Próximamente</span>
+        <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-slate-300 inline-block"></span> Cerrado</span>
+      </div>
+      <div id="meses-container" class="grid grid-cols-3 gap-2"></div>
+      <div class="mt-4 text-right">
+        <button id="btn-ver-empleados"
+                onclick="irPaso2()"
+                style="background:#1e3a5f;color:white;opacity:0.35;cursor:not-allowed"
+                class="px-5 py-2 rounded-xl font-bold text-sm transition">
+          Selecciona un área y un mes para continuar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── PASO 2: Empleados ─────────────────────────────────────────────── -->
+  <div id="paso2" class="hidden">
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
+      <div class="flex items-center gap-3 mb-5">
+        <button onclick="irPaso1()" class="px-3 py-1 bg-slate-100 rounded-lg text-sm font-bold hover:bg-slate-200">← Volver</button>
+        <div>
+          <div class="font-black text-slate-800 text-lg" id="paso2-titulo"></div>
+          <div class="text-slate-400 text-sm" id="paso2-subtitulo"></div>
+        </div>
+      </div>
+      <div id="empleados-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3"></div>
+    </div>
+  </div>
+
+  <!-- ── PASO 3: Calendario ─────────────────────────────────────────────── -->
+  <div id="paso3" class="hidden">
+    <div class="rounded-2xl p-4 mb-4" style="background:#1e3a5f">
+      <div class="flex items-center justify-between flex-wrap gap-3">
+        <div class="flex items-center gap-2 flex-wrap">
+          <button onclick="irPaso1()"
+            style="background:rgba(255,255,255,0.15);color:white"
+            class="px-3 py-1.5 rounded-lg text-sm font-bold hover:bg-white/25 transition">
+            ← Cambiar Área
+          </button>
+          <button onclick="irPaso2()"
+            style="background:rgba(255,255,255,0.15);color:white"
+            class="px-3 py-1.5 rounded-lg text-sm font-bold hover:bg-white/25 transition">
+            ← Empleados
+          </button>
+          <div class="ml-2">
+            <div class="font-black text-white text-lg" id="cal-titulo"></div>
+            <div class="text-white/70 text-sm" id="cal-subtitulo"></div>
+          </div>
+        </div>
+        <div id="cal-badge"></div>
+      </div>
+    </div>
+    <div id="cal-readonly-msg" class="hidden mb-3 p-3 bg-amber-50 border border-amber-200 rounded-xl text-amber-800 text-sm font-medium"></div>
+    <div id="cal-msg" class="hidden mb-3 p-3 rounded-xl text-sm font-medium"></div>
+
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-4">
+      <!-- Leyenda -->
+      <div class="flex flex-wrap gap-3 mb-4 text-xs">
+        <span class="flex items-center gap-1"><span class="w-4 h-4 rounded border-2 border-red-300 bg-red-50 inline-block"></span> Festivo</span>
+        <span class="flex items-center gap-1"><span class="w-4 h-4 rounded border-2 border-red-200 bg-red-50 inline-block"></span> Domingo</span>
+        <span class="flex items-center gap-1"><span class="w-4 h-4 rounded border-2 border-emerald-300 bg-emerald-50 inline-block"></span> Con turno</span>
+        <span class="px-2 py-0.5 rounded-full text-white text-xs font-bold" style="background:#2563eb">M</span>
+        <span class="px-2 py-0.5 rounded-full text-white text-xs font-bold" style="background:#0891b2">T</span>
+        <span class="px-2 py-0.5 rounded-full text-white text-xs font-bold" style="background:#7c3aed">N</span>
+        <span class="px-2 py-0.5 rounded-full text-white text-xs font-bold" style="background:#0369a1">M-T</span>
+        <span class="px-2 py-0.5 rounded-full text-white text-xs font-bold" style="background:#374151">24h</span>
+        <span class="px-2 py-0.5 rounded-full text-white text-xs font-bold" style="background:#059669">Lib</span>
+        <span class="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 text-xs font-bold">P/h</span>
+      </div>
+
+      <!-- Calendario -->
+      <div id="cal-loading" class="text-center text-slate-400 py-10">Cargando...</div>
+      <div id="cal-grid" class="hidden">
+        <div class="grid grid-cols-7 gap-1 mb-1">
+          <div class="text-center text-xs font-bold text-slate-500 py-1">Lun</div>
+          <div class="text-center text-xs font-bold text-slate-500 py-1">Mar</div>
+          <div class="text-center text-xs font-bold text-slate-500 py-1">Mié</div>
+          <div class="text-center text-xs font-bold text-slate-500 py-1">Jue</div>
+          <div class="text-center text-xs font-bold text-slate-500 py-1">Vie</div>
+          <div class="text-center text-xs font-bold text-slate-500 py-1 text-slate-400">Sáb</div>
+          <div class="text-center text-xs font-bold text-red-400 py-1">Dom</div>
+        </div>
+        <div id="cal-days" class="grid grid-cols-7 gap-1"></div>
+      </div>
+
+      <!-- Resumen + Observación -->
+      <div id="cal-resumen" class="mt-4 p-3 bg-slate-50 rounded-xl text-sm hidden">
+        <div id="cal-resumen-turnos" class="font-bold text-slate-700 mb-2"></div>
+        <div id="cal-resumen-horas" class="flex flex-wrap gap-4 text-xs mb-3"></div>
+        <label class="block text-xs font-bold text-slate-600 mb-1">Observación del mes</label>
+        <textarea id="obs-mensual" rows="2" placeholder="Observación general del mes..."
+                  class="w-full border border-slate-200 rounded-lg p-2 text-sm resize-none focus:outline-none focus:border-blue-400"></textarea>
+        <div id="obs-saving" class="text-xs text-slate-400 mt-1 hidden">guardando...</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ═══════════════ MODAL CAMBIAR ÁREA ═══════════════ -->
+<div id="modal-mover-turnos" class="fixed inset-0 z-50 flex items-center justify-center hidden">
+  <div class="absolute inset-0 bg-black/40" onclick="cerrarModalMoverTurnos()"></div>
+  <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm mx-4 p-6 z-10">
+    <h3 class="text-xl font-black text-slate-800 mb-1">Cambiar Área</h3>
+    <p id="mover-t-emp-nombre" class="text-slate-500 text-sm mb-4"></p>
+    <div id="modal-mover-t-error" class="hidden mb-3 px-4 py-2 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm"></div>
+    <div class="mb-5">
+      <label class="block text-sm font-semibold text-slate-700 mb-1">Nuevo área / servicio *</label>
+      <select id="mover-t-area-select"
+        class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400">
+        <option value="">— Seleccionar —</option>
+      </select>
+    </div>
+    <div class="flex justify-end gap-3">
+      <button onclick="cerrarModalMoverTurnos()"
+        class="px-5 py-2 rounded-xl border border-slate-200 text-slate-700 text-sm font-bold hover:bg-slate-50 transition">
+        Cancelar
+      </button>
+      <button onclick="guardarMoverTurnos()" id="btn-guardar-mover-t"
+        style="background:#1e3a5f;color:white"
+        class="px-5 py-2 rounded-xl text-sm font-bold hover:opacity-90 transition">
+        Mover
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+const CSRF = '{{ csrf_token }}';
+const BASE = '{% url "horas_extras:api_areas" %}'.replace('areas/', '');
+
+const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio',
+               'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+
+const TURNOS_OPS = [
+  {v:'',            l:'— Sin turno —'},
+  {v:'manana',      l:'Mañana (07:00–13:00)'},
+  {v:'tarde',       l:'Tarde (13:00–19:00)'},
+  {v:'noche',       l:'Noche (19:00–07:00)'},
+  {v:'manana_tarde',l:'Mañana-Tarde (07:00–19:00)'},
+  {v:'veinticuatro',l:'24 Horas (07:00–07:00)'},
+  {v:'por_horas',   l:'Por horas'},
+  {v:'libre',       l:'Libre'},
+];
+
+const TURNO_BADGE = {
+  manana:{l:'M',bg:'#2563eb'},tarde:{l:'T',bg:'#0891b2'},
+  noche:{l:'N',bg:'#7c3aed'},manana_tarde:{l:'M-T',bg:'#0369a1'},
+  veinticuatro:{l:'24h',bg:'#374151'},libre:{l:'Lib',bg:'#059669'},
+  por_horas:{l:'P/h',bg:'#f59e0b',c:'#78350f'},
+};
+
+// Estado global
+let paso = 1;
+let areas = [];
+let areaSeleccionada = null;
+let mesSeleccionado  = null;  // {year, month}
+let yearVista = new Date().getFullYear();
+let empleadoSeleccionado = null;
+let festivos = {};
+let turnos   = {};
+let obsMensual = '';
+let obsTimer = null;
+
+// ── Helpers ────────────────────────────────────────────────────────────────
+function api(path, opts={}) {
+  const defaults = {headers:{'Content-Type':'application/json','X-CSRFToken':CSRF}};
+  return fetch(BASE + path, {...defaults,...opts,
+    headers:{...defaults.headers,...(opts.headers||{})}});
+}
+
+function fmtFecha(y,m,d) {
+  return `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+}
+
+function getMonthState(year, month) {
+  const hoy = new Date(); hoy.setHours(0,0,0,0);
+
+  // Ventana editable: últimos 10 días del mes → primeros 10 días del mes siguiente
+  const diasEnMes  = new Date(year, month, 0).getDate();          // último día del mes
+  const inicioVentana = new Date(year, month - 1, diasEnMes - 9); // día 22 (en meses de 31)
+  const nextYear   = month === 12 ? year + 1 : year;
+  const nextMonth  = month === 12 ? 1 : month + 1;
+  const finVentana = new Date(nextYear, nextMonth - 1, 10);        // día 10 del mes siguiente
+
+  if (hoy >= inicioVentana && hoy <= finVentana) return 'editable';
+  if (hoy < inicioVentana) return 'upcoming';
+  return 'closed';
+}
+
+function canEdit(year, month) { return getMonthState(year,month)==='editable'; }
+
+// ── Paso 1 ──────────────────────────────────────────────────────────────────
+async function cargarAreas() {
+  document.getElementById('areas-container').innerHTML = '<p class="text-slate-400 text-sm">Cargando...</p>';
+  const r = await api('areas/');
+  areas = await r.json();
+  renderAreas();
+}
+
+function renderAreas() {
+  const c = document.getElementById('areas-container');
+  if (!areas.length) {
+    c.innerHTML = '<p class="text-slate-400 text-sm">No hay áreas. Ve a <strong>Configuración</strong> para crearlas.</p>';
+    return;
+  }
+  c.innerHTML = areas.map(a => `
+    <div onclick="selArea(${a.id})" id="area-card-${a.id}"
+         class="cursor-pointer p-3 rounded-xl border-2 mb-2 transition
+                ${areaSeleccionada?.id===a.id?'border-blue-600 bg-blue-50':'border-slate-200 hover:border-blue-300'}">
+      <div class="font-bold text-slate-800">${a.nombre}</div>
+      ${a.descripcion?`<div class="text-slate-500 text-xs">${a.descripcion}</div>`:''}
+      <div class="text-xs text-slate-400 mt-1">${a.total_trabajadores??0} empleado(s)</div>
+    </div>`).join('');
+}
+
+function selArea(id) {
+  areaSeleccionada = areas.find(a=>a.id===id) || null;
+  renderAreas();
+  actualizarBotonPaso1();
+}
+
+function renderMeses() {
+  document.getElementById('year-label').textContent = yearVista;
+  const c = document.getElementById('meses-container');
+  c.innerHTML = MESES.map((mes,i) => {
+    const m = i+1;
+    const st = getMonthState(yearVista, m);
+    const sel = mesSeleccionado?.year===yearVista && mesSeleccionado?.month===m;
+    const color = {editable:'border-emerald-400 bg-emerald-50 text-emerald-800',
+                   upcoming:'border-amber-300 bg-amber-50 text-amber-700',
+                   closed:'border-slate-200 bg-slate-50 text-slate-400'}[st];
+    const selCls = sel ? 'ring-2 ring-blue-600 ring-offset-1' : '';
+    return `<button onclick="selMes(${m})"
+              class="p-2 rounded-xl border-2 text-xs font-bold text-center transition ${color} ${selCls} cursor-pointer hover:scale-105">
+              <div>${mes}</div>
+              <div class="font-normal text-[10px] mt-0.5 opacity-70">
+                ${{editable:'Editable',upcoming:'Próximo',closed:'Cerrado'}[st]}</div>
+            </button>`;
+  }).join('');
+}
+
+function selMes(m) {
+  if (mesSeleccionado?.year===yearVista && mesSeleccionado?.month===m) {
+    mesSeleccionado = null;
+  } else {
+    mesSeleccionado = {year:yearVista, month:m};
+  }
+  renderMeses();
+  actualizarBotonPaso1();
+}
+
+function actualizarBotonPaso1() {
+  const btn = document.getElementById('btn-ver-empleados');
+  if (areaSeleccionada && mesSeleccionado) {
+    btn.disabled = false;
+    btn.style.cssText = 'background:#1e3a5f;color:white;opacity:1;cursor:pointer';
+    btn.textContent = `Ver empleados de ${areaSeleccionada.nombre} — ${MESES[mesSeleccionado.month-1]} ${mesSeleccionado.year} →`;
+  } else {
+    btn.disabled = true;
+    btn.style.cssText = 'background:#1e3a5f;color:white;opacity:0.35;cursor:not-allowed';
+    btn.textContent = 'Selecciona un área y un mes para continuar';
+  }
+}
+
+function irPaso1() {
+  paso = 1;
+  empleadoSeleccionado = null;
+  setStep(1);
+  cargarAreas();
+}
+
+// ── Paso 2 ──────────────────────────────────────────────────────────────────
+async function irPaso2() {
+  if (!areaSeleccionada || !mesSeleccionado) return;
+  paso = 2;
+  setStep(2);
+  document.getElementById('paso2-titulo').textContent =
+    `${areaSeleccionada.nombre} — ${MESES[mesSeleccionado.month-1]} ${mesSeleccionado.year}`;
+  document.getElementById('paso2-subtitulo').textContent = 'Selecciona un empleado para ver sus turnos';
+  document.getElementById('empleados-container').innerHTML =
+    '<p class="text-slate-400 col-span-3">Cargando empleados...</p>';
+
+  const r = await api(`empleados/?area=${areaSeleccionada.id}`);
+  const empleados = await r.json();
+
+  const c = document.getElementById('empleados-container');
+  if (!empleados.length) {
+    c.innerHTML = '<p class="text-slate-400 col-span-3">No hay empleados en esta área. Ve a <strong>Configuración</strong>.</p>';
+    return;
+  }
+  c.innerHTML = empleados.map(e => `
+    <div class="p-4 rounded-xl border-2 border-slate-200 hover:border-blue-400 transition">
+      <div onclick="selEmpleado(${JSON.stringify(e).replace(/"/g,'&quot;')})"
+           class="cursor-pointer hover:opacity-80 transition mb-3">
+        <div class="font-bold text-slate-800">${e.nombre}</div>
+        <div class="text-xs text-slate-500">${e.documento}</div>
+        <div class="text-xs text-slate-400">${e.cargo||'—'} · ${e.tipo_display}</div>
+      </div>
+      <div class="flex gap-1">
+        <button onclick="selEmpleado(${JSON.stringify(e).replace(/"/g,'&quot;')})"
+          style="background:#1e3a5f;color:white;flex:1"
+          class="px-2 py-1 rounded-lg text-xs font-bold hover:opacity-90 transition">
+          → Ver turnos
+        </button>
+        ${areas.length > 1 ? `<button onclick="abrirModalMoverTurnos(${e.id},'${e.nombre.replace(/'/g,"\\'")}',${e.area})"
+          style="background:#4f46e5;color:white"
+          class="px-2 py-1 rounded-lg text-xs font-bold hover:opacity-90 transition" title="Mover a otra área">
+          ⇄ Área
+        </button>` : ''}
+      </div>
+    </div>`).join('');
+}
+
+function selEmpleado(emp) {
+  empleadoSeleccionado = emp;
+  irPaso3();
+}
+
+// ── Paso 3: Calendario ───────────────────────────────────────────────────────
+async function irPaso3() {
+  paso = 3;
+  setStep(3);
+  const {year, month} = mesSeleccionado;
+  const emp = empleadoSeleccionado;
+
+  document.getElementById('cal-titulo').textContent =
+    `${MESES[month-1]} ${year} — ${emp.nombre}`;
+  document.getElementById('cal-subtitulo').textContent =
+    `${emp.tipo_display} · ${emp.area_nombre}`;
+
+  const editable = canEdit(year, month);
+  const badge = document.getElementById('cal-badge');
+  if (editable) {
+    badge.innerHTML = '<span class="px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 text-xs font-bold">✓ Período editable</span>';
+  } else {
+    const future = getMonthState(year,month)==='upcoming';
+    badge.innerHTML = `<span class="px-3 py-1 rounded-full bg-slate-200 text-slate-600 text-xs font-bold">
+      ${future?'Mes futuro · Solo lectura':'Período cerrado · Solo lectura'}</span>`;
+  }
+
+  const roMsg = document.getElementById('cal-readonly-msg');
+  if (!editable) {
+    roMsg.classList.remove('hidden');
+    roMsg.textContent = getMonthState(year,month)==='upcoming'
+      ? 'Este mes aún no ha comenzado. Solo lectura.'
+      : 'Este período está cerrado. No se pueden modificar los turnos.';
+  } else { roMsg.classList.add('hidden'); }
+
+  document.getElementById('cal-loading').classList.remove('hidden');
+  document.getElementById('cal-grid').classList.add('hidden');
+  document.getElementById('cal-resumen').classList.add('hidden');
+
+  const [fR, tR, obR] = await Promise.all([
+    api(`festivos/?year=${year}&month=${month}`),
+    api(`turnos/?empleado_id=${emp.id}&year=${year}&month=${month}`),
+    api(`observacion-mensual/?empleado_id=${emp.id}&year=${year}&month=${month}`),
+  ]);
+  festivos    = await fR.json();
+  const tList = await tR.json();
+  const obObj = await obR.json();
+
+  turnos = {};
+  tList.forEach(t => {
+    turnos[t.fecha] = {id:t.id, turno:t.turno,
+                       horas_diurnas:t.horas_diurnas??0,
+                       horas_nocturnas:t.horas_nocturnas??0};
+  });
+  obsMensual = obObj.observacion || '';
+
+  renderCalendario(year, month, editable);
+  document.getElementById('cal-loading').classList.add('hidden');
+  document.getElementById('cal-grid').classList.remove('hidden');
+  document.getElementById('cal-resumen').classList.remove('hidden');
+  actualizarResumen(year, month);
+
+  const obsEl = document.getElementById('obs-mensual');
+  obsEl.value = obsMensual;
+  obsEl.disabled = !editable;
+  if (!editable) obsEl.classList.add('opacity-50');
+  else {
+    obsEl.classList.remove('opacity-50');
+    obsEl.oninput = () => {
+      clearTimeout(obsTimer);
+      obsTimer = setTimeout(() => guardarObsMensual(), 1200);
+    };
+  }
+}
+
+function _buildDayHtml(fecha, dia, esDom, esFest, especial, info, editable) {
+  let html = `<div class="font-black text-sm ${especial?'text-red-600':'text-slate-700'}">${dia}</div>`;
+  if (esFest)
+    html += `<div class="text-[10px] text-red-500 leading-tight truncate font-medium" title="${festivos[fecha]}">${festivos[fecha]}</div>`;
+  else if (esDom)
+    html += `<div class="text-[10px] text-red-400 font-medium">Domingo</div>`;
+
+  if (info && info.turno !== 'por_horas') {
+    const b = TURNO_BADGE[info.turno];
+    html += `<div class="inline-block px-2 py-0.5 rounded-full text-white font-bold text-[10px] my-1"
+                  style="background:${b?.bg||'#64748b'}">${b?.l||info.turno}</div>`;
+  }
+  if (info?.turno === 'por_horas') {
+    html += `<div class="flex gap-1 items-center my-1 flex-wrap">
+      <span class="text-[10px] text-slate-500 font-medium">D:</span>
+      <input type="number" min="0" max="24" value="${info.horas_diurnas??0}"
+             ${!editable?'disabled':''}
+             onchange="guardarHoras('${fecha}','horas_diurnas',this.value)"
+             class="w-9 border border-slate-300 rounded text-center text-xs p-0.5 ${!editable?'opacity-50':''}">
+      <span class="text-[10px] text-slate-500 font-medium">N:</span>
+      <input type="number" min="0" max="24" value="${info.horas_nocturnas??0}"
+             ${!editable?'disabled':''}
+             onchange="guardarHoras('${fecha}','horas_nocturnas',this.value)"
+             class="w-9 border border-slate-300 rounded text-center text-xs p-0.5 ${!editable?'opacity-50':''}">
+    </div>`;
+  }
+
+  const selOpts = TURNOS_OPS.map(t =>
+    `<option value="${t.v}" ${info?.turno===t.v?'selected':''}>${t.l}</option>`).join('');
+  const selCls = editable
+    ? 'w-full mt-auto border border-slate-300 rounded-lg px-1 py-1 text-xs bg-white focus:outline-none focus:border-blue-500 cursor-pointer'
+    : 'w-full mt-auto border border-slate-200 rounded-lg px-1 py-1 text-xs bg-slate-50 opacity-50 cursor-not-allowed';
+  html += `<select onchange="cambiarTurno('${fecha}',this.value)" ${!editable?'disabled':''}
+             class="${selCls}">${selOpts}</select>`;
+  html += `<div id="saving-${fecha}" class="hidden text-[10px] text-blue-500 mt-0.5 text-center">guardando...</div>`;
+  return html;
+}
+
+function _dayCellClass(esFest, esDom, info) {
+  let cls = 'min-h-[110px] flex flex-col rounded-xl border-2 p-2 transition ';
+  if (esFest)     cls += 'border-red-300 bg-red-50 ';
+  else if (esDom) cls += 'border-red-200 bg-red-50 ';
+  else if (info)  cls += 'border-emerald-300 bg-emerald-50 ';
+  else            cls += 'border-slate-200 bg-white hover:border-slate-300 ';
+  return cls;
+}
+
+function renderCalendario(year, month, editable) {
+  const numDias = new Date(year, month, 0).getDate();
+  let primerDia = new Date(year, month-1, 1).getDay();
+  primerDia = primerDia === 0 ? 6 : primerDia-1;
+
+  const c = document.getElementById('cal-days');
+  c.innerHTML = '';
+
+  for (let i=0; i<primerDia; i++) {
+    const d = document.createElement('div');
+    d.className = 'min-h-[110px]';
+    c.appendChild(d);
+  }
+
+  for (let dia=1; dia<=numDias; dia++) {
+    const fecha = fmtFecha(year, month, dia);
+    const jsDay = new Date(year, month-1, dia).getDay();
+    const esDom = jsDay === 0;
+    const esFest = fecha in festivos;
+    const especial = esDom || esFest;
+    const info = turnos[fecha];
+    const div = document.createElement('div');
+    div.className = _dayCellClass(esFest, esDom, info);
+    div.id = `day-${fecha}`;
+    div.innerHTML = _buildDayHtml(fecha, dia, esDom, esFest, especial, info, editable);
+    c.appendChild(div);
+  }
+}
+
+async function cambiarTurno(fecha, nuevoTurno) {
+  const savEl = document.getElementById(`saving-${fecha}`);
+  savEl.classList.remove('hidden');
+  try {
+    if (!nuevoTurno) {
+      const ex = turnos[fecha];
+      if (ex?.id) {
+        await api(`turnos/${ex.id}/`, {method:'DELETE'});
+        delete turnos[fecha];
+        rerenderDay(fecha);
+      }
+    } else {
+      const ex = turnos[fecha];
+      const r = await api('turnos/', {method:'POST', body: JSON.stringify({
+        empleado_id: empleadoSeleccionado.id, fecha, turno: nuevoTurno,
+        horas_diurnas: nuevoTurno==='por_horas'?(ex?.horas_diurnas??0):null,
+        horas_nocturnas: nuevoTurno==='por_horas'?(ex?.horas_nocturnas??0):null,
+      })});
+      const data = await r.json();
+      turnos[fecha] = {id:data.id, turno:data.turno,
+                       horas_diurnas:data.horas_diurnas??0,
+                       horas_nocturnas:data.horas_nocturnas??0};
+      rerenderDay(fecha);
+    }
+    actualizarResumen(mesSeleccionado.year, mesSeleccionado.month);
+  } catch(e) { showMsg('error','Error al guardar turno'); }
+  savEl.classList.add('hidden');
+}
+
+async function guardarHoras(fecha, campo, valor) {
+  const info = turnos[fecha];
+  if (!info?.id || info.turno !== 'por_horas') return;
+  info[campo] = Number(valor)||0;
+  try {
+    await api('turnos/', {method:'POST', body: JSON.stringify({
+      empleado_id: empleadoSeleccionado.id, fecha, turno:'por_horas',
+      horas_diurnas: info.horas_diurnas, horas_nocturnas: info.horas_nocturnas,
+    })});
+    actualizarResumen(mesSeleccionado.year, mesSeleccionado.month);
+  } catch(e) { showMsg('error','Error al guardar horas'); }
+}
+
+function rerenderDay(fecha) {
+  const [year, month] = [mesSeleccionado.year, mesSeleccionado.month];
+  const editable = canEdit(year, month);
+  const dia = parseInt(fecha.split('-')[2]);
+  const jsDay = new Date(year, month-1, dia).getDay();
+  const esDom = jsDay === 0;
+  const esFest = fecha in festivos;
+  const especial = esDom || esFest;
+  const info = turnos[fecha];
+  const div = document.getElementById(`day-${fecha}`);
+  if (!div) return;
+  div.className = _dayCellClass(esFest, esDom, info);
+  div.innerHTML = _buildDayHtml(fecha, dia, esDom, esFest, especial, info, editable);
+}
+
+function calcularHorasDia(turno, especial, hd, hn, sigEsp) {
+  if (turno==='libre') return [0,0,0,0];
+  if (turno==='por_horas') { return especial?[0,0,hd,hn]:[hd,hn,0,0]; }
+  if (turno==='noche') {
+    if (especial&&sigEsp)  return [0,0,1,11];
+    if (especial&&!sigEsp) return [1,6,0,5];
+    if (!especial&&sigEsp) return [0,5,1,6];
+    return [1,11,0,0];
+  }
+  if (turno==='veinticuatro') {
+    if (especial&&sigEsp)  return [0,0,12,12];
+    if (especial&&!sigEsp) return [1,6,11,6];
+    if (!especial&&sigEsp) return [11,6,1,6];
+    return [12,12,0,0];
+  }
+  const h = {manana:[6,0],tarde:[5,1],manana_tarde:[11,1]}[turno]||[0,0];
+  return especial?[0,0,h[0],h[1]]:[h[0],h[1],0,0];
+}
+
+function actualizarResumen(year, month) {
+  const keys = Object.keys(turnos);
+  document.getElementById('cal-resumen-turnos').textContent =
+    `${keys.length} turno(s) en ${MESES[month-1]} ${year}.`;
+
+  let hod=0, hon=0, hdf=0, hnf=0;
+  keys.forEach(fecha => {
+    const info = turnos[fecha];
+    if (info.turno==='libre') return;
+    const d = new Date(fecha+'T00:00:00');
+    const esp = d.getDay()===0 || fecha in festivos;
+    const next = new Date(d); next.setDate(next.getDate()+1);
+    const nf = fmtFecha(next.getFullYear(),next.getMonth()+1,next.getDate());
+    const sigEsp = next.getDay()===0 || nf in festivos;
+    const [a,b,c,dd] = calcularHorasDia(info.turno, esp, info.horas_diurnas||0, info.horas_nocturnas||0, sigEsp);
+    hod+=a; hon+=b; hdf+=c; hnf+=dd;
+  });
+
+  document.getElementById('cal-resumen-horas').innerHTML = keys.length ? `
+    <span><strong>${hod}h</strong> Ord. Diurnas</span>
+    <span class="text-purple-600"><strong>${hon}h</strong> Ord. Nocturnas (+35%)</span>
+    <span class="text-orange-600"><strong>${hdf}h</strong> Diurnas Festivas (+75%)</span>
+    <span class="text-red-600"><strong>${hnf}h</strong> Noct. Festivas (+110%)</span>` : '';
+}
+
+async function guardarObsMensual() {
+  const obs = document.getElementById('obs-mensual').value;
+  document.getElementById('obs-saving').classList.remove('hidden');
+  try {
+    await api('observacion-mensual/', {method:'POST', body: JSON.stringify({
+      empleado_id: empleadoSeleccionado.id,
+      year: mesSeleccionado.year, month: mesSeleccionado.month, observacion: obs,
+    })});
+  } catch(e) {}
+  document.getElementById('obs-saving').classList.add('hidden');
+}
+
+// ── Navegación pasos ─────────────────────────────────────────────────────────
+function setStep(n) {
+  document.getElementById('paso1').classList.toggle('hidden', n!==1);
+  document.getElementById('paso2').classList.toggle('hidden', n!==2);
+  document.getElementById('paso3').classList.toggle('hidden', n!==3);
+
+  [1,2,3].forEach(i => {
+    const item = document.getElementById(`step${i}-item`);
+    const num  = document.getElementById(`step${i}-num`);
+    if (i===n) {
+      item.style.cssText = 'background:#1e3a5f;color:white';
+      num.style.cssText  = 'background:white;color:#1e3a5f';
+      item.classList.remove('bg-slate-200','text-slate-500');
+    } else if (i<n) {
+      item.style.cssText = 'background:#dbeafe;color:#1e40af';
+      num.style.cssText  = 'background:#1e40af;color:white';
+      item.classList.remove('bg-slate-200','text-slate-500');
+    } else {
+      item.style.cssText = '';
+      num.style.cssText  = '';
+      item.classList.add('bg-slate-200','text-slate-500');
+    }
+  });
+}
+
+function showMsg(type, text) {
+  const el = document.getElementById('cal-msg');
+  el.classList.remove('hidden','bg-red-100','text-red-800','bg-green-100','text-green-800');
+  el.classList.add(type==='error'?'bg-red-100':'bg-green-100',
+                   type==='error'?'text-red-800':'text-green-800');
+  el.textContent = text;
+  setTimeout(()=>el.classList.add('hidden'), 4000);
+}
+
+// ── Cambiar Área ──────────────────────────────────────────────────────────────
+let moverTurnosEmpId = null;
+
+function abrirModalMoverTurnos(id, nombre, areaActual) {
+  moverTurnosEmpId = id;
+  document.getElementById('mover-t-emp-nombre').textContent = nombre;
+  document.getElementById('modal-mover-t-error').classList.add('hidden');
+  const sel = document.getElementById('mover-t-area-select');
+  sel.innerHTML = '<option value="">— Seleccionar —</option>' +
+    areas.map(a => {
+      const disabled = a.id === areaActual ? ' disabled' : '';
+      const label    = a.id === areaActual ? ' (actual)' : '';
+      return `<option value="${a.id}"${disabled}>${a.nombre}${label}</option>`;
+    }).join('');
+  sel.value = '';
+  document.getElementById('modal-mover-turnos').classList.remove('hidden');
+  setTimeout(() => sel.focus(), 100);
+}
+
+function cerrarModalMoverTurnos() {
+  document.getElementById('modal-mover-turnos').classList.add('hidden');
+  moverTurnosEmpId = null;
+}
+
+async function guardarMoverTurnos() {
+  const areaId = document.getElementById('mover-t-area-select').value;
+  const errEl  = document.getElementById('modal-mover-t-error');
+  if (!areaId) {
+    errEl.textContent = 'Selecciona un área destino';
+    errEl.classList.remove('hidden');
+    return;
+  }
+  errEl.classList.add('hidden');
+  const btn = document.getElementById('btn-guardar-mover-t');
+  btn.disabled = true; btn.textContent = 'Moviendo...';
+  try {
+    const r = await api(`empleados/${moverTurnosEmpId}/`, {
+      method: 'PUT',
+      body: JSON.stringify({ area: parseInt(areaId) }),
+    });
+    if (!r.ok) {
+      const data = await r.json().catch(() => ({}));
+      throw data;
+    }
+    cerrarModalMoverTurnos();
+    irPaso2();   // recarga la lista del área actual
+  } catch(e) {
+    errEl.textContent = e.error || 'Sin permiso para mover a esa área';
+    errEl.classList.remove('hidden');
+  } finally {
+    btn.disabled = false; btn.textContent = 'Mover';
+  }
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+cargarAreas();
+renderMeses();
+</script>
+{% endblock %}

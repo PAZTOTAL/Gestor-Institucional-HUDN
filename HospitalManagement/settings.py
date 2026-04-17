@@ -68,7 +68,7 @@ INSTALLED_APPS = [
     'defenjur_py.legal',
 
     'A_00_Organigrama',
-    'usuarios',# Apps migradas desde AdmonAlexaTotal
+    'usuarios',
     'BasesGenerales',
     'consultas_externas',
     'registro_anestesia',
@@ -87,6 +87,9 @@ INSTALLED_APPS = [
     'frecuenciafetal',
     'certificados_laborales',
     'visor_soportes',
+    # Cuando integre el código completo de UNIFICADOR-V1 en la raíz del repo, descomente:
+    # 'meows',
+    # 'trabajoparto',
 ]
 
 MIDDLEWARE = [
@@ -218,6 +221,7 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_DIRS = [
     BASE_DIR / 'static',
     BASE_DIR / 'defenjur_py' / 'static',
+    BASE_DIR / 'UNIFICADOR-V1' / 'sistema_obstetrico' / 'static',
 ]
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
