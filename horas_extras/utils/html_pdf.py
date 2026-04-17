@@ -9,12 +9,8 @@ from datetime import date
 from jinja2 import Environment, FileSystemLoader
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
-# _HERE = .../horas_extras/utils  →  BASE_DIR = .../Gestor-Institucional-HUDN
-_BASE_DIR = os.path.dirname(os.path.dirname(_HERE))
-TEMPLATE_DIR = os.path.join(_BASE_DIR, 'recargos', 'format')
-# Fallback: plantilla copiada junto a este archivo
-if not os.path.exists(os.path.join(TEMPLATE_DIR, 'FRRHU-030.html')):
-    TEMPLATE_DIR = _HERE
+# Plantilla e imágenes dentro de horas_extras/utils/format/
+TEMPLATE_DIR = os.path.join(_HERE, 'format')
 
 TEMPLATE_FILE = 'FRRHU-030.html'
 
