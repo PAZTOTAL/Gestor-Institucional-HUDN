@@ -253,7 +253,7 @@ class HomeView(AccessControlMixin, TemplateView):
             {'name': 'BANCO DE LECHE', 'slug': 'banco_de_leche', 'icon': 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z M12 8v4 M12 16h.01', 'description': 'Nutrición y Recolección'},
             {'name': 'ORTOPEDIA', 'slug': 'ortopedia', 'icon': 'M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20', 'description': 'Traumatología y Ortopedia'},
             {'name': 'CONSULTA EXTERNA', 'slug': 'consulta_externa', 'icon': 'M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2', 'description': 'Citas y Especialidades'},
-            {'name': 'GINECO OBSTETRICIA', 'slug': 'gineco_obstetricia', 'icon': 'M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6', 'description': 'Maternidad y Neonatal'},
+            {'name': 'SALA DE PARTOS', 'slug': 'gineco_obstetricia', 'icon': 'M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6', 'description': 'Maternidad y Neonatal'},
             {'name': 'TALENTO HUMANO', 'slug': 'talento_humano', 'icon': 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z', 'description': 'Gestión de personal y nómina'},
             {'name': 'CONTABILIDAD', 'slug': 'contabilidad', 'icon': 'M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z', 'description': 'Certificados DIAN y Reportes Contables'},
             {'name': 'BIENES Y SERVICIOS', 'slug': 'financiera', 'icon': 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z', 'description': 'Presupuesto y Compras'},
@@ -262,12 +262,15 @@ class HomeView(AccessControlMixin, TemplateView):
         # 3. Modules List
         quirofanos_modules = [
             {'name': 'Consentimientos Informados', 'slug': 'ConsentimientosInformados', 'description': 'Autorizaciones y Firmas Electrónicas', 'url': '/consentimientos/', 'icon': 'M12 20h9 M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z'},
-            {'name': 'Frecuencia Fetal', 'slug': 'frecuenciafetal', 'description': 'Monitoreo de Frecuencia Cardíaca Fetal', 'url': '/modulo/frecuenciafetal/', 'icon': 'M13 2L3 14h9l-1 8 10-12h-9l1-8z'},
-            {'name': 'Gestión de Partos', 'slug': 'system_obstetrico_app', 'description': 'Historia Clínico y Partograma', 'url': '/modulo/system_obstetrico_app/', 'icon': 'M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z'},
             {'name': 'Registro de Anestesia', 'slug': 'registro_anestesia', 'description': 'Registro Clínico de Anestesia (FRQUI-032)', 'url': '/registro-anestesia/create/', 'icon': 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z'},
-            {'name': 'UNIFICADOR-V1', 'slug': 'unificador_v1', 'description': 'Consolidado de Atención de Partos', 'url': '/atencion/', 'icon': 'M19 14l-7 7-7-7m14-8l-7 7-7-7'},
             {'name': 'Central de Mezclas', 'slug': 'CentralDeMezclas', 'description': 'Laboratorio de Preparaciones Estériles', 'url': '/central-mezclas/', 'icon': 'M11 10.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5z M5.5 15.5l1.5-2 M17 15.5l-1.5-2 M2 22h20 M7 22l1-4.5 M17 22l-1-4.5'},
             {'name': 'Trasplantes y Donación', 'slug': 'trasplantes_donacion', 'description': 'Gestión de Alertas y Trasplantes', 'url': '/modulo/trasplantes_donacion/', 'icon': 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z M12 8v4 M12 16h.01'},
+            {'name': 'Frecuencia Fetal', 'slug': 'frecuenciafetal', 'description': 'Monitoreo de Frecuencia Cardíaca Fetal', 'url': '/modulo/frecuenciafetal/', 'icon': 'M13 2L3 14h9l-1 8 10-12h-9l1-8z'},
+            {'name': 'Gestión de Partos', 'slug': 'system_obstetrico_app', 'description': 'Historia Clínico y Partograma', 'url': '/modulo/system_obstetrico_app/', 'icon': 'M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z'},
+        ]
+
+        gineco_modules = [
+            {'name': 'SALA DE PARTOS', 'slug': 'unificador_v1', 'description': 'Consolidado de Atención de Partos', 'url': '/atencion/', 'icon': 'M19 14l-7 7-7-7m14-8l-7 7-7-7'},
         ]
         
         administrativos = [
@@ -300,6 +303,7 @@ class HomeView(AccessControlMixin, TemplateView):
 
         # 4. Filter lists
         quirofanos_modules = [m for m in quirofanos_modules if has_permission(m['slug'])]
+        gineco_modules = [m for m in gineco_modules if has_permission(m['slug'])]
         administrativos = [m for m in administrativos if has_permission(m['slug'])]
         dashboard_categories = [c for c in all_categories if has_permission(c['slug'])]
         
@@ -314,6 +318,7 @@ class HomeView(AccessControlMixin, TemplateView):
 
         context['dashboard_categories'] = dashboard_categories
         context['quirofanos_modules'] = quirofanos_modules
+        context['gineco_modules'] = gineco_modules
         context['administrativos'] = administrativos
         context['consultas'] = consultas
         context['admin_reports'] = admin_reports

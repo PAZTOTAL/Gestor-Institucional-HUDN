@@ -151,9 +151,27 @@
         <p class="text-xl text-gray-500">Próximamente disponible.</p>
     </div>
 
-    <div id="section-gineco_obstetricia" class="hidden p-10 text-center glass-card">
-        <h2 class="text-3xl font-black mb-4">GINECO OBSTETRICIA</h2>
-        <p class="text-xl text-gray-500">Próximamente disponible.</p>
+    <div id="section-gineco_obstetricia" class="hidden animate-in fade-in slide-in-from-top-2 duration-300">
+        <div class="flex items-center gap-4 mb-6 border-b-2 border-blue-200 pb-2">
+            <button onclick="showSection('asistencial')" class="p-2 hover:bg-blue-100 rounded-full transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="text-blue-700"><path d="m15 18-6-6 6-6"/></svg>
+            </button>
+            <h2 class="text-2xl font-black text-blue-900 uppercase">SALA DE PARTOS</h2>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {% for module in gineco_modules %}
+            <a href="{{ module.url }}" class="glass-card module-card p-5 flex flex-col items-center text-center">
+                <div class="module-icon mb-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="{{ module.icon }}"></path>
+                    </svg>
+                </div>
+                <h3 class="text-lg font-bold mb-1 text-black">{{ module.name }}</h3>
+                <p class="text-blue-900 text-sm font-medium">{{ module.description }}</p>
+            </a>
+            {% endfor %}
+        </div>
     </div>
 
     <!-- JURIDICA -->
