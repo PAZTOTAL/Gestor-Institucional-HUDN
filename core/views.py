@@ -221,16 +221,38 @@ class HomeView(AccessControlMixin, TemplateView):
             # Store for reuse in get_context_data to avoid re-querying
             request._allowed_apps = allowed_apps
         return super().dispatch(request, *args, **kwargs)
-
-    def get_context_data(self, **kwargs):
+    def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
                     
-        # Categorize modules into Healthcare and Administrative groups
-        asistenciales = [
-            {'name': 'Registro de Anestesia', 'slug': 'registro_anestesia', 'description': 'Registro Clínico de Anestesia (FRQUI-032)', 'url': '/registro-anestesia/create/', 'icon': 'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z M14 2 14 8 20 8 M16 13H8 M16 17H8 M10 9H9H8'},
-            {'name': 'UNIFICADOR-V1', 'slug': 'unificador_v1', 'description': 'Historia Clínico y Partograma', 'url': '/atencion/', 'icon': 'M9 12h.01 M15 12h.01 M10 16a2.5 2.5 0 0 0 4 0 M12 22a7 7 0 1 0 0-14 7 7 0 0 0 0 14z M12 8V2 M5.88 10.9a3.5 3.5 0 1 1 5.24 4.77 M18.12 10.9a3.5 3.5 0 1 0-5.24 4.77'},
+        # New Categories requested by USER (Subgerencia de Salud)
+        dashboard_categories = [
+            {'name': 'HOSPITALIZACION', 'slug': 'hospitalizacion', 'icon': 'M19 14l-7 7-7-7m14-8l-7 7-7-7', 'description': 'Gestión de pacientes en piso'},
+            {'name': 'QUIRÚRGICAS', 'slug': 'quirofanos', 'icon': 'M22 12h-4l-3 9L9 3l-3 9H2', 'description': 'Cirugía, Anestesia y Procedimientos'},
+            {'name': 'URGENCIAS', 'slug': 'urgencias', 'icon': 'M13 2L3 14h9l-1 8 10-12h-9l1-8z', 'description': 'Atención Prioritaria'},
+            {'name': 'SERVICIO TERAPEUTICO', 'slug': 'terapeutica', 'icon': 'M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z', 'description': 'Oncología, Diálisis y Terapia Física'},
+            {'name': 'AUDITORIA MEDICA', 'slug': 'auditoria_medica', 'icon': 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z', 'description': 'Control y Calidad'},
+            {'name': 'BANCO DE LECHE', 'slug': 'banco_de_leche', 'icon': 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z M12 8v4 M12 16h.01', 'description': 'Nutrición y Recolección'},
+            {'name': 'ORTOPEDIA', 'slug': 'ortopedia', 'icon': 'M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20', 'description': 'Traumatología y Ortopedia'},
+            {'name': 'CONSULTA EXTERNA', 'slug': 'consulta_externa', 'icon': 'M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2', 'description': 'Citas y Especialidades'},
+            {'name': 'GINECO OBSTETRICIA', 'slug': 'gineco_obstetricia', 'icon': 'M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6', 'description': 'Maternidad y Neonatal'},
+        ]
+
+        # Therapeutic services sub-items
+        terapeuticos_modules = [
+            {'name': 'Oncología', 'slug': 'oncologia', 'description': 'Tratamientos Oncológicos', 'icon': 'bi-bandaid'},
+            {'name': 'Unidad de Diálisis', 'slug': 'dialisis', 'description': 'Terapia Renal', 'icon': 'bi-droplet-half'},
+            {'name': 'Terapia Física', 'slug': 'terapia_fisica', 'description': 'Rehabilitación y Terapia', 'icon': 'bi-person-walking'},
+        ]
+
+        # Modules to be placed inside QUIROFANOS (as per user request: "PON EN QUIROFANO LOS ACCESOS DE LA PANTALLA")
+        quirofanos_modules = [
             {'name': 'Consentimientos Informados', 'slug': 'ConsentimientosInformados', 'description': 'Autorizaciones y Firmas Electrónicas', 'url': '/consentimientos/', 'icon': 'M12 20h9 M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z'},
-            {'name': 'Central de Mezclas', 'slug': 'CentralDeMezclas', 'description': 'Laboratorio de Preparaciones Estériles', 'url': '/central-mezclas/', 'icon': 'M16.3 3.4 12 10V2M11 10.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5z M5.5 15.5l1.5-2 M17 15.5l-1.5-2 M2 22h20 M7 22l1-4.5 M17 22l-1-4.5'},
+            {'name': 'Frecuencia Fetal (Obstetricia)', 'slug': 'frecuenciafetal', 'description': 'Monitoreo de Frecuencia Cardíaca Fetal', 'url': '/modulo/frecuenciafetal/', 'icon': 'M13 2L3 14h9l-1 8 10-12h-9l1-8z'},
+            {'name': 'Gestión de Partos', 'slug': 'system_obstetrico_app', 'description': 'Historia Clínico y Partograma', 'url': '/modulo/system_obstetrico_app/', 'icon': 'M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z'},
+            {'name': 'Registro de Anestesia', 'slug': 'registro_anestesia', 'description': 'Registro Clínico de Anestesia (FRQUI-032)', 'url': '/registro-anestesia/create/', 'icon': 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z'},
+            {'name': 'UNIFICADOR-V1', 'slug': 'unificador_v1', 'description': 'Consolidado de Atención de Partos', 'url': '/atencion/', 'icon': 'M19 14l-7 7-7-7m14-8l-7 7-7-7'},
+            {'name': 'Central de Mezclas', 'slug': 'CentralDeMezclas', 'description': 'Laboratorio de Preparaciones Estériles', 'url': '/central-mezclas/', 'icon': 'M11 10.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5z M5.5 15.5l1.5-2 M17 15.5l-1.5-2 M2 22h20 M7 22l1-4.5 M17 22l-1-4.5'},
+            {'name': 'Trasplantes y Donación', 'slug': 'trasplantes_donacion', 'description': 'Gestión de Alertas y Trasplantes', 'url': '/modulo/trasplantes_donacion/', 'icon': 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z M12 8v4 M12 16h.01'},
         ]
         
         administrativos = [
@@ -275,7 +297,7 @@ class HomeView(AccessControlMixin, TemplateView):
                 )
 
             # Filter in Python using the pre-fetched set (0 extra queries)
-            asistenciales = [m for m in asistenciales if m['slug'] in allowed_apps]
+            quirofanos_modules = [m for m in quirofanos_modules if m['slug'] in allowed_apps]
             administrativos = [m for m in administrativos if m['slug'] in allowed_apps]
             
             # Filter Consultas
@@ -285,11 +307,12 @@ class HomeView(AccessControlMixin, TemplateView):
                 salud_reports = []
         
         # Add URL to each module
-        for mod in asistenciales + administrativos:
+        for mod in quirofanos_modules + administrativos:
             if 'url' not in mod:
                 mod['url'] = f"/modulo/{mod['slug']}/"
             
-        context['asistenciales'] = asistenciales
+        context['dashboard_categories'] = dashboard_categories
+        context['quirofanos_modules'] = quirofanos_modules
         context['administrativos'] = administrativos
         context['consultas'] = consultas
         context['admin_reports'] = admin_reports
