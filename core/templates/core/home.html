@@ -16,22 +16,45 @@
         </div>
     </div>
 
-    <!-- NIVEL 0: ACCESO PRINCIPAL -->
-    <div id="main-cards-grid" class="flex justify-center py-20 animate-in fade-in zoom-in duration-500">
-        <!-- Tarjeta GERENCIA -->
-        <div onclick="showSection('gerencia_nive1')" id="card-gerencia"
-            class="glass-card p-16 cursor-pointer hover:border-blue-900 group transition-all duration-500 w-full max-w-xl">
-            <div class="flex flex-col items-center text-center">
-                <div class="w-24 h-24 bg-blue-900/10 rounded-full flex items-center justify-center mb-8 text-blue-900 group-hover:bg-blue-900 group-hover:text-white transition-all transform group-hover:scale-110">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path><path d="M2 21h20"></path><path d="M7 8h2"></path><path d="M15 8h2"></path><path d="M7 12h2"></path><path d="M15 12h2"></path><path d="M7 16h2"></path><path d="M15 16h2"></path></svg>
-                </div>
-                <h2 class="text-4xl font-black mb-4 uppercase text-blue-950 tracking-tighter">GERENCIA</h2>
-                <p class="text-slate-600 text-xl font-medium">Dirección General Institucional</p>
-                <div class="mt-6 flex items-center gap-2 text-blue-700 font-bold group-hover:translate-x-2 transition-transform">
-                    INGRESAR AL SISTEMA <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg>
+    <!-- NIVEL 0: ACCESO PRINCIPAL / SMART DASHBOARD -->
+    <div id="main-cards-grid" class="animate-in fade-in zoom-in duration-500">
+        {% if show_direct_modules %}
+            <!-- DASHBOARD DINÁMICO: ACCESO DIRECTO (Menos Clics) -->
+            <div class="mb-8 border-l-4 border-blue-600 pl-4">
+                <h2 class="text-xl font-black text-blue-900 uppercase">Mis Aplicaciones</h2>
+                <p class="text-slate-500 font-medium">Acceso rápido a tus herramientas autorizadas</p>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {% for module in all_permitted_modules %}
+                <a href="{{ module.url }}" class="glass-card module-card p-6 flex flex-col items-center text-center hover:border-blue-500 transition-all">
+                    <div class="w-16 h-16 bg-blue-100 rounded-2xl flex items-center justify-center mb-4 text-blue-600">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="{{ module.icon|default:'M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5' }}"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-lg font-bold mb-1 text-blue-950 uppercase">{{ module.name }}</h3>
+                    <p class="text-slate-600 text-sm font-medium">{{ module.description }}</p>
+                </a>
+                {% endfor %}
+            </div>
+        {% else %}
+            <!-- NIVEL 0: ORGANIGRAMA TRADICIONAL (Para Administradores) -->
+            <div class="flex justify-center py-20">
+                <div onclick="showSection('gerencia_nive1')" id="card-gerencia"
+                    class="glass-card p-16 cursor-pointer hover:border-blue-900 group transition-all duration-500 w-full max-w-xl">
+                    <div class="flex flex-col items-center text-center">
+                        <div class="w-24 h-24 bg-blue-900/10 rounded-full flex items-center justify-center mb-8 text-blue-900 group-hover:bg-blue-900 group-hover:text-white transition-all transform group-hover:scale-110">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path><path d="M2 21h20"></path><path d="M7 8h2"></path><path d="M15 8h2"></path><path d="M7 12h2"></path><path d="M15 12h2"></path><path d="M7 16h2"></path><path d="M15 16h2"></path></svg>
+                        </div>
+                        <h2 class="text-4xl font-black mb-4 uppercase text-blue-950 tracking-tighter">GERENCIA</h2>
+                        <p class="text-slate-600 text-xl font-medium">Dirección General Institucional</p>
+                        <div class="mt-6 flex items-center gap-2 text-blue-700 font-bold group-hover:translate-x-2 transition-transform">
+                            INGRESAR AL SISTEMA <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg>
+                        </div>
+                    </div>
                 </div>
             </div>
-        </div>
+        {% endif %}
     </div>
 </div>
 

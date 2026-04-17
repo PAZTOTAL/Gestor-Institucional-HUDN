@@ -112,26 +112,69 @@ class PersonalPorAreaReportView(LoginRequiredMixin, TemplateView):
         context = super().get_context_data(**kwargs)
         from django.db import connections
         
+        # 1. Obtener la fuente de verdad (Excel - 764 personas)
+        excel_data = get_master_excel_data()
+        if not excel_data:
+            context['error'] = "No se pudo cargar el archivo Excel maestro."
+            return context
+
+        # 2. Obtener mapeo de áreas desde Dinámica para TODOS los activos
+        # Cruza NMEMPLEA con centros de costos
+        mapping = {}
         with connections['readonly'].cursor() as cursor:
-            # Distribución de Personal PERMANENTE por Area
-            query = """
+            query_db = """
                 SELECT 
+                    RTRIM(LTRIM(e.NEMCODIGO)) as cedula,
                     ISNULL(c.CCCODIGO, ISNULL(a.ARECODIGO, 'SIN-AREA')) as area_code,
-                    ISNULL(c.CCNOMBRE, ISNULL(a.ARENOMBRE, 'SIN AREA ASIGNADA')) as area_name,
-                    COUNT(e.NEMCODIGO) as total
+                    ISNULL(c.CCNOMBRE, ISNULL(a.ARENOMBRE, 'SIN AREA ASIGNADA')) as area_name
                 FROM NMEMPLEA e
                 LEFT JOIN CTNCENCOS c ON RTRIM(LTRIM(e.GASCODIGO)) = RTRIM(LTRIM(c.CCCODIGO))
                 LEFT JOIN AFNAREAS a ON RTRIM(LTRIM(e.GASCODIGO)) = RTRIM(LTRIM(a.ARECODIGO))
-                WHERE e.NEMESTADO = 1 AND e.NEMCLAEMP = 0
-                GROUP BY c.CCCODIGO, c.CCNOMBRE, a.ARECODIGO, a.ARENOMBRE
-                ORDER BY COUNT(e.NEMCODIGO) DESC
+                WHERE e.NEMESTADO IN (1, 2)
             """
-            cursor.execute(query)
-            columns = [col[0] for col in cursor.description]
-            areas = [dict(zip(columns, row)) for row in cursor.fetchall()]
+            cursor.execute(query_db)
+            for row in cursor.fetchall():
+                mapping[row[0]] = {'code': row[1], 'name': row[2]}
+
+        # 3. Cruzar y agrupar
+        # Estructura: areas_dict[area_code] = {name, total, planta, temporal}
+        areas_dict = {}
+        
+        for p in excel_data:
+            cedula = str(p.get('CEDULA')).strip()
+            vinc = str(p.get('VINCULACION')).upper()
+            
+            # Info de Dinámica o fallback
+            db_info = mapping.get(cedula)
+            if db_info:
+                a_code = db_info['code']
+                a_name = db_info['name']
+            else:
+                a_code = 'SIN-INFO'
+                a_name = 'SIN REGISTRO EN DINÁMICA'
+
+            if a_code not in areas_dict:
+                areas_dict[a_code] = {
+                    'area_code': a_code,
+                    'area_name': a_name,
+                    'total': 0,
+                    'planta': 0,
+                    'temporal': 0
+                }
+            
+            areas_dict[a_code]['total'] += 1
+            if vinc == 'PERMANENTE':
+                areas_dict[a_code]['planta'] += 1
+            else:
+                areas_dict[a_code]['temporal'] += 1
+
+        # 4. Convertir a lista y ordenar
+        areas = sorted(areas_dict.values(), key=lambda x: x['total'], reverse=True)
 
         context['areas'] = areas
-        context['total_empleados'] = sum(a['total'] for a in areas)
+        context['total_empleados'] = len(excel_data)
+        context['total_planta'] = sum(a['planta'] for a in areas)
+        context['total_temporal'] = sum(a['temporal'] for a in areas)
         context['fecha_corte'] = timezone.now()
         return context
 
@@ -141,56 +184,65 @@ class PersonalAreaDetailView(LoginRequiredMixin, TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         area_code = self.kwargs.get('area_code')
+        filtro_tipo = self.request.GET.get('filtro', '').upper()
         from django.db import connections
         
+        # 1. Obtener fuente de verdad (Excel)
+        excel_data = get_master_excel_data()
+        
+        # 2. Obtener mapeo y nombres de centros de costo para el encabezado
+        mapping = {}
+        area_name = "Área Desconocida"
+        
         with connections['readonly'].cursor() as cursor:
-            # Preparar parámetros y filtro
-            if area_code == 'SIN-AREA':
-                context['area_name'] = 'SIN AREA ASIGNADA'
-                # Incluimos: NULL, vacíos, o códigos que no existen en la tabla maestra CTNCENCOS
-                filter_sql = """
-                    WHERE e.NEMESTADO = 1 AND (
-                        e.GASCODIGO IS NULL OR 
-                        RTRIM(LTRIM(e.GASCODIGO)) = '' OR 
-                        NOT EXISTS (SELECT 1 FROM CTNCENCOS c2 WHERE RTRIM(LTRIM(c2.CCCODIGO)) = RTRIM(LTRIM(e.GASCODIGO)))
-                    )
-                """
-                params = []
-            else:
-                cursor.execute("SELECT CCNOMBRE FROM CTNCENCOS WHERE RTRIM(LTRIM(CCCODIGO)) = %s", [area_code.strip()])
+            # Obtener nombre del área
+            if area_code != 'SIN-INFO':
+                cursor.execute("SELECT CCNOMBRE FROM CTNCENCOS WHERE RTRIM(LTRIM(CCCODIGO)) = %s", [area_code])
                 res = cursor.fetchone()
                 if not res:
-                    cursor.execute("SELECT ARENOMBRE FROM AFNAREAS WHERE RTRIM(LTRIM(ARECODIGO)) = %s", [area_code.strip()])
+                    cursor.execute("SELECT ARENOMBRE FROM AFNAREAS WHERE RTRIM(LTRIM(ARECODIGO)) = %s", [area_code])
                     res = cursor.fetchone()
-                context['area_name'] = res[0] if res else 'Área Desconocida'
-                filter_sql = "WHERE e.NEMESTADO = 1 AND RTRIM(LTRIM(e.GASCODIGO)) = %s"
-                params = [area_code.strip()]
+                area_name = res[0] if res else area_code
+            else:
+                area_name = "SIN REGISTRO EN DINÁMICA"
 
-            # Obtener lista de funcionarios
-            filtro_tipo = self.request.GET.get('filtro', '')
-            # Swapped logic: 3 is Temporal, 0 is Permanente
-            clase_sql = " AND e.NEMCLAEMP = 3" if filtro_tipo == 'temporal' else " AND e.NEMCLAEMP = 0"
-            
-            # Reemplazar NEMESTADO=1 por NEMESTADO=1 + clase_sql
-            current_filter = filter_sql.replace("WHERE e.NEMESTADO = 1", f"WHERE e.NEMESTADO = 1{clase_sql}")
-
-            query = f"""
+            # Traer info para mapeo
+            cursor.execute("""
                 SELECT 
-                    e.NEMCODIGO as documento,
-                    e.NEMNOMCOM as nombre,
-                    e.NEMFECING as fecha_ingreso,
-                    v.VINNOMBRE as vinculacion
+                    RTRIM(LTRIM(e.NEMCODIGO)) as cedula,
+                    ISNULL(c.CCCODIGO, ISNULL(a.ARECODIGO, 'SIN-AREA')) as area_code,
+                    v.VINNOMBRE as vinculacion_db
                 FROM NMEMPLEA e
+                LEFT JOIN CTNCENCOS c ON RTRIM(LTRIM(e.GASCODIGO)) = RTRIM(LTRIM(c.CCCODIGO))
+                LEFT JOIN AFNAREAS a ON RTRIM(LTRIM(e.GASCODIGO)) = RTRIM(LTRIM(a.ARECODIGO))
                 LEFT JOIN NOMVINCULA v ON e.NEMTIPCON = v.VINCODIGO
-                {current_filter}
-                ORDER BY e.NEMNOMCOM ASC
-            """
-            cursor.execute(query, params)
-                
-            columns = [col[0] for col in cursor.description]
-            funcionarios = [dict(zip(columns, row)) for row in cursor.fetchall()]
+                WHERE e.NEMESTADO IN (1, 2)
+            """)
+            for row in cursor.fetchall():
+                mapping[row[0]] = {'area': row[1], 'vinc': row[2]}
 
-        context['funcionarios'] = funcionarios
+        # 3. Filtrar empleados del Excel que pertenecen a este área
+        funcionarios = []
+        for p in excel_data:
+            cedula = str(p.get('CEDULA')).strip()
+            vinc_excel = str(p.get('VINCULACION')).upper()
+            
+            # Determinar área en Dinámica
+            emp_info = mapping.get(cedula)
+            emp_area = emp_info['area'] if emp_info else 'SIN-INFO'
+            
+            if emp_area == area_code:
+                # Aplicar filtro de tipo (Planta/Temporal) si viene de los reportes específicos
+                if filtro_tipo and vinc_excel != filtro_tipo:
+                    continue
+                    
+                funcionarios.append({
+                    'documento': cedula,
+                    'nombre': p.get('NOMBRE'),
+                    'vinculacion': vinc_excel,
+                    'vinculacion_db': emp_info['vinc'] if emp_info else 'NO REGISTRA'
+                })
+
         context['area_code'] = area_code
         context['filtro'] = self.request.GET.get('filtro', '')
         return context

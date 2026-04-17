@@ -216,8 +216,12 @@ class HomeView(AccessControlMixin, TemplateView):
             )
             if len(allowed_apps) == 1:
                 unica_app = next(iter(allowed_apps))
+                # Map some known apps to their dashboards, otherwise follow local logic
                 if unica_app == 'CertificadosDIAN':
                     return redirect('certificados_dian:dashboard')
+                elif unica_app == 'unificador_v1':
+                    return redirect('/atencion/')
+                # Removed redirect for horas_extras to use the new dashboard categories instead of the old hub view
             # Store for reuse in get_context_data to avoid re-querying
             request._allowed_apps = allowed_apps
         return super().dispatch(request, *args, **kwargs)
@@ -240,89 +244,115 @@ class HomeView(AccessControlMixin, TemplateView):
             if slug in ['A_00_Organigrama', 'usuarios', 'consultas_externas']: # Public apps
                 return True
             if slug in allowed_apps: return True
+            if 'horas_extras' in allowed_apps: return True
             if slug.startswith('CertificadosDIAN') and 'CertificadosDIAN' in allowed_apps: return True
             return False
 
-        # 2. Categories (Subgerencia de Salud Cards)
-        all_categories = [
-            {'name': 'HOSPITALIZACION', 'slug': 'hospitalizacion', 'icon': 'M19 14l-7 7-7-7m14-8l-7 7-7-7', 'description': 'Gestión de pacientes en piso'},
-            {'name': 'QUIRÚRGICAS', 'slug': 'quirofanos', 'icon': 'M22 12h-4l-3 9L9 3l-3 9H2', 'description': 'Cirugía, Anestesia y Procedimientos'},
-            {'name': 'URGENCIAS', 'slug': 'urgencias', 'icon': 'M13 2L3 14h9l-1 8 10-12h-9l1-8z', 'description': 'Atención Prioritaria'},
-            {'name': 'SERVICIO TERAPEUTICO', 'slug': 'terapeutica', 'icon': 'M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z', 'description': 'Oncología, Diálisis y Terapia Física'},
-            {'name': 'AUDITORIA MEDICA', 'slug': 'auditoria_medica', 'icon': 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z', 'description': 'Control y Calidad'},
-            {'name': 'BANCO DE LECHE', 'slug': 'banco_de_leche', 'icon': 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z M12 8v4 M12 16h.01', 'description': 'Nutrición y Recolección'},
-            {'name': 'ORTOPEDIA', 'slug': 'ortopedia', 'icon': 'M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20', 'description': 'Traumatología y Ortopedia'},
-            {'name': 'CONSULTA EXTERNA', 'slug': 'consulta_externa', 'icon': 'M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2', 'description': 'Citas y Especialidades'},
-            {'name': 'SALA DE PARTOS', 'slug': 'gineco_obstetricia', 'icon': 'M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6', 'description': 'Maternidad y Neonatal'},
-            {'name': 'TALENTO HUMANO', 'slug': 'talento_humano', 'icon': 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z', 'description': 'Gestión de personal y nómina'},
-            {'name': 'CONTABILIDAD', 'slug': 'contabilidad', 'icon': 'M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z', 'description': 'Certificados DIAN y Reportes Contables'},
-            {'name': 'BIENES Y SERVICIOS', 'slug': 'financiera', 'icon': 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z', 'description': 'Presupuesto y Compras'},
+        # Define Categories with their respective modules
+        # This structure allows us to filter categories based on whether they have visible modules
+        structure = [
+            {
+                'category': {'name': 'HOSPITALIZACION', 'slug': 'hospitalizacion', 'icon': 'M19 14l-7 7-7-7m14-8l-7 7-7-7', 'description': 'Gestión de pacientes en piso'},
+                'modules': []
+            },
+            {
+                'category': {'name': 'QUIRÚRGICAS', 'slug': 'quirofanos', 'icon': 'M22 12h-4l-3 9L9 3l-3 9H2', 'description': 'Cirugía, Anestesia y Procedimientos'},
+                'modules': [
+                    {'name': 'Consentimientos Informados', 'slug': 'ConsentimientosInformados', 'description': 'Autorizaciones y Firmas Electrónicas', 'url': '/consentimientos/', 'icon': 'M12 20h9 M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z'},
+                    {'name': 'Registro de Anestesia', 'slug': 'registro_anestesia', 'description': 'Registro Clínico de Anestesia (FRQUI-032)', 'url': '/registro-anestesia/create/', 'icon': 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z'},
+                    {'name': 'Central de Mezclas', 'slug': 'CentralDeMezclas', 'description': 'Laboratorio de Preparaciones Estériles', 'url': '/central-mezclas/', 'icon': 'M11 10.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5z M5.5 15.5l1.5-2 M17 15.5l-1.5-2 M2 22h20 M7 22l1-4.5 M17 22l-1-4.5'},
+                    {'name': 'Trasplantes y Donación', 'slug': 'trasplantes_donacion', 'description': 'Gestión de Alertas y Trasplantes', 'url': '/modulo/trasplantes_donacion/', 'icon': 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z M12 8v4 M12 16h.01'},
+                    {'name': 'Frecuencia Fetal', 'slug': 'frecuenciafetal', 'description': 'Monitoreo de Frecuencia Cardíaca Fetal', 'url': '/modulo/frecuenciafetal/', 'icon': 'M13 2L3 14h9l-1 8 10-12h-9l1-8z'},
+                    {'name': 'Gestión de Partos', 'slug': 'system_obstetrico_app', 'description': 'Historia Clínico y Partograma', 'url': '/modulo/system_obstetrico_app/', 'icon': 'M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z'},
+                ]
+            },
+            {
+                'category': {'name': 'SALA DE PARTOS', 'slug': 'gineco_obstetricia', 'icon': 'M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6', 'description': 'Maternidad y Neonatal'},
+                'modules': [
+                    {'name': 'SALA DE PARTOS', 'slug': 'unificador_v1', 'description': 'Consolidado de Atención de Partos', 'url': '/atencion/', 'icon': 'M19 14l-7 7-7-7m14-8l-7 7-7-7'},
+                ]
+            },
+            {
+                'category': {'name': 'TALENTO HUMANO', 'slug': 'talento_humano', 'icon': 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z', 'description': 'Gestión de personal y nómina'},
+                'modules': [
+                    {'name': 'Organigrama Institucional', 'slug': 'A_00_Organigrama', 'description': 'Estructura Jerárquica - 6 Niveles', 'url': '/organigrama/', 'icon': 'M4 5h16v14H4z'},
+                    {'name': 'Certificación por OPS', 'slug': 'buscar_funcionario', 'description': 'Generación de documentos de contratación', 'url': '/horas-extras/informes/buscar-funcionario/', 'icon': 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z'},
+                    {'name': 'Horas Extras', 'slug': 'hora_extra_list', 'description': 'Registro y control de tiempos suplementarios', 'url': '/horas-extras/asignacion-turnos/', 'icon': 'M12 8v4l3 3'},
+                    {'name': 'Reportes de Nómina', 'slug': 'informes_dashboard', 'description': 'Consultas y reportes estadísticos', 'url': '/horas-extras/informes/', 'icon': 'M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z'},
+                    {'name': 'Conciliación Nómina vs Excel', 'slug': 'informe_consistencia_excel', 'description': 'Cruce con Excel Maestro de Cargos', 'url': '/horas-extras/informes/consistencia-excel/', 'icon': 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2'},
+                    {'name': 'Resumen Planta Permanente', 'slug': 'reporte_personal_activo', 'description': 'Dashboard de personal activo de planta', 'url': '/horas-extras/informes/personal-activo/', 'icon': 'M17 20h5v-2a3 3 0 00-5.356-1.857'},
+                    {'name': 'Resumen Planta Temporal', 'slug': 'reporte_personal_temporal', 'description': 'Reportes específicos de personal temporal', 'url': '/horas-extras/informes/personal-temporal/', 'icon': 'M17 20h5v-2a3 3 0 00-5.356-1.857'},
+                    {'name': 'Listado Planta Permanente', 'slug': 'reporte_planta_listado', 'description': 'Listado detallado vinculado por planta', 'url': '/horas-extras/informes/planta-permanente/listado/', 'icon': 'M4 6h16M4 10h16M4 14h16M4 18h16'},
+                    {'name': 'Listado Planta Temporal', 'slug': 'reporte_temporal_listado', 'description': 'Listado detallado vinculado por temporal', 'url': '/horas-extras/informes/planta-temporal/listado/', 'icon': 'M4 6h16M4 10h16M4 14h16M4 18h16'},
+                    {'name': 'Personal por Áreas', 'slug': 'reporte_personal_area', 'description': 'Distribución por Centros de Costos', 'url': '/horas-extras/informes/personal-area/', 'icon': 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6'},
+                ]
+            },
+            {
+                'category': {'name': 'ADMINISTRATIVO', 'slug': 'administrativo', 'icon': 'M4 5a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1V5z', 'description': 'Gestión institucional'},
+                'modules': [
+                    {'name': 'Organigrama', 'slug': 'A_00_Organigrama', 'description': 'Estructura Jerárquica Institucional', 'url': '/organigrama/', 'icon': 'M4 5a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1V5z'},
+                    {'name': 'Presupuesto', 'slug': 'presupuesto', 'description': 'Gestión Presupuestal', 'url': '/presupuesto/', 'icon': 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2'},
+                ]
+            }
         ]
 
-        # 3. Modules List
-        quirofanos_modules = [
-            {'name': 'Consentimientos Informados', 'slug': 'ConsentimientosInformados', 'description': 'Autorizaciones y Firmas Electrónicas', 'url': '/consentimientos/', 'icon': 'M12 20h9 M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z'},
-            {'name': 'Registro de Anestesia', 'slug': 'registro_anestesia', 'description': 'Registro Clínico de Anestesia (FRQUI-032)', 'url': '/registro-anestesia/create/', 'icon': 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z'},
-            {'name': 'Central de Mezclas', 'slug': 'CentralDeMezclas', 'description': 'Laboratorio de Preparaciones Estériles', 'url': '/central-mezclas/', 'icon': 'M11 10.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5z M5.5 15.5l1.5-2 M17 15.5l-1.5-2 M2 22h20 M7 22l1-4.5 M17 22l-1-4.5'},
-            {'name': 'Trasplantes y Donación', 'slug': 'trasplantes_donacion', 'description': 'Gestión de Alertas y Trasplantes', 'url': '/modulo/trasplantes_donacion/', 'icon': 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z M12 8v4 M12 16h.01'},
-            {'name': 'Frecuencia Fetal', 'slug': 'frecuenciafetal', 'description': 'Monitoreo de Frecuencia Cardíaca Fetal', 'url': '/modulo/frecuenciafetal/', 'icon': 'M13 2L3 14h9l-1 8 10-12h-9l1-8z'},
-            {'name': 'Gestión de Partos', 'slug': 'system_obstetrico_app', 'description': 'Historia Clínico y Partograma', 'url': '/modulo/system_obstetrico_app/', 'icon': 'M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z'},
-        ]
+        # Process structure and filter based on permissions
+        active_structure = []
+        all_permitted_modules = []
 
-        gineco_modules = [
-            {'name': 'SALA DE PARTOS', 'slug': 'unificador_v1', 'description': 'Consolidado de Atención de Partos', 'url': '/atencion/', 'icon': 'M19 14l-7 7-7-7m14-8l-7 7-7-7'},
-        ]
-        
-        administrativos = [
-            {'name': 'Organigrama', 'slug': 'A_00_Organigrama', 'description': 'Estructura Jerárquica Institucional (6 Niveles)', 'url': '/organigrama/', 'icon': 'M4 5a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM14 5a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1V5zM4 15a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1v-4zM14 15a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z'},
-            {'name': 'Generales y Seguridad', 'slug': 'usuarios', 'description': 'Configuración general y seguridad'},
-            {'name': 'Consultas Base Externa', 'slug': 'consultas_externas', 'description': 'Consulta de datos GENTERCER y otros', 'url': '/consultas-externas/'},
-            {'name': 'Talento Humano', 'slug': 'horas_extras', 'description': 'Gestión de Personal: Horas Extras e Informes', 'url': '/horas-extras/', 'icon': 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z'},
-            {'name': 'Formatos Institucionales', 'slug': 'BasesGenerales', 'description': 'Gestión de formatos y códigos FRXXX', 'url': '/modulo/BasesGenerales/tabla/Formatos_Hudn/', 'icon': 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z'},
-            {'name': 'Presupuesto', 'slug': 'presupuesto', 'description': 'Gestión Presupuestal (CDP, RP, Obligaciones)', 'url': '/presupuesto/'},
-            {'name': 'Estudio De Conveniencia', 'slug': 'EstudioDeConveniencia', 'description': 'Generación de Estudios Previos', 'icon': 'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z M14 2 14 8 20 8 M16 13H8 M16 17H8 M10 9H9H8'},
-        ]
+        for item in structure:
+            permitted_modules = [m for m in item['modules'] if has_permission(m['slug'])]
+            
+            # Ensure every module has a URL
+            for m in permitted_modules:
+                if 'url' not in m: m['url'] = f"/modulo/{m['slug']}/"
+            
+            if permitted_modules or has_permission(item['category']['slug']):
+                active_structure.append({
+                    'category': item['category'],
+                    'modules': permitted_modules
+                })
+                all_permitted_modules.extend(permitted_modules)
 
-        consultas = [
-            {'name': 'Administrativas', 'slug': 'consultas_administrativas', 'description': 'Facturación, RIPS y Aseguradoras', 'icon': 'bi-cash-stack'},
-            {'name': 'Asistenciales', 'slug': 'consultas_asistenciales', 'description': 'Indicadores Médicos y Salud', 'icon': 'bi-activity'},
-        ]
+        # Decide if we show the "Direct View" (skipped category level)
+        # We skip the category step if the user has 1..6 modules total, 
+        # making it "Dynamic" and "Less Clicky" as requested.
+        show_direct_modules = (1 <= len(all_permitted_modules) <= 6) and not is_superuser
 
-        admin_reports = [
-            {'name': 'Facturación Total', 'url': '/consultas/admin/?view=ventas&group_by=global', 'description': 'Resumen global de ventas'},
-            {'name': 'Facturación por Aseguradora', 'url': '/consultas/admin/?view=ventas&group_by=aseguradora', 'description': 'Ventas agrupadas por pagador'},
-            {'name': 'Facturación por Paciente', 'url': '/consultas/admin/?view=ventas&group_by=paciente', 'description': 'Detalle de cargos por usuario'},
-            {'name': 'Reportes RIPS', 'url': '/consultas/admin/?view=rips&group_by=global', 'description': 'Registros RIPS Procesados'},
-        ]
-        
-        salud_reports = [
-            {'name': 'Indicadores de Salud', 'url': '/consultas/salud/', 'description': 'Estadísticas Médicas'},
-            {'name': 'Producción Médica', 'url': '/consultas/produccion-medico/', 'description': 'Informe de atenciones por profesional'},
-            {'name': 'Trazabilidad de Pacientes', 'url': '/consultas/pacientes-urgencias/', 'description': 'Seguimiento de pacientes activos en todo el hospital'},
-        ]
+        context.update({
+            'active_structure': active_structure,
+            'dashboard_categories': [item['category'] for item in active_structure],
+            'all_permitted_modules': all_permitted_modules,
+            'show_direct_modules': show_direct_modules,
+            'is_superuser': is_superuser
+        })
 
-        # 4. Filter lists
-        quirofanos_modules = [m for m in quirofanos_modules if has_permission(m['slug'])]
-        gineco_modules = [m for m in gineco_modules if has_permission(m['slug'])]
-        administrativos = [m for m in administrativos if has_permission(m['slug'])]
-        dashboard_categories = [c for c in all_categories if has_permission(c['slug'])]
-        
-        if not has_permission('consultas'):
-            consultas = []
-            admin_reports = []
-            salud_reports = []
+        # Backward compatibility for existing templates (will eventually remove)
+        context['quirofanos_modules'] = next((item['modules'] for item in structure if item['category']['slug'] == 'quirofanos'), [])
+        context['gineco_modules'] = next((item['modules'] for item in structure if item['category']['slug'] == 'gineco_obstetricia'), [])
+        context['administrativos'] = next((item['modules'] for item in structure if item['category']['slug'] == 'administrativo'), [])
+        context['nav_talento_humano'] = next((item['modules'] for item in structure if item['category']['slug'] == 'talento_humano'), [])
 
-        # Re-add URLs/Icons if missing (simplified)
-        for mod in quirofanos_modules + administrativos:
-            if 'url' not in mod: mod['url'] = f"/modulo/{mod['slug']}/"
+        # Consultas section
+        if has_permission('consultas'):
+             context.update({
+                'consultas': [
+                    {'name': 'Administrativas', 'slug': 'consultas_administrativas', 'description': 'Facturación y RIPS', 'icon': 'bi-cash-stack'},
+                    {'name': 'Asistenciales', 'slug': 'consultas_asistenciales', 'description': 'Indicadores Médicos', 'icon': 'bi-activity'},
+                ],
+                'admin_reports': [
+                    {'name': 'Facturación Total', 'url': '/consultas/admin/?view=ventas&group_by=global'},
+                    {'name': 'Reportes RIPS', 'url': '/consultas/admin/?view=rips&group_by=global'},
+                ],
+                'salud_reports': [
+                    {'name': 'Indicadores de Salud', 'url': '/consultas/salud/'},
+                    {'name': 'Producción Médica', 'url': '/consultas/produccion-medico/'},
+                ]
+             })
+        else:
+            context.update({'consultas': [], 'admin_reports': [], 'salud_reports': []})
 
-        context['dashboard_categories'] = dashboard_categories
-        context['quirofanos_modules'] = quirofanos_modules
-        context['gineco_modules'] = gineco_modules
-        context['administrativos'] = administrativos
-        context['consultas'] = consultas
-        context['admin_reports'] = admin_reports
-        context['salud_reports'] = salud_reports
+        return context
         return context
 
 class ModuleDetailView(AccessControlMixin, TemplateView):
