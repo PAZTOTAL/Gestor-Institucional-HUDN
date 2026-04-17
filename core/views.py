@@ -263,7 +263,6 @@ class HomeView(AccessControlMixin, TemplateView):
                     {'name': 'Central de Mezclas', 'slug': 'CentralDeMezclas', 'description': 'Laboratorio de Preparaciones Estériles', 'url': '/central-mezclas/', 'icon': 'M11 10.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5z M5.5 15.5l1.5-2 M17 15.5l-1.5-2 M2 22h20 M7 22l1-4.5 M17 22l-1-4.5'},
                     {'name': 'Trasplantes y Donación', 'slug': 'trasplantes_donacion', 'description': 'Gestión de Alertas y Trasplantes', 'url': '/modulo/trasplantes_donacion/', 'icon': 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z M12 8v4 M12 16h.01'},
                     {'name': 'Frecuencia Fetal', 'slug': 'frecuenciafetal', 'description': 'Monitoreo de Frecuencia Cardíaca Fetal', 'url': '/modulo/frecuenciafetal/', 'icon': 'M13 2L3 14h9l-1 8 10-12h-9l1-8z'},
-                    {'name': 'Gestión de Partos', 'slug': 'system_obstetrico_app', 'description': 'Historia Clínico y Partograma', 'url': '/modulo/system_obstetrico_app/', 'icon': 'M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z'},
                 ]
             },
             {
@@ -358,6 +357,16 @@ class HomeView(AccessControlMixin, TemplateView):
 class ModuleDetailView(AccessControlMixin, TemplateView):
     permission_type = 'view'
     template_name = 'core/module_detail.html'
+
+    def dispatch(self, request, *args, **kwargs):
+        slug = kwargs.get('module_name')
+        try:
+            apps.get_app_config(slug)
+        except LookupError:
+            from django.contrib import messages
+            messages.error(request, f'El módulo "{slug}" no está instalado.')
+            return redirect('home')
+        return super().dispatch(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)

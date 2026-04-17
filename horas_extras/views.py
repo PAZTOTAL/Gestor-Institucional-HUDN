@@ -118,34 +118,39 @@ class PersonalPorAreaReportView(LoginRequiredMixin, TemplateView):
             context['error'] = "No se pudo cargar el archivo Excel maestro."
             return context
 
-        # 2. Obtener mapeo de áreas desde Dinámica para TODOS los activos
-        # Cruza NMEMPLEA con centros de costos
+        # 2. Obtener mapeo de áreas desde Dinámica para TODOS los posibles empleados
+        # Cruza NMEMPLEA con centros de costos (CTNCENCOS) y áreas de servicio (GENARESER)
         mapping = {}
         with connections['readonly'].cursor() as cursor:
+            # Query amplia: sin filtro de estado para capturar a todos los referenciados en el Excel
             query_db = """
                 SELECT 
                     RTRIM(LTRIM(e.NEMCODIGO)) as cedula,
-                    ISNULL(c.CCCODIGO, ISNULL(a.ARECODIGO, 'SIN-AREA')) as area_code,
-                    ISNULL(c.CCNOMBRE, ISNULL(a.ARENOMBRE, 'SIN AREA ASIGNADA')) as area_name
+                    ISNULL(g.GASCODIGO, ISNULL(c.CCCODIGO, ISNULL(a.ARECODIGO, 'SIN-AREA'))) as area_code,
+                    ISNULL(g.GASNOMBRE, ISNULL(c.CCNOMBRE, ISNULL(a.ARENOMBRE, 'SIN AREA ASIGNADA'))) as area_name
                 FROM NMEMPLEA e
+                LEFT JOIN GENARESER g ON RTRIM(LTRIM(e.GASCODIGO)) = RTRIM(LTRIM(g.GASCODIGO))
                 LEFT JOIN CTNCENCOS c ON RTRIM(LTRIM(e.GASCODIGO)) = RTRIM(LTRIM(c.CCCODIGO))
                 LEFT JOIN AFNAREAS a ON RTRIM(LTRIM(e.GASCODIGO)) = RTRIM(LTRIM(a.ARECODIGO))
-                WHERE e.NEMESTADO IN (1, 2)
             """
             cursor.execute(query_db)
             for row in cursor.fetchall():
-                mapping[row[0]] = {'code': row[1], 'name': row[2]}
+                # Normalización de cédula (quitar ceros a la izquierda) para coincidir con Excel
+                db_cedula = str(row[0]).strip().lstrip('0')
+                if db_cedula:
+                    mapping[db_cedula] = {'code': row[1], 'name': row[2].strip()}
 
         # 3. Cruzar y agrupar
         # Estructura: areas_dict[area_code] = {name, total, planta, temporal}
         areas_dict = {}
         
         for p in excel_data:
-            cedula = str(p.get('CEDULA')).strip()
+            # Normalización del Excel (quitar ceros a la izquierda)
+            cedula_excel = str(p.get('CEDULA')).strip().lstrip('0')
             vinc = str(p.get('VINCULACION')).upper()
             
             # Info de Dinámica o fallback
-            db_info = mapping.get(cedula)
+            db_info = mapping.get(cedula_excel)
             if db_info:
                 a_code = db_info['code']
                 a_name = db_info['name']
@@ -206,29 +211,31 @@ class PersonalAreaDetailView(LoginRequiredMixin, TemplateView):
             else:
                 area_name = "SIN REGISTRO EN DINÁMICA"
 
-            # Traer info para mapeo
+            # Traer info para mapeo buscando en GENARESER primero (Consultas Externas)
             cursor.execute("""
                 SELECT 
                     RTRIM(LTRIM(e.NEMCODIGO)) as cedula,
-                    ISNULL(c.CCCODIGO, ISNULL(a.ARECODIGO, 'SIN-AREA')) as area_code,
+                    ISNULL(g.GASCODIGO, ISNULL(c.CCCODIGO, ISNULL(a.ARECODIGO, 'SIN-AREA'))) as area_code,
                     v.VINNOMBRE as vinculacion_db
                 FROM NMEMPLEA e
+                LEFT JOIN GENARESER g ON RTRIM(LTRIM(e.GASCODIGO)) = RTRIM(LTRIM(g.GASCODIGO))
                 LEFT JOIN CTNCENCOS c ON RTRIM(LTRIM(e.GASCODIGO)) = RTRIM(LTRIM(c.CCCODIGO))
                 LEFT JOIN AFNAREAS a ON RTRIM(LTRIM(e.GASCODIGO)) = RTRIM(LTRIM(a.ARECODIGO))
                 LEFT JOIN NOMVINCULA v ON e.NEMTIPCON = v.VINCODIGO
-                WHERE e.NEMESTADO IN (1, 2)
             """)
             for row in cursor.fetchall():
-                mapping[row[0]] = {'area': row[1], 'vinc': row[2]}
+                db_cedula = str(row[0]).strip().lstrip('0')
+                if db_cedula:
+                    mapping[db_cedula] = {'area': row[1], 'vinc': row[2]}
 
         # 3. Filtrar empleados del Excel que pertenecen a este área
         funcionarios = []
         for p in excel_data:
-            cedula = str(p.get('CEDULA')).strip()
+            cedula_excel = str(p.get('CEDULA')).strip().lstrip('0')
             vinc_excel = str(p.get('VINCULACION')).upper()
             
             # Determinar área en Dinámica
-            emp_info = mapping.get(cedula)
+            emp_info = mapping.get(cedula_excel)
             emp_area = emp_info['area'] if emp_info else 'SIN-INFO'
             
             if emp_area == area_code:
@@ -237,14 +244,16 @@ class PersonalAreaDetailView(LoginRequiredMixin, TemplateView):
                     continue
                     
                 funcionarios.append({
-                    'documento': cedula,
+                    'documento': cedula_excel,
                     'nombre': p.get('NOMBRE'),
                     'vinculacion': vinc_excel,
                     'vinculacion_db': emp_info['vinc'] if emp_info else 'NO REGISTRA'
                 })
 
         context['area_code'] = area_code
-        context['filtro'] = self.request.GET.get('filtro', '')
+        context['area_name'] = area_name
+        context['funcionarios'] = sorted(funcionarios, key=lambda x: x['nombre'])
+        context['filtro'] = filtro_tipo.lower()
         return context
 
 class PersonalTemporalReportView(LoginRequiredMixin, TemplateView):
