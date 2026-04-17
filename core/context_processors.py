@@ -1,66 +1,88 @@
 from django.core.cache import cache
 from .models import DashboardModule
+from usuarios.models import PermisoApp
 
 
 def modules_processor(request):
-    """Provides navigation modules to every template. Results are cached."""
+    """Provides navigation modules filtered by user permissions."""
     
-    # Cache modules for 10 minutes (they rarely change)
-    cache_key = 'dashboard_modules_nav'
-    cached = cache.get(cache_key)
+    # 1. Fetch all active modules (cached globally)
+    # Reduced cache time to 60 seconds for faster updates
+    cache_key_all = 'all_active_dashboard_modules'
+    all_modules = cache.get(cache_key_all)
     
-    if cached is None:
-        # Fetch active modules from database - single query with only needed fields
+    if all_modules is None:
         all_modules = list(
             DashboardModule.objects.filter(is_active=True)
             .values('name', 'slug', 'description', 'url', 'icon', 'category')
             .order_by('order', 'name')
         )
-        
-        asistenciales = []
-        administrativos = []
-        juridica = []
-        talento_humano = []
-        financiera = []
-        varios = []
-        consultas = []
-        
-        for mod in all_modules:
-            mod_dict = {
-                'name': mod['name'],
-                'slug': mod['slug'],
-                'description': mod['description'],
-                'url': mod['url'],
-                'icon': mod['icon']
-            }
-            
-            cat = mod['category']
-            if cat == 'asistencial':
-                asistenciales.append(mod_dict)
-            elif cat == 'administrativo':
-                administrativos.append(mod_dict)
-            elif cat == 'juridica':
-                juridica.append(mod_dict)
-            elif cat == 'talento_humano':
-                talento_humano.append(mod_dict)
-            elif cat == 'financiera':
-                financiera.append(mod_dict)
-            elif cat == 'varios':
-                varios.append(mod_dict)
-            elif cat == 'consultas':
-                consultas.append(mod_dict)
+        cache.set(cache_key_all, all_modules, 60)
 
-        cached = {
-            'nav_asistenciales': asistenciales,
-            'nav_administrativos': administrativos,
-            'nav_juridica': juridica,
-            'nav_talento_humano': talento_humano,
-            'nav_financiera': financiera,
-            'nav_varios': varios,
-            'nav_consultas': consultas,
-        }
-        cache.set(cache_key, cached, 600)  # 10 minutes
+    # 2. Get User Permissions
+    allowed_apps = set()
+    is_superuser = False
     
-    result = dict(cached)
-    result['readonly_db_available'] = getattr(request, 'readonly_db_available', True)
-    return result
+    if request.user.is_authenticated:
+        if request.user.is_superuser:
+            is_superuser = True
+        else:
+            # Try to get pre-fetched permissions from the view
+            allowed_apps = getattr(request, '_allowed_apps', None)
+            if allowed_apps is None:
+                allowed_apps = set(
+                    PermisoApp.objects.filter(user=request.user, permitido=True)
+                    .values_list('app_label', flat=True)
+                )
+
+    # 3. Filter and Group Modules
+    categories = {
+        'asistencial': [],
+        'administrativo': [],
+        'juridica': [],
+        'talento_humano': [],
+        'contabilidad': [],
+        'financiera': [],
+        'varios': [],
+        'consultas': []
+    }
+
+    for mod in all_modules:
+        slug = mod['slug']
+        
+        has_perm = is_superuser
+        if not has_perm:
+            # Permissions Logic (Strict matching)
+            if slug in ['A_00_Organigrama', 'usuarios', 'consultas_externas']:
+                 has_perm = True
+            elif slug in allowed_apps:
+                has_perm = True
+            elif slug.startswith('CertificadosDIAN') and 'CertificadosDIAN' in allowed_apps:
+                has_perm = True
+            
+        if not has_perm:
+            continue
+
+        mod_dict = {
+            'name': mod['name'],
+            'slug': mod['slug'],
+            'description': mod['description'],
+            'url': mod['url'],
+            'icon': mod['icon']
+        }
+        
+        cat = mod['category']
+        if cat in categories:
+            categories[cat].append(mod_dict)
+
+    return {
+        'nav_asistenciales': categories['asistencial'],
+        'nav_administrativos': categories['administrativo'],
+        'nav_juridica': categories['juridica'],
+        'nav_talento_humano': categories['talento_humano'],
+        'nav_contabilidad': categories['contabilidad'],
+        'nav_financiera': categories['financiera'],
+        'nav_varios': categories['varios'],
+        'nav_consultas': categories['consultas'],
+        'readonly_db_available': getattr(request, 'readonly_db_available', True)
+    }

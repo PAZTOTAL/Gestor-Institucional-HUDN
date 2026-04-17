@@ -107,24 +107,25 @@
                     <a href="{% url 'home' %}"
                         class="nav-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}">Inicio</a>
 
-                    {% if permisos_apps_global == 'ALL' or 'CertificadosDIAN' not in permisos_apps_global or permisos_apps_global|length > 1 %}
-                    <!-- Menú Asistencial -->
+                    {% if nav_asistenciales %}
                     <a href="{% url 'home' %}?section=asistencial" class="nav-link flex items-center gap-1">
                         Asistencial
                     </a>
+                    {% endif %}
 
-                    <!-- Menú Administrativo -->
+                    {% if nav_administrativos or nav_talento_humano or nav_financiera or nav_juridica or nav_contabilidad %}
                     <a href="{% url 'home' %}?section=administrativo" class="nav-link flex items-center gap-1">
                         Administrativo
                     </a>
+                    {% endif %}
 
-                    <!-- Menú Varios -->
+                    {% if nav_varios %}
                     <a href="{% url 'home' %}?section=varios" class="nav-link flex items-center gap-1">
                         Varios
                     </a>
+                    {% endif %}
 
-                    <!-- Menú Consultas -->
-                    {% if permisos_apps_global == 'ALL' or 'consultas' in permisos_apps_global %}
+                    {% if nav_consultas %}
                     <a href="{% url 'home' %}?section=consultas" class="nav-link flex items-center gap-1">
                         Consultas
                     </a>
@@ -134,7 +135,6 @@
                     <a href="{% url 'home' %}?section=config" class="nav-link flex items-center gap-1">
                         Configuración
                     </a>
-                    {% endif %}
                     {% endif %}
 
                     <!-- Autenticación -->

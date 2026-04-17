@@ -6,6 +6,7 @@ class DashboardModule(models.Model):
         ('administrativo', 'ADMINISTRATIVO'),
         ('juridica', 'JURIDICA'),
         ('talento_humano', 'TALENTO HUMANO'),
+        ('contabilidad', 'CONTABILIDAD'),
         ('financiera', 'BIENES Y SERVICIOS - FINANCIERA'),
         ('varios', 'VARIOS'),
         ('consultas', 'CONSULTAS'),

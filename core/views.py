@@ -223,9 +223,28 @@ class HomeView(AccessControlMixin, TemplateView):
         return super().dispatch(request, *args, **kwargs)
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-                    
-        # New Categories requested by USER (Subgerencia de Salud)
-        dashboard_categories = [
+        user = self.request.user
+        is_superuser = user.is_superuser
+        
+        # 1. Get filtered lists from our context processor logic
+        allowed_apps = getattr(self.request, '_allowed_apps', set())
+        if not is_superuser and not allowed_apps:
+             from usuarios.models import PermisoApp
+             allowed_apps = set(
+                 PermisoApp.objects.filter(user=user, permitido=True)
+                 .values_list('app_label', flat=True)
+             )
+
+        def has_permission(slug):
+            if is_superuser: return True
+            if slug in ['A_00_Organigrama', 'usuarios', 'consultas_externas']: # Public apps
+                return True
+            if slug in allowed_apps: return True
+            if slug.startswith('CertificadosDIAN') and 'CertificadosDIAN' in allowed_apps: return True
+            return False
+
+        # 2. Categories (Subgerencia de Salud Cards)
+        all_categories = [
             {'name': 'HOSPITALIZACION', 'slug': 'hospitalizacion', 'icon': 'M19 14l-7 7-7-7m14-8l-7 7-7-7', 'description': 'Gestión de pacientes en piso'},
             {'name': 'QUIRÚRGICAS', 'slug': 'quirofanos', 'icon': 'M22 12h-4l-3 9L9 3l-3 9H2', 'description': 'Cirugía, Anestesia y Procedimientos'},
             {'name': 'URGENCIAS', 'slug': 'urgencias', 'icon': 'M13 2L3 14h9l-1 8 10-12h-9l1-8z', 'description': 'Atención Prioritaria'},
@@ -235,19 +254,15 @@ class HomeView(AccessControlMixin, TemplateView):
             {'name': 'ORTOPEDIA', 'slug': 'ortopedia', 'icon': 'M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20', 'description': 'Traumatología y Ortopedia'},
             {'name': 'CONSULTA EXTERNA', 'slug': 'consulta_externa', 'icon': 'M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2', 'description': 'Citas y Especialidades'},
             {'name': 'GINECO OBSTETRICIA', 'slug': 'gineco_obstetricia', 'icon': 'M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6', 'description': 'Maternidad y Neonatal'},
+            {'name': 'TALENTO HUMANO', 'slug': 'talento_humano', 'icon': 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z', 'description': 'Gestión de personal y nómina'},
+            {'name': 'CONTABILIDAD', 'slug': 'contabilidad', 'icon': 'M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z', 'description': 'Certificados DIAN y Reportes Contables'},
+            {'name': 'BIENES Y SERVICIOS', 'slug': 'financiera', 'icon': 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z', 'description': 'Presupuesto y Compras'},
         ]
 
-        # Therapeutic services sub-items
-        terapeuticos_modules = [
-            {'name': 'Oncología', 'slug': 'oncologia', 'description': 'Tratamientos Oncológicos', 'icon': 'bi-bandaid'},
-            {'name': 'Unidad de Diálisis', 'slug': 'dialisis', 'description': 'Terapia Renal', 'icon': 'bi-droplet-half'},
-            {'name': 'Terapia Física', 'slug': 'terapia_fisica', 'description': 'Rehabilitación y Terapia', 'icon': 'bi-person-walking'},
-        ]
-
-        # Modules to be placed inside QUIROFANOS (as per user request: "PON EN QUIROFANO LOS ACCESOS DE LA PANTALLA")
+        # 3. Modules List
         quirofanos_modules = [
             {'name': 'Consentimientos Informados', 'slug': 'ConsentimientosInformados', 'description': 'Autorizaciones y Firmas Electrónicas', 'url': '/consentimientos/', 'icon': 'M12 20h9 M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z'},
-            {'name': 'Frecuencia Fetal (Obstetricia)', 'slug': 'frecuenciafetal', 'description': 'Monitoreo de Frecuencia Cardíaca Fetal', 'url': '/modulo/frecuenciafetal/', 'icon': 'M13 2L3 14h9l-1 8 10-12h-9l1-8z'},
+            {'name': 'Frecuencia Fetal', 'slug': 'frecuenciafetal', 'description': 'Monitoreo de Frecuencia Cardíaca Fetal', 'url': '/modulo/frecuenciafetal/', 'icon': 'M13 2L3 14h9l-1 8 10-12h-9l1-8z'},
             {'name': 'Gestión de Partos', 'slug': 'system_obstetrico_app', 'description': 'Historia Clínico y Partograma', 'url': '/modulo/system_obstetrico_app/', 'icon': 'M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z'},
             {'name': 'Registro de Anestesia', 'slug': 'registro_anestesia', 'description': 'Registro Clínico de Anestesia (FRQUI-032)', 'url': '/registro-anestesia/create/', 'icon': 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z'},
             {'name': 'UNIFICADOR-V1', 'slug': 'unificador_v1', 'description': 'Consolidado de Atención de Partos', 'url': '/atencion/', 'icon': 'M19 14l-7 7-7-7m14-8l-7 7-7-7'},
@@ -262,7 +277,6 @@ class HomeView(AccessControlMixin, TemplateView):
             {'name': 'Talento Humano', 'slug': 'horas_extras', 'description': 'Gestión de Personal: Horas Extras e Informes', 'url': '/horas-extras/', 'icon': 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z'},
             {'name': 'Formatos Institucionales', 'slug': 'BasesGenerales', 'description': 'Gestión de formatos y códigos FRXXX', 'url': '/modulo/BasesGenerales/tabla/Formatos_Hudn/', 'icon': 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z'},
             {'name': 'Presupuesto', 'slug': 'presupuesto', 'description': 'Gestión Presupuestal (CDP, RP, Obligaciones)', 'url': '/presupuesto/'},
-            {'name': 'Bases Generales', 'slug': 'BasesGenerales', 'description': 'Configuración de bases generales'},
             {'name': 'Estudio De Conveniencia', 'slug': 'EstudioDeConveniencia', 'description': 'Generación de Estudios Previos', 'icon': 'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z M14 2 14 8 20 8 M16 13H8 M16 17H8 M10 9H9H8'},
         ]
 
@@ -270,8 +284,7 @@ class HomeView(AccessControlMixin, TemplateView):
             {'name': 'Administrativas', 'slug': 'consultas_administrativas', 'description': 'Facturación, RIPS y Aseguradoras', 'icon': 'bi-cash-stack'},
             {'name': 'Asistenciales', 'slug': 'consultas_asistenciales', 'description': 'Indicadores Médicos y Salud', 'icon': 'bi-activity'},
         ]
-        
-        # We also need the specific report links for the sub-sections
+
         admin_reports = [
             {'name': 'Facturación Total', 'url': '/consultas/admin/?view=ventas&group_by=global', 'description': 'Resumen global de ventas'},
             {'name': 'Facturación por Aseguradora', 'url': '/consultas/admin/?view=ventas&group_by=aseguradora', 'description': 'Ventas agrupadas por pagador'},
@@ -284,33 +297,21 @@ class HomeView(AccessControlMixin, TemplateView):
             {'name': 'Producción Médica', 'url': '/consultas/produccion-medico/', 'description': 'Informe de atenciones por profesional'},
             {'name': 'Trazabilidad de Pacientes', 'url': '/consultas/pacientes-urgencias/', 'description': 'Seguimiento de pacientes activos en todo el hospital'},
         ]
-        
-        # Filter based on permissions - OPTIMIZED: single query instead of N+1
-        if not self.request.user.is_superuser:
-            # Reuse the set from dispatch if available, otherwise fetch once
-            allowed_apps = getattr(self.request, '_allowed_apps', None)
-            if allowed_apps is None:
-                allowed_apps = set(
-                    PermisoApp.objects.filter(
-                        user=self.request.user, permitido=True
-                    ).values_list('app_label', flat=True)
-                )
 
-            # Filter in Python using the pre-fetched set (0 extra queries)
-            quirofanos_modules = [m for m in quirofanos_modules if m['slug'] in allowed_apps]
-            administrativos = [m for m in administrativos if m['slug'] in allowed_apps]
-            
-            # Filter Consultas
-            if 'consultas' not in allowed_apps:
-                consultas = []
-                admin_reports = []
-                salud_reports = []
+        # 4. Filter lists
+        quirofanos_modules = [m for m in quirofanos_modules if has_permission(m['slug'])]
+        administrativos = [m for m in administrativos if has_permission(m['slug'])]
+        dashboard_categories = [c for c in all_categories if has_permission(c['slug'])]
         
-        # Add URL to each module
+        if not has_permission('consultas'):
+            consultas = []
+            admin_reports = []
+            salud_reports = []
+
+        # Re-add URLs/Icons if missing (simplified)
         for mod in quirofanos_modules + administrativos:
-            if 'url' not in mod:
-                mod['url'] = f"/modulo/{mod['slug']}/"
-            
+            if 'url' not in mod: mod['url'] = f"/modulo/{mod['slug']}/"
+
         context['dashboard_categories'] = dashboard_categories
         context['quirofanos_modules'] = quirofanos_modules
         context['administrativos'] = administrativos
