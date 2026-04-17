@@ -1,0 +1,919 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto py-6 px-4">
+
+  <!-- Cabecera -->
+  <div class="flex items-center justify-between mb-6">
+    <div>
+      <h1 class="text-3xl font-black text-slate-900">Configuración</h1>
+      <p class="text-slate-500 text-sm mt-1">Gestión de Áreas, Funcionarios{% if es_admin %} y Coordinadores{% endif %}</p>
+    </div>
+    <a href="{% url 'horas_extras:turnos_recargos' %}"
+       class="px-4 py-2 bg-slate-700 text-white rounded-xl text-sm font-bold hover:bg-slate-900 transition">
+      ← Turnos
+    </a>
+  </div>
+
+  <!-- Pestañas -->
+  <div class="flex gap-1 mb-6 bg-slate-100 p-1 rounded-xl w-fit">
+    <button onclick="setTab('areas')" id="tab-areas"
+      class="tab-btn px-5 py-2 rounded-lg font-bold text-sm transition bg-white text-blue-700 shadow">
+      Áreas / Servicios
+    </button>
+    <button onclick="setTab('empleados')" id="tab-empleados"
+      class="tab-btn px-5 py-2 rounded-lg font-bold text-sm transition text-slate-500 hover:text-slate-800">
+      Funcionarios
+    </button>
+    {% if es_admin %}
+    <button onclick="setTab('coordinadores')" id="tab-coordinadores"
+      class="tab-btn px-5 py-2 rounded-lg font-bold text-sm transition text-slate-500 hover:text-slate-800">
+      Coordinadores
+    </button>
+    {% endif %}
+  </div>
+
+  <!-- ── PESTAÑA ÁREAS ─────────────────────────────────────────────────────── -->
+  <div id="panel-areas">
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
+      <div class="flex justify-between items-center mb-4">
+        <h2 class="font-black text-slate-800 text-lg">Servicios / Áreas</h2>
+        {% if es_admin %}
+        <button onclick="abrirModalArea()" class="px-4 py-2 bg-blue-600 text-white rounded-xl text-sm font-bold hover:bg-blue-800 transition">
+          + Nuevo Servicio
+        </button>
+        {% endif %}
+      </div>
+      <div id="areas-body">
+        <p class="text-slate-400 text-sm py-4">Cargando...</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── PESTAÑA FUNCIONARIOS ──────────────────────────────────────────────── -->
+  <div id="panel-empleados" class="hidden">
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
+      <div class="flex justify-between items-center mb-4">
+        <h2 class="font-black text-slate-800 text-lg">Gestión de Funcionarios</h2>
+        <div class="flex gap-2">
+          {% if es_admin %}
+          <button onclick="abrirModalImportar()" id="btn-importar-emp"
+            style="background:#15803d;color:white"
+            class="px-4 py-2 rounded-xl text-sm font-bold hover:opacity-90 transition">
+            ↓ Importar desde Nómina
+          </button>
+          {% endif %}
+          <button onclick="abrirModalEmpleado()" id="btn-nuevo-emp"
+            style="background:#1e3a5f;color:white"
+            class="px-4 py-2 rounded-xl text-sm font-bold hover:opacity-90 transition">
+            + Nuevo Funcionario
+          </button>
+        </div>
+      </div>
+
+      <!-- Filtro -->
+      <div class="flex items-center gap-3 mb-4">
+        <label class="text-sm font-medium text-slate-600">Filtrar área:</label>
+        <select id="filtro-area-emp" onchange="filtrarEmpleados()"
+          class="border border-slate-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400">
+          <option value="">Todas las áreas</option>
+        </select>
+      </div>
+
+      <div id="empleados-body">
+        <p class="text-slate-400 text-sm py-4">Cargando...</p>
+      </div>
+    </div>
+  </div>
+
+  {% if es_admin %}
+  <!-- ── PESTAÑA COORDINADORES ─────────────────────────────────────────────── -->
+  <div id="panel-coordinadores" class="hidden">
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
+      <div class="flex justify-between items-center mb-4">
+        <h2 class="font-black text-slate-800 text-lg">Coordinadores</h2>
+        <button onclick="abrirModalCoord()"
+          class="px-4 py-2 bg-blue-600 text-white rounded-xl text-sm font-bold hover:bg-blue-800 transition">
+          + Nuevo Coordinador
+        </button>
+      </div>
+      <div id="coords-body">
+        <p class="text-slate-400 text-sm py-4">Cargando...</p>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+</div>
+
+<!-- ═══════════════ MODAL ÁREA ═══════════════ -->
+<div id="modal-area" class="fixed inset-0 z-50 flex items-center justify-center hidden">
+  <div class="absolute inset-0 bg-black/40" onclick="cerrarModalArea()"></div>
+  <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 p-6 z-10">
+    <h3 id="modal-area-title" class="text-xl font-black text-slate-800 mb-4">Nuevo Servicio</h3>
+    <div id="modal-area-error" class="hidden mb-3 px-4 py-2 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm"></div>
+    <div class="mb-4">
+      <label class="block text-sm font-semibold text-slate-700 mb-1">Nombre del servicio *</label>
+      <input id="area-nombre" type="text" placeholder="Ej: UCI, Urgencias, Cirugía..."
+        class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+        onkeydown="if(event.key==='Enter') guardarArea()">
+    </div>
+    <div class="mb-5">
+      <label class="block text-sm font-semibold text-slate-700 mb-1">Descripción</label>
+      <input id="area-descripcion" type="text" placeholder="Descripción opcional"
+        class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400">
+    </div>
+    <div class="flex justify-end gap-3">
+      <button onclick="cerrarModalArea()" class="px-5 py-2 rounded-xl border border-slate-200 text-slate-700 text-sm font-bold hover:bg-slate-50 transition">Cancelar</button>
+      <button onclick="guardarArea()" id="btn-guardar-area"
+        class="px-5 py-2 rounded-xl bg-blue-600 text-white text-sm font-bold hover:bg-blue-800 transition">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ MODAL EMPLEADO ═══════════════ -->
+<div id="modal-emp" class="fixed inset-0 z-50 flex items-center justify-center hidden">
+  <div class="absolute inset-0 bg-black/40" onclick="cerrarModalEmpleado()"></div>
+  <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg mx-4 p-6 z-10">
+    <h3 id="modal-emp-title" class="text-xl font-black text-slate-800 mb-4">Nuevo Funcionario</h3>
+    <div id="modal-emp-error" class="hidden mb-3 px-4 py-2 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm"></div>
+    <div class="grid grid-cols-2 gap-4 mb-4">
+      <div class="col-span-2">
+        <label class="block text-sm font-semibold text-slate-700 mb-1">Nombre completo *</label>
+        <input id="emp-nombre" type="text" placeholder="Ej: Juan Pérez López"
+          class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400">
+      </div>
+      <div>
+        <label class="block text-sm font-semibold text-slate-700 mb-1">Documento *</label>
+        <input id="emp-documento" type="text" placeholder="Cédula"
+          class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400">
+      </div>
+      <div>
+        <label class="block text-sm font-semibold text-slate-700 mb-1">Cargo</label>
+        <input id="emp-cargo" type="text" placeholder="Ej: Operario..."
+          class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400">
+      </div>
+      <div>
+        <label class="block text-sm font-semibold text-slate-700 mb-1">Área *</label>
+        <select id="emp-area"
+          class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400">
+          <option value="">— Seleccionar —</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-sm font-semibold text-slate-700 mb-1">Tipo de vinculación *</label>
+        <select id="emp-tipo"
+          class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400">
+          <option value="permanente">Planta Permanente</option>
+          <option value="temporal">Planta Temporal</option>
+          <option value="ops">OPS</option>
+        </select>
+      </div>
+    </div>
+    <div class="flex justify-end gap-3">
+      <button onclick="cerrarModalEmpleado()" class="px-5 py-2 rounded-xl border border-slate-200 text-slate-700 text-sm font-bold hover:bg-slate-50 transition">Cancelar</button>
+      <button onclick="guardarEmpleado()" id="btn-guardar-emp"
+        class="px-5 py-2 rounded-xl bg-blue-600 text-white text-sm font-bold hover:bg-blue-800 transition">Guardar</button>
+    </div>
+  </div>
+</div>
+
+{% if es_admin %}
+<!-- ═══════════════ MODAL COORDINADOR ═══════════════ -->
+<div id="modal-coord" class="fixed inset-0 z-50 flex items-center justify-center hidden">
+  <div class="absolute inset-0 bg-black/40" onclick="cerrarModalCoord()"></div>
+  <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg mx-4 p-6 z-10 max-h-screen overflow-y-auto">
+    <h3 id="modal-coord-title" class="text-xl font-black text-slate-800 mb-4">Nuevo Coordinador</h3>
+    <div id="modal-coord-error" class="hidden mb-3 px-4 py-2 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm"></div>
+
+    <div id="coord-username-row" class="mb-4">
+      <label class="block text-sm font-semibold text-slate-700 mb-1">Nombre de usuario *</label>
+      <input id="coord-username" type="text" placeholder="Ej: jperez"
+        class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400">
+    </div>
+    <div class="mb-4">
+      <label class="block text-sm font-semibold text-slate-700 mb-1">Número de identificación</label>
+      <input id="coord-documento" type="text" placeholder="Cédula del coordinador"
+        class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400">
+    </div>
+    <div class="grid grid-cols-2 gap-4 mb-4">
+      <div>
+        <label class="block text-sm font-semibold text-slate-700 mb-1">Nombre</label>
+        <input id="coord-first-name" type="text" placeholder="Juan"
+          class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400">
+      </div>
+      <div>
+        <label class="block text-sm font-semibold text-slate-700 mb-1">Apellido</label>
+        <input id="coord-last-name" type="text" placeholder="Pérez"
+          class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400">
+      </div>
+    </div>
+    <div class="mb-4">
+      <label class="block text-sm font-semibold text-slate-700 mb-1" id="coord-pass-label">Contraseña *</label>
+      <input id="coord-password" type="password" placeholder="Mín. 6 caracteres"
+        class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400">
+    </div>
+    <div class="mb-5">
+      <label class="block text-sm font-semibold text-slate-700 mb-2">Servicios / Áreas asignadas *</label>
+      <div id="coord-areas-checkboxes" class="flex flex-wrap gap-2"></div>
+    </div>
+    <div class="flex justify-end gap-3">
+      <button onclick="cerrarModalCoord()" class="px-5 py-2 rounded-xl border border-slate-200 text-slate-700 text-sm font-bold hover:bg-slate-50 transition">Cancelar</button>
+      <button onclick="guardarCoord()" id="btn-guardar-coord"
+        class="px-5 py-2 rounded-xl bg-blue-600 text-white text-sm font-bold hover:bg-blue-800 transition">Crear</button>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<!-- ═══════════════ MODAL IMPORTAR NÓMINA ═══════════════ -->
+<div id="modal-importar" class="fixed inset-0 z-50 flex items-center justify-center hidden">
+  <div class="absolute inset-0 bg-black/40" onclick="cerrarModalImportar()"></div>
+  <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl mx-4 z-10 flex flex-col" style="max-height:90vh">
+
+    <div class="p-6 border-b border-slate-100">
+      <h3 class="text-xl font-black text-slate-800">Importar desde Nómina (DGEMPRES01)</h3>
+      <p class="text-slate-500 text-sm mt-1">Selecciona la dependencia, elige los funcionarios y el área destino.</p>
+    </div>
+
+    <div class="p-6 overflow-y-auto flex-1">
+      <div id="imp-error" class="hidden mb-3 px-4 py-2 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm"></div>
+
+      <!-- Paso 1: dependencia -->
+      <div class="flex items-end gap-3 mb-4">
+        <div class="flex-1">
+          <label class="block text-sm font-semibold text-slate-700 mb-1">Dependencia / Servicio (nómina)</label>
+          <select id="imp-dependencia"
+            class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400">
+            <option value="">— Cargando dependencias… —</option>
+          </select>
+        </div>
+        <button onclick="cargarEmpleadosNomina()"
+          style="background:#1e3a5f;color:white"
+          class="px-4 py-2.5 rounded-xl text-sm font-bold hover:opacity-90 transition whitespace-nowrap">
+          Cargar
+        </button>
+      </div>
+
+      <!-- Tabla de empleados -->
+      <div id="imp-tabla" class="hidden mb-4">
+        <div class="flex items-center justify-between mb-2">
+          <span id="imp-count" class="text-xs font-bold text-slate-500"></span>
+          <label class="flex items-center gap-1 text-xs font-bold text-slate-600 cursor-pointer">
+            <input type="checkbox" id="imp-select-all" onchange="toggleTodosImportar(this.checked)">
+            Seleccionar todos
+          </label>
+        </div>
+        <div class="overflow-auto" style="max-height:260px">
+          <table class="w-full text-xs">
+            <thead class="sticky top-0 bg-slate-50">
+              <tr>
+                <th class="px-2 py-1.5 text-left font-bold text-slate-600 w-6"></th>
+                <th class="px-2 py-1.5 text-left font-bold text-slate-600">Nombre</th>
+                <th class="px-2 py-1.5 text-left font-bold text-slate-600">Documento</th>
+                <th class="px-2 py-1.5 text-left font-bold text-slate-600">Cargo</th>
+                <th class="px-2 py-1.5 text-left font-bold text-slate-600">Tipo</th>
+                <th class="px-2 py-1.5 text-left font-bold text-slate-600">Estado</th>
+              </tr>
+            </thead>
+            <tbody id="imp-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Área destino -->
+      <div id="imp-area-row" class="hidden">
+        <label class="block text-sm font-semibold text-slate-700 mb-1">Área destino en el sistema *</label>
+        <select id="imp-area-dest"
+          class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400">
+          <option value="">— Seleccionar —</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="p-6 border-t border-slate-100 flex justify-between items-center">
+      <span id="imp-result" class="text-sm font-bold text-emerald-700 hidden"></span>
+      <div class="flex gap-3 ml-auto">
+        <button onclick="cerrarModalImportar()"
+          class="px-5 py-2 rounded-xl border border-slate-200 text-slate-700 text-sm font-bold hover:bg-slate-50 transition">
+          Cerrar
+        </button>
+        <button onclick="ejecutarImportacion()" id="btn-ejecutar-imp"
+          style="background:#15803d;color:white"
+          class="px-5 py-2 rounded-xl text-sm font-bold hover:opacity-90 transition">
+          Importar seleccionados
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ MODAL CAMBIAR ÁREA ═══════════════ -->
+<div id="modal-mover" class="fixed inset-0 z-50 flex items-center justify-center hidden">
+  <div class="absolute inset-0 bg-black/40" onclick="cerrarModalMover()"></div>
+  <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm mx-4 p-6 z-10">
+    <h3 class="text-xl font-black text-slate-800 mb-1">Cambiar Área</h3>
+    <p id="mover-emp-nombre" class="text-slate-500 text-sm mb-4"></p>
+    <div id="modal-mover-error" class="hidden mb-3 px-4 py-2 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm"></div>
+    <div class="mb-5">
+      <label class="block text-sm font-semibold text-slate-700 mb-1">Nuevo área / servicio *</label>
+      <select id="mover-area-select"
+        class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400">
+        <option value="">— Seleccionar —</option>
+      </select>
+    </div>
+    <div class="flex justify-end gap-3">
+      <button onclick="cerrarModalMover()"
+        class="px-5 py-2 rounded-xl border border-slate-200 text-slate-700 text-sm font-bold hover:bg-slate-50 transition">
+        Cancelar
+      </button>
+      <button onclick="guardarMover()" id="btn-guardar-mover"
+        style="background:#1e3a5f;color:white"
+        class="px-5 py-2 rounded-xl text-sm font-bold transition hover:opacity-90">
+        Mover
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+const CSRF = '{{ csrf_token }}';
+const BASE = '{% url "horas_extras:api_areas" %}'.replace('areas/', '');
+const ES_ADMIN = {{ es_admin|yesno:"true,false" }};
+
+function api(path, opts={}) {
+  const defaults = { headers: {'Content-Type':'application/json','X-CSRFToken':CSRF} };
+  return fetch(BASE + path, {...defaults, ...opts,
+    headers: {...defaults.headers, ...(opts.headers||{})}
+  }).then(async r => {
+    const data = await r.json().catch(()=>({}));
+    if (!r.ok) throw data;
+    return data;
+  });
+}
+
+// ── Estado global ──────────────────────────────────────────────────────────
+let areas      = [];
+let empleados  = [];
+let coordsList = [];
+let editAreaId   = null;
+let editEmpId    = null;
+let editCoordId  = null;
+
+// ── Tabs ───────────────────────────────────────────────────────────────────
+function setTab(tab) {
+  ['areas','empleados','coordinadores'].forEach(t => {
+    const panel = document.getElementById('panel-' + t);
+    const btn   = document.getElementById('tab-' + t);
+    if (!panel || !btn) return;
+    if (t === tab) {
+      panel.classList.remove('hidden');
+      btn.classList.add('bg-white','text-blue-700','shadow');
+      btn.classList.remove('text-slate-500');
+    } else {
+      panel.classList.add('hidden');
+      btn.classList.remove('bg-white','text-blue-700','shadow');
+      btn.classList.add('text-slate-500');
+    }
+  });
+  if (tab === 'areas')         cargarAreas();
+  if (tab === 'empleados')     cargarEmpleados();
+  if (tab === 'coordinadores') cargarCoords();
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// ÁREAS
+// ══════════════════════════════════════════════════════════════════════
+async function cargarAreas() {
+  try {
+    areas = await api('areas/');
+    renderAreas();
+    poblarSelectAreas();
+  } catch(e) {
+    document.getElementById('areas-body').innerHTML =
+      '<p class="text-red-500 text-sm py-4">Error al cargar áreas.</p>';
+  }
+}
+
+function renderAreas() {
+  const el = document.getElementById('areas-body');
+  if (!areas.length) {
+    el.innerHTML = '<p class="text-slate-400 text-sm py-4">No hay servicios. Crea el primero para comenzar.</p>';
+    return;
+  }
+  let html = `<div class="overflow-x-auto"><table class="w-full text-sm">
+    <thead><tr class="bg-slate-50 text-left">
+      <th class="px-4 py-2 font-bold text-slate-600">Nombre</th>
+      <th class="px-4 py-2 font-bold text-slate-600">Descripción</th>
+      <th class="px-4 py-2 font-bold text-slate-600">Funcionarios</th>
+      ${ES_ADMIN ? '<th class="px-4 py-2 font-bold text-slate-600">Acciones</th>' : ''}
+    </tr></thead><tbody>`;
+  areas.forEach(a => {
+    html += `<tr class="border-t border-slate-100 hover:bg-slate-50">
+      <td class="px-4 py-2.5 font-bold text-slate-800">${a.nombre}</td>
+      <td class="px-4 py-2.5 text-slate-500">${a.descripcion || '—'}</td>
+      <td class="px-4 py-2.5 text-slate-600">${a.total_trabajadores}</td>
+      ${ES_ADMIN ? `<td class="px-4 py-2.5">
+        <div class="flex gap-2">
+          <button onclick="abrirModalArea(${a.id})"
+            class="px-3 py-1 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg text-xs font-bold transition">Editar</button>
+          <button onclick="eliminarArea(${a.id},'${a.nombre.replace(/'/g,"\\'")}' )"
+            class="px-3 py-1 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg text-xs font-bold transition">Eliminar</button>
+        </div>
+      </td>` : ''}
+    </tr>`;
+  });
+  html += '</tbody></table></div>';
+  el.innerHTML = html;
+}
+
+function poblarSelectAreas() {
+  const filtro = document.getElementById('filtro-area-emp');
+  const empArea = document.getElementById('emp-area');
+  if (filtro) {
+    filtro.innerHTML = '<option value="">Todas las áreas</option>' +
+      areas.map(a => `<option value="${a.id}">${a.nombre}</option>`).join('');
+  }
+  if (empArea) {
+    empArea.innerHTML = '<option value="">— Seleccionar —</option>' +
+      areas.map(a => `<option value="${a.id}">${a.nombre}</option>`).join('');
+  }
+}
+
+function abrirModalArea(id=null) {
+  editAreaId = id;
+  const area = id ? areas.find(a=>a.id===id) : null;
+  document.getElementById('modal-area-title').textContent = id ? 'Editar Servicio' : 'Nuevo Servicio';
+  document.getElementById('area-nombre').value = area ? area.nombre : '';
+  document.getElementById('area-descripcion').value = area ? area.descripcion : '';
+  document.getElementById('modal-area-error').classList.add('hidden');
+  document.getElementById('modal-area').classList.remove('hidden');
+  setTimeout(()=>document.getElementById('area-nombre').focus(), 100);
+}
+function cerrarModalArea() { document.getElementById('modal-area').classList.add('hidden'); }
+
+async function guardarArea() {
+  const nombre = document.getElementById('area-nombre').value.trim();
+  const desc   = document.getElementById('area-descripcion').value.trim();
+  const errEl  = document.getElementById('modal-area-error');
+  if (!nombre) { errEl.textContent='El nombre es obligatorio'; errEl.classList.remove('hidden'); return; }
+  errEl.classList.add('hidden');
+  const btn = document.getElementById('btn-guardar-area');
+  btn.disabled = true; btn.textContent = 'Guardando...';
+  try {
+    if (editAreaId) {
+      await api(`areas/${editAreaId}/`, {method:'PUT', body: JSON.stringify({nombre, descripcion:desc})});
+    } else {
+      await api('areas/', {method:'POST', body: JSON.stringify({nombre, descripcion:desc})});
+    }
+    cerrarModalArea();
+    cargarAreas();
+  } catch(e) {
+    errEl.textContent = e.error || 'Error al guardar';
+    errEl.classList.remove('hidden');
+  } finally {
+    btn.disabled = false; btn.textContent = editAreaId ? 'Actualizar' : 'Guardar';
+  }
+}
+
+async function eliminarArea(id, nombre) {
+  if (!confirm(`¿Eliminar "${nombre}"? Se eliminarán todos sus empleados y turnos.`)) return;
+  try {
+    await api(`areas/${id}/`, {method:'DELETE'});
+    cargarAreas();
+  } catch { alert('Error al eliminar'); }
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// EMPLEADOS
+// ══════════════════════════════════════════════════════════════════════
+async function cargarEmpleados(areaId='') {
+  const el = document.getElementById('empleados-body');
+  el.innerHTML = '<p class="text-slate-400 text-sm py-4">Cargando...</p>';
+  try {
+    const qs = areaId ? `?area=${areaId}` : '';
+    empleados = await api(`empleados/${qs}`);
+    renderEmpleados();
+  } catch {
+    el.innerHTML = '<p class="text-red-500 text-sm py-4">Error al cargar funcionarios.</p>';
+  }
+}
+
+function filtrarEmpleados() {
+  const areaId = document.getElementById('filtro-area-emp').value;
+  cargarEmpleados(areaId);
+}
+
+const TIPO_COLORS = {permanente:'bg-blue-100 text-blue-800', temporal:'bg-amber-100 text-amber-800', ops:'bg-purple-100 text-purple-800'};
+
+function renderEmpleados() {
+  const el = document.getElementById('empleados-body');
+  if (!empleados.length) {
+    el.innerHTML = '<p class="text-slate-400 text-sm py-4">No hay funcionarios.</p>';
+    return;
+  }
+  let html = `<div class="overflow-x-auto"><table class="w-full text-sm">
+    <thead><tr class="bg-slate-50 text-left">
+      <th class="px-4 py-2 font-bold text-slate-600">Nombre</th>
+      <th class="px-4 py-2 font-bold text-slate-600">Documento</th>
+      <th class="px-4 py-2 font-bold text-slate-600">Cargo</th>
+      <th class="px-4 py-2 font-bold text-slate-600">Área</th>
+      <th class="px-4 py-2 font-bold text-slate-600">Tipo</th>
+      <th class="px-4 py-2 font-bold text-slate-600">Acciones</th>
+    </tr></thead><tbody>`;
+  empleados.forEach(e => {
+    const tipoCls = TIPO_COLORS[e.tipo] || 'bg-slate-100 text-slate-700';
+    html += `<tr class="border-t border-slate-100 hover:bg-slate-50">
+      <td class="px-4 py-2.5 font-bold text-slate-800">${e.nombre}</td>
+      <td class="px-4 py-2.5 text-slate-500">${e.documento}</td>
+      <td class="px-4 py-2.5 text-slate-500">${e.cargo||'—'}</td>
+      <td class="px-4 py-2.5 text-slate-600">${e.area_nombre}</td>
+      <td class="px-4 py-2.5"><span class="px-2 py-0.5 rounded-full text-xs font-bold ${tipoCls}">${e.tipo_display}</span></td>
+      <td class="px-4 py-2.5">
+        <div class="flex gap-2 flex-wrap">
+          <button onclick="abrirModalEmpleado(${e.id})"
+            class="px-3 py-1 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg text-xs font-bold transition">Editar</button>
+          <button onclick="abrirModalMover(${e.id},'${e.nombre.replace(/'/g,"\\'")}',${e.area})"
+            class="px-3 py-1 bg-indigo-100 hover:bg-indigo-200 text-indigo-700 rounded-lg text-xs font-bold transition">Cambiar Área</button>
+          <button onclick="eliminarEmpleado(${e.id},'${e.nombre.replace(/'/g,"\\'")}' )"
+            class="px-3 py-1 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg text-xs font-bold transition">Eliminar</button>
+        </div>
+      </td>
+    </tr>`;
+  });
+  html += '</tbody></table></div>';
+  el.innerHTML = html;
+}
+
+function abrirModalEmpleado(id=null) {
+  editEmpId = id;
+  const emp = id ? empleados.find(e=>e.id===id) : null;
+  document.getElementById('modal-emp-title').textContent = id ? 'Editar Funcionario' : 'Nuevo Funcionario';
+  document.getElementById('emp-nombre').value    = emp ? emp.nombre    : '';
+  document.getElementById('emp-documento').value = emp ? emp.documento : '';
+  document.getElementById('emp-cargo').value     = emp ? emp.cargo     : '';
+  document.getElementById('emp-tipo').value      = emp ? emp.tipo      : 'permanente';
+  poblarSelectAreas();
+  if (emp) document.getElementById('emp-area').value = emp.area;
+  document.getElementById('modal-emp-error').classList.add('hidden');
+  document.getElementById('modal-emp').classList.remove('hidden');
+  setTimeout(()=>document.getElementById('emp-nombre').focus(), 100);
+}
+function cerrarModalEmpleado() { document.getElementById('modal-emp').classList.add('hidden'); }
+
+async function guardarEmpleado() {
+  const nombre    = document.getElementById('emp-nombre').value.trim();
+  const documento = document.getElementById('emp-documento').value.trim();
+  const cargo     = document.getElementById('emp-cargo').value.trim();
+  const area      = document.getElementById('emp-area').value;
+  const tipo      = document.getElementById('emp-tipo').value;
+  const errEl     = document.getElementById('modal-emp-error');
+  if (!nombre || !documento) { errEl.textContent='Nombre y documento son obligatorios'; errEl.classList.remove('hidden'); return; }
+  if (!area) { errEl.textContent='Selecciona un área'; errEl.classList.remove('hidden'); return; }
+  errEl.classList.add('hidden');
+  const btn = document.getElementById('btn-guardar-emp');
+  btn.disabled=true; btn.textContent='Guardando...';
+  try {
+    if (editEmpId) {
+      await api(`empleados/${editEmpId}/`, {method:'PUT', body: JSON.stringify({nombre,documento,cargo,area,tipo})});
+    } else {
+      await api('empleados/', {method:'POST', body: JSON.stringify({nombre,documento,cargo,area,tipo})});
+    }
+    cerrarModalEmpleado();
+    cargarEmpleados(document.getElementById('filtro-area-emp').value);
+  } catch(e) {
+    errEl.textContent = e.error || e.documento?.[0] || 'Error al guardar';
+    errEl.classList.remove('hidden');
+  } finally {
+    btn.disabled=false; btn.textContent = editEmpId ? 'Actualizar' : 'Guardar';
+  }
+}
+
+async function eliminarEmpleado(id, nombre) {
+  if (!confirm(`¿Eliminar a ${nombre}? Se borrarán todos sus turnos.`)) return;
+  try {
+    await api(`empleados/${id}/`, {method:'DELETE'});
+    cargarEmpleados(document.getElementById('filtro-area-emp').value);
+  } catch { alert('Error al eliminar'); }
+}
+
+{% if es_admin %}
+// ══════════════════════════════════════════════════════════════════════
+// COORDINADORES
+// ══════════════════════════════════════════════════════════════════════
+async function cargarCoords() {
+  const el = document.getElementById('coords-body');
+  el.innerHTML = '<p class="text-slate-400 text-sm py-4">Cargando...</p>';
+  try {
+    coordsList = await api('coordinadores/');
+    renderCoords();
+  } catch {
+    el.innerHTML = '<p class="text-red-500 text-sm py-4">Error al cargar coordinadores.</p>';
+  }
+}
+
+function renderCoords() {
+  const el = document.getElementById('coords-body');
+  if (!coordsList.length) {
+    el.innerHTML = '<p class="text-slate-400 text-sm py-4">No hay coordinadores registrados.</p>';
+    return;
+  }
+  let html = `<div class="overflow-x-auto"><table class="w-full text-sm">
+    <thead><tr class="bg-slate-50 text-left">
+      <th class="px-4 py-2 font-bold text-slate-600">Nombre</th>
+      <th class="px-4 py-2 font-bold text-slate-600">Identificación</th>
+      <th class="px-4 py-2 font-bold text-slate-600">Usuario</th>
+      <th class="px-4 py-2 font-bold text-slate-600">Servicios asignados</th>
+      <th class="px-4 py-2 font-bold text-slate-600">Acciones</th>
+    </tr></thead><tbody>`;
+  coordsList.forEach(c => {
+    const areasHtml = c.areas.length
+      ? c.areas.map(a=>`<span class="px-2 py-0.5 rounded-full text-xs font-bold bg-blue-100 text-blue-800 mr-1">${a.nombre}</span>`).join('')
+      : '<span class="text-slate-400">Sin áreas</span>';
+    html += `<tr class="border-t border-slate-100 hover:bg-slate-50">
+      <td class="px-4 py-2.5 font-bold text-slate-800">${c.nombre || c.username}</td>
+      <td class="px-4 py-2.5 text-slate-500">${c.documento||'—'}</td>
+      <td class="px-4 py-2.5 text-slate-500">${c.username}</td>
+      <td class="px-4 py-2.5">${areasHtml}</td>
+      <td class="px-4 py-2.5">
+        <div class="flex gap-2">
+          <button onclick="abrirModalCoord(${c.id})"
+            class="px-3 py-1 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg text-xs font-bold transition">Editar</button>
+          <button onclick="eliminarCoord(${c.id},'${(c.nombre||c.username).replace(/'/g,"\\'")}' )"
+            class="px-3 py-1 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg text-xs font-bold transition">Eliminar</button>
+        </div>
+      </td>
+    </tr>`;
+  });
+  html += '</tbody></table></div>';
+  el.innerHTML = html;
+}
+
+async function abrirModalCoord(id=null) {
+  editCoordId = id;
+  const c = id ? coordsList.find(x=>x.id===id) : null;
+  // Cargar áreas disponibles para los checkboxes
+  if (!areas.length) areas = await api('areas/');
+  document.getElementById('modal-coord-title').textContent = id ? `Editar: ${c.nombre||c.username}` : 'Nuevo Coordinador';
+  document.getElementById('coord-username-row').style.display = id ? 'none' : '';
+  document.getElementById('coord-username').value   = '';
+  document.getElementById('coord-documento').value  = c ? (c.documento||'') : '';
+  document.getElementById('coord-first-name').value = c ? (c.first_name||'') : '';
+  document.getElementById('coord-last-name').value  = c ? (c.last_name||'')  : '';
+  document.getElementById('coord-password').value   = '';
+  document.getElementById('coord-pass-label').textContent = id ? 'Nueva contraseña (dejar vacío para no cambiar)' : 'Contraseña *';
+  document.getElementById('btn-guardar-coord').textContent = id ? 'Actualizar' : 'Crear';
+
+  const selectedAreas = c ? c.areas.map(a=>a.id) : [];
+  const chkDiv = document.getElementById('coord-areas-checkboxes');
+  chkDiv.innerHTML = areas.map(a => {
+    const sel = selectedAreas.includes(a.id);
+    return `<label data-area="${a.id}" onclick="toggleAreaCoord(${a.id},this)"
+      class="cursor-pointer select-none px-3 py-1.5 rounded-full border text-sm font-medium transition
+             ${sel ? 'border-blue-700 bg-blue-50 text-blue-800 font-bold' : 'border-slate-200 bg-white text-slate-600'}">
+      ${a.nombre}
+    </label>`;
+  }).join('');
+
+  document.getElementById('modal-coord-error').classList.add('hidden');
+  document.getElementById('modal-coord').classList.remove('hidden');
+}
+function cerrarModalCoord() { document.getElementById('modal-coord').classList.add('hidden'); }
+
+function toggleAreaCoord(areaId, el) {
+  const on = el.classList.contains('border-blue-700');
+  if (on) {
+    el.classList.remove('border-blue-700','bg-blue-50','text-blue-800','font-bold');
+    el.classList.add('border-slate-200','bg-white','text-slate-600');
+  } else {
+    el.classList.remove('border-slate-200','bg-white','text-slate-600');
+    el.classList.add('border-blue-700','bg-blue-50','text-blue-800','font-bold');
+  }
+}
+
+function getSelectedAreas() {
+  return [...document.querySelectorAll('#coord-areas-checkboxes label.border-blue-700')]
+    .map(el => parseInt(el.dataset.area));
+}
+
+async function guardarCoord() {
+  const first_name = document.getElementById('coord-first-name').value.trim();
+  const last_name  = document.getElementById('coord-last-name').value.trim();
+  const documento  = document.getElementById('coord-documento').value.trim();
+  const password   = document.getElementById('coord-password').value;
+  const areasSelec = getSelectedAreas();
+  const errEl      = document.getElementById('modal-coord-error');
+
+  if (areasSelec.length === 0) {
+    errEl.textContent = 'Asigna al menos un área'; errEl.classList.remove('hidden'); return;
+  }
+  errEl.classList.add('hidden');
+  const btn = document.getElementById('btn-guardar-coord');
+  btn.disabled=true; btn.textContent='Guardando...';
+
+  try {
+    if (editCoordId) {
+      const body = {first_name, last_name, documento, areas: areasSelec};
+      if (password) body.password = password;
+      await api(`coordinadores/${editCoordId}/`, {method:'PUT', body: JSON.stringify(body)});
+    } else {
+      const username = document.getElementById('coord-username').value.trim();
+      if (!username) { errEl.textContent='El nombre de usuario es obligatorio'; errEl.classList.remove('hidden'); btn.disabled=false; btn.textContent='Crear'; return; }
+      if (!password) { errEl.textContent='La contraseña es obligatoria'; errEl.classList.remove('hidden'); btn.disabled=false; btn.textContent='Crear'; return; }
+      await api('coordinadores/', {method:'POST', body: JSON.stringify({username, first_name, last_name, documento, password, areas: areasSelec})});
+    }
+    cerrarModalCoord();
+    cargarCoords();
+  } catch(e) {
+    errEl.textContent = e.error || 'Error al guardar';
+    errEl.classList.remove('hidden');
+  } finally {
+    btn.disabled=false; btn.textContent = editCoordId ? 'Actualizar' : 'Crear';
+  }
+}
+
+async function eliminarCoord(id, nombre) {
+  if (!confirm(`¿Eliminar al coordinador "${nombre}"? Esta acción no se puede deshacer.`)) return;
+  try {
+    await api(`coordinadores/${id}/`, {method:'DELETE'});
+    cargarCoords();
+  } catch { alert('Error al eliminar el coordinador'); }
+}
+{% endif %}
+
+// ══════════════════════════════════════════════════════════════════════
+// IMPORTAR DESDE NÓMINA
+// ══════════════════════════════════════════════════════════════════════
+let empleadosNomina = [];
+
+async function abrirModalImportar() {
+  document.getElementById('imp-error').classList.add('hidden');
+  document.getElementById('imp-tabla').classList.add('hidden');
+  document.getElementById('imp-area-row').classList.add('hidden');
+  document.getElementById('imp-result').classList.add('hidden');
+  document.getElementById('imp-tbody').innerHTML = '';
+
+  // Poblar área destino
+  const selArea = document.getElementById('imp-area-dest');
+  selArea.innerHTML = '<option value="">— Seleccionar —</option>' +
+    areas.map(a => `<option value="${a.id}">${a.nombre}</option>`).join('');
+
+  // Cargar dependencias
+  const selDep = document.getElementById('imp-dependencia');
+  selDep.innerHTML = '<option value="">Cargando…</option>';
+  try {
+    const deps = await api('nomina-dependencias/');
+    selDep.innerHTML = '<option value="">— Selecciona dependencia —</option>' +
+      deps.map(d => `<option value="${d.codigo}">${d.nombre}</option>`).join('');
+  } catch(e) {
+    selDep.innerHTML = '<option value="">Error al cargar</option>';
+    mostrarErrorImp(e.error || 'No se pudo conectar a DGEMPRES01');
+  }
+  document.getElementById('modal-importar').classList.remove('hidden');
+}
+
+function cerrarModalImportar() {
+  document.getElementById('modal-importar').classList.add('hidden');
+}
+
+async function cargarEmpleadosNomina() {
+  const dep = document.getElementById('imp-dependencia').value;
+  if (!dep) { mostrarErrorImp('Selecciona una dependencia'); return; }
+  document.getElementById('imp-error').classList.add('hidden');
+  document.getElementById('imp-tabla').classList.add('hidden');
+  document.getElementById('imp-area-row').classList.add('hidden');
+  document.getElementById('imp-tbody').innerHTML = '<tr><td colspan="6" class="px-2 py-3 text-slate-400">Cargando...</td></tr>';
+  document.getElementById('imp-tabla').classList.remove('hidden');
+
+  try {
+    empleadosNomina = await api(`nomina-empleados/?dependencia=${encodeURIComponent(dep)}`);
+  } catch(e) {
+    mostrarErrorImp(e.error || 'Error al consultar nómina');
+    return;
+  }
+
+  const TIPO_LABEL = {permanente:'Planta Permanente', temporal:'Planta Temporal', ops:'OPS'};
+  const tbody = document.getElementById('imp-tbody');
+  tbody.innerHTML = empleadosNomina.length === 0
+    ? '<tr><td colspan="6" class="px-2 py-4 text-slate-400 text-center">Sin empleados activos en esta dependencia</td></tr>'
+    : empleadosNomina.map((e, i) => `
+        <tr class="border-t border-slate-100 ${e.ya_existe ? 'opacity-50' : 'hover:bg-slate-50'}">
+          <td class="px-2 py-1.5">
+            <input type="checkbox" data-idx="${i}" class="imp-chk" ${e.ya_existe ? 'disabled title="Ya existe en el sistema"' : ''}>
+          </td>
+          <td class="px-2 py-1.5 font-medium text-slate-800">${e.nombre}</td>
+          <td class="px-2 py-1.5 text-slate-500">${e.documento}</td>
+          <td class="px-2 py-1.5 text-slate-500">${e.cargo || '—'}</td>
+          <td class="px-2 py-1.5 text-slate-500">${TIPO_LABEL[e.tipo] || e.tipo}</td>
+          <td class="px-2 py-1.5">
+            ${e.ya_existe
+              ? '<span class="px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 font-bold">Ya existe</span>'
+              : '<span class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 font-bold">Nuevo</span>'}
+          </td>
+        </tr>`).join('');
+
+  const nuevos = empleadosNomina.filter(e => !e.ya_existe).length;
+  document.getElementById('imp-count').textContent =
+    `${empleadosNomina.length} funcionario(s) · ${nuevos} nuevos · ${empleadosNomina.length - nuevos} ya importados`;
+  document.getElementById('imp-select-all').checked = false;
+  document.getElementById('imp-area-row').classList.remove('hidden');
+}
+
+function toggleTodosImportar(checked) {
+  document.querySelectorAll('.imp-chk:not(:disabled)').forEach(cb => cb.checked = checked);
+}
+
+async function ejecutarImportacion() {
+  const areaId = document.getElementById('imp-area-dest').value;
+  if (!areaId) { mostrarErrorImp('Selecciona el área destino'); return; }
+
+  const seleccionados = [...document.querySelectorAll('.imp-chk:checked')]
+    .map(cb => empleadosNomina[parseInt(cb.dataset.idx)]);
+  if (!seleccionados.length) { mostrarErrorImp('Marca al menos un funcionario'); return; }
+
+  document.getElementById('imp-error').classList.add('hidden');
+  const btn = document.getElementById('btn-ejecutar-imp');
+  btn.disabled = true; btn.textContent = 'Importando…';
+
+  try {
+    const res = await api('importar-empleados/', {
+      method: 'POST',
+      body: JSON.stringify({ area: parseInt(areaId), empleados: seleccionados }),
+    });
+    const msg = document.getElementById('imp-result');
+    msg.textContent = `✓ ${res.creados} importado(s). ${res.omitidos} omitido(s) (ya existían).`;
+    msg.classList.remove('hidden');
+    cargarEmpleados(document.getElementById('filtro-area-emp').value);
+  } catch(e) {
+    mostrarErrorImp(e.error || 'Error al importar');
+  } finally {
+    btn.disabled = false; btn.textContent = 'Importar seleccionados';
+  }
+}
+
+function mostrarErrorImp(msg) {
+  const el = document.getElementById('imp-error');
+  el.textContent = msg;
+  el.classList.remove('hidden');
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// CAMBIAR ÁREA
+// ══════════════════════════════════════════════════════════════════════
+let moverEmpId = null;
+
+function abrirModalMover(id, nombre, areaActual) {
+  moverEmpId = id;
+  document.getElementById('mover-emp-nombre').textContent = nombre;
+  document.getElementById('modal-mover-error').classList.add('hidden');
+
+  // Poblar select con las áreas disponibles (ya filtradas por permisos en el global `areas`)
+  const sel = document.getElementById('mover-area-select');
+  sel.innerHTML = '<option value="">— Seleccionar —</option>' +
+    areas.map(a => {
+      const disabled = a.id === areaActual ? ' disabled' : '';
+      const label    = a.id === areaActual ? ` (actual)` : '';
+      return `<option value="${a.id}"${disabled}>${a.nombre}${label}</option>`;
+    }).join('');
+  sel.value = '';
+
+  document.getElementById('modal-mover').classList.remove('hidden');
+  setTimeout(() => sel.focus(), 100);
+}
+
+function cerrarModalMover() {
+  document.getElementById('modal-mover').classList.add('hidden');
+  moverEmpId = null;
+}
+
+async function guardarMover() {
+  const areaId = document.getElementById('mover-area-select').value;
+  const errEl  = document.getElementById('modal-mover-error');
+  if (!areaId) {
+    errEl.textContent = 'Selecciona un área destino';
+    errEl.classList.remove('hidden');
+    return;
+  }
+  errEl.classList.add('hidden');
+  const btn = document.getElementById('btn-guardar-mover');
+  btn.disabled = true; btn.textContent = 'Moviendo...';
+  try {
+    await api(`empleados/${moverEmpId}/`, {
+      method: 'PUT',
+      body: JSON.stringify({ area: parseInt(areaId) })
+    });
+    cerrarModalMover();
+    cargarEmpleados(document.getElementById('filtro-area-emp').value);
+  } catch(e) {
+    errEl.textContent = e.error || 'No tienes permiso para mover a ese área';
+    errEl.classList.remove('hidden');
+  } finally {
+    btn.disabled = false; btn.textContent = 'Mover';
+  }
+}
+
+// ── Inicio ─────────────────────────────────────────────────────────────────
+cargarAreas();
+</script>
+{% endblock %}
