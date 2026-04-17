@@ -12,6 +12,9 @@ urlpatterns = [
     path('informes/personal-activo/', views.PersonalActivoReportView.as_view(), name='reporte_personal_activo'),
     path('informes/personal-area/', views.PersonalPorAreaReportView.as_view(), name='reporte_personal_area'),
     path('informes/personal-temporal/', views.PersonalTemporalReportView.as_view(), name='reporte_personal_temporal'),
+    path('informes/planta-permanente/listado/', views.PersonalPlantaGeneralListView.as_view(), name='reporte_planta_listado'),
+    path('informes/planta-temporal/listado/', views.PersonalTemporalGeneralListView.as_view(), name='reporte_temporal_listado'),
+    path('informes/consistencia-excel/', views.InformeConsistenciaExcelView.as_view(), name='informe_consistencia_excel'),
     path('informes/buscar-funcionario/', views.BuscarFuncionarioView.as_view(), name='buscar_funcionario'),
     path('informes/personal-area/<str:area_code>/', views.PersonalAreaDetailView.as_view(), name='reporte_personal_area_detalle'),
 ]
