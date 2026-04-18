@@ -146,7 +146,7 @@ DATABASES = {
     },
     'readonly': {
         'ENGINE': 'mssql',
-        'NAME': 'DGEMPRES01',
+        'NAME': 'DGEMPRES03',
         'USER': 'DSOLARTE',
         'PASSWORD': 'ConsultaHUDN2026*/$', 
         'HOST': '172.20.100.209',
