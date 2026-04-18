@@ -156,8 +156,8 @@ DATABASES = {
         'OPTIONS': {
             'driver': 'ODBC Driver 17 for SQL Server',
             'host_is_server': True,
-            'timeout': 5,  # Timeout reducido para consultas de lectura
-            'connection_timeout': 3,  # Timeout de conexión rápido
+            'timeout': 10,  # Timeout para consultas de lectura
+            'connection_timeout': 1,  # Timeout de conexión mínimo
         },
     }
 }
