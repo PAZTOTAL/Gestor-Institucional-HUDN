@@ -40,6 +40,8 @@ def modules_processor(request):
                 equiv_map = {
                     'certificados_laborales': 'mvp',
                     'mvp': 'certificados_laborales',
+                    'consultas_externas': 'consultas',
+                    'consultas': 'consultas_externas',
                 }
                 
                 allowed_apps = raw_perms.copy()
@@ -64,8 +66,16 @@ def modules_processor(request):
         
         has_perm = is_superuser
         if not has_perm:
-            # Lógica de Permisos Unificada y Estricta (Relación 1 a 1)
+            # Lógica de Permisos con Herencia (Más flexible)
             if slug in allowed_apps:
+                has_perm = True
+            elif slug.startswith('th_') and 'horas_extras' in allowed_apps:
+                has_perm = True
+            elif slug.startswith('CertificadosDIAN') and ('CertificadosDIAN' in allowed_apps or 'CertificadosDIAN_SOL' in allowed_apps):
+                has_perm = True
+            elif (slug.startswith('consultas_') or slug == 'produccion-medico') and 'consultas' in allowed_apps:
+                has_perm = True
+            elif (slug.startswith('defenjur_') or slug == 'legal') and 'defenjur' in allowed_apps:
                 has_perm = True
             
         if not has_perm:

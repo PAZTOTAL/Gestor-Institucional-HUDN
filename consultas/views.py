@@ -2,7 +2,11 @@ from django.shortcuts import render, redirect
 from django.db.models import Sum, Count, Q
 from django.utils import timezone
 from datetime import timedelta, datetime
-from consultas_externas.models import Hcnfolio, Genmedico, Hcndiapac, Gendiagno, Genpacien, Adningreso, Gendetcon, Gentercer, Gentercert, Gentercerd, Genpacient, Genpaciend
+from consultas_externas.models import (
+    Hcnfolio, Genmedico, Hcndiapac, Gendiagno, Genpacien, Adningreso, 
+    Gendetcon, Gentercer, Gentercert, Gentercerd, Genpacient, Genpaciend,
+    Slnfactur, Genareser, Genespeci, Genmunici
+)
 from django.http import HttpResponse
 import openpyxl
 from openpyxl.styles import Font, Alignment, Border, Side, PatternFill
@@ -347,9 +351,9 @@ def produccion_medico(request):
                         except ValueError: continue
 
             if discrete_dates:
-                query = Hcnfolio.objects.filter(hcfecfol__date__in=discrete_dates)
+                query = Hcnfolio.objects.using('readonly').filter(hcfecfol__date__in=discrete_dates)
             else:
-                query = Hcnfolio.objects.filter(hcfecfol__range=[start_date, end_date])
+                query = Hcnfolio.objects.using('readonly').filter(hcfecfol__range=[start_date, end_date])
             
             # Doctor filtering fix
             clean_doctor_ids = [int(d_id) for d_id in doctor_ids if d_id.isdigit()]
@@ -363,25 +367,25 @@ def produccion_medico(request):
             folio_ids = []
 
             for f in folios:
-                if f.genpacien:
-                    paciente_ids.add(f.genpacien)
-                mid = getattr(f, 'genmedico', None)
+                if f.genpacien_id:
+                    paciente_ids.add(f.genpacien_id)
+                mid = getattr(f, 'genmedico_id', None)
                 if mid:
                    medico_ids.add(mid)
                 folio_ids.append(f.oid)
 
-            pacientes = {p.oid: p for p in Genpacien.objects.filter(oid__in=paciente_ids)}
-            medicos = {m.oid: m for m in Genmedico.objects.filter(oid__in=medico_ids)}
+            pacientes = {p.oid: p for p in Genpacien.objects.using('readonly').filter(oid__in=paciente_ids)}
+            medicos = {m.oid: m for m in Genmedico.objects.using('readonly').filter(oid__in=medico_ids)}
             
             adningreso_ids = set()
             for f in folios:
                 if f.adningreso:
                     adningreso_ids.add(f.adningreso)
             
-            adningresos = {a.oid: a for a in Adningreso.objects.filter(oid__in=adningreso_ids)}
+            adningresos = {a.oid: a for a in Adningreso.objects.using('readonly').filter(oid__in=adningreso_ids)}
             
             start_search = start_date - timedelta(days=30)
-            extra_admissions = Adningreso.objects.filter(
+            extra_admissions = Adningreso.objects.using('readonly').filter(
                 genpacien__in=paciente_ids, 
                 ainfecing__lte=end_date,
                 ainfecing__gte=start_search
@@ -396,7 +400,7 @@ def produccion_medico(request):
                 if adm.dgndiagno:
                     diag_ids.add(adm.dgndiagno)
 
-            diags_pac = Hcndiapac.objects.filter(hcnfolio__in=folio_ids)
+            diags_pac = Hcndiapac.objects.using('readonly').filter(hcnfolio__in=folio_ids)
             folio_diag_map = {}
 
             for dp in diags_pac:
@@ -407,7 +411,7 @@ def produccion_medico(request):
                 if a.dgndiagno:
                     diag_ids.add(a.dgndiagno)
 
-            diagnosticos_master = {d.oid: d for d in Gendiagno.objects.filter(oid__in=diag_ids)}
+            diagnosticos_master = {d.oid: d for d in Gendiagno.objects.using('readonly').filter(oid__in=diag_ids)}
 
             for dp in diags_pac:
                  if dp.gendiagno in diagnosticos_master:
@@ -423,7 +427,7 @@ def produccion_medico(request):
                         gendetcon_ids.add(adm.gendetcon_id)
                      
 
-            target_planes = {p.oid: p for p in Gendetcon.objects.filter(oid__in=gendetcon_ids)}
+            target_planes = {p.oid: p for p in Gendetcon.objects.using('readonly').filter(oid__in=gendetcon_ids)}
             
             terceros_ids = set()
             for adm in adningresos.values():
@@ -434,18 +438,18 @@ def produccion_medico(request):
                     if adm.entidadadministradora:
                         terceros_ids.add(adm.entidadadministradora)
             
-            terceros = {t.oid: t for t in Gentercer.objects.filter(oid__in=terceros_ids)}
+            terceros = {t.oid: t for t in Gentercer.objects.using('readonly').filter(oid__in=terceros_ids)}
 
             # Patient contact details fallbacks
             patient_tercer_ids = [p.gentercer for p in pacientes.values() if p.gentercer]
             
             # Fetch from Genpacient/d (direct patient details)
-            p_tels = {t.genpacien: t.pactelefono for t in Genpacient.objects.filter(genpacien__in=paciente_ids).order_by('-pactelprinc')}
-            p_dirs = {d.genpacien: d.pacdireccion for d in Genpaciend.objects.filter(genpacien__in=paciente_ids).order_by('-pacdiprinc')}
+            p_tels = {t.genpacien: t.pactelefono for t in Genpacient.objects.using('readonly').filter(genpacien__in=paciente_ids).order_by('-pactelprinc')}
+            p_dirs = {d.genpacien: d.pacdireccion for d in Genpaciend.objects.using('readonly').filter(genpacien__in=paciente_ids).order_by('-pacdiprinc')}
             
             # Fetch from Gentercert/d (terceros details)
-            t_tels = {t.gentercer: t.tertelefono for t in Gentercert.objects.filter(gentercer__in=patient_tercer_ids).order_by('-tel_princi' if 'tel_princi' in [f.name for f in Gentercert._meta.fields] else '-telprinci')}
-            t_dirs = {d.gentercer: d.terdireccion for d in Gentercerd.objects.filter(gentercer__in=patient_tercer_ids).order_by('-dir_princi' if 'dir_princi' in [f.name for f in Gentercerd._meta.fields] else '-dirprinci')}
+            t_tels = {t.gentercer: t.tertelefono for t in Gentercert.objects.using('readonly').filter(gentercer__in=patient_tercer_ids).order_by('-tel_princi' if 'tel_princi' in [f.name for f in Gentercert._meta.fields] else '-telprinci')}
+            t_dirs = {d.gentercer: d.terdireccion for d in Gentercerd.objects.using('readonly').filter(gentercer__in=patient_tercer_ids).order_by('-dir_princi' if 'dir_princi' in [f.name for f in Gentercerd._meta.fields] else '-dirprinci')}
 
 
 
@@ -771,7 +775,7 @@ def pacientes_urgencias_list(request):
             )
         
         # Obtener ingresos activos con datos relacionados
-        ingresos = Adningreso.objects.filter(query).select_related(
+        ingresos = Adningreso.objects.using('readonly').filter(query).select_related(
             'genpacien',
             'gendetcon'
         ).order_by('-ainfecing')[:100]  # Limitar a 100 resultados cuando se busca
@@ -780,7 +784,7 @@ def pacientes_urgencias_list(request):
         pacientes_por_area = {}
         for ingreso in ingresos:
             # Obtener el folio más reciente para este ingreso
-            ultimo_folio = Hcnfolio.objects.filter(
+            ultimo_folio = Hcnfolio.objects.using('readonly').filter(
                 adningreso=ingreso.oid
             ).order_by('-hcfecfol').first()
             
@@ -789,7 +793,7 @@ def pacientes_urgencias_list(request):
             ubicacion_actual = 'Sin ubicación registrada'
             
             if ultimo_folio:
-                num_diagnosticos = Hcndiapac.objects.filter(
+                num_diagnosticos = Hcndiapac.objects.using('readonly').filter(
                     hcnfolio=ultimo_folio.oid
                 ).count()
                 

@@ -213,11 +213,14 @@ class HomeView(AccessControlMixin, TemplateView):
                 .values_list('app_label', flat=True)
             )
             
-            # 1. Definir Mapeo de Equivalencias (App Label <-> Slug)
-            # Esto asegura que dar permiso a la App o al Módulo funcione igual
             equiv_map = {
                 'certificados_laborales': 'mvp',
                 'mvp': 'certificados_laborales',
+                'consultas': 'consultas_externas',
+                'consultas_externas': 'consultas',
+                'defenjur': 'defenjur_py',
+                'defenjur_py': 'defenjur',
+                'legal': 'defenjur',
             }
             
             # Expandir allowed_apps con equivalencias
@@ -254,15 +257,24 @@ class HomeView(AccessControlMixin, TemplateView):
         is_superuser = user.is_superuser
         allowed_apps = getattr(self.request, '_allowed_apps', set())
         
-        # Función de validación robusta y ESTRICTA
+        # Función de validación robusta (Flexible para herencia)
         def has_permission(slug):
             if is_superuser: return True
-            
-            # 1. Validación de coincidencia exacta (incluye mapeo de equivalencias previo)
             if slug in allowed_apps: return True
             
-            # 2. Casos especiales de mapeo manual (Solo si el slug en DB es distinto al permiso)
-            # Actualmente cubierto por final_perms en dispatch, pero se puede reforzar aquí si es necesario.
+            # Lógica de Prefijos / Herencia (Ej: th_ -> horas_extras)
+            # Esto permite que al dar permiso a la App principal, se vean sus reportes
+            if 'horas_extras' in allowed_apps and (slug.startswith('th_') or slug.startswith('hora_extra')):
+                return True
+            
+            if ('CertificadosDIAN' in allowed_apps or 'CertificadosDIAN_SOL' in allowed_apps) and slug.startswith('CertificadosDIAN'):
+                return True
+            
+            if 'consultas' in allowed_apps and (slug.startswith('consultas_') or slug.startswith('produccion-medico')):
+                return True
+
+            if 'defenjur' in allowed_apps and (slug.startswith('defenjur_') or slug == 'legal'):
+                return True
                 
             return False
 
@@ -376,12 +388,12 @@ class HomeView(AccessControlMixin, TemplateView):
                 'salud_reports': [
                     {'name': 'Indicadores de Salud', 'url': '/consultas/salud/'},
                     {'name': 'Producción Médica', 'url': '/consultas/produccion-medico/'},
+                    {'name': 'Trazabilidad de Pacientes', 'url': '/consultas/pacientes-urgencias/'},
                 ]
              })
         else:
             context.update({'consultas': [], 'admin_reports': [], 'salud_reports': []})
 
-        return context
         return context
 
 class ModuleDetailView(AccessControlMixin, TemplateView):
