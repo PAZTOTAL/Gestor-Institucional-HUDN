@@ -5,9 +5,7 @@
 <div class="max-w-4xl mx-auto py-12 px-4 text-black">
     <!-- Breadcrumb -->
     <nav class="flex mb-8 text-sm font-bold text-slate-500 animate-in fade-in duration-500">
-        <a href="{% url 'horas_extras:dashboard' %}" class="hover:text-blue-600">Talento Humano</a>
-        <span class="mx-2 text-slate-300">/</span>
-        <a href="{% url 'horas_extras:informes_dashboard' %}" class="hover:text-blue-600">Informes</a>
+        <a href="/" class="hover:text-blue-600">Talento Humano</a>
         <span class="mx-2 text-slate-300">/</span>
         <span class="text-slate-900">Buscar Funcionario</span>
     </nav>
@@ -53,22 +51,38 @@
             <div class="p-10 grid grid-cols-1 md:grid-cols-2 gap-10">
                 <div class="space-y-8">
                     <div>
-                        <div class="text-xs font-black text-slate-400 uppercase tracking-widest mb-3">Área / Dependencia</div>
-                        <div class="flex items-center gap-4">
-                            <div class="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600">
-                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                             <div class="text-xl font-black text-slate-900">
+                                {{ funcionario.area }}
+                                <div class="text-[9px] text-slate-400 font-bold uppercase mt-1">
+                                    {% if fuente == 'NMEMPLEA' %}Origen: CTNCENCOS / AFNAREAS
+                                    {% elif fuente == 'NOMEMPLEADO (Hoja de Vida)' %}Origen: NOMSUBGRU
+                                    {% else %}Origen: Dinámica{% endif %}
+                                </div>
+                                {% if excel_data and excel_data.AREA != funcionario.area %}
+                                    <div class="mt-2 flex items-center gap-2 p-2 bg-amber-50 rounded-lg border border-amber-200">
+                                        <svg class="w-3 h-3 text-amber-600" fill="currentColor" viewBox="0 0 20 20"><path d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"></path></svg>
+                                        <span class="text-[10px] text-amber-700 font-black">EXCEL: {{ excel_data.AREA }}</span>
+                                    </div>
+                                {% endif %}
                             </div>
-                            <div class="text-xl font-black text-slate-900">{{ funcionario.area }}</div>
                         </div>
                     </div>
 
                     <div>
-                        <div class="text-xs font-black text-slate-400 uppercase tracking-widest mb-3">Cargo Institucional</div>
-                        <div class="flex items-center gap-4">
-                            <div class="w-12 h-12 bg-emerald-50 rounded-2xl flex items-center justify-center text-emerald-600">
-                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                             <div class="text-xl font-black text-slate-900">
+                                {{ funcionario.cargo|default:"SIN CARGO DEFINIDO" }}
+                                <div class="text-[9px] text-slate-400 font-bold uppercase mt-1">
+                                    {% if fuente == 'NMEMPLEA' %}Origen: NMCARGOS
+                                    {% elif fuente == 'NOMEMPLEADO (Hoja de Vida)' %}Origen: DATO GENÉRICO
+                                    {% else %}Origen: Dinámica{% endif %}
+                                </div>
+                                {% if excel_data and excel_data.CARGO != funcionario.cargo %}
+                                    <div class="mt-2 flex items-center gap-2 p-2 bg-amber-50 rounded-lg border border-amber-200">
+                                        <svg class="w-3 h-3 text-amber-600" fill="currentColor" viewBox="0 0 20 20"><path d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"></path></svg>
+                                        <span class="text-[10px] text-amber-700 font-black">EXCEL: {{ excel_data.CARGO }}</span>
+                                    </div>
+                                {% endif %}
                             </div>
-                            <div class="text-xl font-black text-slate-900">{{ funcionario.cargo|default:"SIN CARGO DEFINIDO" }}</div>
                         </div>
                     </div>
                 </div>
@@ -94,6 +108,24 @@
                         </div>
                     </div>
                 </div>
+                </div>
+            </div>
+
+            <div class="bg-slate-50 p-6 border-t border-slate-100 flex flex-col md:flex-row justify-between items-center gap-4">
+                <div class="flex items-center gap-3">
+                    <span class="text-xs font-black text-slate-400 uppercase">Fuente de Datos:</span>
+                    <span class="px-3 py-1 bg-white border border-slate-200 text-slate-600 text-[10px] font-black rounded-lg shadow-sm">
+                        {{ fuente }}
+                    </span>
+                </div>
+                {% if excel_data %}
+                <div class="flex items-center gap-3">
+                    <span class="text-xs font-black text-slate-400 uppercase">Cotejo Excel:</span>
+                    <span class="px-3 py-1 bg-green-50 border border-green-200 text-green-700 text-[10px] font-black rounded-lg shadow-sm">
+                        VERIFICADO EN EXCEL MAESTRO
+                    </span>
+                </div>
+                {% endif %}
             </div>
         </div>
     </div>

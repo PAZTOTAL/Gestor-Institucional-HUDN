@@ -12,10 +12,18 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 
 from pathlib import Path
 import os
+import sys
 from dotenv import load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+# Apps obstétricas (meows, trabajoparto) viven bajo UNIFICADOR-V1 en este monorepo.
+_SISTEMA_OBST = BASE_DIR / 'UNIFICADOR-V1' / 'sistema_obstetrico'
+if _SISTEMA_OBST.is_dir():
+    _obst_path = str(_SISTEMA_OBST)
+    if _obst_path not in sys.path:
+        sys.path.insert(0, _obst_path)
 
 load_dotenv(BASE_DIR / '.env')
 
@@ -57,16 +65,14 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'core',
-    'defenjur_app',
+    'defenjur_py.legal',
 
     'A_00_Organigrama',
     'usuarios',
-    # Apps migradas desde AdmonAlexaTotal
     'BasesGenerales',
     'consultas_externas',
     'registro_anestesia',
-    'meows',  # Sistema de Alerta Temprana Obstétrico
-    'trabajoparto',
+    'unificador_v1',
     'consultas',
     'presupuesto',
     'ConsentimientosInformados',
@@ -79,12 +85,16 @@ INSTALLED_APPS = [
     'CertificadosDIAN',
     'horas_extras',
     'frecuenciafetal',
-    'obstetriciaunificador',
     'certificados_laborales',
+    'visor_soportes',
+    # Cuando integre el código completo de UNIFICADOR-V1 en la raíz del repo, descomente:
+    # 'meows',
+    # 'trabajoparto',
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -99,7 +109,7 @@ ROOT_URLCONF = 'HospitalManagement.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR / 'defenjur_py' / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -129,23 +139,25 @@ DATABASES = {
         'PASSWORD': 'ConsultasPantojaHUDN_2026$', 
         'HOST': '172.20.100.209',
         'PORT': '',
+        'CONN_MAX_AGE': 0,  # No reusar conexiones — MSSQL cierra las inactivas y causa errores
         'OPTIONS': {
             'driver': 'ODBC Driver 17 for SQL Server',
-            'host_is_server': True,
-            'timeout': 60, # Mayor timeout para migraciones iniciales
+            'timeout': 60,
         },
     },
     'readonly': {
         'ENGINE': 'mssql',
-        'NAME': 'DGEMPRES_NEXUS',
-        'USER': 'apantoja',
-        'PASSWORD': 'ConsultasPantojaHUDN_2026$', 
+        'NAME': 'DGEMPRES03',
+        'USER': 'DSOLARTE',
+        'PASSWORD': 'ConsultaHUDN2026*/$',
         'HOST': '172.20.100.209',
         'PORT': '',
+        'CONN_MAX_AGE': 0,  # No reusar conexiones
         'OPTIONS': {
             'driver': 'ODBC Driver 17 for SQL Server',
             'host_is_server': True,
-            'timeout': 10,
+            'timeout': 10,  # Timeout para consultas de lectura
+            'connection_timeout': 1,  # Timeout de conexión mínimo
         },
     }
 }
@@ -166,7 +178,10 @@ DATABASES = {
 
 
 # Database Routers
-DATABASE_ROUTERS = ['HospitalManagement.routers.HospitalRouter', 'trabajoparto.db_router.ClinicoRouter']
+DATABASE_ROUTERS = [
+    'HospitalManagement.routers.HospitalRouter',
+    # 'trabajoparto.db_router.ClinicoRouter',
+]
 
 # Password validation
 # https://docs.djangoproject.com/en/5.0/ref/settings/#auth-password-validators
@@ -204,8 +219,11 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 STATICFILES_DIRS = [
     BASE_DIR / 'static',
+    BASE_DIR / 'defenjur_py' / 'static',
+    BASE_DIR / 'UNIFICADOR-V1' / 'sistema_obstetrico' / 'static',
 ]
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
@@ -224,13 +242,12 @@ LOGOUT_REDIRECT_URL = 'login'
 DATA_UPLOAD_MAX_NUMBER_FIELDS = 10000
 
 # DIAN Certificates Configuration
-# 1. Origen de datos (Plantilla y Excel en la ubicación "Original")
-DIAN_SOURCE_ROOT = r'C:\Users\SISTEMAS\Documents\HospitalManagement\media\certificados_dian'
-DIAN_EXCEL_PATH = os.path.join(DIAN_SOURCE_ROOT, 'CertificadoIngresos2025.xlsm')
-DIAN_TEMPLATE_PATH = os.path.join(DIAN_SOURCE_ROOT, 'Formulario_220_2026.pdf')
+# 1. Origen de datos (Plantilla y Excel)
+DIAN_EXCEL_PATH = os.path.join(BASE_DIR, 'CertificadoIngresos2025.xlsm')
+DIAN_TEMPLATE_PATH = os.path.join(BASE_DIR, 'media', 'certificados_dian', 'Formulario_220_2026.pdf')
 
-# 2. Destino de los PDF generados (Carpeta que pediste)
-DIAN_OUTPUT_DIR = r'C:\Users\SISTEMAS\Documents\Dian2025'
+# 2. Destino de los PDF generados
+DIAN_OUTPUT_DIR = os.path.join(BASE_DIR.parent, 'Dian2025')
 if not os.path.exists(DIAN_OUTPUT_DIR):
     try:
         os.makedirs(DIAN_OUTPUT_DIR, exist_ok=True)
@@ -252,3 +269,6 @@ EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'True') == 'True'
 EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', '')
 EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')
 DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', EMAIL_HOST_USER)
+
+
+

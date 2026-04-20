@@ -1,0 +1,110 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto py-12 px-4 text-black">
+    <!-- Breadcrumb -->
+    <nav class="flex mb-8 text-sm font-bold text-slate-500 animate-in fade-in duration-500">
+        <a href="/" class="hover:text-blue-600">Talento Humano</a>
+        <span class="mx-2 text-slate-300">/</span>
+        <span class="text-slate-900">Conciliación Dinámica vs Excel</span>
+    </nav>
+
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-12 gap-6 animate-in fade-in slide-in-from-top-4 duration-700">
+        <div>
+            <h1 class="text-4xl font-black text-slate-900 mb-2">Informe de Consistencia</h1>
+            <p class="text-lg text-slate-600">Validación de datos entre el Excel Maestro (C:\Users\SISTEMAS\Documents) y la base de datos Dinámica.</p>
+        </div>
+        
+        <div class="flex gap-4">
+            <div class="bg-white px-6 py-4 rounded-3xl border border-slate-200 shadow-sm flex items-center gap-4">
+                <div class="w-10 h-10 bg-green-50 rounded-full flex items-center justify-center text-green-600 font-bold">
+                    {{ stats.encontrados }}
+                </div>
+                <div>
+                    <div class="text-[10px] font-black text-slate-400 uppercase tracking-widest">En Dinámica</div>
+                </div>
+            </div>
+            <div class="bg-white px-6 py-4 rounded-3xl border border-slate-200 shadow-sm flex items-center gap-4">
+                <div class="w-10 h-10 bg-red-50 rounded-full flex items-center justify-center text-red-600 font-bold">
+                    {{ stats.faltantes }}
+                </div>
+                <div>
+                    <div class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Faltan/Errados</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if error %}
+    <div class="bg-red-100 border-l-4 border-red-500 p-6 rounded-2xl mb-8">
+        <p class="text-red-700 font-bold">{{ error }}</p>
+    </div>
+    {% endif %}
+
+    <!-- Table Section -->
+    <div class="bg-white rounded-[2.5rem] border border-slate-200 shadow-2xl overflow-hidden animate-in fade-in slide-in-from-bottom-8 duration-1000">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse" id="consistencyTable">
+                <thead>
+                    <tr class="bg-slate-50 text-slate-400 text-xs font-black uppercase tracking-widest">
+                        <th class="px-8 py-5">Cédula</th>
+                        <th class="px-8 py-5">Información Excel</th>
+                        <th class="px-8 py-5">Información Dinámica</th>
+                        <th class="px-8 py-5">Estado / Observación</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    {% for item in analisis %}
+                    <tr class="hover:bg-slate-50/50 transition-colors group">
+                        <td class="px-8 py-6">
+                            <span class="font-bold text-slate-500">{{ item.cedula }}</span>
+                        </td>
+                        <td class="px-8 py-6">
+                            <div class="font-black text-slate-900 mb-1">{{ item.nombre_excel }}</div>
+                            <div class="text-[10px] text-slate-400 uppercase font-black">
+                                {{ item.cargo_excel }} | {{ item.area_excel }}
+                            </div>
+                            <span class="inline-flex px-2 py-0.5 rounded-full text-[9px] font-black bg-slate-100 text-slate-500 mt-1">
+                                {{ item.vinculacion_excel }}
+                            </span>
+                        </td>
+                        <td class="px-8 py-6">
+                            {% if item.db_data %}
+                                <div class="font-bold text-slate-700">{{ item.db_data.nombre_dinamica }}</div>
+                                <div class="text-[10px] text-slate-400">
+                                    {{ item.db_data.cargo_dinamica|default:"SIN CARGO" }} | {{ item.db_data.area_dinamica|default:"SIN ÁREA" }}
+                                </div>
+                                <span class="inline-flex px-2 py-0.5 rounded-full text-[9px] font-black bg-blue-50 text-blue-600 mt-1">
+                                    {{ item.db_data.vinculacion_dinamica }}
+                                </span>
+                            {% else %}
+                                <span class="text-red-400 italic text-sm">No encontrado en Nómina</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-8 py-6">
+                            {% if item.estado == 'OK' %}
+                                <span class="inline-flex items-center px-4 py-1.5 rounded-full bg-green-100 text-green-700 text-xs font-black">
+                                    <svg class="w-3 h-3 mr-2" fill="currentColor" viewBox="0 0 20 20"><path d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"></path></svg>
+                                    OK
+                                </span>
+                            {% elif item.estado == 'FALTA EN DINAMICA' %}
+                                <span class="inline-flex items-center px-4 py-1.5 rounded-full bg-red-100 text-red-700 text-xs font-black">
+                                    Falta Registro
+                                </span>
+                                <div class="mt-1 text-[10px] text-red-400 italic">No existe en NMEMPLEA</div>
+                            {% else %}
+                                <span class="inline-flex items-center px-4 py-1.5 rounded-full bg-amber-100 text-amber-700 text-xs font-black">
+                                    Inconsistencia
+                                </span>
+                                <div class="mt-1 text-[10px] text-amber-500 italic">{{ item.detalles }}</div>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

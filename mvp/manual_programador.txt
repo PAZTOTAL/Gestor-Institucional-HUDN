@@ -1,5 +1,5 @@
 MANUAL DEL PROGRAMADOR
-Sistema: MVP - Generador de Certificados Laborales
+Sistema: MVP - Certificación de contratación por OPS
 
 1. Descripcion general
 Aplicacion web en Django que consulta contratos en SQL Server y genera certificados laborales en formato Word (.docx) con plantillas locales.

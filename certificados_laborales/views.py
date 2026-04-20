@@ -12,6 +12,9 @@ logger = logging.getLogger(__name__)
 def certificados_laborales_index(request):
     return render(request, "certificados_laborales/index.html")
 
+from django.views.decorators.csrf import csrf_exempt
+
+@csrf_exempt
 def api_consultar_contratos(request):
     if request.method != "POST":
         return JsonResponse({"error": "Método no permitido"}, status=405)
@@ -34,21 +37,33 @@ def api_consultar_contratos(request):
             {"error": "Error interno del servidor al procesar la solicitud."}, status=500
         )
 
+@csrf_exempt
 def api_generar_certificado(request):
     if request.method != "POST":
         return JsonResponse({"error": "Método no permitido"}, status=405)
 
     try:
-        data = json.loads(request.body)
-        genero = data.get("genero", "masculino")
+        if request.content_type == 'application/json':
+            payload = json.loads(request.body)
+            cedula = payload.get("cedula")
+            genero = payload.get("genero", "masculino")
+        else:
+            cedula = request.POST.get("cedula")
+            genero = request.POST.get("genero", "masculino")
         
+        if not cedula:
+            return JsonResponse({"error": "Cédula requerida"}, status=400)
+
+        data = get_grouped_contracts_by_cedula(cedula)
         output, filename = generate_certificate(data, genero)
 
+        from django.http import HttpResponse
         response = HttpResponse(
             output.getvalue(),
-            content_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            content_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
         )
-        response["Content-Disposition"] = f"attachment; filename={filename}"
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        response['Access-Control-Expose-Headers'] = 'Content-Disposition'
         return response
 
     except ValueError as e:

@@ -1,140 +1,404 @@
 {% extends 'core/base.html' %}
 {% load static %}
 
-{% block title %}Crear Cuenta - Sistema De Gestión Empresarial{% endblock %}
+{% block title %}Registro Institucional - Gestor HUDN{% endblock %}
 
-{% block scripts %}
-<script>
-    function togglePassword(inputId, button) {
-        const input = document.getElementById(inputId);
-        const icon = button.querySelector('svg');
-        if (input.type === 'password') {
-            input.type = 'text';
-            icon.innerHTML = '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line>';
-        } else {
-            input.type = 'password';
-            icon.innerHTML = '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle>';
-        }
+{% block extra_css %}
+<style>
+    body {
+        background: linear-gradient(135deg, #fdf2f8 0%, #f0f9ff 100%);
+        min-height: 100vh;
+        font-family: 'Inter', system-ui, -apple-system, sans-serif;
     }
-</script>
+    .main-card {
+        background: rgba(255, 255, 255, 0.82);
+        backdrop-filter: blur(24px);
+        @apply shadow-2xl rounded-[3rem] border border-white/60 overflow-hidden mx-auto transition-all duration-700;
+        max-width: 850px;
+    }
+    .btn-premium {
+        @apply bg-blue-600 hover:bg-blue-700 text-white font-black py-5 px-10 rounded-2xl shadow-xl transition-all duration-300 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed uppercase tracking-widest text-sm flex items-center justify-center gap-3;
+    }
+    .step-dot {
+        @apply w-3 h-3 rounded-full bg-slate-200 transition-all duration-700;
+    }
+    .step-dot.active {
+        @apply bg-blue-500 w-12;
+    }
+    .fade-section {
+        animation: fadeIn 0.8s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(30px) scale(0.98); }
+        to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    input:-webkit-autofill {
+        -webkit-box-shadow: 0 0 0 50px white inset !important;
+    }
+</style>
 {% endblock %}
 
 {% block content %}
-<div class="flex items-center justify-center min-h-[80vh] py-12">
-    <div class="glass-card w-full max-w-2xl p-8 animate-fade-in bg-white border-2 border-blue-400 shadow-2xl">
-        <div class="text-center mb-8">
-            <h1 class="text-3xl font-black text-black mb-2">Crear Cuenta</h1>
-            <p class="text-blue-900 font-bold">Únete a nuestra plataforma de gestión profesional</p>
+<div class="px-4 py-16">
+    <!-- Premium Header -->
+    <div class="text-center mb-16 space-y-4">
+        <div class="inline-flex p-4 bg-white/90 rounded-[2rem] shadow-sm border border-white mb-6 animate-pulse">
+            <svg class="w-12 h-12 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path>
+            </svg>
         </div>
+        <h1 class="text-6xl font-black tracking-tighter text-slate-800">
+            Registro <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">Institucional</span>
+        </h1>
+        <p class="text-slate-400 font-bold text-lg max-w-md mx-auto">Modernización y acceso seguro al ecosistema digital del HUDN</p>
+    </div>
 
-        <form method="post" class="space-y-6">
+    <div class="main-card">
+        <!-- Unified Progress -->
+        <div class="flex items-center justify-center gap-3 py-8 bg-slate-50/40 border-b border-white/50">
+            <div id="dot-1" class="step-dot active"></div>
+            <div id="dot-2" class="step-dot"></div>
+        </div>
+        
+        <form method="post" id="registrationForm" class="p-8 md:p-16">
             {% csrf_token %}
-
+            
             {% if form.errors %}
-            <div class="bg-red-100 border-2 border-red-500 text-red-700 p-4 rounded-xl text-sm mb-6 font-bold">
-                <p class="font-black mb-1">Por favor corrige los siguientes errores:</p>
-                <ul class="list-disc list-inside">
-                    {% for field in form %}
+            <div class="mb-8 p-6 bg-rose-50 border-2 border-rose-100 rounded-3xl animate-bounce">
+                <div class="flex items-center gap-3 text-rose-600 mb-2">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    <span class="font-black uppercase tracking-widest text-sm">Errores de Validación</span>
+                </div>
+                <ul class="space-y-1">
+                {% for field in form %}
                     {% for error in field.errors %}
-                    <li>{{ field.label }}: {{ error }}</li>
+                        <li class="text-rose-500 font-bold text-sm ml-9">• {{ error }}</li>
                     {% endfor %}
-                    {% endfor %}
-                    {% for error in form.non_field_errors %}
-                    <li>{{ error }}</li>
-                    {% endfor %}
+                {% endfor %}
+                {% for error in form.non_field_errors %}
+                    <li class="text-rose-500 font-bold text-sm ml-9">• {{ error }}</li>
+                {% endfor %}
                 </ul>
             </div>
             {% endif %}
-
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div class="space-y-2">
-                    <label for="{{ form.first_name.id_for_label }}"
-                        class="block text-sm font-black text-black ml-1">Nombre</label>
-                    <div class="relative">
-                        <input type="text" name="first_name" id="{{ form.first_name.id_for_label }}" required
-                            class="w-full bg-blue-50 border-2 border-blue-300 rounded-xl px-4 py-3 text-black font-bold placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-600 transition-all duration-300"
-                            placeholder="Tu nombre">
+            
+            <!-- Step 1: Verification -->
+            <div id="step-1" class="fade-section space-y-12">
+                <div class="text-center max-w-lg mx-auto space-y-6">
+                    <h2 class="text-3xl font-black text-slate-700 tracking-tight">Comencemos con tu identificación</h2>
+                    <p class="text-slate-400 font-medium leading-relaxed">Extraeremos automáticamente tu información desde Dinámica Nexus para facilitar tu registro.</p>
+                    
+                    <div class="relative group mt-10">
+                        <div class="absolute -inset-1.5 bg-gradient-to-r from-blue-400 to-indigo-500 rounded-[2.5rem] blur opacity-15 group-focus-within:opacity-40 transition duration-1000"></div>
+                        <input type="text" id="lookup_cedula" name="documento_verificador_hudn" class="relative block w-full text-center text-5xl font-black py-10 rounded-[2.5rem] border-4 border-white bg-white focus:ring-0 outline-none placeholder-slate-100 text-slate-700 shadow-2xl transition-all" placeholder="00000000" autofocus inputmode="numeric" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
                     </div>
+
+                    <div id="lookup-error" class="hidden p-4 bg-rose-50 text-rose-600 rounded-2xl border border-rose-100 font-bold text-sm"></div>
                 </div>
 
-                <div class="space-y-2">
-                    <label for="{{ form.last_name.id_for_label }}"
-                        class="block text-sm font-black text-black ml-1">Apellido</label>
-                    <div class="relative">
-                        <input type="text" name="last_name" id="{{ form.last_name.id_for_label }}" required
-                            class="w-full bg-blue-50 border-2 border-blue-300 rounded-xl px-4 py-3 text-black font-bold placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-600 transition-all duration-300"
-                            placeholder="Tu apellido">
-                    </div>
-                </div>
-
-                <div class="space-y-2">
-                    <label for="{{ form.username.id_for_label }}"
-                        class="block text-sm font-black text-black ml-1">Nombre de Usuario</label>
-                    <div class="relative">
-                        <input type="text" name="username" id="{{ form.username.id_for_label }}" required
-                            class="w-full bg-blue-50 border-2 border-blue-300 rounded-xl px-4 py-3 text-black font-bold placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-600 transition-all duration-300"
-                            placeholder="usuario123">
-                    </div>
-                </div>
-
-                <div class="space-y-2">
-                    <label for="{{ form.email.id_for_label }}" class="block text-sm font-black text-black ml-1">Correo
-                        Electrónico</label>
-                    <div class="relative">
-                        <input type="email" name="email" id="{{ form.email.id_for_label }}" required
-                            class="w-full bg-blue-50 border-2 border-blue-300 rounded-xl px-4 py-3 text-black font-bold placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-600 transition-all duration-300"
-                            placeholder="ejemplo@correo.com">
-                    </div>
-                </div>
-
-                <div class="space-y-2">
-                    <label for="{{ form.password1.id_for_label }}"
-                        class="block text-sm font-black text-black ml-1">Contraseña</label>
-                    <div class="relative">
-                        <input type="password" name="password1" id="{{ form.password1.id_for_label }}" required
-                            class="w-full bg-blue-50 border-2 border-blue-300 rounded-xl px-4 py-3 text-black font-bold placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-600 transition-all duration-300 pr-12"
-                            placeholder="••••••••">
-                        <button type="button" onclick="togglePassword('{{ form.password1.id_for_label }}', this)"
-                            class="absolute right-3 top-1/2 -translate-y-1/2 text-blue-500 hover:text-blue-800 focus:outline-none transition-colors duration-300">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                                <circle cx="12" cy="12" r="3"></circle>
-                            </svg>
-                        </button>
-                    </div>
-                </div>
-
-                <div class="space-y-2">
-                    <label for="{{ form.password2.id_for_label }}"
-                        class="block text-sm font-black text-black ml-1">Confirmar Contraseña</label>
-                    <div class="relative">
-                        <input type="password" name="password2" id="{{ form.password2.id_for_label }}" required
-                            class="w-full bg-blue-50 border-2 border-blue-300 rounded-xl px-4 py-3 text-black font-bold placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-600 transition-all duration-300 pr-12"
-                            placeholder="••••••••">
-                        <button type="button" onclick="togglePassword('{{ form.password2.id_for_label }}', this)"
-                            class="absolute right-3 top-1/2 -translate-y-1/2 text-blue-500 hover:text-blue-800 focus:outline-none transition-colors duration-300">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                                <circle cx="12" cy="12" r="3"></circle>
-                            </svg>
-                        </button>
+                <div class="flex flex-col items-center gap-6 pt-4">
+                    <button type="button" id="btn-next" onclick="performLookup()" class="btn-premium group min-w-[300px] relative overflow-hidden">
+                        <span class="relative z-10 flex items-center justify-center gap-3">
+                            Verificar Identidad
+                            <svg class="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M13 7l5 5m0 0l-5 5m5-5H6"></path></svg>
+                        </span>
+                    </button>
+                    
+                    <div id="loader" class="hidden flex items-center gap-3 text-blue-600 font-black text-xs uppercase tracking-widest animate-pulse">
+                        <svg class="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Consultando Dinámica Nexus...
                     </div>
                 </div>
             </div>
 
-            <button type="submit"
-                class="w-full mt-4 bg-blue-600 hover:bg-blue-700 text-white font-black py-3 rounded-xl shadow-lg shadow-blue-500/30 transition-all duration-300 transform hover:scale-[1.01] active:scale-[0.99]">
-                Crear Mi Cuenta
-            </button>
+            <!-- Step 2: Data & Account (Initially hidden) -->
+            <div id="step-2" class="fade-section hidden space-y-8">
+                <style>
+                    :root {
+                        --pastel-blue: #e0f2fe;
+                        --pastel-green: #dcfce7;
+                        --pastel-purple: #f3e8ff;
+                        --pastel-amber: #fef3c7;
+                        --pastel-rose: #ffe4e6;
+                        --pastel-indigo: #e0e7ff;
+                    }
+                    .field-card {
+                        @apply p-4 rounded-2xl border-2 transition-all duration-300;
+                        background: white;
+                    }
+                    .field-card:focus-within {
+                        @apply shadow-lg border-blue-200;
+                        transform: translateY(-2px);
+                    }
+                    .label-pastel {
+                        @apply text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1 block;
+                    }
+                </style>
+
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <!-- Row 1: Document & Institutional User -->
+                    <div class="field-card bg-slate-50 border-slate-100">
+                        <label class="label-pastel">Cédula</label>
+                        <input type="text" name="cedula" id="id_cedula" readonly class="w-full bg-transparent font-bold text-slate-600 outline-none cursor-not-allowed">
+                    </div>
+
+                    <div class="md:col-span-3 field-card border-blue-100 bg-blue-50/30">
+                        <label class="label-pastel text-blue-500">Usuario Institucional (Dinámica Nexus)</label>
+                        <div class="flex items-center gap-3">
+                            <input type="text" name="username" id="id_username" class="flex-1 bg-transparent font-black text-blue-700 placeholder-blue-300 outline-none" required placeholder="Ej: apantojaa">
+                            <span id="badge-institucional" class="hidden px-2 py-0.5 bg-green-500 text-white text-[8px] font-black rounded-full uppercase">Staff</span>
+                            <span id="badge-cliente" class="hidden px-2 py-0.5 bg-amber-500 text-white text-[8px] font-black rounded-full uppercase">Cliente</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Row 2: Nombres -->
+                    <div class="field-card border-purple-100">
+                        <label class="label-pastel text-purple-500">Primer Nombre</label>
+                        <input type="text" name="primer_nombre" id="id_primer_nombre" class="w-full bg-transparent font-semibold outline-none" required>
+                    </div>
+
+                    <div class="field-card border-purple-100">
+                        <label class="label-pastel text-purple-400">Segundo Nombre</label>
+                        <input type="text" name="segundo_nombre" id="id_segundo_nombre" class="w-full bg-transparent font-semibold outline-none">
+                    </div>
+
+                    <div class="field-card border-purple-100">
+                        <label class="label-pastel text-purple-500">Primer Apellido</label>
+                        <input type="text" name="primer_apellido" id="id_primer_apellido" class="w-full bg-transparent font-semibold outline-none" required>
+                    </div>
+
+                    <div class="field-card border-purple-100">
+                        <label class="label-pastel text-purple-400">Segundo Apellido</label>
+                        <input type="text" name="segundo_apellido" id="id_segundo_apellido" class="w-full bg-transparent font-semibold outline-none">
+                    </div>
+
+                    <!-- Row 3: Biodemográficos -->
+                    <div class="field-card border-rose-100">
+                        <label class="label-pastel text-rose-500">Sexo</label>
+                        <select name="sexo" id="id_sexo" class="w-full bg-transparent font-semibold outline-none">
+                            <option value="">Seleccione</option>
+                            <option value="M">Masculino</option>
+                            <option value="F">Femenino</option>
+                            <option value="O">Otro</option>
+                        </select>
+                    </div>
+
+                    <div class="field-card border-rose-100">
+                        <label class="label-pastel text-rose-500">Grupo Sanguíneo</label>
+                        <select name="grupo_sanguineo" id="id_grupo_sanguineo" class="w-full bg-transparent font-semibold outline-none">
+                            <option value="">Seleccione</option>
+                            <option value="O">O</option>
+                            <option value="A">A</option>
+                            <option value="B">B</option>
+                            <option value="AB">AB</option>
+                        </select>
+                    </div>
+
+                    <div class="field-card border-rose-100">
+                        <label class="label-pastel text-rose-500">Factor RH</label>
+                        <select name="rh" id="id_rh" class="w-full bg-transparent font-semibold outline-none">
+                            <option value="">Seleccione</option>
+                            <option value="+">Positivo (+)</option>
+                            <option value="-">Negativo (-)</option>
+                        </select>
+                    </div>
+
+                    <div class="field-card border-amber-100">
+                        <label class="label-pastel text-amber-600">Fecha Nacimiento</label>
+                        <input type="date" name="fecha_nacimiento" id="id_fecha_nacimiento" class="w-full bg-transparent font-semibold outline-none">
+                    </div>
+
+                    <!-- Row 4: Contacto -->
+                    <div class="md:col-span-2 field-card border-indigo-100">
+                        <label class="label-pastel text-indigo-500">Correo Institucional</label>
+                        <input type="email" name="email_institucional" id="id_email_institucional" class="w-full bg-transparent font-semibold outline-none" placeholder="usuario@hosdenar.gov.co">
+                    </div>
+
+                    <div class="md:col-span-2 field-card border-indigo-100">
+                        <label class="label-pastel text-indigo-600">Correo Personal (Obligatorio)</label>
+                        <input type="email" name="email_personal" id="id_email_personal" class="w-full bg-transparent font-bold text-indigo-700 outline-none" required placeholder="correo@ejemplo.com">
+                    </div>
+
+                    <!-- Row 5: Localización -->
+                    <div class="md:col-span-3 field-card border-emerald-100">
+                        <label class="label-pastel text-emerald-600">Dirección de Residencia</label>
+                        <input type="text" name="direccion" id="id_direccion" class="w-full bg-transparent font-semibold outline-none" placeholder="Calle ...">
+                    </div>
+
+                    <div class="field-card border-emerald-100">
+                        <label class="label-pastel text-emerald-500">Teléfono</label>
+                        <input type="text" name="telefono" id="id_telefono" class="w-full bg-transparent font-semibold outline-none" placeholder="300...">
+                    </div>
+
+                    <!-- Row 6: Passwords -->
+                    <div class="md:col-span-2 field-card border-slate-200 bg-slate-50/50">
+                        <label class="label-pastel">Contraseña</label>
+                        <input type="password" name="password1" class="w-full bg-transparent font-semibold outline-none" required placeholder="••••••••">
+                    </div>
+
+                    <div class="md:col-span-2 field-card border-slate-200 bg-slate-50/50">
+                        <label class="label-pastel">Confirmar Contraseña</label>
+                        <input type="password" name="password2" class="w-full bg-transparent font-semibold outline-none" required placeholder="••••••••">
+                    </div>
+                </div>
+
+                {% if form.errors %}
+                <div class="p-4 bg-rose-50 border border-rose-200 rounded-2xl space-y-1">
+                    <p class="text-rose-700 font-black text-sm uppercase tracking-wide mb-2">Corrige los siguientes errores:</p>
+                    {% for field in form %}
+                        {% for error in field.errors %}
+                        <p class="text-rose-600 text-sm font-semibold">• <strong>{{ field.label }}:</strong> {{ error }}</p>
+                        {% endfor %}
+                    {% endfor %}
+                    {% for error in form.non_field_errors %}
+                    <p class="text-rose-600 text-sm font-semibold">• {{ error }}</p>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                <div class="flex flex-col md:flex-row gap-4 pt-6">
+                    <button type="button" onclick="goBack()" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold py-4 rounded-xl transition-all">
+                        Regresar
+                    </button>
+                    <button type="submit" class="flex-[2] btn-premium">
+                        Completar Registro
+                    </button>
+                </div>
+            </div>
         </form>
 
-        <div class="mt-8 text-center border-t-2 border-blue-100 pt-6">
-            <p class="text-blue-900 font-medium">¿Ya tienes una cuenta?
-                <a href="{% url 'login' %}"
-                    class="text-blue-600 hover:text-blue-800 font-black transition-colors underline">Inicia sesión
-                    aquí</a>
+        <div class="mt-10 text-center border-t border-slate-100 pt-8">
+            <p class="text-slate-500 font-semibold">¿Ya tienes una cuenta? 
+                <a href="{% url 'login' %}" class="text-blue-600 hover:text-blue-800 font-black transition-colors underline underline-offset-4">Inicia sesión aquí</a>
             </p>
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function performLookup() {
+        const cedula = document.getElementById('lookup_cedula').value.trim();
+        const btn = document.getElementById('btn-next');
+        const loader = document.getElementById('loader');
+        const errorDiv = document.getElementById('lookup-error');
+
+        if (!cedula) {
+            showError("Por favor ingrese su número de documento.");
+            return;
+        }
+
+        // Reset UI
+        errorDiv.classList.add('hidden');
+        btn.disabled = true;
+        loader.classList.remove('hidden');
+
+        fetch(`{% url 'lookup_cedula' %}?cedula=${cedula}`)
+            .then(response => response.json())
+            .then(result => {
+                if (result.found) {
+                    fillForm(result.data);
+                    goToStep2();
+                } else {
+                    showError(result.message || "No se encontró información institucional.");
+                }
+            })
+            .catch(error => {
+                showError("Error al conectar con el servidor. Intente nuevamente.");
+            })
+            .finally(() => {
+                btn.disabled = false;
+                loader.classList.add('hidden');
+            });
+    }
+
+    function fillForm(data) {
+        if (!data) return;
+        
+        // Populate fields
+        document.getElementById('id_cedula').value = data.cedula || '';
+        document.getElementById('id_primer_nombre').value = data.primer_nombre || '';
+        document.getElementById('id_segundo_nombre').value = data.segundo_nombre || '';
+        document.getElementById('id_primer_apellido').value = data.primer_apellido || '';
+        document.getElementById('id_segundo_apellido').value = data.segundo_apellido || '';
+        document.getElementById('id_email_institucional').value = data.email_institucional || '';
+        document.getElementById('id_email_personal').value = data.email_personal || '';
+        document.getElementById('id_direccion').value = data.direccion || '';
+        document.getElementById('id_telefono').value = data.telefono || '';
+        document.getElementById('id_fecha_nacimiento').value = data.fecha_nacimiento || '';
+        
+        // Biodemographics Selects
+        if (data.sexo) document.getElementById('id_sexo').value = data.sexo;
+        if (data.grupo_sanguineo) document.getElementById('id_grupo_sanguineo').value = data.grupo_sanguineo;
+        if (data.rh) document.getElementById('id_rh').value = data.rh;
+        
+        // Institutional Username & Badges
+        const usernameInput = document.getElementById('id_username');
+        const badgeCliente = document.getElementById('badge-cliente');
+        const badgeInstitucional = document.getElementById('badge-institucional');
+
+        if (data.username_institucional) {
+            usernameInput.value = data.username_institucional;
+            badgeInstitucional.classList.remove('hidden');
+            badgeCliente.classList.add('hidden');
+        } else {
+            usernameInput.value = '';
+            badgeInstitucional.classList.add('hidden');
+            badgeCliente.classList.remove('hidden');
+        }
+    }
+
+    function goToStep2() {
+        document.getElementById('step-1').classList.add('hidden');
+        document.getElementById('step-2').classList.remove('hidden');
+        document.getElementById('dot-1').classList.remove('active');
+        document.getElementById('dot-2').classList.add('active');
+    }
+
+    function goBack() {
+        document.getElementById('step-2').classList.add('hidden');
+        document.getElementById('step-1').classList.remove('hidden');
+        document.getElementById('dot-2').classList.remove('active');
+        document.getElementById('dot-1').classList.add('active');
+    }
+
+    function showError(msg) {
+        const errorDiv = document.getElementById('lookup-error');
+        errorDiv.textContent = msg;
+        errorDiv.classList.remove('hidden');
+    }
+
+    // Allow Enter key to trigger lookup
+    document.getElementById('lookup_cedula').addEventListener('keypress', function (e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            performLookup();
+        }
+    });
+
+    // Handle initial errors if any (from server-side validation)
+    {% if form.errors %}
+        fillForm({
+            cedula: "{{ form.cedula.value|default:'' }}",
+            username_institucional: "{{ form.username.value|default:'' }}",
+            primer_nombre: "{{ form.primer_nombre.value|default:'' }}",
+            segundo_nombre: "{{ form.segundo_nombre.value|default:'' }}",
+            primer_apellido: "{{ form.primer_apellido.value|default:'' }}",
+            segundo_apellido: "{{ form.segundo_apellido.value|default:'' }}",
+            email_personal: "{{ form.email_personal.value|default:'' }}",
+            email_institucional: "{{ form.email_institucional.value|default:'' }}",
+            direccion: "{{ form.direccion.value|default:'' }}",
+            telefono: "{{ form.telefono.value|default:'' }}",
+            fecha_nacimiento: "{{ form.fecha_nacimiento.value|default:'' }}",
+            sexo: "{{ form.sexo.value|default:'' }}",
+            grupo_sanguineo: "{{ form.grupo_sanguineo.value|default:'' }}",
+            rh: "{{ form.rh.value|default:'' }}"
+        });
+        goToStep2();
+    {% endif %}
+</script>
 {% endblock %}

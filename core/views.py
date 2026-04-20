@@ -207,99 +207,175 @@ class HomeView(AccessControlMixin, TemplateView):
     template_name = 'core/home.html'
 
     def dispatch(self, request, *args, **kwargs):
-        # Bloquear navegación a Home si solo tienen 1 permiso (su app dedicada)
         if request.user.is_authenticated and not request.user.is_superuser:
-            user_apps = PermisoApp.objects.filter(user=request.user, permitido=True)
-            if user_apps.count() == 1:
-                unica_app = user_apps.first().app_label
-                if unica_app == 'CertificadosDIAN':
-                    return redirect('certificados_dian:dashboard')
+            allowed_apps = set(
+                PermisoApp.objects.filter(user=request.user, permitido=True)
+                .values_list('app_label', flat=True)
+            )
+            
+            # 1. Definir Mapeo de Equivalencias (App Label <-> Slug)
+            # Esto asegura que dar permiso a la App o al Módulo funcione igual
+            equiv_map = {
+                'certificados_laborales': 'mvp',
+                'mvp': 'certificados_laborales',
+            }
+            
+            # Expandir allowed_apps con equivalencias
+            final_perms = allowed_apps.copy()
+            for app in allowed_apps:
+                if app in equiv_map:
+                    final_perms.add(equiv_map[app])
+            
+            # 2. Redirección Directa para Usuarios con 1 solo módulo (Skip Dashboard)
+            if len(allowed_apps) == 1:
+                unica_app = next(iter(allowed_apps))
+                redirect_map = {
+                    'CertificadosDIAN': 'certificados_dian:dashboard',
+                    'unificador_v1': '/atencion/',
+                    'certificados_laborales': '/certificados-laborales/',
+                    'mvp': '/certificados-laborales/',
+                    'horas_extras': '/horas-extras/asignacion-turnos/',
+                    'registro_anestesia': '/registro-anestesia/create/',
+                    'defenjur': '/defenjur/',
+                    'presupuesto': '/presupuesto/',
+                    'A_00_Organigrama': '/organigrama/'
+                }
+                
+                target = redirect_map.get(unica_app)
+                if target:
+                    return redirect(target)
+            
+            request._allowed_apps = final_perms
         return super().dispatch(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        user = self.request.user
+        is_superuser = user.is_superuser
+        allowed_apps = getattr(self.request, '_allowed_apps', set())
         
-        # 1. AUTO-REDIRECT logic: Si el usuario solo tiene 1 app permitida y no es admin, lo forzamos allá
-        if not self.request.user.is_superuser:
-            user_apps = PermisoApp.objects.filter(user=self.request.user, permitido=True)
-            if user_apps.count() == 1:
-                unica_app = user_apps.first().app_label
-                if unica_app == 'CertificadosDIAN':
-                    # Podríamos usar raise para interrumpir o atrapar esto en dispatch
-                    pass # En Django CBVs, no puedes retornar un redirect desde get_context_data
-                    
-        # Categorize modules into Healthcare and Administrative groups
-        asistenciales = [
-            {'name': 'Registro de Anestesia', 'slug': 'registro_anestesia', 'description': 'Registro Clínico de Anestesia (FRQUI-032)', 'url': '/registro-anestesia/create/', 'icon': 'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z M14 2 14 8 20 8 M16 13H8 M16 17H8 M10 9H9H8'},
-            {'name': 'Sistema MEOWS', 'slug': 'meows', 'description': 'Sistema de Alerta Temprana Obstétrico', 'url': '/meows/nuevo/0/', 'icon': 'M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z'},
-            {'name': 'Gestión de Partos', 'slug': 'trabajoparto', 'description': 'Historia Clínico y Partograma', 'url': '/parto/', 'icon': 'M9 12h.01 M15 12h.01 M10 16a2.5 2.5 0 0 0 4 0 M12 22a7 7 0 1 0 0-14 7 7 0 0 0 0 14z M12 8V2 M5.88 10.9a3.5 3.5 0 1 1 5.24 4.77 M18.12 10.9a3.5 3.5 0 1 0-5.24 4.77'},
-            {'name': 'Consentimientos Informados', 'slug': 'ConsentimientosInformados', 'description': 'Autorizaciones y Firmas Electrónicas', 'url': '/consentimientos/', 'icon': 'M12 20h9 M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z'},
-            {'name': 'Central de Mezclas', 'slug': 'CentralDeMezclas', 'description': 'Laboratorio de Preparaciones Estériles', 'url': '/central-mezclas/', 'icon': 'M16.3 3.4 12 10V2M11 10.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5z M5.5 15.5l1.5-2 M17 15.5l-1.5-2 M2 22h20 M7 22l1-4.5 M17 22l-1-4.5'},
-        ]
-        
-        administrativos = [
-            {'name': 'Generales y Seguridad', 'slug': 'usuarios', 'description': 'Configuración general y seguridad'},
-            {'name': 'Consultas Base Externa', 'slug': 'consultas_externas', 'description': 'Consulta de datos GENTERCER y otros', 'url': '/consultas-externas/'},
-            {'name': 'Talento Humano', 'slug': 'horas_extras', 'description': 'Gestión de Personal: Horas Extras e Informes', 'url': '/horas-extras/', 'icon': 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z'},
-            {'name': 'Formatos Institucionales', 'slug': 'BasesGenerales', 'description': 'Gestión de formatos y códigos FRXXX', 'url': '/modulo/BasesGenerales/tabla/Formatos_Hudn/', 'icon': 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z'},
-            {'name': 'Presupuesto', 'slug': 'presupuesto', 'description': 'Gestión Presupuestal (CDP, RP, Obligaciones)', 'url': '/presupuesto/'},
-            {'name': 'Bases Generales', 'slug': 'BasesGenerales', 'description': 'Configuración de bases generales'},
-            {'name': 'Estudio De Conveniencia', 'slug': 'EstudioDeConveniencia', 'description': 'Generación de Estudios Previos', 'icon': 'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z M14 2 14 8 20 8 M16 13H8 M16 17H8 M10 9H9H8'},
-        ]
-
-        consultas = [
-            {'name': 'Administrativas', 'slug': 'consultas_administrativas', 'description': 'Facturación, RIPS y Aseguradoras', 'icon': 'bi-cash-stack'},
-            {'name': 'Asistenciales', 'slug': 'consultas_asistenciales', 'description': 'Indicadores Médicos y Salud', 'icon': 'bi-activity'},
-        ]
-        
-        # We also need the specific report links for the sub-sections
-        admin_reports = [
-            {'name': 'Facturación Total', 'url': '/consultas/admin/?view=ventas&group_by=global', 'description': 'Resumen global de ventas'},
-            {'name': 'Facturación por Aseguradora', 'url': '/consultas/admin/?view=ventas&group_by=aseguradora', 'description': 'Ventas agrupadas por pagador'},
-            {'name': 'Facturación por Paciente', 'url': '/consultas/admin/?view=ventas&group_by=paciente', 'description': 'Detalle de cargos por usuario'},
-            {'name': 'Reportes RIPS', 'url': '/consultas/admin/?view=rips&group_by=global', 'description': 'Registros RIPS Procesados'},
-        ]
-        
-        salud_reports = [
-            {'name': 'Indicadores de Salud', 'url': '/consultas/salud/', 'description': 'Estadísticas Médicas'},
-            {'name': 'Producción Médica', 'url': '/consultas/produccion-medico/', 'description': 'Informe de atenciones por profesional'},
-            {'name': 'Trazabilidad de Pacientes', 'url': '/consultas/pacientes-urgencias/', 'description': 'Seguimiento de pacientes activos en todo el hospital'},
-        ]
-        
-        # Filter based on permissions
-        if not self.request.user.is_superuser:
-            # Helper to check permission
-            def has_access(slug):
-                return PermisoApp.objects.filter(
-                    user=self.request.user, 
-                    app_label=slug, 
-                    permitido=True
-                ).exists()
-
-            asistenciales = [m for m in asistenciales if has_access(m['slug'])]
-            administrativos = [m for m in administrativos if has_access(m['slug'])]
+        # Función de validación robusta y ESTRICTA
+        def has_permission(slug):
+            if is_superuser: return True
             
-            # Filter Consultas (Check app permission for 'consultas')
-            if not has_access('consultas'):
-                consultas = []
-                admin_reports = []
-                salud_reports = []
-        
-        # Add URL to each module
-        for mod in asistenciales + administrativos:
-            if 'url' not in mod:
-                mod['url'] = f"/modulo/{mod['slug']}/"
+            # 1. Validación de coincidencia exacta (incluye mapeo de equivalencias previo)
+            if slug in allowed_apps: return True
             
-        context['asistenciales'] = asistenciales
-        context['administrativos'] = administrativos
-        context['consultas'] = consultas
-        context['admin_reports'] = admin_reports
-        context['salud_reports'] = salud_reports
+            # 2. Casos especiales de mapeo manual (Solo si el slug en DB es distinto al permiso)
+            # Actualmente cubierto por final_perms en dispatch, pero se puede reforzar aquí si es necesario.
+                
+            return False
+
+        # 1. Definir lista base de módulos (hardcoded para iconos/descripciones detalladas)
+        # pero ahora solo como un complemento. El motor principal será la base de datos.
+        hardcoded_metadata = {
+            'A_00_Organigrama': {'name': 'Organigrama Institucional', 'icon': 'M4 5h16v14H4z'},
+            'mvp': {'name': 'Certificación por OPS', 'url': '/certificados-laborales/'},
+            'hora_extra_list': {'name': 'Horas Extras', 'url': '/horas-extras/asignacion-turnos/'},
+            # ... se pueden añadir más aquí si se desea sobreescribir la DB
+        }
+
+        # 2. Obtener TODOS los módulos de la base de datos que el usuario tiene permitido
+        from core.models import DashboardModule
+        from django.db.models import Q
+        
+        db_modules = DashboardModule.objects.filter(is_active=True)
+        permitted_db_modules = []
+        for m in db_modules:
+            if has_permission(m.slug):
+                meta = hardcoded_metadata.get(m.slug, {})
+                permitted_db_modules.append({
+                    'name': meta.get('name', m.name),
+                    'slug': m.slug,
+                    'description': m.description,
+                    'url': meta.get('url', m.url or f"/modulo/{m.slug}/"),
+                    'icon': meta.get('icon', m.icon),
+                    'category': m.category
+                })
+
+        # 3. Agrupar por categorías para la estructura del Dashboard
+        categories_map = {
+            'asistencial': {'name': 'HOSPITALIZACION / SALUD', 'slug': 'asistencial', 'icon': 'M22 12h-4l-3 9L9 3l-3 9H2'},
+            'talento_humano': {'name': 'TALENTO HUMANO', 'slug': 'talento_humano', 'icon': 'M17 20h5...'},
+            'financiera': {'name': 'FINANZAS', 'slug': 'financiera', 'icon': 'M12 1v22...'},
+            'juridica': {'name': 'JURÍDICA', 'slug': 'juridica', 'icon': 'M12 22s8-4...'},
+            'contabilidad': {'name': 'CONTABILIDAD', 'slug': 'contabilidad', 'icon': 'M9 5H7...'},
+            'consultas': {'name': 'CONSULTAS', 'slug': 'consultas', 'icon': 'M9 17v-2...'},
+            'varios': {'name': 'VARIOS', 'slug': 'varios', 'icon': 'M12 2L2 7...'}
+        }
+
+        active_structure = []
+        all_permitted_modules = permitted_db_modules
+
+        # Agrupar módulos en la estructura activa
+        from itertools import groupby
+        from operator import itemgetter
+        
+        # Ordenar por categoría para el groupby
+        all_permitted_modules.sort(key=itemgetter('category'))
+        
+        for cat_slug, modules_gen in groupby(all_permitted_modules, key=itemgetter('category')):
+            modules_list = list(modules_gen)
+            cat_info = categories_map.get(cat_slug, {'name': cat_slug.upper(), 'slug': cat_slug, 'icon': ''})
+            
+            active_structure.append({
+                'category': cat_info,
+                'modules': modules_list
+            })
+            # Poblar variables específicas para el template (nav_...)
+            context[f'nav_{cat_slug}'] = modules_list
+
+        # Filtros específicos para sub-secciones de Salud (Compatibilidad con template)
+        context['quirofanos_modules'] = [m for m in all_permitted_modules if m['category'] == 'asistencial']
+        context['gineco_modules'] = [m for m in all_permitted_modules if m['category'] == 'asistencial']
+        # Nota: Se pueden granular más si hay categorías específicas en DB para esto.
+
+        # Decide if we show the "Direct View" (skipped category level)
+        show_direct_modules = (1 <= len(all_permitted_modules) <= 6) and not is_superuser
+
+        context.update({
+            'active_structure': active_structure,
+            'dashboard_categories': [item['category'] for item in active_structure],
+            'all_permitted_modules': all_permitted_modules,
+            'show_direct_modules': show_direct_modules,
+            'is_superuser': is_superuser
+        })
+
+        # Consultas section
+        if has_permission('consultas'):
+             context.update({
+                'consultas': [
+                    {'name': 'Administrativas', 'slug': 'consultas_administrativas', 'description': 'Facturación y RIPS', 'icon': 'bi-cash-stack'},
+                    {'name': 'Asistenciales', 'slug': 'consultas_asistenciales', 'description': 'Indicadores Médicos', 'icon': 'bi-activity'},
+                ],
+                'admin_reports': [
+                    {'name': 'Facturación Total', 'url': '/consultas/admin/?view=ventas&group_by=global'},
+                    {'name': 'Reportes RIPS', 'url': '/consultas/admin/?view=rips&group_by=global'},
+                ],
+                'salud_reports': [
+                    {'name': 'Indicadores de Salud', 'url': '/consultas/salud/'},
+                    {'name': 'Producción Médica', 'url': '/consultas/produccion-medico/'},
+                ]
+             })
+        else:
+            context.update({'consultas': [], 'admin_reports': [], 'salud_reports': []})
+
+        return context
         return context
 
 class ModuleDetailView(AccessControlMixin, TemplateView):
     permission_type = 'view'
     template_name = 'core/module_detail.html'
+
+    def dispatch(self, request, *args, **kwargs):
+        slug = kwargs.get('module_name')
+        try:
+            apps.get_app_config(slug)
+        except LookupError:
+            from django.contrib import messages
+            messages.error(request, f'El módulo "{slug}" no está instalado.')
+            return redirect('home')
+        return super().dispatch(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)

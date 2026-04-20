@@ -1,7 +1,7 @@
 {% extends 'core/base.html' %}
 {% load static %}
 
-{% block title %}Generador de Certificados Laborales{% endblock %}
+{% block title %}Certificación de contratación por OPS{% endblock %}
 
 {% block extra_head %}
 <link rel="stylesheet" href="{% static 'certificados_laborales/app.css' %}">
@@ -31,11 +31,18 @@
     .primary-btn {
         background: #2563eb;
         transition: all 0.3s ease;
+        white-space: nowrap;
+        font-size: 0.85rem;
     }
     .primary-btn:hover {
         background: #1d4ed8;
         transform: translateY(-2px);
         box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+    .action-btn {
+        white-space: nowrap;
+        font-size: 0.85rem;
+        transition: all 0.3s ease;
     }
     .gender-btn.active {
         background: #eff6ff;
@@ -50,7 +57,7 @@
 <div class="page">
     <div class="layout">
         <div class="mb-8">
-            <h1 class="text-3xl font-black text-blue-950">Generador de Certificados Laborales</h1>
+            <h1 class="text-3xl font-black text-blue-950">Certificación de contratación por OPS</h1>
             <p class="text-slate-500 font-medium">Hospital Universitario Departamental de Nariño - ESE</p>
         </div>
 
@@ -83,11 +90,11 @@
                     </div>
 
                     <div class="pt-4 flex gap-3">
-                        <button type="button" class="flex-1 py-4 px-6 bg-slate-100 text-slate-700 font-black rounded-xl hover:bg-slate-200 transition-all" id="btn-buscar">
+                        <button type="button" class="flex-1 py-4 px-6 bg-slate-100 text-slate-700 font-black rounded-xl hover:bg-slate-200 action-btn" id="btn-buscar">
                             Visualizar Datos
                         </button>
-                        <button type="button" class="flex-1 py-4 px-6 bg-blue-600 text-white font-black rounded-xl primary-btn shadow-lg shadow-blue-200" id="btn-generar">
-                            Generar Word
+                        <button type="button" class="flex-1 py-4 px-6 bg-blue-600 text-white font-black rounded-xl primary-btn action-btn shadow-lg shadow-blue-200" id="btn-generar">
+                            Generar documento
                         </button>
                     </div>
                 </div>

@@ -2,11 +2,14 @@ from django.db import models
 
 class DashboardModule(models.Model):
     CATEGORIES = (
-        ('asistencial', 'Asistencial'),
-        ('administrativo', 'Administrativo'),
-        ('varios', 'Varios'),
-        ('consultas', 'Consultas'),
-        ('talento_humano', 'Talento Humano'),
+        ('asistencial', 'ASISTENCIAL'),
+        ('administrativo', 'ADMINISTRATIVO'),
+        ('juridica', 'JURIDICA'),
+        ('talento_humano', 'TALENTO HUMANO'),
+        ('contabilidad', 'CONTABILIDAD'),
+        ('financiera', 'BIENES Y SERVICIOS - FINANCIERA'),
+        ('varios', 'VARIOS'),
+        ('consultas', 'CONSULTAS'),
     )
 
     name = models.CharField(max_length=100, verbose_name="Nombre del Módulo")

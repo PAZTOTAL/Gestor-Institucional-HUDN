@@ -1,0 +1,121 @@
+/* 
+  Sidebar Moderno - Sistema Obstétrico Unificado
+  Diseño Premium alineado con la estética institucional
+*/
+
+aside.sidebar {
+    width: 280px !important;
+    background: #0f172a !important; /* Azul marino profundo */
+    color: white !important;
+    display: flex !important;
+    flex-direction: column !important;
+    padding: 24px 16px !important;
+    min-height: 100vh !important;
+    box-sizing: border-box !important;
+}
+
+.sidebar-module {
+    margin-bottom: 24px !important;
+}
+
+.sidebar-module-header {
+    display: flex !important;
+    align-items: center !important;
+    padding: 12px 14px !important;
+    border-radius: 12px !important;
+    background: rgba(255, 255, 255, 0.05) !important;
+    transition: all 0.2s ease !important;
+    cursor: pointer !important;
+    text-decoration: none !important;
+    color: white !important;
+}
+
+.sidebar-module-header:hover {
+    background: rgba(255, 255, 255, 0.1) !important;
+    transform: translateX(4px) !important;
+}
+
+.icon-container {
+    width: 42px !important;
+    height: 42px !important;
+    background: rgba(59, 130, 246, 0.15) !important;
+    border-radius: 10px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    margin-right: 14px !important;
+    color: #60a5fa !important;
+}
+
+.nav-icon {
+    width: 20px !important;
+    height: 20px !important;
+}
+
+.sidebar-module-info {
+    flex: 1 !important;
+}
+
+.sidebar-module-title {
+    font-size: 10px !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.1em !important;
+    opacity: 0.5 !important;
+    font-weight: 800 !important;
+}
+
+.sidebar-module-name {
+    font-size: 14px !important;
+    font-weight: 700 !important;
+    margin-top: 1px !important;
+}
+
+.sidebar-module-dropdown {
+    padding-left: 12px !important;
+    margin-top: 8px !important;
+}
+
+.tabs-link {
+    display: flex !important;
+    align-items: center !important;
+    gap: 12px !important;
+    padding: 10px 14px !important;
+    border-radius: 8px !important;
+    text-decoration: none !important;
+    color: rgba(255, 255, 255, 0.6) !important;
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    transition: all 0.2s !important;
+}
+
+.tabs-link:hover, .tabs-link.active {
+    color: white !important;
+    background: rgba(255, 255, 255, 0.1) !important;
+}
+
+.sidebar-paciente-unificado {
+    background: rgba(255, 255, 255, 0.04) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border-radius: 16px !important;
+    padding: 16px !important;
+    margin-bottom: 32px !important;
+}
+
+.spu-card-eyebrow {
+    font-size: 9px !important;
+    text-transform: uppercase !important;
+    color: #3b82f6 !important;
+    font-weight: 800 !important;
+    margin-bottom: 8px !important;
+    display: block !important;
+}
+
+.spu-value--name {
+    font-size: 14px !important;
+    font-weight: 700 !important;
+}
+
+.spu-value--doc {
+    font-size: 12px !important;
+    opacity: 0.6 !important;
+}

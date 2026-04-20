@@ -4,4 +4,4 @@ echo =========================================================
 echo =    CONSOLA DE COMANDOS HUDN (ENTORNO LOCAL)         =
 echo =========================================================
 echo.
-cmd /k
+cmd /k "venv\Scripts\activate"

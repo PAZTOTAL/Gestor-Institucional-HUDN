@@ -13,6 +13,30 @@ _cache_lock = Lock()
 _metadata_cache = {"expires_at": 0, "tables": None}
 
 
+from django.conf import settings
+import pyodbc
+
+def get_connection():
+    db_config = settings.DATABASES['default']
+    # Extraer datos de la configuración de Django para abrir una conexión pyodbc pura (estilo MVP)
+    server = db_config.get('HOST', 'localhost')
+    port = db_config.get('PORT', '')
+    database = db_config.get('NAME', '')
+    user = db_config.get('USER', '')
+    password = db_config.get('PASSWORD', '')
+    
+    server_str = f"{server},{port}" if port else server
+    
+    conn_str = (
+        "DRIVER={ODBC Driver 17 for SQL Server};"
+        f"SERVER={server_str};"
+        f"DATABASE={database};"
+        f"UID={user};"
+        f"PWD={password};"
+        "Encrypt=no;TrustServerCertificate=yes;"
+    )
+    return pyodbc.connect(conn_str, timeout=30)
+
 def quote_identifier(value):
     return f"[{str(value).replace(']', ']]')}]"
 
@@ -118,15 +142,15 @@ def get_tables_metadata():
         LEFT JOIN information_schema.columns c
           ON c.table_schema = t.table_schema
          AND c.table_name = t.table_name
-        WHERE t.table_schema = %s
+        WHERE t.table_schema = ?
           AND t.table_name LIKE 'contratos[_][0-9][0-9][0-9][0-9]'
-          AND TRY_CONVERT(INT, RIGHT(t.table_name, 4)) <= %s
+          AND TRY_CONVERT(INT, RIGHT(t.table_name, 4)) <= ?
         ORDER BY t.table_name, c.ordinal_position
     """
     by_table = {}
-    from django.db import connection
-    with connection.cursor() as cursor:
-        cursor.execute(sql_text, [DB_SCHEMA, DB_MAX_CONTRACT_YEAR])
+    with get_connection() as connection:
+        cursor = connection.cursor()
+        cursor.execute(sql_text, DB_SCHEMA, DB_MAX_CONTRACT_YEAR)
         for table_name, column_name in cursor.fetchall():
             by_table.setdefault(table_name, [])
             if column_name:
@@ -177,11 +201,11 @@ def query_contracts_by_table(table_name, columns, cedula, cedula_alt):
           {select_or_null('valor_ejecutado', 'valorejecutado')}
         FROM {table_ref}
     """
-    raw_sql = f"{select_sql} WHERE CAST({q(column_map['cedula'])} AS NVARCHAR(100)) IN (%s, %s)"
+    raw_sql = f"{select_sql} WHERE CAST({q(column_map['cedula'])} AS NVARCHAR(100)) IN (?, ?)"
 
-    from django.db import connection
-    with connection.cursor() as cursor:
-        cursor.execute(raw_sql, [cedula, cedula_alt])
+    with get_connection() as connection:
+        cursor = connection.cursor()
+        cursor.execute(raw_sql, cedula, cedula_alt)
         rows = cursor.fetchall()
         cols = [desc[0] for desc in cursor.description]
         raw = [dict(zip(cols, row)) for row in rows]
@@ -189,12 +213,12 @@ def query_contracts_by_table(table_name, columns, cedula, cedula_alt):
             return raw
 
         normalized_filter = (
-            f"{q(column_map['cedula_digits'])} IN (%s, %s)"
+            f"{q(column_map['cedula_digits'])} IN (?, ?)"
             if column_map["cedula_digits"]
-            else f"{build_digits_only_sql(q(column_map['cedula']))} IN (%s, %s)"
+            else f"{build_digits_only_sql(q(column_map['cedula']))} IN (?, ?)"
         )
         normalized_sql = f"{select_sql} WHERE {normalized_filter}"
-        cursor.execute(normalized_sql, [cedula, cedula_alt])
+        cursor.execute(normalized_sql, cedula, cedula_alt)
         rows = cursor.fetchall()
         cols = [desc[0] for desc in cursor.description]
         return [dict(zip(cols, row)) for row in rows]

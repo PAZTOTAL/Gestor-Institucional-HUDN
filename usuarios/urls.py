@@ -1,10 +1,11 @@
 from django.urls import path
-from .views import CustomLoginView, CustomLogoutView, RegistroView, PanelUsuariosView, GestionPermisosView, ConfigPerfilView
+from .views import CustomLoginView, CustomLogoutView, RegistroView, PanelUsuariosView, GestionPermisosView, ConfigPerfilView, lookup_tercero_por_cedula
 
 urlpatterns = [
     path('login/', CustomLoginView.as_view(), name='login'),
     path('logout/', CustomLogoutView.as_view(), name='logout'),
     path('registro/', RegistroView.as_view(), name='registro'),
+    path('api/lookup-cedula/', lookup_tercero_por_cedula, name='lookup_cedula'),
     path('gestion/', PanelUsuariosView.as_view(), name='gestion_usuarios'),
     path('permisos/<int:pk>/', GestionPermisosView.as_view(), name='gestion_permisos'),
     path('configuracion/apariencia/', ConfigPerfilView.as_view(), name='config_perfil'),

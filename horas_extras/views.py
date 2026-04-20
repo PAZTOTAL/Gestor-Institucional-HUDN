@@ -17,6 +17,9 @@ from .utils.report import (generar_planilla, generar_planilla_area,
                             EmpleadoInfo, MESES_ES, calcular_horas,
                             DIAS_ES, TURNOS_LABEL)
 from django.apps import apps
+import pandas as pd
+import os
+from django.core.cache import cache
 
 class TalentoHumanoDashboardView(LoginRequiredMixin, TemplateView):
     template_name = 'horas_extras/talento_humano_dashboard.html'
@@ -84,8 +87,8 @@ class PersonalActivoReportView(LoginRequiredMixin, TemplateView):
         from django.db import connections
         
         with connections['readonly'].cursor() as cursor:
-            # Personal Permanente: NEMTIPCON = 1 AND NEMCLAEMP = 3 (Validado por el usuario)
-            cursor.execute("SELECT COUNT(*) FROM NMEMPLEA WHERE NEMESTADO = 1 AND NEMCLAEMP = 3")
+            # Personal Permanente: Class 0 (Older entries, verified by entry dates and user feedback)
+            cursor.execute("SELECT COUNT(*) FROM NMEMPLEA WHERE NEMESTADO = 1 AND NEMCLAEMP = 0")
             context['total_activo'] = cursor.fetchone()[0]
             
             # Distribución por vinculación (solo para permanentes)
@@ -109,25 +112,74 @@ class PersonalPorAreaReportView(LoginRequiredMixin, TemplateView):
         context = super().get_context_data(**kwargs)
         from django.db import connections
         
+        # 1. Obtener la fuente de verdad (Excel - 764 personas)
+        excel_data = get_master_excel_data()
+        if not excel_data:
+            context['error'] = "No se pudo cargar el archivo Excel maestro."
+            return context
+
+        # 2. Obtener mapeo de áreas desde Dinámica para TODOS los posibles empleados
+        # Cruza NMEMPLEA con centros de costos (CTNCENCOS) y áreas de servicio (GENARESER)
+        mapping = {}
         with connections['readonly'].cursor() as cursor:
-            # Distribución de Personal PERMANENTE por Area
-            query = """
+            # Query amplia: sin filtro de estado para capturar a todos los referenciados en el Excel
+            query_db = """
                 SELECT 
-                    ISNULL(c.CCCODIGO, 'SIN-AREA') as area_code,
-                    ISNULL(c.CCNOMBRE, 'SIN AREA ASIGNADA') as area_name,
-                    COUNT(e.NEMCODIGO) as total
+                    RTRIM(LTRIM(e.NEMCODIGO)) as cedula,
+                    ISNULL(g.GASCODIGO, ISNULL(c.CCCODIGO, ISNULL(a.ARECODIGO, 'SIN-AREA'))) as area_code,
+                    ISNULL(g.GASNOMBRE, ISNULL(c.CCNOMBRE, ISNULL(a.ARENOMBRE, 'SIN AREA ASIGNADA'))) as area_name
                 FROM NMEMPLEA e
+                LEFT JOIN GENARESER g ON RTRIM(LTRIM(e.GASCODIGO)) = RTRIM(LTRIM(g.GASCODIGO))
                 LEFT JOIN CTNCENCOS c ON RTRIM(LTRIM(e.GASCODIGO)) = RTRIM(LTRIM(c.CCCODIGO))
-                WHERE e.NEMESTADO = 1 AND e.NEMCLAEMP = 3
-                GROUP BY c.CCCODIGO, c.CCNOMBRE
-                ORDER BY COUNT(e.NEMCODIGO) DESC
+                LEFT JOIN AFNAREAS a ON RTRIM(LTRIM(e.GASCODIGO)) = RTRIM(LTRIM(a.ARECODIGO))
             """
-            cursor.execute(query)
-            columns = [col[0] for col in cursor.description]
-            areas = [dict(zip(columns, row)) for row in cursor.fetchall()]
+            cursor.execute(query_db)
+            for row in cursor.fetchall():
+                # Normalización de cédula (quitar ceros a la izquierda) para coincidir con Excel
+                db_cedula = str(row[0]).strip().lstrip('0')
+                if db_cedula:
+                    mapping[db_cedula] = {'code': row[1], 'name': row[2].strip()}
+
+        # 3. Cruzar y agrupar
+        # Estructura: areas_dict[area_code] = {name, total, planta, temporal}
+        areas_dict = {}
+        
+        for p in excel_data:
+            # Normalización del Excel (quitar ceros a la izquierda)
+            cedula_excel = str(p.get('CEDULA')).strip().lstrip('0')
+            vinc = str(p.get('VINCULACION')).upper()
+            
+            # Info de Dinámica o fallback
+            db_info = mapping.get(cedula_excel)
+            if db_info:
+                a_code = db_info['code']
+                a_name = db_info['name']
+            else:
+                a_code = 'SIN-INFO'
+                a_name = 'SIN REGISTRO EN DINÁMICA'
+
+            if a_code not in areas_dict:
+                areas_dict[a_code] = {
+                    'area_code': a_code,
+                    'area_name': a_name,
+                    'total': 0,
+                    'planta': 0,
+                    'temporal': 0
+                }
+            
+            areas_dict[a_code]['total'] += 1
+            if vinc == 'PERMANENTE':
+                areas_dict[a_code]['planta'] += 1
+            else:
+                areas_dict[a_code]['temporal'] += 1
+
+        # 4. Convertir a lista y ordenar
+        areas = sorted(areas_dict.values(), key=lambda x: x['total'], reverse=True)
 
         context['areas'] = areas
-        context['total_empleados'] = sum(a['total'] for a in areas)
+        context['total_empleados'] = len(excel_data)
+        context['total_planta'] = sum(a['planta'] for a in areas)
+        context['total_temporal'] = sum(a['temporal'] for a in areas)
         context['fecha_corte'] = timezone.now()
         return context
 
@@ -137,55 +189,71 @@ class PersonalAreaDetailView(LoginRequiredMixin, TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         area_code = self.kwargs.get('area_code')
+        filtro_tipo = self.request.GET.get('filtro', '').upper()
         from django.db import connections
         
+        # 1. Obtener fuente de verdad (Excel)
+        excel_data = get_master_excel_data()
+        
+        # 2. Obtener mapeo y nombres de centros de costo para el encabezado
+        mapping = {}
+        area_name = "Área Desconocida"
+        
         with connections['readonly'].cursor() as cursor:
-            # Preparar parámetros y filtro
-            if area_code == 'SIN-AREA':
-                context['area_name'] = 'SIN AREA ASIGNADA'
-                # Incluimos: NULL, vacíos, o códigos que no existen en la tabla maestra CTNCENCOS
-                filter_sql = """
-                    WHERE e.NEMESTADO = 1 AND (
-                        e.GASCODIGO IS NULL OR 
-                        RTRIM(LTRIM(e.GASCODIGO)) = '' OR 
-                        NOT EXISTS (SELECT 1 FROM CTNCENCOS c2 WHERE RTRIM(LTRIM(c2.CCCODIGO)) = RTRIM(LTRIM(e.GASCODIGO)))
-                    )
-                """
-                params = []
-            else:
-                cursor.execute("SELECT CCNOMBRE FROM CTNCENCOS WHERE RTRIM(LTRIM(CCCODIGO)) = %s", [area_code.strip()])
+            # Obtener nombre del área
+            if area_code != 'SIN-INFO':
+                cursor.execute("SELECT CCNOMBRE FROM CTNCENCOS WHERE RTRIM(LTRIM(CCCODIGO)) = %s", [area_code])
                 res = cursor.fetchone()
-                context['area_name'] = res[0] if res else 'Área Desconocida'
-                filter_sql = "WHERE e.NEMESTADO = 1 AND RTRIM(LTRIM(e.GASCODIGO)) = %s"
-                params = [area_code.strip()]
+                if not res:
+                    cursor.execute("SELECT ARENOMBRE FROM AFNAREAS WHERE RTRIM(LTRIM(ARECODIGO)) = %s", [area_code])
+                    res = cursor.fetchone()
+                area_name = res[0] if res else area_code
+            else:
+                area_name = "SIN REGISTRO EN DINÁMICA"
 
-            # Obtener lista de funcionarios
-            filtro_tipo = self.request.GET.get('filtro', '')
-            # Si es temporal filtramos por clase 0, si no (por defecto) es permanente clase 3
-            clase_sql = " AND e.NEMCLAEMP = 0" if filtro_tipo == 'temporal' else " AND e.NEMCLAEMP = 3"
-            
-            # Reemplazar NEMESTADO=1 por NEMESTADO=1 + clase_sql
-            current_filter = filter_sql.replace("WHERE e.NEMESTADO = 1", f"WHERE e.NEMESTADO = 1{clase_sql}")
-
-            query = f"""
+            # Traer info para mapeo buscando en GENARESER primero (Consultas Externas)
+            cursor.execute("""
                 SELECT 
-                    e.NEMCODIGO as documento,
-                    e.NEMNOMCOM as nombre,
-                    e.NEMFECING as fecha_ingreso,
-                    v.VINNOMBRE as vinculacion
+                    RTRIM(LTRIM(e.NEMCODIGO)) as cedula,
+                    ISNULL(g.GASCODIGO, ISNULL(c.CCCODIGO, ISNULL(a.ARECODIGO, 'SIN-AREA'))) as area_code,
+                    v.VINNOMBRE as vinculacion_db
                 FROM NMEMPLEA e
+                LEFT JOIN GENARESER g ON RTRIM(LTRIM(e.GASCODIGO)) = RTRIM(LTRIM(g.GASCODIGO))
+                LEFT JOIN CTNCENCOS c ON RTRIM(LTRIM(e.GASCODIGO)) = RTRIM(LTRIM(c.CCCODIGO))
+                LEFT JOIN AFNAREAS a ON RTRIM(LTRIM(e.GASCODIGO)) = RTRIM(LTRIM(a.ARECODIGO))
                 LEFT JOIN NOMVINCULA v ON e.NEMTIPCON = v.VINCODIGO
-                {current_filter}
-                ORDER BY e.NEMNOMCOM ASC
-            """
-            cursor.execute(query, params)
-                
-            columns = [col[0] for col in cursor.description]
-            funcionarios = [dict(zip(columns, row)) for row in cursor.fetchall()]
+            """)
+            for row in cursor.fetchall():
+                db_cedula = str(row[0]).strip().lstrip('0')
+                if db_cedula:
+                    mapping[db_cedula] = {'area': row[1], 'vinc': row[2]}
 
-        context['funcionarios'] = funcionarios
+        # 3. Filtrar empleados del Excel que pertenecen a este área
+        funcionarios = []
+        for p in excel_data:
+            cedula_excel = str(p.get('CEDULA')).strip().lstrip('0')
+            vinc_excel = str(p.get('VINCULACION')).upper()
+            
+            # Determinar área en Dinámica
+            emp_info = mapping.get(cedula_excel)
+            emp_area = emp_info['area'] if emp_info else 'SIN-INFO'
+            
+            if emp_area == area_code:
+                # Aplicar filtro de tipo (Planta/Temporal) si viene de los reportes específicos
+                if filtro_tipo and vinc_excel != filtro_tipo:
+                    continue
+                    
+                funcionarios.append({
+                    'documento': cedula_excel,
+                    'nombre': p.get('NOMBRE'),
+                    'vinculacion': vinc_excel,
+                    'vinculacion_db': emp_info['vinc'] if emp_info else 'NO REGISTRA'
+                })
+
         context['area_code'] = area_code
-        context['filtro'] = self.request.GET.get('filtro', '')
+        context['area_name'] = area_name
+        context['funcionarios'] = sorted(funcionarios, key=lambda x: x['nombre'])
+        context['filtro'] = filtro_tipo.lower()
         return context
 
 class PersonalTemporalReportView(LoginRequiredMixin, TemplateView):
@@ -200,20 +268,21 @@ class PersonalTemporalReportView(LoginRequiredMixin, TemplateView):
             cursor.execute("SELECT COUNT(*) FROM NMEMPLEA WHERE NEMESTADO = 1")
             context['total_activos'] = cursor.fetchone()[0]
             
-            # Ajuste según feedback: NEMCLAEMP = 0 como Temporal (158 registros)
-            cursor.execute("SELECT COUNT(*) FROM NMEMPLEA WHERE NEMESTADO = 1 AND NEMCLAEMP = 0")
+            # Swapped logic: Class 3 as Temporal
+            cursor.execute("SELECT COUNT(*) FROM NMEMPLEA WHERE NEMESTADO = 1 AND NEMCLAEMP = 3")
             context['total_temporal'] = cursor.fetchone()[0]
 
-            # 2. Distribución por áreas (solo temporales - Clase 0)
+            # 2. Distribución por áreas (solo temporales - Clase 3)
             query = """
                 SELECT 
-                    ISNULL(c.CCCODIGO, 'SIN-AREA') as area_code,
-                    ISNULL(c.CCNOMBRE, 'SIN AREA ASIGNADA') as area_name,
+                    ISNULL(c.CCCODIGO, ISNULL(a.ARECODIGO, 'SIN-AREA')) as area_code,
+                    ISNULL(c.CCNOMBRE, ISNULL(a.ARENOMBRE, 'SIN AREA ASIGNADA')) as area_name,
                     COUNT(e.NEMCODIGO) as total
                 FROM NMEMPLEA e
                 LEFT JOIN CTNCENCOS c ON RTRIM(LTRIM(e.GASCODIGO)) = RTRIM(LTRIM(c.CCCODIGO))
-                WHERE e.NEMESTADO = 1 AND e.NEMCLAEMP = 0
-                GROUP BY c.CCCODIGO, c.CCNOMBRE
+                LEFT JOIN AFNAREAS a ON RTRIM(LTRIM(e.GASCODIGO)) = RTRIM(LTRIM(a.ARECODIGO))
+                WHERE e.NEMESTADO = 1 AND e.NEMCLAEMP = 3
+                GROUP BY c.CCCODIGO, c.CCNOMBRE, a.ARECODIGO, a.ARENOMBRE
                 ORDER BY COUNT(e.NEMCODIGO) DESC
             """
             cursor.execute(query)
@@ -240,13 +309,14 @@ class BuscarFuncionarioView(LoginRequiredMixin, TemplateView):
                         e.NEMCODIGO as documento,
                         e.NEMNOMCOM as nombre,
                         e.NEMFECING as fecha_ingreso,
-                        ISNULL(c.CCNOMBRE, 'SIN AREA ASIGNADA') as area,
+                        ISNULL(c.CCNOMBRE, ISNULL(a.ARENOMBRE, 'SIN AREA ASIGNADA')) as area,
                         v.VINNOMBRE as vinculacion,
                         cr.NCENOMBRE as cargo,
-                        CASE WHEN e.NEMCLAEMP = 3 THEN 'PLANTA PERMANENTE' ELSE 'PLANTA TEMPORAL' END as tipo_planta,
+                        CASE WHEN e.NEMCLAEMP = 0 THEN 'PLANTA PERMANENTE' ELSE 'PLANTA TEMPORAL' END as tipo_planta,
                         CASE WHEN e.NEMESTADO = 1 THEN 'ACTIVO' ELSE 'INACTIVO' END as estado
                     FROM NMEMPLEA e
                     LEFT JOIN CTNCENCOS c ON RTRIM(LTRIM(e.GASCODIGO)) = RTRIM(LTRIM(c.CCCODIGO))
+                    LEFT JOIN AFNAREAS a ON RTRIM(LTRIM(e.GASCODIGO)) = RTRIM(LTRIM(a.ARECODIGO))
                     LEFT JOIN NOMVINCULA v ON e.NEMTIPCON = v.VINCODIGO
                     LEFT JOIN NMCARGOS cr ON RTRIM(LTRIM(e.NCECODIGO)) = RTRIM(LTRIM(cr.NCECODIGO))
                     WHERE e.NEMCODIGO = %s OR RTRIM(LTRIM(e.NEMCODIGO)) = %s
@@ -257,37 +327,250 @@ class BuscarFuncionarioView(LoginRequiredMixin, TemplateView):
                 
                 if res:
                     context['funcionario'] = dict(zip(columns, res))
-                    context['fuente'] = 'NMEMPLEA'
+                    context['fuente'] = 'NMEMPLEA' # Nómina Principal
                 else:
-                    # 2. Fallback a NOMEMPLEADO (Superset de empleados)
+                    # 2. Fallback a NOMEMPLEADO (Tratando de buscar más detalles)
                     query_fallback = """
                         SELECT 
                             e.EMPCODIGO as documento,
-                            (ISNULL(e.EMPNOMBRE1, '') + ' ' + ISNULL(e.EMPNOMBRE2, '') + ' ' + 
-                             ISNULL(e.EMPAPELLI1, '') + ' ' + ISNULL(e.EMPAPELLI2, '') ) as nombre,
-                            i.ILFECINGRE as fecha_ingreso,
-                            ISNULL(s.SUBNOMBRE, 'AREA NO ESPECIFICADA') as area,
-                            'PLANTA' as vinculacion,
-                            'CARGO ADMINISTRATIVO' as cargo,
-                            'PLANTA PERMANENTE' as tipo_planta,
+                            (RTRIM(LTRIM(ISNULL(e.EMPNOMBRE1, ''))) + ' ' + 
+                             RTRIM(LTRIM(ISNULL(e.EMPNOMBRE2, ''))) + ' ' + 
+                             RTRIM(LTRIM(ISNULL(e.EMPAPELLI1, ''))) + ' ' + 
+                             RTRIM(LTRIM(ISNULL(e.EMPAPELLI2, ''))) ) as nombre,
+                            e.EMPFECNACI as fecha_nacimiento,
+                            s.SUBNOMBRE as area,
+                            'NOMEMPLEADO' as vinculacion,
+                            'VERIFICAR EN FISICO' as cargo,
+                            'NO ESPECIFICADO' as tipo_planta,
                             'ACTIVO' as estado
                         FROM NOMEMPLEADO e
-                        LEFT JOIN NOMINFOLAB i ON e.NOMINFOLAB = i.OID
                         LEFT JOIN NOMSUBGRU s ON e.NOMSUBGRU = s.OID
                         WHERE e.EMPCODIGO = %s OR RTRIM(LTRIM(e.EMPCODIGO)) = %s
                     """
                     cursor.execute(query_fallback, [q, q])
-                    if cursor.description:
-                        columns_f = [col[0] for col in cursor.description]
-                        res_f = cursor.fetchone()
-                        if res_f:
-                            context['funcionario'] = dict(zip(columns_f, res_f))
-                            context['fuente'] = 'NOMEMPLEADO'
-                        else:
-                            context['error'] = "No se encontró ningún funcionario con ese número de documento en ninguna nómina."
+                    columns_f = [col[0] for col in cursor.description]
+                    res_f = cursor.fetchone()
+                    if res_f:
+                        context['funcionario'] = dict(zip(columns_f, res_f))
+                        context['fuente'] = 'NOMEMPLEADO (Hoja de Vida)'
                     else:
-                        context['error'] = "Error al consultar la base de datos de empleados."
+                        context['error'] = "No se encontró ningún funcionario con ese número de documento en Dinámica."
 
+            # 3. Cruzar con Excel Maestro para detectar diferencias
+            excel_data = get_master_excel_data()
+            excel_match = next((item for item in excel_data if str(item.get('CEDULA')).strip() == q), None)
+            if excel_match:
+                context['excel_data'] = excel_match
+                # Si no se encontró en DB, pero sí en Excel, usamos los datos del Excel
+                if not context.get('funcionario'):
+                    context['funcionario'] = {
+                        'documento': q,
+                        'nombre': excel_match.get('NOMBRE'),
+                        'area': excel_match.get('AREA'),
+                        'cargo': excel_match.get('CARGO'),
+                        'vinculacion': excel_match.get('VINCULACION'),
+                        'estado': 'EN EXCEL (FALTA DINAMICA)'
+                    }
+                    context['fuente'] = 'EXCEL MAESTRO 2026'
+
+        return context
+
+class PersonalPlantaGeneralListView(LoginRequiredMixin, TemplateView):
+    template_name = 'horas_extras/listado_general_personal.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        excel_data = get_master_excel_data()
+        
+        # Filtrar solo PERMANENTE según Excel
+        excel_planta = [p for p in excel_data if p.get('VINCULACION') == 'PERMANENTE']
+        target_ids = [str(p.get('CEDULA')).strip() for p in excel_planta]
+
+        from django.db import connections
+        with connections['readonly'].cursor() as cursor:
+            # Query Dinámica para estos IDs
+            placeholders = ', '.join(['%s'] * len(target_ids))
+            # Padded IDs for NMEMPLEA
+            padded_ids = [id.zfill(15) for id in target_ids]
+            
+            query = f"""
+                SELECT 
+                    RTRIM(LTRIM(e.NEMCODIGO)) as documento,
+                    e.NEMNOMCOM as nombre,
+                    e.NEMFECING as fecha_ingreso,
+                    v.VINNOMBRE as vinculacion,
+                    ISNULL(c.CCNOMBRE, ISNULL(a.ARENOMBRE, 'SIN AREA ASIGNADA')) as area
+                FROM NMEMPLEA e
+                LEFT JOIN NOMVINCULA v ON e.NEMTIPCON = v.VINCODIGO
+                LEFT JOIN CTNCENCOS c ON RTRIM(LTRIM(e.GASCODIGO)) = RTRIM(LTRIM(c.CCCODIGO))
+                LEFT JOIN AFNAREAS a ON RTRIM(LTRIM(e.GASCODIGO)) = RTRIM(LTRIM(a.ARECODIGO))
+                WHERE RTRIM(LTRIM(e.NEMCODIGO)) IN ({placeholders})
+            """
+            cursor.execute(query, target_ids)
+            columns = [col[0] for col in cursor.description]
+            db_results = {row[0]: dict(zip(columns, row)) for row in cursor.fetchall()}
+
+        # Construir listado final basado en Excel
+        funcionarios = []
+        for p in excel_planta:
+            cedula = str(p.get('CEDULA')).strip()
+            db_data = db_results.get(cedula)
+            
+            funcionarios.append({
+                'documento': cedula,
+                'nombre': p.get('NOMBRE'),
+                'area': p.get('AREA') if not db_data else db_data.get('area'),
+                'vinculacion': p.get('VINCULACION'),
+                'fecha_ingreso': db_data.get('fecha_ingreso') if db_data else None,
+                'status_db': "OK" if db_data else "FALTA EN DINÁMICA"
+            })
+
+        context['funcionarios'] = funcionarios
+        context['titulo'] = "Listado General - Planta Permanente (Según Excel)"
+        context['tipo_planta'] = "Permanente"
+        return context
+
+class PersonalTemporalGeneralListView(LoginRequiredMixin, TemplateView):
+    template_name = 'horas_extras/listado_general_personal.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        excel_data = get_master_excel_data()
+        
+        # Filtrar solo TEMPORAL según Excel
+        excel_temporal = [p for p in excel_data if p.get('VINCULACION') == 'TEMPORAL']
+        target_ids = [str(p.get('CEDULA')).strip() for p in excel_temporal]
+
+        from django.db import connections
+        with connections['readonly'].cursor() as cursor:
+            placeholders = ', '.join(['%s'] * len(target_ids))
+            query = f"""
+                SELECT 
+                    RTRIM(LTRIM(e.NEMCODIGO)) as documento,
+                    e.NEMNOMCOM as nombre,
+                    e.NEMFECING as fecha_ingreso,
+                    v.VINNOMBRE as vinculacion,
+                    ISNULL(c.CCNOMBRE, ISNULL(a.ARENOMBRE, 'SIN AREA ASIGNADA')) as area
+                FROM NMEMPLEA e
+                LEFT JOIN NOMVINCULA v ON e.NEMTIPCON = v.VINCODIGO
+                LEFT JOIN CTNCENCOS c ON RTRIM(LTRIM(e.GASCODIGO)) = RTRIM(LTRIM(c.CCCODIGO))
+                LEFT JOIN AFNAREAS a ON RTRIM(LTRIM(e.GASCODIGO)) = RTRIM(LTRIM(a.ARECODIGO))
+                WHERE RTRIM(LTRIM(e.NEMCODIGO)) IN ({placeholders})
+            """
+            cursor.execute(query, target_ids)
+            columns = [col[0] for col in cursor.description]
+            db_results = {row[0]: dict(zip(columns, row)) for row in cursor.fetchall()}
+
+        funcionarios = []
+        for p in excel_temporal:
+            cedula = str(p.get('CEDULA')).strip()
+            db_data = db_results.get(cedula)
+            
+            funcionarios.append({
+                'documento': cedula,
+                'nombre': p.get('NOMBRE'),
+                'area': p.get('AREA') if not db_data else db_data.get('area'),
+                'vinculacion': p.get('VINCULACION'),
+                'fecha_ingreso': db_data.get('fecha_ingreso') if db_data else None,
+                'status_db': "OK" if db_data else "FALTA EN DINÁMICA"
+            })
+
+        context['funcionarios'] = funcionarios
+        context['titulo'] = "Listado General - Planta Temporal (Según Excel)"
+        context['tipo_planta'] = "Temporal"
+        return context
+        context['titulo'] = "Listado General - Planta Temporal"
+        context['tipo_planta'] = "Temporal"
+        return context
+
+# --- NUEVAS VISTAS BASADAS EN EXCEL (CONCILIACIÓN) ---
+
+def get_master_excel_data():
+    """Carga y cachea los datos del Excel maestro."""
+    cache_key = 'th_master_excel_data'
+    data = cache.get(cache_key)
+    if data is None:
+        path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data', 'personal.xlsx')
+        if os.path.exists(path):
+            df = pd.read_excel(path)
+            # Normalizar columnas
+            df.columns = [c.upper().strip() for c in df.columns]
+            # Convertir a lista de dicts para fácil manejo
+            data = df.to_dict('records')
+            cache.set(cache_key, data, 3600) # Cache por 1 hora
+        else:
+            data = []
+    return data
+
+class InformeConsistenciaExcelView(LoginRequiredMixin, TemplateView):
+    template_name = 'horas_extras/informe_consistencia.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        excel_data = get_master_excel_data()
+        
+        if not excel_data:
+            context['error'] = "No se pudo cargar el archivo Excel maestro (horas_extras/data/personal.xlsx)."
+            return context
+
+        # Obtener todos los empleados de Dinámica para comparar (por lotes o completo)
+        from django.db import connections
+        with connections['readonly'].cursor() as cursor:
+            # Traer datos básicos de NMEMPLEA y NOMEMPLEADO para cruce
+            cursor.execute("""
+                SELECT 
+                    RTRIM(LTRIM(e.NEMCODIGO)) as cedula,
+                    e.NEMNOMCOM as nombre_dinamica,
+                    CASE WHEN e.NEMCLAEMP = 0 THEN 'PERMANENTE' ELSE 'TEMPORAL' END as vinculacion_dinamica,
+                    cr.NCENOMBRE as cargo_dinamica,
+                    ISNULL(c.CCNOMBRE, a.ARENOMBRE) as area_dinamica
+                FROM NMEMPLEA e
+                LEFT JOIN AFNAREAS a ON RTRIM(LTRIM(e.GASCODIGO)) = RTRIM(LTRIM(a.ARECODIGO))
+                LEFT JOIN CTNCENCOS c ON RTRIM(LTRIM(e.GASCODIGO)) = RTRIM(LTRIM(c.CCCODIGO))
+                LEFT JOIN NMCARGOS cr ON RTRIM(LTRIM(e.NCECODIGO)) = RTRIM(LTRIM(cr.NCECODIGO))
+                WHERE e.NEMESTADO = 1
+            """)
+            columns = [col[0] for col in cursor.description]
+            db_employees = {row[0]: dict(zip(columns, row)) for row in cursor.fetchall()}
+
+        # Cruce y análisis
+        analisis = []
+        for row in excel_data:
+            cedula = str(row.get('CEDULA', '')).strip()
+            db_emp = db_employees.get(cedula)
+            
+            estado = "OK"
+            detalles = []
+            
+            if not db_emp:
+                estado = "FALTA EN DINAMICA"
+                detalles.append("El funcionario no aparece como activo en NMEMPLEA.")
+            else:
+                # Verificar inconsistencias
+                if row.get('VINCULACION') != db_emp.get('vinculacion_dinamica'):
+                    estado = "ERROR CLASIFICACION"
+                    detalles.append(f"Excel: {row.get('VINCULACION')} vs Dinámica: {db_emp.get('vinculacion_dinamica')}")
+                
+                # Comparación de área (aproximada/basada en keywords si es necesario, por ahora exacta)
+                # ... lógica adicional si hay discrepancia de nombres
+            
+            analisis.append({
+                'cedula': cedula,
+                'nombre_excel': row.get('NOMBRE'),
+                'vinculacion_excel': row.get('VINCULACION'),
+                'cargo_excel': row.get('CARGO'),
+                'area_excel': row.get('AREA'),
+                'db_data': db_emp,
+                'estado': estado,
+                'detalles': " | ".join(detalles)
+            })
+
+        context['analisis'] = analisis
+        context['stats'] = {
+            'total_excel': len(excel_data),
+            'encontrados': len([a for a in analisis if a['db_data']]),
+            'faltantes': len([a for a in analisis if not a['db_data']]),
+        }
         return context
 
 

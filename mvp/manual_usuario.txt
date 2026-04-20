@@ -1,5 +1,5 @@
 MANUAL DE USUARIO
-Sistema: Generador de Certificados Laborales
+Sistema: Certificación de contratación por OPS
 Institucion: Hospital Universitario Departamental de NariÃ±o
 
 1. Objetivo

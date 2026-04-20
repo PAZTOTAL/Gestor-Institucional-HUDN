@@ -13,40 +13,20 @@ from lxml import etree
 from .date_utils import get_spanish_expedition_date
 
 BASE_DIR = Path(__file__).resolve().parents[2]
-TEMPLATES_DOCX_DIR = BASE_DIR / "media" / "templates_docx"
+TEMPLATES_DOCX_DIR = BASE_DIR / "mvp" / "templates_docx"
 
 
 def score_corruption(text):
-    return len(re.findall(r"Ã|Â|â|�|[\u0080-\u009f]", text))
+    return len(re.findall(r"Ã|Â|â||[\u0080-\u009f]", text))
 
 
 def repair_common_mojibake(text):
     replacements = {
-        "Ã¡": "á",
-        "Ã©": "é",
-        "Ã­": "í",
-        "Ã³": "ó",
-        "Ãº": "ú",
-        "Ã": "Á",
-        "Ã‰": "É",
-        "Ã": "Í",
-        "Ã“": "Ó",
-        "Ãš": "Ú",
-        "Ã±": "ñ",
-        "Ã‘": "Ñ",
-        "Ã¼": "ü",
-        "Ãœ": "Ü",
-        "â€“": "–",
-        "â€”": "—",
-        "â€œ": "“",
-        "â€": "”",
-        "â€˜": "‘",
-        "â€™": "’",
-        "Â": "",
-        "Ã?O": "ÑO",
-        "Ã?o": "ño",
-        "Ã?N": "ÓN",
-        "Ã?n": "ón",
+        "Ã¡": "á", "Ã©": "é", "Ã­": "í", "Ã³": "ó", "Ãº": "ú",
+        "Ã ": "Á", "Ã‰": "É", "Ã ": "Í", "Ã“": "Ó", "Ãš": "Ú",
+        "Ã±": "ñ", "Ã‘": "Ñ", "Ã¼": "ü", "Ãœ": "Ü",
+        "â€“": "–", "â€”": "—", "â€œ": "“", "â€ ": "”", "â€˜": "‘", "â€™": "’",
+        "Â": "", "Ã?O": "ÑO", "Ã?o": "ño", "Ã?N": "ÓN", "Ã?n": "ón",
     }
     output = text
     for source, target in replacements.items():
@@ -56,18 +36,10 @@ def repair_common_mojibake(text):
 
 def repair_lost_accent_question_marks(text):
     replacements = {
-        "GESTI?N": "GESTIÓN",
-        "INFORMACI?N": "INFORMACIÓN",
-        "ATENCI?N": "ATENCIÓN",
-        "SECCI?N": "SECCIÓN",
-        "OPERACI?N": "OPERACIÓN",
-        "ADMINISTRACI?N": "ADMINISTRACIÓN",
-        "CONTRATACI?N": "CONTRATACIÓN",
-        "PRESTACI?N": "PRESTACIÓN",
-        "RELACI?N": "RELACIÓN",
-        "CERTIFICACI?N": "CERTIFICACIÓN",
-        "T?CNICO": "TÉCNICO",
-        "TECNOL?GICOS": "TECNOLÓGICOS",
+        "GESTI?N": "GESTIÓN", "INFORMACI?N": "INFORMACIÓN", "ATENCI?N": "ATENCIÓN",
+        "SECCI?N": "SECCIÓN", "OPERACI?N": "OPERACIÓN", "ADMINISTRACI?N": "ADMINISTRACIÓN",
+        "CONTRATACI?N": "CONTRATACIÓN", "PRESTACI?N": "PRESTACIÓN", "RELACI?N": "RELACIÓN",
+        "CERTIFICACI?N": "CERTIFICACIÓN", "T?CNICO": "TÉCNICO", "TECNOL?GICOS": "TECNOLÓGICOS",
         "NARI?O": "NARIÑO",
     }
     output = text
@@ -81,9 +53,12 @@ def sanitize_text(value):
     if not text:
         return text
     if re.search(r"Ã|Â|â|[\u0080-\u009f]", text):
-        decoded = text.encode("latin1", errors="ignore").decode("utf-8", errors="ignore")
-        if score_corruption(decoded) < score_corruption(text):
-            text = decoded
+        try:
+            decoded = text.encode("latin1", errors="ignore").decode("utf-8", errors="ignore")
+            if score_corruption(decoded) < score_corruption(text):
+                text = decoded
+        except:
+            pass
     text = repair_common_mojibake(text)
     text = repair_lost_accent_question_marks(text)
     text = unicodedata.normalize("NFC", text)
@@ -111,7 +86,7 @@ def template_path_by_gender(genero):
 def replace_tokens(text, mapping):
     output = text
     for key, value in mapping.items():
-        output = output.replace(key, str(value))
+        output = output.replace(key, str(value if value is not None else ""))
     return output
 
 
@@ -125,7 +100,7 @@ def apply_mapping_to_paragraph(paragraph, mapping):
         for run in paragraph.runs[1:]:
             run.text = ""
     else:
-        paragraph.add_run(replaced)
+        paragraph.add_un(replaced)
 
 
 def render_contracts_loop(document, contracts):
@@ -211,8 +186,10 @@ def generate_certificate(data, genero):
 
         render_contracts_loop(doc, context["contratos"] or [])
     except Exception as error:
+        import traceback
+        print(traceback.format_exc())
         raise ValueError(
-            f"Error al renderizar la plantilla. Verifica etiquetas y bloque de contratos. Detalle: {error}"
+            f"Error al renderizar la plantilla. Detalle: {error}"
         ) from error
 
     output = BytesIO()
@@ -220,3 +197,4 @@ def generate_certificate(data, genero):
     output.seek(0)
     filename = f"certificado_{clean_data.get('cedula')}_{int(time.time() * 1000)}.docx"
     return output, filename
+

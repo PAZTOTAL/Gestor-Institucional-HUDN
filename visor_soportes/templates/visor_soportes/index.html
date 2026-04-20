@@ -1,0 +1,99 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Consulta de contrato y soportes{% endblock %}
+
+{% block extra_head %}
+  <link rel="stylesheet" href="{% static 'visor_soportes/styles.css' %}">
+  <script src="{% static 'visor_soportes/pdf-lib.min.js' %}"></script>
+  <style>
+    /* Ajustes para integrar con el layout global */
+    .container-app {
+        max-width: 1000px;
+        margin: 0 auto;
+    }
+    .form {
+        background: white;
+        border: 2px solid #7dd3fc;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    }
+    .card {
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+    dialog {
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    }
+  </style>
+{% endblock %}
+
+{% block content %}
+<div class="container-app">
+    <div class="mb-8">
+        <h1 class="text-3xl font-black text-blue-900">Consulta de contrato y soportes</h1>
+        <p class="text-slate-500 font-medium italic">Formulario para consultar por cédula y visualizar soportes contractuales.</p>
+    </div>
+
+    <form id="form-consulta" class="form grid grid-cols-1 md:grid-cols-4 gap-4 items-end p-6 rounded-2xl mb-8">
+      <div class="flex flex-col gap-2">
+        <label class="text-sm font-bold text-slate-700">Cédula</label>
+        <input id="cedula" type="text" placeholder="Ingrese la cédula" required
+               class="p-3 border-2 border-slate-200 rounded-xl focus:border-blue-500 outline-none font-bold">
+      </div>
+      <div class="flex flex-col gap-2">
+        <label class="text-sm font-bold text-slate-700">Mes</label>
+        <select id="mes" required class="p-3 border-2 border-slate-200 rounded-xl focus:border-blue-500 outline-none font-bold">
+          <option value="">Seleccione...</option>
+          <option value="1">Enero</option>
+          <option value="2">Febrero</option>
+          <option value="3">Marzo</option>
+          <option value="4">Abril</option>
+          <option value="5">Mayo</option>
+          <option value="6">Junio</option>
+          <option value="7">Julio</option>
+          <option value="8">Agosto</option>
+          <option value="9">Septiembre</option>
+          <option value="10">Octubre</option>
+          <option value="11">Noviembre</option>
+          <option value="12">Diciembre</option>
+        </select>
+      </div>
+      <div class="flex flex-col gap-2">
+        <label class="text-sm font-bold text-slate-700">Año</label>
+        <input id="anio" type="number" min="2000" max="2100" placeholder="2026" required
+               class="p-3 border-2 border-slate-200 rounded-xl focus:border-blue-500 outline-none font-bold">
+      </div>
+      <button type="submit" class="bg-blue-700 hover:bg-blue-800 text-white font-black py-3.5 rounded-xl shadow-lg shadow-blue-200 transition-all active:scale-95">
+        Buscar Soportes
+      </button>
+    </form>
+
+    <section id="estado" class="estado text-center text-lg mb-4" aria-live="polite"></section>
+    <section id="resultados" class="space-y-4"></section>
+</div>
+
+<dialog id="visor-modal" class="rounded-3xl p-0 overflow-hidden outline-none">
+    <div class="modal-header bg-slate-100 p-4 border-b flex justify-between items-center">
+      <strong id="visor-titulo" class="text-xl font-black text-slate-800">Documento</strong>
+      <button id="cerrar-modal" type="button" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-xl text-sm font-bold transition-all">
+        Cerrar
+      </button>
+    </div>
+    <div class="p-6">
+        <div class="selector-wrap flex flex-col gap-2 mb-4">
+          <label class="text-sm font-bold text-slate-700">Contrato detectado</label>
+          <select id="selector-contrato" class="p-3 border-2 border-slate-200 rounded-xl font-bold"></select>
+        </div>
+        <iframe id="visor-pdf" title="Visor de documento" class="w-full border-2 border-slate-200 rounded-2xl shadow-inner"></iframe>
+        <div class="mt-4 flex justify-end">
+            <a id="descargar-pdf" href="#" download class="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-xl font-black shadow-lg shadow-green-100 transition-all">
+                Descargar Soportes PDF
+            </a>
+        </div>
+    </div>
+</dialog>
+{% endblock %}
+
+{% block scripts %}
+  <script type="module" src="{% static 'visor_soportes/app.js' %}"></script>
+{% endblock %}

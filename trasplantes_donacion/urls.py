@@ -8,4 +8,5 @@ urlpatterns = [
     path('alertas/', views.AlertasView.as_view(), name='alertas'),
     path('sync/', views.sync_excel, name='sync'),
     path('sync-husn/', views.sync_husn, name='sync_husn'),
+    path('historia/<int:pk>/', views.historia_clinica_api, name='historia_clinica'),
 ]

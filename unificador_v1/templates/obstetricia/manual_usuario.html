@@ -1,0 +1,405 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manual de usuario | Sistema Obstétrico Unificado</title>
+    <link rel="stylesheet" href="{% static 'unificador_v1/css/sidebar.css' %}">
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+    <style>
+        :root {
+            --manual-bg: #f1f5f9;
+            --manual-card: #ffffff;
+            --manual-border: #e2e8f0;
+            --manual-accent: #0f4c81;
+            --manual-muted: #64748b;
+        }
+        body {
+            margin: 0;
+            font-family: 'Inter', system-ui, -apple-system, Segoe UI, sans-serif;
+            background: var(--manual-bg);
+            color: #1e293b;
+            font-size: 15px;
+            line-height: 1.65;
+        }
+        .app-layout { display: flex; min-height: 100vh; }
+        .sidebar { width: 280px; flex-shrink: 0; }
+        .manual-wrap {
+            flex: 1;
+            min-width: 0;
+            padding: 28px 32px 48px;
+        }
+        .manual-inner { max-width: 920px; margin: 0 auto; }
+        .manual-hero {
+            background: linear-gradient(135deg, #0f4c81 0%, #1e3a5f 100%);
+            color: #f8fafc;
+            padding: 28px 32px;
+            border-radius: 16px;
+            margin-bottom: 28px;
+            box-shadow: 0 12px 40px rgba(15, 76, 129, 0.25);
+        }
+        .manual-hero h1 {
+            margin: 0 0 10px;
+            font-size: 1.65rem;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+        }
+        .manual-hero p {
+            margin: 0;
+            opacity: 0.92;
+            font-size: 0.98rem;
+            line-height: 1.5;
+        }
+        .manual-toc {
+            background: var(--manual-card);
+            border: 1px solid var(--manual-border);
+            border-radius: 14px;
+            padding: 18px 22px;
+            margin-bottom: 28px;
+        }
+        .manual-toc h2 {
+            margin: 0 0 14px;
+            font-size: 0.72rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--manual-muted);
+        }
+        .manual-toc ul {
+            margin: 0;
+            padding: 0;
+            list-style: none;
+            display: grid;
+            gap: 8px;
+        }
+        @media (min-width: 720px) {
+            .manual-toc ul { grid-template-columns: 1fr 1fr; }
+        }
+        .manual-toc a {
+            color: var(--manual-accent);
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.88rem;
+        }
+        .manual-toc a:hover { text-decoration: underline; }
+        .manual-section {
+            background: var(--manual-card);
+            border: 1px solid var(--manual-border);
+            border-radius: 14px;
+            padding: 26px 28px 28px;
+            margin-bottom: 22px;
+            scroll-margin-top: 20px;
+        }
+        .manual-section h2 {
+            margin: 0 0 14px;
+            font-size: 1.2rem;
+            font-weight: 800;
+            color: var(--manual-accent);
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e0e7ff;
+        }
+        .manual-section h3 {
+            margin: 22px 0 10px;
+            font-size: 1.02rem;
+            font-weight: 700;
+            color: #334155;
+        }
+        .manual-section p { margin: 0 0 12px; color: #334155; }
+        .manual-section ul, .manual-section ol { margin: 0 0 14px; padding-left: 1.35rem; color: #334155; }
+        .manual-section li { margin-bottom: 6px; }
+        .manual-kbd {
+            font-family: ui-monospace, Consolas, monospace;
+            font-size: 0.85em;
+            background: #f1f5f9;
+            padding: 2px 7px;
+            border-radius: 6px;
+            border: 1px solid #e2e8f0;
+        }
+        .manual-note {
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            border-radius: 10px;
+            padding: 12px 16px;
+            margin: 14px 0;
+            font-size: 0.92rem;
+            color: #1e40af;
+        }
+        .manual-warn {
+            background: #fffbeb;
+            border: 1px solid #fde68a;
+            border-radius: 10px;
+            padding: 12px 16px;
+            margin: 14px 0;
+            font-size: 0.92rem;
+            color: #92400e;
+        }
+        .manual-path {
+            font-family: ui-monospace, Consolas, monospace;
+            font-size: 0.82rem;
+            background: #0f172a;
+            color: #e2e8f0;
+            padding: 10px 14px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 10px 0;
+        }
+        @media (max-width: 900px) {
+            .manual-wrap { padding: 18px 16px 36px; }
+            .manual-hero { padding: 22px 20px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-layout">
+        {% include "obstetricia/sidebar.html" with is_manual_usuario=True %}
+        <div class="manual-wrap">
+            <div class="manual-inner">
+                <header class="manual-hero">
+                    <h1>Manual de usuario</h1>
+                    <p>Sistema Obstétrico Unificado: guía operativa y funcional. Incluye la diferencia entre <strong>usuarios del sistema</strong> y <strong>pacientes</strong>, las vías de alta de pacientes nuevas, y el detalle de <strong>consulta y registro</strong> en MEOWS, Frecuencia fetal y Trabajo de parto, además de Sala de Partos y panel de atención.</p>
+                </header>
+
+                <nav class="manual-toc" aria-label="Índice del manual">
+                    <h2>Contenido</h2>
+                    <ul>
+                        <li><a href="#manual-vision">1. Visión general</a></li>
+                        <li><a href="#manual-personal">2. Usuarios del sistema (personal)</a></li>
+                        <li><a href="#manual-altas-paciente">3. Registro de pacientes nuevos y altas</a></li>
+                        <li><a href="#manual-dashboard">4. Dashboard</a></li>
+                        <li><a href="#manual-sala">5. Sala de Partos (hub)</a></li>
+                        <li><a href="#manual-panel">6. Panel de atención</a></li>
+                        <li><a href="#manual-meows">7. MEOWS: consulta y registro</a></li>
+                        <li><a href="#manual-fetal">8. Frecuencia fetal: consulta y registro</a></li>
+                        <li><a href="#manual-parto">9. Trabajo de parto: consulta y registro</a></li>
+                        <li><a href="#manual-unificado">10. Datos unificados del paciente</a></li>
+                        <li><a href="#manual-pdf">11. PDF unificado</a></li>
+                        <li><a href="#manual-sidebar">12. Barra lateral</a></li>
+                        <li><a href="#manual-flujos">13. Flujos recomendados</a></li>
+                        <li><a href="#manual-soporte">14. Buenas prácticas y soporte</a></li>
+                    </ul>
+                </nav>
+
+                <article class="manual-doc">
+                    <section class="manual-section" id="manual-vision">
+                        <h2>1. Visión general</h2>
+                        <p>La aplicación integra la atención obstétrica en un solo ecosistema: identificación de la paciente, registro de signos vitales (MEOWS), control fetal, trabajo de parto y generación de documentación. La <strong>Sala de Partos</strong> actúa como punto de entrada principal para localizar a la paciente y abrir cada módulo con el mismo documento de identidad.</p>
+                        <h3>Componentes principales</h3>
+                        <ul>
+                            <li><strong>Dashboard</strong> (<span class="manual-path">/atencion/</span>): pantalla de bienvenida y acceso rápido al sistema.</li>
+                            <li><strong>Sala de Partos</strong> (<span class="manual-path">/atencion/sala-de-partos/</span>): búsqueda por documento, tablero clínico, accesos a MEOWS, Fetal y Parto, línea de tiempo y ficha de datos del paciente.</li>
+                            <li><strong>Panel de atención</strong> (<span class="manual-path">/atencion/&lt;id&gt;/</span>): vista consolidada de una atención concreta, tarjeta de paciente y enlaces a formularios.</li>
+                            <li><strong>MEOWS</strong> (<span class="manual-path">/meows/…</span>): formularios y mediciones de alerta temprana obstétrica.</li>
+                            <li><strong>Frecuencia fetal</strong> (<span class="manual-path">/fetal/…</span>): registros de bienestar fetal.</li>
+                            <li><strong>Trabajo de parto</strong> (<span class="manual-path">/parto/…</span>): partograma y formulario clínico de evolución.</li>
+                        </ul>
+                    </section>
+
+                    <section class="manual-section" id="manual-personal">
+                        <h2>2. Usuarios del sistema (personal)</h2>
+                        <p>En este software, <strong>usuario del sistema</strong> se refiere al personal (médico, enfermería, auxiliares, sistemas) que opera la aplicación, y se distingue de la <strong>paciente</strong>, que es un registro clínico identificado por documento.</p>
+                        <h3>2.1 Alta y gestión de cuentas de personal</h3>
+                        <p>La aplicación clínica <strong>no incluye</strong>, por defecto, un formulario público de “registro de usuario” para el personal. La creación de cuentas, contraseñas y permisos suele hacerse mediante el <strong>panel de administración Django</strong>:</p>
+                        <div class="manual-path">/admin/</div>
+                        <p>Allí el administrador (TI) crea <code>User</code>, asigna pertenencia a grupos y permisos sobre modelos, y define qué personal puede entrar al admin o a vistas protegidas si su institución activó autenticación.</p>
+                        <h3>2.2 Consultas relacionadas con el personal</h3>
+                        <ul>
+                            <li>Si olvidó su contraseña o no tiene usuario: solicitud al <strong>área de sistemas</strong> o responsable del <code>/admin/</code>.</li>
+                            <li>Si una pantalla exige login y no la tiene: no es un fallo del manual clínico; es configuración de seguridad de su entorno.</li>
+                        </ul>
+                        <div class="manual-warn">No comparta credenciales entre profesionales. Cada acción en sistemas con auditoría debe poder atribuirse a una cuenta individual cuando la institución lo exija.</div>
+                    </section>
+
+                    <section class="manual-section" id="manual-altas-paciente">
+                        <h2>3. Registro de pacientes nuevos y altas (datos clínicos)</h2>
+                        <p>Aquí “<strong>paciente nueva</strong>” significa que aún <strong>no existe</strong> en las tablas locales del unificador (MEOWS, trabajo de parto o registro fetal) o que no aparece al consultar por documento hasta que se sincroniza o se crea el registro.</p>
+                        <h3>3.1 Consulta previa obligatoria en el flujo habitual</h3>
+                        <ol>
+                            <li>En <strong>Sala de Partos</strong>, ingrese el <strong>número de documento</strong> y pulse <strong>Consultar</strong>.</li>
+                            <li>El sistema llama a <span class="manual-path">GET /atencion/api/datos-paciente-unificado/?num_identificacion=…</span> (también acepta <code>doc</code>).</li>
+                            <li>Si la respuesta es <code>encontrado: false</code>, verá la tarjeta de <strong>paciente no registrado</strong> con opción de acudir al panel para iniciar datos.</li>
+                        </ol>
+                        <h3>3.2 Altas automáticas o asistidas por el sistema</h3>
+                        <ul>
+                            <li><strong>Desde el hospital (HIS) en solo lectura:</strong> si la conexión a la base hospitalaria está configurada y la paciente existe allí, al consultar por documento el backend puede <strong>sincronizar</strong> y crear/actualizar <code>meows.Paciente</code> (y datos obstétricos asociados) sin que usted rellene un formulario de alta manual previo.</li>
+                            <li><strong>Al abrir MEOWS por documento desde el panel o enlaces <code>/meows/crear/&lt;documento&gt;/</code>:</strong> si no hay fila en MEOWS para ese documento, el sistema puede crear un <code>Paciente</code> MEOWS con datos mínimos (p. ej. nombres/apellidos placeholder) para poder asociar la primera medición; luego debe <strong>completar y guardar</strong> datos demográficos en el formulario.</li>
+                            <li><strong>Panel de atención — tarjeta de paciente:</strong> la acción de guardar la tarjeta (endpoint <span class="manual-path">POST /atencion/&lt;id_atención&gt;/guardar-datos-paciente/</span>) <strong>crea o actualiza</strong> <code>meows.Paciente</code> y vincula el texto del documento en <code>AtencionParto.paciente</code>. Es un punto de ingreso explícito para pacientes nuevas en el contexto de una atención ya creada.</li>
+                            <li><strong>Trabajo de parto (API local):</strong> el front del módulo Parto puede crear un <code>trabajoparto.Paciente</code> mediante <span class="manual-path">POST /api/pacientes/</span> (historia clínica e identificación únicos, nombres, fecha de nacimiento, grupo sanguíneo, etc.) antes o al guardar el formulario.</li>
+                        </ul>
+                        <h3>3.3 Resumen: dónde “nace” el registro de la paciente</h3>
+                        <table style="width:100%; border-collapse:collapse; font-size:0.9rem; margin:12px 0;">
+                            <thead>
+                                <tr style="background:#f1f5f9; border-bottom:2px solid #e2e8f0;">
+                                    <th style="text-align:left; padding:8px 10px;">Origen del alta</th>
+                                    <th style="text-align:left; padding:8px 10px;">Qué se crea / actualiza</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr style="border-bottom:1px solid #e2e8f0;"><td style="padding:8px 10px;">Consulta unificada + HIS</td><td style="padding:8px 10px;"><code>meows.Paciente</code> (y enriquecimiento), más datos de parto/fetal si ya había vínculos</td></tr>
+                                <tr style="border-bottom:1px solid #e2e8f0;"><td style="padding:8px 10px;">Enlace MEOWS crear / primer acceso</td><td style="padding:8px 10px;"><code>meows.Paciente</code> mínimo → completar en formulario</td></tr>
+                                <tr style="border-bottom:1px solid #e2e8f0;"><td style="padding:8px 10px;">Guardar tarjeta en panel</td><td style="padding:8px 10px;"><code>meows.Paciente</code> + documento en atención</td></tr>
+                                <tr><td style="padding:8px 10px;">Formulario trabajo de parto</td><td style="padding:8px 10px;"><code>trabajoparto.Paciente</code> vía API; formularios y mediciones asociados</td></tr>
+                            </tbody>
+                        </table>
+                    </section>
+
+                    <section class="manual-section" id="manual-dashboard">
+                        <h2>4. Dashboard</h2>
+                        <p>Al entrar en <strong>/atencion/</strong> verá el mensaje de bienvenida y un resumen de los tres grandes bloques clínicos. Desde la barra lateral puede ir a <strong>Sala de Partos</strong> o abrir este <strong>Manual de usuario</strong>.</p>
+                        <div class="manual-note">Si el sistema ofrece búsqueda de paciente en el panel lateral del dashboard, úsela para saltar a una atención existente cuando conozca el documento o la ruta del panel.</div>
+                    </section>
+
+                    <section class="manual-section" id="manual-sala">
+                        <h2>5. Sala de Partos (hub)</h2>
+                        <h3>5.1 Identificar paciente (consulta)</h3>
+                        <p>Ingrese el <strong>número de documento</strong> (cédula u otro identificador configurado) y pulse <strong>Consultar</strong>. La página ejecuta una petición <strong>GET</strong> a la API unificada; según el resultado:</p>
+                        <ul>
+                            <li><strong>Encontrado:</strong> se oculta el buscador, se muestra el tablero, la ficha ampliada de datos, contadores por módulo, línea de vida (si hay eventos) y enlaces a MEOWS, Fetal y Parto con <code>doc</code> y <code>atencion</code> en la URL.</li>
+                            <li><strong>No encontrado:</strong> se muestra la tarjeta de registro sugerido (enlace al panel con documento propuesto) para quien deba dar de alta los datos clínicos allí o en otro módulo autorizado.</li>
+                        </ul>
+                        <h3>5.2 Tablero y ficha</h3>
+                        <ul>
+                            <li><strong>Tablero clínico unificado</strong>: estado global derivado de riesgo MEOWS, contadores de registros por módulo e ID de atención.</li>
+                            <li><strong>Datos registrados del paciente</strong>: bloque con datos básicos (documento, nombres, historia, fechas, sexo, grupo sanguíneo, acompañante) y campos clínicos compartidos (aseguradora, responsable, diagnóstico, edad gestacional, gestas, controles prenatales, cama, fecha de ingreso).</li>
+                            <li><strong>Línea de vida</strong>: eventos recientes ordenados por módulo cuando hay historial.</li>
+                        </ul>
+                        <h3>5.3 Acceso a módulos</h3>
+                        <p>Las tarjetas <strong>MEOWS</strong>, <strong>Frecuencia fetal</strong> y <strong>Trabajo de parto</strong> enlazan con el documento y la atención actual para continuar el registro sin volver a teclear la identificación.</p>
+                        <h3>5.4 Volver desde un módulo</h3>
+                        <p>Si ya consultó a la paciente en esta misma pestaña del navegador, al pulsar <strong>Sala de Partos</strong> en el lateral el sistema puede <strong>restaurar el tablero</strong> usando la caché de sesión (sin mostrar de nuevo el formulario de búsqueda), mientras la sesión sea reciente. Si usa <strong>cambiar paciente / nueva búsqueda</strong> en el tablero, se evita esa restauración automática hasta la siguiente consulta exitosa.</p>
+                        <h3>5.5 Paciente no encontrado</h3>
+                        <p>Se ofrece la opción de iniciar registro según la configuración del sistema (enlace al panel base). Coordinar con su área de sistemas para altas de paciente si el flujo hospitalario exige sincronización previa.</p>
+                    </section>
+
+                    <section class="manual-section" id="manual-panel">
+                        <h2>6. Panel de atención</h2>
+                        <p>La ruta <span class="manual-path">/atencion/&lt;id&gt;/</span> concentra la atención identificada por <strong>ID numérico</strong> de <code>AtencionParto</code>.</p>
+                        <h3>6.1 Consulta en el panel</h3>
+                        <ul>
+                            <li>Lista o resumen de <strong>mediciones MEOWS</strong>, <strong>registros fetales</strong> y <strong>formularios de parto</strong> filtrados por la atención o por el texto almacenado en <code>AtencionParto.paciente</code> (documento o criterio configurado).</li>
+                            <li><strong>Tarjeta / pestañas de datos del paciente:</strong> edición y guardado que persisten en MEOWS y actualizan el vínculo del documento con la atención.</li>
+                            <li>Enlaces a <code>/meows/crear/&lt;doc&gt;/?atencion=&lt;id&gt;</code>, fetal y parto según la plantilla.</li>
+                        </ul>
+                        <h3>6.2 Registro desde el panel</h3>
+                        <p>Al <strong>guardar la tarjeta de paciente</strong> se envía JSON al servidor: crea o actualiza el registro en <code>meows.Paciente</code> y deja el documento en la atención para que las demás vistas lo reutilicen. Las mediciones y formularios específicos se registran entrando a cada módulo desde esos enlaces.</p>
+                        <p>Use el panel cuando ya exista una <strong>atención creada</strong> y deba documentar o auditar todo bajo ese identificador.</p>
+                    </section>
+
+                    <section class="manual-section" id="manual-meows">
+                        <h2>7. Módulo MEOWS — consulta y registro</h2>
+                        <p>MEOWS (Modified Early Obstetric Warning Score) clasifica riesgo obstétrico a partir de signos vitales y parámetros registrados en cada <strong>medición</strong>.</p>
+                        <h3>7.1 Cómo consultar / localizar a la paciente</h3>
+                        <ul>
+                            <li><strong>Desde Sala de Partos o panel:</strong> enlace a <span class="manual-path">/meows/crear/&lt;documento&gt;/?atencion=…</span> (o rutas equivalentes bajo el prefijo montado, p. ej. <code>/fetal/meows/…</code> si el proyecto enruta así). Abre el formulario de nueva medición asociado al <code>paciente_id</code> interno.</li>
+                            <li><strong>Campo “Documento” + Buscar</strong> en la barra del formulario: llama al endpoint <span class="manual-path">/meows/api/buscar-paciente/</span> (o la ruta efectiva en su despliegue) para traer datos si el documento ya existe en MEOWS.</li>
+                            <li><strong>Sincronizar:</strong> vuelve a pedir <span class="manual-path">/atencion/api/datos-paciente-unificado/</span> y aplica los datos demográficos y clínicos al formulario sin sobrescribir la lógica de riesgo ya calculada hasta que guarde una nueva medición.</li>
+                            <li><strong>Historial:</strong> <span class="manual-path">/meows/historial/&lt;paciente_id&gt;/</span> lista mediciones previas; desde allí puede ir al formulario MEOWS con el documento.</li>
+                            <li><strong>Pacientes activas (gineco):</strong> botón que consume <span class="manual-path">/meows/api/pacientes-activos/</span> cuando esté habilitado, para elegir paciente y cargar documento en contexto.</li>
+                        </ul>
+                        <h3>7.2 Cómo se registra información (alta y guardado)</h3>
+                        <ol>
+                            <li>Si la paciente <strong>no existía</strong> en MEOWS, el primer acceso por documento puede crear un <code>Paciente</code> con datos mínimos; debe completar nombres, apellidos, fechas y demás campos obligatorios y guardar.</li>
+                            <li>Completa los <strong>parámetros</strong> de la medición (presión, frecuencias, etc.) según la tabla de la institución.</li>
+                            <li><strong>Guardar</strong> persiste la <code>Medicion</code> y los <code>MedicionValor</code>; el motor calcula score y <strong>riesgo</strong> (p. ej. verde / amarillo / rojo) que verá en Sala de Partos y panel.</li>
+                            <li><strong>PDF:</strong> genera documento de la medición actual según la implementación del módulo.</li>
+                        </ol>
+                        <div class="manual-note">Si cambia el número de documento en el formulario y ya existe otra paciente con ese documento, el sistema enlaza la medición a la existente para evitar duplicados; revise mensajes de integridad.</div>
+                    </section>
+
+                    <section class="manual-section" id="manual-fetal">
+                        <h2>8. Frecuencia fetal — consulta y registro</h2>
+                        <h3>8.1 Consulta</h3>
+                        <p>El módulo vive bajo el prefijo <span class="manual-path">/fetal/</span>. La vista principal del formulario acepta parámetros de consulta típicos <code>doc</code> (identificación) y <code>atencion</code> para precargar la paciente y mantener coherencia con Sala de Partos.</p>
+                        <ul>
+                            <li>Al cargar con <code>doc</code>, el front busca o asocia el <strong>registro de parto</strong> (<code>RegistroParto</code>) cuya identificación coincide, o prepara un registro nuevo según la lógica del formulario.</li>
+                            <li>API REST bajo <span class="manual-path">/fetal/api/registros/</span>: listado, filtro y detalle de registros; rutas anidadas para <code>fetocardia</code>, recién nacido y postparto.</li>
+                            <li>Búsquedas auxiliares: endpoints como <span class="manual-path">/fetal/api/registros/buscar/</span> o integraciones con sala de partos hospitalaria si están activas en su entorno.</li>
+                        </ul>
+                        <h3>8.2 Registro</h3>
+                        <ol>
+                            <li>Complete identificación de la paciente y datos del parte según el formulario (puede requerir crear primero cabecera de registro si no existe).</li>
+                            <li>Agregue <strong>controles de fetocardia</strong> (fecha, hora, valor, responsable) y demás secciones (recién nacido, postparto) según protocolo.</li>
+                            <li>Cada guardado persiste vía API en el registro; los contadores y la línea de vida en Sala de Partos reflejan esos eventos al refrescar la consulta unificada.</li>
+                        </ol>
+                    </section>
+
+                    <section class="manual-section" id="manual-parto">
+                        <h2>9. Trabajo de parto — consulta y registro</h2>
+                        <h3>9.1 Consulta</h3>
+                        <p>Entrada típica <span class="manual-path">/parto/</span> con parámetros <code>doc</code> y <code>atencion</code> cuando se llega desde el hub. El front consulta la API del proyecto (p. ej. <span class="manual-path">GET /api/pacientes/buscar-completo/?num_identificacion=…</span>) para traer paciente local, formulario reciente y mediciones.</p>
+                        <ul>
+                            <li>Si la paciente no está en la BD local pero sí en el HIS, el backend puede sincronizar antes de mostrar el formulario (según configuración).</li>
+                            <li>Previsualización e impresión de PDF por formulario o por paciente según enlaces del módulo.</li>
+                        </ul>
+                        <h3>9.2 Registro</h3>
+                        <ol>
+                            <li><strong>Crear paciente (trabajo de parto):</strong> <span class="manual-path">POST /api/pacientes/</span> con <code>num_historia_clinica</code>, <code>num_identificacion</code>, <code>nombres</code>, <code>fecha_nacimiento</code>, <code>tipo_sangre</code>, etc. El front guarda el <code>id</code> devuelto en campos ocultos para siguientes guardados.</li>
+                            <li><strong>Formulario de evolución:</strong> PUT/PATCH al recurso del formulario o creación según el flujo del SPA; incluye diagnóstico, edad gestacional, responsable, aseguradora vinculada, etc.</li>
+                            <li><strong>Partograma:</strong> registro gráfico y numérico de la evolución del trabajo de parto en la misma sesión de trabajo; debe mantenerse el mismo documento de paciente.</li>
+                        </ol>
+                        <div class="manual-note">Configure el cliente HTTP del módulo Parto para usar la <strong>misma base URL</strong> que la página (mismo host y puerto) al llamar a <code>/api/…</code>, evitando errores CORS.</div>
+                    </section>
+
+                    <section class="manual-section" id="manual-unificado">
+                        <h2>10. Datos unificados del paciente</h2>
+                        <p>El endpoint <span class="manual-path">GET /atencion/api/datos-paciente-unificado/?num_identificacion=&lt;doc&gt;</span> (también acepta <code>doc</code>) centraliza:</p>
+                        <ul>
+                            <li>Búsqueda en <strong>MEOWS.Paciente</strong> y, si aplica, en <strong>Trabajo de parto.Paciente</strong>.</li>
+                            <li>Si no hay registro local, consulta a la <strong>base hospitalaria en solo lectura</strong> (cuando esté configurada), sincronizando datos básicos y obstétricos según la lógica del conector.</li>
+                            <li>Enriquecimiento con estancia, aseguradora, cama, ingreso, diagnóstico y otros campos cuando existan en fuentes enlazadas.</li>
+                        </ul>
+                        <p>El navegador guarda una <strong>caché en sessionStorage</strong> (tiempo limitado) para no repetir la misma petición al cambiar de módulo. Esa caché es la que permite restaurar la Sala de Partos sin nueva búsqueda.</p>
+                    </section>
+
+                    <section class="manual-section" id="manual-pdf">
+                        <h2>11. PDF unificado</h2>
+                        <p>En Sala de Partos, el botón de <strong>PDF unificado</strong> se habilita cuando existen registros en al menos uno de los módulos (MEOWS, fetal o parto). El archivo agrega la información disponible bajo la atención y documento consultados. Si no hay registros, el botón permanece oculto o deshabilitado según diseño de pantalla.</p>
+                    </section>
+
+                    <section class="manual-section" id="manual-sidebar">
+                        <h2>12. Barra lateral</h2>
+                        <ul>
+                            <li><strong>Sistema → Dashboard</strong>: retorno al inicio.</li>
+                            <li><strong>Sala de Partos</strong>: hub de consulta y módulos.</li>
+                            <li><strong>Documentación → Manual de usuario</strong>: esta guía.</li>
+                            <li><strong>Paciente en contexto</strong> (en MEOWS, Fetal, Parto y panel): muestra nombre y documento de la paciente activa cuando la vista recibe el identificador; los datos detallados siguen en Sala de Partos o en el panel.</li>
+                        </ul>
+                    </section>
+
+                    <section class="manual-section" id="manual-flujos">
+                        <h2>13. Flujos recomendados</h2>
+                        <h3>Inicio de guardia</h3>
+                        <ol>
+                            <li>Entrar en <strong>Sala de Partos</strong>.</li>
+                            <li>Consultar por documento a cada paciente que vaya a atender.</li>
+                            <li>Abrir el módulo necesario (MEOWS, Fetal o Parto) desde las tarjetas.</li>
+                            <li>Registrar, guardar y volver con el enlace lateral a Sala de Partos si necesita otra paciente o el PDF unificado.</li>
+                        </ol>
+                        <h3>Seguimiento de una sola paciente</h3>
+                        <ol>
+                            <li>Desde Sala de Partos o panel, mantenga abierta la pestaña del módulo.</li>
+                            <li>Use <strong>Sincronizar</strong> en MEOWS tras actualizar datos en otro equipo si la política del servicio lo permite.</li>
+                            <li>Revise la línea de vida en Sala de Partos para orden cronológico de eventos.</li>
+                        </ol>
+                    </section>
+
+                    <section class="manual-section" id="manual-soporte">
+                        <h2>14. Buenas prácticas y soporte</h2>
+                        <ul>
+                            <li>Verifique siempre el <strong>documento</strong> mostrado en cabecera o en la ficha antes de firmar o imprimir.</li>
+                            <li>No comparta credenciales; cierre sesión en equipos compartidos si el sistema las utiliza.</li>
+                            <li>Si aparece error de conexión, confirme que el servidor de aplicaciones está en ejecución y que accede con la misma URL/puerto que emplean los formularios (evita mezclar puertos distintos entre página y API).</li>
+                            <li>Problemas de <strong>acentos o caracteres raros</strong> en nombres suelen deberse a codificación de datos en origen; reporte al área de TI con ejemplo de documento y captura.</li>
+                        </ul>
+                        <div class="manual-warn">Este manual describe el comportamiento funcional previsto del software. Algunas opciones (conexión hospitalaria, listados de activas, campos obligatorios) dependen de la configuración y permisos definidos en su institución.</div>
+                    </section>
+                </article>
+            </div>
+        </div>
+    </div>
+    <script>lucide.createIcons();</script>
+</body>
+</html>
+
+
+

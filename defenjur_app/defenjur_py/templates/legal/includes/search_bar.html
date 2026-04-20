@@ -1,7 +1,0 @@
-<form method="get" style="display:flex; gap:0.75rem; align-items:center; flex-wrap:wrap;">
-    <input type="search" name="q" value="{{ search_query }}" class="premium-input" placeholder="{{ placeholder }}" style="max-width:320px;" autocomplete="off" aria-label="Buscar en el listado">
-    <button type="submit" class="btn-premium" style="padding:0.5rem 1rem;">Buscar</button>
-    {% if search_query %}
-    <a href="{{ request.path }}" class="btn-premium" style="padding:0.5rem 1rem; text-decoration:none; background:rgba(255,255,255,0.08);">Limpiar</a>
-    {% endif %}
-</form>

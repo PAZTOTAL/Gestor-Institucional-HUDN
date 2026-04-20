@@ -1,4 +1,4 @@
-# MVP - Generador de Certificados Laborales (Django)
+# MVP - Certificación de contratación por OPS (Django)
 
 Este proyecto genera certificados Word (`.docx`) usando SQL Server y plantillas locales.
 

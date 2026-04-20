@@ -4,5 +4,5 @@ echo =========================================================
 echo =    INICIANDO SERVIDOR LOCAL HOSPITAL MANAGEMENT      =
 echo =========================================================
 echo.
-python manage.py runserver 0.0.0.0:8000
+.\venv\Scripts\python.exe manage.py runserver 0.0.0.0:8000
 pause

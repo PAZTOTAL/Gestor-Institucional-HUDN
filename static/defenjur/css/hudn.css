@@ -255,3 +255,55 @@
         max-width: none;
     }
 }
+
+/* --- Premium Tables (Light Mode) --- */
+.hudn-app .premium-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0 10px;
+}
+
+.hudn-app .premium-table thead th {
+    padding: 0.85rem;
+    text-align: left;
+    color: #495057;
+    font-weight: 700;
+    font-size: 0.85rem;
+    border-bottom: 2px solid #dee2e6;
+}
+
+.hudn-app .premium-table tbody tr {
+    background: #ffffff;
+    border: 1px solid #e9ecef;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+    transition: all 0.2s ease;
+}
+
+.hudn-app .premium-table tbody tr:hover {
+    background: #f1f5f9;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+.hudn-app .premium-table td {
+    padding: 1rem 0.85rem;
+}
+
+.hudn-app .col-id {
+    font-weight: 800;
+    color: #4f46e5; /* Indigo */
+}
+
+.hudn-app .icon-pdf { color: #0891b2; }
+.hudn-app .icon-attach { color: #d97706; }
+.hudn-app .icon-edit { color: #059669; }
+.hudn-app .icon-delete { color: #e11d48; }
+
+.hudn-app .premium-tag {
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+.hudn-app .tag-success { background: #d1fae5; color: #065f46; }
+.hudn-app .tag-info { background: #dbeafe; color: #1e40af; }

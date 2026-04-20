@@ -1,7 +1,7 @@
 from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator
 import uuid
-from obstetriciaunificador.models import AtencionParto
+from unificador_v1.models import AtencionParto
 
 class RegistroParto(models.Model):
     """Modelo principal del formato FRSPA-007"""
@@ -331,3 +331,6 @@ class Huella(models.Model):
 
     def __str__(self):
         return f"Huella Paciente {self.documento} - {self.fecha}"
+
+
+

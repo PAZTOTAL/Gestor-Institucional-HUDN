@@ -1,5 +1,5 @@
 DICCIONARIO DE DATOS
-Sistema: MVP - Generador de Certificados Laborales
+Sistema: MVP - Certificación de contratación por OPS
 
 1. Contexto
 El sistema consulta tablas anuales de contratos con patron contratos_YYYY en SQL Server.
