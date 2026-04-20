@@ -139,7 +139,7 @@ DATABASES = {
         'PASSWORD': 'ConsultasPantojaHUDN_2026$', 
         'HOST': '172.20.100.209',
         'PORT': '',
-        'CONN_MAX_AGE': 600,  # Reusar conexiones por 10 minutos (evita reconexión en cada request)
+        'CONN_MAX_AGE': 0,  # No reusar conexiones — MSSQL cierra las inactivas y causa errores
         'OPTIONS': {
             'driver': 'ODBC Driver 17 for SQL Server',
             'timeout': 60,
@@ -149,10 +149,10 @@ DATABASES = {
         'ENGINE': 'mssql',
         'NAME': 'DGEMPRES03',
         'USER': 'DSOLARTE',
-        'PASSWORD': 'ConsultaHUDN2026*/$', 
+        'PASSWORD': 'ConsultaHUDN2026*/$',
         'HOST': '172.20.100.209',
         'PORT': '',
-        'CONN_MAX_AGE': 600,  # Reusar conexiones por 10 minutos
+        'CONN_MAX_AGE': 0,  # No reusar conexiones
         'OPTIONS': {
             'driver': 'ODBC Driver 17 for SQL Server',
             'host_is_server': True,

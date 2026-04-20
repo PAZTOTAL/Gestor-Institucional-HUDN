@@ -490,7 +490,7 @@ def get_master_excel_data():
     cache_key = 'th_master_excel_data'
     data = cache.get(cache_key)
     if data is None:
-        path = r'C:\Users\SISTEMAS\Documents\BASE ACTUALIZADA CON CARGOS Y AREAS  04- 2026.xlsx'
+        path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data', 'personal.xlsx')
         if os.path.exists(path):
             df = pd.read_excel(path)
             # Normalizar columnas
@@ -510,7 +510,7 @@ class InformeConsistenciaExcelView(LoginRequiredMixin, TemplateView):
         excel_data = get_master_excel_data()
         
         if not excel_data:
-            context['error'] = "No se pudo cargar el archivo Excel maestro en C:\\Users\\SISTEMAS\\Documents\\"
+            context['error'] = "No se pudo cargar el archivo Excel maestro (horas_extras/data/personal.xlsx)."
             return context
 
         # Obtener todos los empleados de Dinámica para comparar (por lotes o completo)

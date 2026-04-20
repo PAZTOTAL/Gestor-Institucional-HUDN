@@ -65,38 +65,44 @@ class GestionPermisosView(AccessControlMixin, TemplateView):
         user_id = self.kwargs.get('pk')
         target_user = User.objects.get(pk=user_id)
         perfil, _ = PerfilUsuario.objects.get_or_create(user=target_user)
-        
-        # Obtener todas las apps locales dinámicamente comprobando el directorio de instalación
+
         from django.apps import apps
         from django.conf import settings
-        
-        # Filtramos solo las apps cuyo path está dentro de BASE_DIR (las creadas por nosotros)
+        from core.models import DashboardModule
+
+        # Filtramos solo las apps cuyo path está dentro de BASE_DIR
         local_apps = [
             app_config.label for app_config in apps.get_app_configs()
             if str(app_config.path).startswith(str(settings.BASE_DIR))
         ]
-        
-        # Get and merge with dynamic DashboardModules (External links or custom shortcuts)
-        from core.models import DashboardModule
+
         db_modules = DashboardModule.objects.filter(is_active=True)
-        
-        # We'll use a set to avoid duplicates with django app labels
-        all_app_slugs = set(local_apps)
-        for db_mod in db_modules:
-            all_app_slugs.add(db_mod.slug)
-            
+        db_modules_dict = {m.slug: m for m in db_modules}
+
+        all_app_slugs = sorted(set(local_apps) | set(db_modules_dict.keys()))
+
+        # ── Prefetch todos los permisos del usuario en 2 queries ──────────────
+        permisos_app = {
+            p.app_label: p
+            for p in PermisoApp.objects.filter(user=target_user)
+        }
+        permisos_modelo = {
+            (p.app_label, p.model_name): p
+            for p in PermisoModelo.objects.filter(user=target_user)
+        }
+        # ──────────────────────────────────────────────────────────────────────
+
         app_permissions = []
-        for app in sorted(list(all_app_slugs)):
-            perm_app = PermisoApp.objects.filter(user=target_user, app_label=app).first()
-            
-            # Get models for this slug if it's a Django App
+        for app in all_app_slugs:
+            perm_app = permisos_app.get(app)
+
             app_models = []
             if app in local_apps:
                 try:
                     app_config = apps.get_app_config(app)
                     for model in app_config.get_models():
                         model_name = model.__name__
-                        perm_mod = PermisoModelo.objects.filter(user=target_user, app_label=app, model_name=model_name).first()
+                        perm_mod = permisos_modelo.get((app, model_name))
                         app_models.append({
                             'name': model_name,
                             'verbose_name': model._meta.verbose_name.title(),
@@ -105,8 +111,7 @@ class GestionPermisosView(AccessControlMixin, TemplateView):
                 except LookupError:
                     pass
 
-            # Find display name (if in DB use name, else use slug)
-            db_mod_info = db_modules.filter(slug=app).first()
+            db_mod_info = db_modules_dict.get(app)
             display_name = db_mod_info.name if db_mod_info else app.replace('_', ' ').title()
 
             app_permissions.append({
@@ -116,7 +121,7 @@ class GestionPermisosView(AccessControlMixin, TemplateView):
                 'models': app_models,
                 'is_db': db_mod_info is not None
             })
-            
+
         context['target_user'] = target_user
         context['perfil'] = perfil
         context['app_permissions'] = app_permissions
