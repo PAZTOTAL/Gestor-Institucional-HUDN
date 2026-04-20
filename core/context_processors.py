@@ -27,13 +27,25 @@ def modules_processor(request):
         if request.user.is_superuser:
             is_superuser = True
         else:
-            # Try to get pre-fetched permissions from the view
+            # Reutilizar permisos ya procesados en la vista si existen
             allowed_apps = getattr(request, '_allowed_apps', None)
             if allowed_apps is None:
-                allowed_apps = set(
+                # Si no están en el request, los calculamos aquí
+                raw_perms = set(
                     PermisoApp.objects.filter(user=request.user, permitido=True)
                     .values_list('app_label', flat=True)
                 )
+                
+                # Mapa de Equivalencias
+                equiv_map = {
+                    'certificados_laborales': 'mvp',
+                    'mvp': 'certificados_laborales',
+                }
+                
+                allowed_apps = raw_perms.copy()
+                for p in raw_perms:
+                    if p in equiv_map:
+                        allowed_apps.add(equiv_map[p])
 
     # 3. Filter and Group Modules
     categories = {
@@ -52,12 +64,8 @@ def modules_processor(request):
         
         has_perm = is_superuser
         if not has_perm:
-            # Permissions Logic (Strict matching)
-            if slug in ['A_00_Organigrama', 'usuarios', 'consultas_externas']:
-                 has_perm = True
-            elif slug in allowed_apps:
-                has_perm = True
-            elif slug.startswith('CertificadosDIAN') and 'CertificadosDIAN' in allowed_apps:
+            # Lógica de Permisos Unificada y Estricta (Relación 1 a 1)
+            if slug in allowed_apps:
                 has_perm = True
             
         if not has_perm:

@@ -3,6 +3,7 @@ from django.contrib.auth.models import User
 from django.contrib.auth.forms import UserCreationForm
 from django.core.exceptions import ValidationError
 from django.db import connections
+from .models import PerfilUsuario
 
 class RegistroForm(UserCreationForm):
     primer_nombre = forms.CharField(max_length=100, required=True, label="Primer Nombre")
@@ -23,6 +24,12 @@ class RegistroForm(UserCreationForm):
         model = User
         fields = ['username']
 
+    def clean_cedula(self):
+        cedula = self.cleaned_data.get('cedula')
+        if PerfilUsuario.objects.filter(cedula=cedula).exists():
+            raise ValidationError("Esta cédula ya se encuentra registrada en el sistema.")
+        return cedula
+
     def clean_username(self):
         username = self.cleaned_data.get('username')
         cedula = self.cleaned_data.get('cedula')
@@ -31,9 +38,15 @@ class RegistroForm(UserCreationForm):
         if User.objects.filter(username=username).exists():
             raise ValidationError("Este nombre de usuario ya está registrado en el Gestor Institucional.")
 
-        # 2. Validar contra Dinámica Nexus
-        try:
-            with connections['readonly'].cursor() as cursor:
+        # 2. Validar contra Dinámica Nexus (Si cedula está presente)
+        if cedula:
+            conn = connections['readonly']
+            cursor = None
+            try:
+                # Asegurar conexión activa
+                conn.ensure_connection()
+                cursor = conn.cursor()
+                
                 # Estrategia A: Por Cédula
                 cursor.execute("SELECT USUNOMBRE FROM GENUSUARIO WHERE NumeroDocumento = %s AND USUESTADO = 1", [cedula])
                 usu_row = cursor.fetchone()
@@ -52,11 +65,22 @@ class RegistroForm(UserCreationForm):
                 if usu_row:
                     usu_institucional = usu_row[0]
                     if username.lower() != usu_institucional.lower():
-                        raise ValidationError(f"Para funcionarios del HUDN, el usuario debe ser exactamente: {usu_institucional}")
-        except Exception as e:
-            if isinstance(e, ValidationError):
-                raise e
-            pass 
+                        raise ValidationError(f"Para funcionarios del HUDN, el usuario debe ser exactamente su código institucional: {usu_institucional}")
+            except ValidationError as ve:
+                raise ve
+            except Exception as e:
+                # Si falla la conexión, cerramos para limpiar el pool y seguimos
+                try:
+                    conn.close()
+                except:
+                    pass
+                pass 
+            finally:
+                if cursor:
+                    try:
+                        cursor.close()
+                    except:
+                        pass
 
         return username
 

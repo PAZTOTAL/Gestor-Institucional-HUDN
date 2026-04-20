@@ -70,6 +70,7 @@
         </div>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
             <!-- Tarjeta SUBGERENCIA DE SALUD -->
+            {% if nav_asistenciales %}
             <div onclick="showSection('asistencial')" class="glass-card p-10 cursor-pointer hover:border-blue-500 group transition-all duration-300">
                 <div class="flex flex-col items-center text-center">
                     <div class="w-20 h-20 bg-blue-100 rounded-3xl flex items-center justify-center mb-6 text-blue-500 group-hover:bg-blue-500 group-hover:text-white transition-all transform group-hover:rotate-6">
@@ -79,8 +80,10 @@
                     <p class="text-slate-600 text-lg">Hospitalización, Cirugía y Servicios Médicos.</p>
                 </div>
             </div>
+            {% endif %}
 
             <!-- Tarjeta SUBGERENCIA FINANCIERA -->
+            {% if nav_talento_humano or nav_financiera or nav_contabilidad %}
             <div onclick="showSection('subgerencia_financiera')" class="glass-card p-10 cursor-pointer hover:border-green-500 group transition-all duration-300">
                 <div class="flex flex-col items-center text-center">
                     <div class="w-20 h-20 bg-green-100 rounded-3xl flex items-center justify-center mb-6 text-green-500 group-hover:bg-green-500 group-hover:text-white transition-all transform group-hover:-rotate-6">
@@ -90,6 +93,7 @@
                     <p class="text-slate-600 text-lg">Finanzas, RRHH y Gestión de Información.</p>
                 </div>
             </div>
+            {% endif %}
         </div>
     </div>
 
@@ -259,6 +263,7 @@
         </div>
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             <!-- JURIDICA Card -->
+            {% if nav_juridica %}
             <div onclick="showSection('juridica')" 
                 class="glass-card p-6 cursor-pointer hover:border-indigo-500 group transition-all duration-300">
                 <div class="flex flex-col items-center text-center">
@@ -269,8 +274,10 @@
                     <p class="text-dim text-sm">Procesos Judiciales y Tutelas.</p>
                 </div>
             </div>
+            {% endif %}
 
             <!-- SUBGERENCIA FINANCIERA Card -->
+            {% if nav_talento_humano or nav_financiera or nav_contabilidad %}
             <div onclick="showSection('subgerencia_financiera')" 
                 class="glass-card p-6 cursor-pointer hover:border-blue-600 group transition-all duration-300">
                 <div class="flex flex-col items-center text-center">
@@ -281,6 +288,7 @@
                     <p class="text-dim text-sm">Financiera, Contabilidad y Almacén.</p>
                 </div>
             </div>
+            {% endif %}
         </div>
     </div>
 
@@ -294,6 +302,7 @@
         </div>
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             <!-- FINANZAS Card -->
+            {% if nav_financiera or nav_contabilidad %}
             <div onclick="showSection('financiera_detallada')" 
                 class="glass-card p-6 cursor-pointer hover:border-blue-600 group transition-all duration-300">
                 <div class="flex flex-col items-center text-center">
@@ -304,8 +313,10 @@
                     <p class="text-dim text-sm">Contabilidad, Presupuesto, Tesorería.</p>
                 </div>
             </div>
+            {% endif %}
 
             <!-- TALENTO HUMANO Card -->
+            {% if nav_talento_humano %}
             <div onclick="showSection('talento_humano')" 
                 class="glass-card p-6 cursor-pointer hover:border-teal-500 group transition-all duration-300">
                 <div class="flex flex-col items-center text-center">
@@ -316,8 +327,10 @@
                     <p class="text-dim text-sm">Nómina, Contratación, Bienestar.</p>
                 </div>
             </div>
+            {% endif %}
 
             <!-- BIENES Y SERVICIOS Card -->
+            {% if nav_asistenciales_varios %} <!-- Marcador si hubiera -->
             <div onclick="showSection('bienes_servicios')" 
                 class="glass-card p-6 cursor-pointer hover:border-emerald-600 group transition-all duration-300">
                 <div class="flex flex-col items-center text-center">
@@ -328,8 +341,11 @@
                     <p class="text-dim text-sm">Mantenimiento y Apoyo Logístico.</p>
                 </div>
             </div>
+            {% endif %}
+        </div>
 
             <!-- GESTION DE LA INFORMACION Card -->
+            {% if nav_varios %}
             <div onclick="showSection('gestion_informacion')" 
                 class="glass-card p-6 cursor-pointer hover:border-amber-600 group transition-all duration-300">
                 <div class="flex flex-col items-center text-center">
@@ -340,6 +356,7 @@
                     <p class="text-dim text-sm">Sistemas y Archivo Clínico.</p>
                 </div>
             </div>
+            {% endif %}
         </div>
     </div>
 

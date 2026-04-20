@@ -63,6 +63,25 @@
         <form method="post" id="registrationForm" class="p-8 md:p-16">
             {% csrf_token %}
             
+            {% if form.errors %}
+            <div class="mb-8 p-6 bg-rose-50 border-2 border-rose-100 rounded-3xl animate-bounce">
+                <div class="flex items-center gap-3 text-rose-600 mb-2">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    <span class="font-black uppercase tracking-widest text-sm">Errores de Validación</span>
+                </div>
+                <ul class="space-y-1">
+                {% for field in form %}
+                    {% for error in field.errors %}
+                        <li class="text-rose-500 font-bold text-sm ml-9">• {{ error }}</li>
+                    {% endfor %}
+                {% endfor %}
+                {% for error in form.non_field_errors %}
+                    <li class="text-rose-500 font-bold text-sm ml-9">• {{ error }}</li>
+                {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+            
             <!-- Step 1: Verification -->
             <div id="step-1" class="fade-section space-y-12">
                 <div class="text-center max-w-lg mx-auto space-y-6">
@@ -365,6 +384,7 @@
     {% if form.errors %}
         fillForm({
             cedula: "{{ form.cedula.value|default:'' }}",
+            username_institucional: "{{ form.username.value|default:'' }}",
             primer_nombre: "{{ form.primer_nombre.value|default:'' }}",
             segundo_nombre: "{{ form.segundo_nombre.value|default:'' }}",
             primer_apellido: "{{ form.primer_apellido.value|default:'' }}",
@@ -374,7 +394,9 @@
             direccion: "{{ form.direccion.value|default:'' }}",
             telefono: "{{ form.telefono.value|default:'' }}",
             fecha_nacimiento: "{{ form.fecha_nacimiento.value|default:'' }}",
-            username_institucional: "{{ form.username.value|default:'' }}"
+            sexo: "{{ form.sexo.value|default:'' }}",
+            grupo_sanguineo: "{{ form.grupo_sanguineo.value|default:'' }}",
+            rh: "{{ form.rh.value|default:'' }}"
         });
         goToStep2();
     {% endif %}
