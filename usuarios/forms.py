@@ -40,35 +40,47 @@ class RegistroForm(UserCreationForm):
 
         # 2. Validar contra Dinámica Nexus (Si cedula está presente)
         if cedula:
+            conn = connections['readonly']
+            cursor = None
             try:
-                # Usamos una conexión con timeout corto para no bloquear eternamente
-                with connections['readonly'].cursor() as cursor:
-                    # Estrategia A: Por Cédula
-                    cursor.execute("SELECT USUNOMBRE FROM GENUSUARIO WHERE NumeroDocumento = %s AND USUESTADO = 1", [cedula])
+                # Asegurar conexión activa
+                conn.ensure_connection()
+                cursor = conn.cursor()
+                
+                # Estrategia A: Por Cédula
+                cursor.execute("SELECT USUNOMBRE FROM GENUSUARIO WHERE NumeroDocumento = %s AND USUESTADO = 1", [cedula])
+                usu_row = cursor.fetchone()
+                
+                # Estrategia B: Por Médico
+                if not usu_row:
+                    sql_medico = """
+                    SELECT U.USUNOMBRE FROM GENUSUARIO U 
+                    INNER JOIN GENMEDICO M ON U.USUNOMBRE = M.GMECODIGO 
+                    INNER JOIN GENTERCER T ON M.GENTERCER = T.OID 
+                    WHERE T.TERNUMDOC = %s AND U.USUESTADO = 1
+                    """
+                    cursor.execute(sql_medico, [cedula])
                     usu_row = cursor.fetchone()
-                    
-                    # Estrategia B: Por Médico
-                    if not usu_row:
-                        sql_medico = """
-                        SELECT U.USUNOMBRE FROM GENUSUARIO U 
-                        INNER JOIN GENMEDICO M ON U.USUNOMBRE = M.GMECODIGO 
-                        INNER JOIN GENTERCER T ON M.GENTERCER = T.OID 
-                        WHERE T.TERNUMDOC = %s AND U.USUESTADO = 1
-                        """
-                        cursor.execute(sql_medico, [cedula])
-                        usu_row = cursor.fetchone()
 
-                    if usu_row:
-                        usu_institucional = usu_row[0]
-                        if username.lower() != usu_institucional.lower():
-                            raise ValidationError(f"Para funcionarios del HUDN, el usuario debe ser exactamente su código institucional: {usu_institucional}")
+                if usu_row:
+                    usu_institucional = usu_row[0]
+                    if username.lower() != usu_institucional.lower():
+                        raise ValidationError(f"Para funcionarios del HUDN, el usuario debe ser exactamente su código institucional: {usu_institucional}")
+            except ValidationError as ve:
+                raise ve
             except Exception as e:
-                # Si es un ValidationError lo relanzamos, si es error de conexión (timeout) dejamos pasar 
-                # para no bloquear el registro si la base de datos externa está caída.
-                if isinstance(e, ValidationError):
-                    raise e
-                # Log system error here if logger were available
+                # Si falla la conexión, cerramos para limpiar el pool y seguimos
+                try:
+                    conn.close()
+                except:
+                    pass
                 pass 
+            finally:
+                if cursor:
+                    try:
+                        cursor.close()
+                    except:
+                        pass
 
         return username
 

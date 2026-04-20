@@ -12,22 +12,31 @@ _SKIP_PATHS = ('/login', '/logout', '/accounts/login', '/accounts/logout', '/adm
 def _check_databases_connectivity():
     """Verifica las bases de datos en un hilo aparte."""
     # Check Readonly (DGEMPRES03)
+    conn_ro = connections['readonly']
     try:
-        conn = connections['readonly']
-        conn.ensure_connection()
+        conn_ro.ensure_connection()
+        # Intentar una consulta rápida para validar que realmente responde
+        with conn_ro.cursor() as cursor:
+            cursor.execute("SELECT 1")
         cache.set('readonly_db_available', True, 3600)
     except Exception as e:
         logger.warning(f"BD readonly no disponible: {e}")
         cache.set('readonly_db_available', False, 120)
+        try: conn_ro.close()
+        except: pass
     
     # Check Default (GestorInstitucional)
+    conn_def = connections['default']
     try:
-        conn = connections['default']
-        conn.ensure_connection()
+        conn_def.ensure_connection()
+        with conn_def.cursor() as cursor:
+            cursor.execute("SELECT 1")
         cache.set('default_db_available', True, 3600)
     except Exception as e:
         logger.warning(f"BD default no disponible: {e}")
         cache.set('default_db_available', False, 120)
+        try: conn_def.close()
+        except: pass
 
 class DatabaseCheckMiddleware:
     def __init__(self, get_response):
