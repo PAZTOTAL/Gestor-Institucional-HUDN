@@ -88,12 +88,18 @@
 </head>
 
 <body>
-    {% if not readonly_db_available %}
-    <div class="bg-red-600 text-white text-center py-2 px-4 font-bold sticky top-0 z-50 animate-pulse shadow-lg">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 inline-block mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-        </svg>
-        SIN CONECCION A CONSULTA - REVISE BLOQUEO DEL ADMINISTRADOR SQL - EL ADMINISTRADOR BLOQUEO OTRA VEZ - 
+    {% if db_caidas %}
+    <div class="bg-red-600 text-white text-center py-3 px-4 font-bold sticky top-0 z-50 animate-pulse shadow-2xl flex flex-col items-center justify-center gap-1">
+        <div class="flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+            <span class="text-lg">¡ALERTA DE CONEXIÓN SQL!</span>
+        </div>
+        <div class="bg-white/20 px-4 py-1 rounded-full text-xs backdrop-blur-sm border border-white/30">
+            BASES AFECTADAS: <span class="text-yellow-200">{{ db_caidas }}</span>
+        </div>
+        <p class="text-[10px] opacity-80 uppercase mt-1">REVISE BLOQUEO DEL ADMINISTRADOR SQL - EL ADMINISTRADOR BLOQUEÓ OTRA VEZ</p>
     </div>
     {% endif %}
     <div class="flex flex-col min-h-screen">
