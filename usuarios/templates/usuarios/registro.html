@@ -226,6 +226,20 @@
                     </div>
                 </div>
 
+                {% if form.errors %}
+                <div class="p-4 bg-rose-50 border border-rose-200 rounded-2xl space-y-1">
+                    <p class="text-rose-700 font-black text-sm uppercase tracking-wide mb-2">Corrige los siguientes errores:</p>
+                    {% for field in form %}
+                        {% for error in field.errors %}
+                        <p class="text-rose-600 text-sm font-semibold">• <strong>{{ field.label }}:</strong> {{ error }}</p>
+                        {% endfor %}
+                    {% endfor %}
+                    {% for error in form.non_field_errors %}
+                    <p class="text-rose-600 text-sm font-semibold">• {{ error }}</p>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
                 <div class="flex flex-col md:flex-row gap-4 pt-6">
                     <button type="button" onclick="goBack()" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold py-4 rounded-xl transition-all">
                         Regresar
@@ -351,14 +365,16 @@
     {% if form.errors %}
         fillForm({
             cedula: "{{ form.cedula.value|default:'' }}",
-            primer_nombre: "{{ form.first_name.value|default:'' }}",
-            segundo_nombre: "",
-            primer_apellido: "{{ form.last_name.value|default:'' }}",
-            segundo_apellido: "",
-            email: "{{ form.email.value|default:'' }}",
+            primer_nombre: "{{ form.primer_nombre.value|default:'' }}",
+            segundo_nombre: "{{ form.segundo_nombre.value|default:'' }}",
+            primer_apellido: "{{ form.primer_apellido.value|default:'' }}",
+            segundo_apellido: "{{ form.segundo_apellido.value|default:'' }}",
+            email_personal: "{{ form.email_personal.value|default:'' }}",
+            email_institucional: "{{ form.email_institucional.value|default:'' }}",
             direccion: "{{ form.direccion.value|default:'' }}",
             telefono: "{{ form.telefono.value|default:'' }}",
-            fecha_nacimiento: "{{ form.fecha_nacimiento.value|default:'' }}"
+            fecha_nacimiento: "{{ form.fecha_nacimiento.value|default:'' }}",
+            username_institucional: "{{ form.username.value|default:'' }}"
         });
         goToStep2();
     {% endif %}
