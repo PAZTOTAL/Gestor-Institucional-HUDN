@@ -266,71 +266,92 @@ class HomeView(AccessControlMixin, TemplateView):
                 
             return False
 
-        # 1. Definir lista base de módulos (hardcoded para iconos/descripciones detalladas)
-        # pero ahora solo como un complemento. El motor principal será la base de datos.
-        hardcoded_metadata = {
-            'A_00_Organigrama': {'name': 'Organigrama Institucional', 'icon': 'M4 5h16v14H4z'},
-            'mvp': {'name': 'Certificación por OPS', 'url': '/certificados-laborales/'},
-            'hora_extra_list': {'name': 'Horas Extras', 'url': '/horas-extras/asignacion-turnos/'},
-            # ... se pueden añadir más aquí si se desea sobreescribir la DB
-        }
+        # Estructura jerárquica original (Subgerencias)
+        structure = [
+            {
+                'category': {'name': 'HOSPITALIZACION', 'slug': 'hospitalizacion', 'icon': 'M19 14l-7 7-7-7m14-8l-7 7-7-7', 'description': 'Gestión de pacientes en piso'},
+                'modules': []
+            },
+            {
+                'category': {'name': 'QUIRÚRGICAS', 'slug': 'quirofanos', 'icon': 'M22 12h-4l-3 9L9 3l-3 9H2', 'description': 'Cirugía, Anestesia y Procedimientos'},
+                'modules': [
+                    {'name': 'Consentimientos Informados', 'slug': 'ConsentimientosInformados', 'description': 'Autorizaciones y Firmas Electrónicas', 'url': '/consentimientos/', 'icon': 'M12 20h9 M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z'},
+                    {'name': 'Registro de Anestesia', 'slug': 'registro_anestesia', 'description': 'Registro Clínico de Anestesia (FRQUI-032)', 'url': '/registro-anestesia/create/', 'icon': 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z'},
+                    {'name': 'Central de Mezclas', 'slug': 'CentralDeMezclas', 'description': 'Laboratorio de Preparaciones Estériles', 'url': '/central-mezclas/', 'icon': 'M11 10.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5z M5.5 15.5l1.5-2 M17 15.5l-1.5-2 M2 22h20 M7 22l1-4.5 M17 22l-1-4.5'},
+                    {'name': 'Trasplantes y Donación', 'slug': 'trasplantes_donacion', 'description': 'Gestión de Alertas y Trasplantes', 'url': '/modulo/trasplantes_donacion/', 'icon': 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z M12 8v4 M12 16h.01'},
+                    {'name': 'Frecuencia Fetal', 'slug': 'frecuenciafetal', 'description': 'Monitoreo de Frecuencia Cardíaca Fetal', 'url': '/modulo/frecuenciafetal/', 'icon': 'M13 2L3 14h9l-1 8 10-12h-9l1-8z'},
+                ]
+            },
+            {
+                'category': {'name': 'SALA DE PARTOS', 'slug': 'gineco_obstetricia', 'icon': 'M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6', 'description': 'Maternidad y Neonatal'},
+                'modules': [
+                    {'name': 'SALA DE PARTOS', 'slug': 'unificador_v1', 'description': 'Consolidado de Atención de Partos', 'url': '/atencion/', 'icon': 'M19 14l-7 7-7-7m14-8l-7 7-7-7'},
+                ]
+            },
+            {
+                'category': {'name': 'TALENTO HUMANO', 'slug': 'talento_humano', 'icon': 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z', 'description': 'Gestión de personal y nómina'},
+                'modules': [
+                    {'name': 'Organigrama Institucional', 'slug': 'A_00_Organigrama', 'description': 'Estructura Jerárquica - 6 Niveles', 'url': '/organigrama/', 'icon': 'M4 5h16v14H4z'},
+                    {'name': 'Certificación por OPS', 'slug': 'mvp', 'description': 'Generación de documentos de contratación', 'url': '/certificados-laborales/', 'icon': 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z'},
+                    {'name': 'Paz y Salvo', 'slug': 'paz-y-salvo', 'description': 'Trámite de desvinculación', 'url': '/paz-y-salvo/', 'icon': 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z'},
+                ]
+            },
+            {
+                'category': {'name': 'FINANCIERA', 'slug': 'financiera', 'icon': 'M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6', 'description': 'Gestión contable y presupuestal'},
+                'modules': [
+                    {'name': 'Presupuesto', 'slug': 'presupuesto', 'description': 'Gestión Presupuestal', 'url': '/presupuesto/', 'icon': 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2'},
+                    {'name': 'Caja y Tesorería', 'slug': 'tesoreria', 'description': 'Control de pagos y recaudos', 'url': '/modulo/tesoreria/', 'icon': 'M3 10h18M7 15h1m4 0h1m4 0h1'},
+                ]
+            }
+        ]
 
-        # 2. Obtener TODOS los módulos de la base de datos que el usuario tiene permitido
+        # 2. Inyectar módulos dinámicos de DB en la estructura
         from core.models import DashboardModule
-        from django.db.models import Q
-        
         db_modules = DashboardModule.objects.filter(is_active=True)
-        permitted_db_modules = []
-        for m in db_modules:
-            if has_permission(m.slug):
-                meta = hardcoded_metadata.get(m.slug, {})
-                permitted_db_modules.append({
-                    'name': meta.get('name', m.name),
-                    'slug': m.slug,
-                    'description': m.description,
-                    'url': meta.get('url', m.url or f"/modulo/{m.slug}/"),
-                    'icon': meta.get('icon', m.icon),
-                    'category': m.category
-                })
+        for db_m in db_modules:
+            if has_permission(db_m.slug):
+                # Buscar si ya existe la categoría en structure
+                found = False
+                for item in structure:
+                    if item['category']['slug'] == db_m.category:
+                        # Evitar duplicados (slug)
+                        if not any(m['slug'] == db_m.slug for m in item['modules']):
+                            item['modules'].append({
+                                'name': db_m.name,
+                                'slug': db_m.slug,
+                                'description': db_m.description,
+                                'url': db_m.url or f"/modulo/{db_m.slug}/",
+                                'icon': db_m.icon
+                            })
+                        found = True
+                        break
+                # Si no existe la categoría, se ignora o se crea una genérica (para no romper el diseño)
 
-        # 3. Agrupar por categorías para la estructura del Dashboard
-        categories_map = {
-            'asistencial': {'name': 'HOSPITALIZACION / SALUD', 'slug': 'asistencial', 'icon': 'M22 12h-4l-3 9L9 3l-3 9H2'},
-            'talento_humano': {'name': 'TALENTO HUMANO', 'slug': 'talento_humano', 'icon': 'M17 20h5...'},
-            'financiera': {'name': 'FINANZAS', 'slug': 'financiera', 'icon': 'M12 1v22...'},
-            'juridica': {'name': 'JURÍDICA', 'slug': 'juridica', 'icon': 'M12 22s8-4...'},
-            'contabilidad': {'name': 'CONTABILIDAD', 'slug': 'contabilidad', 'icon': 'M9 5H7...'},
-            'consultas': {'name': 'CONSULTAS', 'slug': 'consultas', 'icon': 'M9 17v-2...'},
-            'varios': {'name': 'VARIOS', 'slug': 'varios', 'icon': 'M12 2L2 7...'}
-        }
-
+        # 3. Procesar visibilidad final
         active_structure = []
-        all_permitted_modules = permitted_db_modules
+        all_permitted_modules = []
 
-        # Agrupar módulos en la estructura activa
-        from itertools import groupby
-        from operator import itemgetter
-        
-        # Ordenar por categoría para el groupby
-        all_permitted_modules.sort(key=itemgetter('category'))
-        
-        for cat_slug, modules_gen in groupby(all_permitted_modules, key=itemgetter('category')):
-            modules_list = list(modules_gen)
-            cat_info = categories_map.get(cat_slug, {'name': cat_slug.upper(), 'slug': cat_slug, 'icon': ''})
+        for item in structure:
+            permitted_modules = [m for m in item['modules'] if has_permission(m['slug'])]
             
-            active_structure.append({
-                'category': cat_info,
-                'modules': modules_list
-            })
-            # Poblar variables específicas para el template (nav_...)
-            context[f'nav_{cat_slug}'] = modules_list
+            if permitted_modules or has_permission(item['category']['slug']):
+                active_structure.append({
+                    'category': item['category'],
+                    'modules': permitted_modules
+                })
+                all_permitted_modules.extend(permitted_modules)
+                # Poblar variables nav_ para el template
+                context[f"nav_{item['category']['slug']}"] = permitted_modules
 
-        # Filtros específicos para sub-secciones de Salud (Compatibilidad con template)
-        context['quirofanos_modules'] = [m for m in all_permitted_modules if m['category'] == 'asistencial']
-        context['gineco_modules'] = [m for m in all_permitted_modules if m['category'] == 'asistencial']
-        # Nota: Se pueden granular más si hay categorías específicas en DB para esto.
+        # Filtros específicos Salud
+        context['nav_asistenciales'] = [cat for cat in active_structure if cat['category']['slug'] in ['hospitalizacion', 'quirofanos', 'gineco_obstetricia', 'asistencial', 'consultas']]
+        context['nav_financiera_cat'] = [cat for cat in active_structure if cat['category']['slug'] in ['financiera', 'talento_humano', 'contabilidad']]
+        
+        # Compatibilidad con loops de Salud en template
+        context['quirofanos_modules'] = next((m['modules'] for m in active_structure if m['category']['slug'] == 'quirofanos'), [])
+        context['gineco_modules'] = next((m['modules'] for m in active_structure if m['category']['slug'] == 'gineco_obstetricia'), [])
 
-        # Decide if we show the "Direct View" (skipped category level)
+        # Decide if we show the "Direct View"
         show_direct_modules = (1 <= len(all_permitted_modules) <= 6) and not is_superuser
 
         context.update({
