@@ -352,20 +352,29 @@ class HomeView(AccessControlMixin, TemplateView):
         for item in structure:
             permitted_modules = [m for m in item['modules'] if has_permission(m['slug'])]
             
-            if permitted_modules or has_permission(item['category']['slug']):
+            # Solo añadir si hay módulos o si la categoría en sí es permitida
+            if permitted_modules or is_superuser:
                 active_structure.append({
                     'category': item['category'],
                     'modules': permitted_modules
                 })
                 all_permitted_modules.extend(permitted_modules)
-                # Poblar variables nav_ para el template
                 context[f"nav_{item['category']['slug']}"] = permitted_modules
 
-        # Filtros específicos Salud
-        context['nav_asistenciales'] = [cat for cat in active_structure if cat['category']['slug'] in ['hospitalizacion', 'quirofanos', 'gineco_obstetricia', 'asistencial', 'consultas']]
-        context['nav_financiera_cat'] = [cat for cat in active_structure if cat['category']['slug'] in ['financiera', 'talento_humano', 'contabilidad']]
+        # --- SEPARACIÓN ESTRICTA DE SUBGERENCIAS ---
+        # Salud: Solo lo médico (clínico)
+        salud_slugs = ['hospitalizacion', 'quirofanos', 'gineco_obstetricia', 'urgencias', 'consulta_externa', 'asistencial']
         
-        # Compatibilidad con loops de Salud en template
+        # Finanzas: Solo administrativo, legal y financiero
+        finanzas_slugs = ['financiera', 'talento_humano', 'contabilidad', 'administrativo', 'juridica', 'varios', 'presupuesto', 'consultas']
+
+        nav_asistenciales = [cat for cat in active_structure if cat['category']['slug'] in salud_slugs]
+        nav_financiera_cat = [cat for cat in active_structure if cat['category']['slug'] in finanzas_slugs]
+        
+        context['nav_asistenciales'] = nav_asistenciales
+        context['nav_financiera_cat'] = nav_financiera_cat
+        
+        # Compatibilidad con loops específicos (si los usa el template)
         context['quirofanos_modules'] = next((m['modules'] for m in active_structure if m['category']['slug'] == 'quirofanos'), [])
         context['gineco_modules'] = next((m['modules'] for m in active_structure if m['category']['slug'] == 'gineco_obstetricia'), [])
 
@@ -401,6 +410,8 @@ class HomeView(AccessControlMixin, TemplateView):
             'consultas': context.get('consultas', []),
             'admin_reports': context.get('admin_reports', []),
             'salud_reports': context.get('salud_reports', []),
+            'nav_asistenciales': nav_asistenciales,
+            'nav_financiera_cat': nav_financiera_cat,
         }
         # Inyectar las variables nav_ dinámicas al cache
         for item in active_structure:

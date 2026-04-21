@@ -106,7 +106,8 @@
             <h2 class="text-2xl font-black text-blue-900">SUBGERENCIA DE SALUD</h2>
         </div>
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {% for cat in dashboard_categories %}
+            {% for item in nav_asistenciales %}
+            {% with cat=item.category %}
             <div onclick="showSection('{{ cat.slug }}')" 
                 class="glass-card p-6 cursor-pointer hover:border-blue-500 group transition-all duration-300">
                 <div class="flex flex-col items-center text-center">
@@ -119,300 +120,84 @@
                     <p class="text-dim text-sm">{{ cat.description }}</p>
                 </div>
             </div>
+            {% endwith %}
             {% endfor %}
         </div>
     </div>
 
-    <!-- Secciones Vacías (Marcadores) -->
-    <div id="section-hospitalizacion" class="hidden p-10 text-center glass-card">
-        <h2 class="text-3xl font-black mb-4">MÓDULO HOSPITALIZACIÓN</h2>
-        <p class="text-xl text-gray-500">Próximamente disponible en esta sección.</p>
-    </div>
-
-    <!-- Sección Quirofanos (Con los accesos actuales) -->
-    <div id="section-quirofanos" class="hidden animate-in fade-in slide-in-from-top-2 duration-300">
-        <div class="flex items-center gap-4 mb-6 border-b-2 border-blue-200 pb-2">
-            <button onclick="showSection('asistencial')" class="p-2 hover:bg-blue-100 rounded-full transition-colors">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="text-blue-700"><path d="m15 18-6-6 6-6"/></svg>
-            </button>
-            <h2 class="text-2xl font-black text-blue-900 uppercase">QUIRÓFANOS Y PROCEDIMIENTOS</h2>
-        </div>
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {% for module in quirofanos_modules %}
-            <a href="{{ module.url }}" class="glass-card module-card p-5 flex flex-col items-center text-center">
-                <div class="module-icon mb-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none"
-                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="{{ module.icon }}"></path>
-                    </svg>
-                </div>
-                <h3 class="text-lg font-bold mb-1 text-black">{{ module.name }}</h3>
-                <p class="text-blue-900 text-sm font-medium">{{ module.description }}</p>
-            </a>
-            {% endfor %}
-        </div>
-    </div>
-
-    <div id="section-terapeutica" class="hidden p-10 text-center glass-card">
-        <h2 class="text-3xl font-black mb-4">TERAPEUTICA</h2>
-        <p class="text-xl text-gray-500">Próximamente disponible.</p>
-    </div>
-
-    <div id="section-farmacia" class="hidden p-10 text-center glass-card">
-        <h2 class="text-3xl font-black mb-4">FARMACIA</h2>
-        <p class="text-xl text-gray-500">Próximamente disponible.</p>
-    </div>
-
-    <div id="section-urgencias" class="hidden p-10 text-center glass-card">
-        <h2 class="text-3xl font-black mb-4">URGENCIAS</h2>
-        <p class="text-xl text-gray-500">Próximamente disponible.</p>
-    </div>
-
-    <div id="section-consulta_externa" class="hidden p-10 text-center glass-card">
-        <h2 class="text-3xl font-black mb-4">CONSULTA EXTERNA</h2>
-        <p class="text-xl text-gray-500">Próximamente disponible.</p>
-    </div>
-
-    <div id="section-auditoria_medica" class="hidden p-10 text-center glass-card">
-        <h2 class="text-3xl font-black mb-4">AUDITORIA MEDICA</h2>
-        <p class="text-xl text-gray-500">Próximamente disponible.</p>
-    </div>
-
-    <div id="section-gineco_obstetricia" class="hidden animate-in fade-in slide-in-from-top-2 duration-300">
-        <div class="flex items-center gap-4 mb-6 border-b-2 border-blue-200 pb-2">
-            <button onclick="showSection('asistencial')" class="p-2 hover:bg-blue-100 rounded-full transition-colors">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="text-blue-700"><path d="m15 18-6-6 6-6"/></svg>
-            </button>
-            <h2 class="text-2xl font-black text-blue-900 uppercase">SALA DE PARTOS</h2>
-        </div>
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {% for module in gineco_modules %}
-            <a href="{{ module.url }}" class="glass-card module-card p-5 flex flex-col items-center text-center">
-                <div class="module-icon mb-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none"
-                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="{{ module.icon }}"></path>
-                    </svg>
-                </div>
-                <h3 class="text-lg font-bold mb-1 text-black">{{ module.name }}</h3>
-                <p class="text-blue-900 text-sm font-medium">{{ module.description }}</p>
-            </a>
-            {% endfor %}
-        </div>
-    </div>
-
-    <!-- JURIDICA -->
-    <div id="section-juridica" class="hidden animate-in fade-in slide-in-from-top-2 duration-300">
-        <h2 class="text-2xl font-black mb-6 text-indigo-900 border-b-2 border-indigo-200 pb-2">JURÍDICA</h2>
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {% for module in nav_juridica %}
-            <a href="{{ module.url }}" class="glass-card module-card p-5 flex flex-col items-center text-center">
-                <div class="module-icon mb-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="{{ module.icon|default:'M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z' }}"></path></svg>
-                </div>
-                <h3 class="text-lg font-bold mb-1 text-black">{{ module.name }}</h3>
-                <p class="text-blue-900 text-sm font-medium">{{ module.description }}</p>
-            </a>
-            {% endfor %}
-        </div>
-    </div>
-    <!-- Talento Humano Section -->
-    <div id="section-talento_humano" class="hidden animate-in fade-in slide-in-from-top-2 duration-300">
-        <div class="flex items-center gap-4 mb-6 border-b-2 border-teal-200 pb-2">
-            <button onclick="showSection('subgerencia_financiera')" class="p-2 hover:bg-teal-100 rounded-full transition-colors">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="text-teal-700"><path d="m15 18-6-6 6-6"/></svg>
-            </button>
-            <h2 class="text-2xl font-black text-teal-900 uppercase">TALENTO HUMANO</h2>
-        </div>
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {% for module in nav_talento_humano %}
-            <a href="{{ module.url }}" class="glass-card module-card p-5 flex flex-col items-center text-center">
-                <div class="module-icon mb-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="{{ module.icon|default:'M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2' }}"></path></svg>
-                </div>
-                <h3 class="text-lg font-bold mb-1 text-black">{{ module.name }}</h3>
-                <p class="text-blue-900 text-sm font-medium">{{ module.description }}</p>
-            </a>
-            {% endfor %}
-        </div>
-    </div>
-
-    <!-- FINANCIERA -->
-    <div id="section-financiera" class="hidden animate-in fade-in slide-in-from-top-2 duration-300">
-        <h2 class="text-2xl font-black mb-6 text-emerald-900 border-b-2 border-emerald-200 pb-2">FINANCIERA</h2>
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {% for module in nav_financiera %}
-            <a href="{{ module.url }}" class="glass-card module-card p-5 flex flex-col items-center text-center">
-                <div class="module-icon text-emerald-600 mb-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="{{ module.icon|default:'M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6' }}"></path></svg>
-                </div>
-                <h3 class="text-lg font-bold mb-1 text-black">{{ module.name }}</h3>
-                <p class="text-blue-900 text-sm font-medium">{{ module.description }}</p>
-            </a>
-            {% endfor %}
-        </div>
-    </div>
-
-    <!-- Administrativo (Contenedor de Sub-Categorías) -->
-    <div id="section-administrativo" class="hidden animate-in fade-in slide-in-from-top-2 duration-300">
-        <div class="flex items-center gap-4 mb-6 border-b-2 border-green-200 pb-2">
-            <button onclick="showSelection()" class="p-2 hover:bg-green-100 rounded-full transition-colors">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="text-green-700"><path d="m15 18-6-6 6-6"/></svg>
-            </button>
-            <h2 class="text-2xl font-black text-green-900 uppercase">GESTIÓN ADMINISTRATIVA</h2>
-        </div>
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            <!-- JURIDICA Card -->
-            {% if nav_juridica %}
-            <div onclick="showSection('juridica')" 
-                class="glass-card p-6 cursor-pointer hover:border-indigo-500 group transition-all duration-300">
-                <div class="flex flex-col items-center text-center">
-                    <div class="w-16 h-16 bg-indigo-100 rounded-2xl flex items-center justify-center mb-4 text-indigo-500 group-hover:bg-indigo-500 group-hover:text-white transition-all">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
-                    </div>
-                    <h2 class="text-xl font-bold mb-2">JURÍDICA</h2>
-                    <p class="text-dim text-sm">Procesos Judiciales y Tutelas.</p>
-                </div>
-            </div>
-            {% endif %}
-
-            <!-- SUBGERENCIA FINANCIERA Card -->
-            {% if nav_talento_humano or nav_financiera or nav_contabilidad %}
-            <div onclick="showSection('subgerencia_financiera')" 
-                class="glass-card p-6 cursor-pointer hover:border-blue-600 group transition-all duration-300">
-                <div class="flex flex-col items-center text-center">
-                    <div class="w-16 h-16 bg-blue-100 rounded-2xl flex items-center justify-center mb-4 text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-all">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
-                    </div>
-                    <h2 class="text-xl font-bold mb-2">SUBGERENCIA FINANCIERA</h2>
-                    <p class="text-dim text-sm">Financiera, Contabilidad y Almacén.</p>
-                </div>
-            </div>
-            {% endif %}
-        </div>
-    </div>
-
-    <!-- SUBGERENCIA FINANCIERA (Section) -->
+    <!-- SUBGERENCIA FINANCIERA (Nivel 2: Gestión Administrativa) -->
     <div id="section-subgerencia_financiera" class="hidden animate-in fade-in slide-in-from-top-2 duration-300">
-        <div class="flex items-center gap-4 mb-6 border-b-2 border-green-200 pb-2">
-            <button onclick="showSection('gerencia_nive1')" class="p-2 hover:bg-green-100 rounded-full transition-colors">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="text-green-700"><path d="m15 18-6-6 6-6"/></svg>
-            </button>
-            <h2 class="text-2xl font-black text-green-900 uppercase">SUBGERENCIA FINANCIERA</h2>
-        </div>
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            <!-- FINANZAS Card -->
-            {% if nav_financiera or nav_contabilidad %}
-            <div onclick="showSection('financiera_detallada')" 
-                class="glass-card p-6 cursor-pointer hover:border-blue-600 group transition-all duration-300">
-                <div class="flex flex-col items-center text-center">
-                    <div class="w-16 h-16 bg-blue-100 rounded-2xl flex items-center justify-center mb-4 text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-all">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
-                    </div>
-                    <h2 class="text-xl font-bold mb-2">FINANZAS</h2>
-                    <p class="text-dim text-sm">Contabilidad, Presupuesto, Tesorería.</p>
-                </div>
-            </div>
-            {% endif %}
-
-            <!-- TALENTO HUMANO Card -->
-            {% if nav_talento_humano %}
-            <div onclick="showSection('talento_humano')" 
-                class="glass-card p-6 cursor-pointer hover:border-teal-500 group transition-all duration-300">
-                <div class="flex flex-col items-center text-center">
-                    <div class="w-16 h-16 bg-teal-100 rounded-2xl flex items-center justify-center mb-4 text-teal-500 group-hover:bg-teal-500 group-hover:text-white transition-all">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
-                    </div>
-                    <h2 class="text-xl font-bold mb-2 uppercase">TALENTO HUMANO</h2>
-                    <p class="text-dim text-sm">Nómina, Contratación, Bienestar.</p>
-                </div>
-            </div>
-            {% endif %}
-
-            <!-- BIENES Y SERVICIOS Card -->
-            {% if nav_asistenciales_varios %} <!-- Marcador si hubiera -->
-            <div onclick="showSection('bienes_servicios')" 
-                class="glass-card p-6 cursor-pointer hover:border-emerald-600 group transition-all duration-300">
-                <div class="flex flex-col items-center text-center">
-                    <div class="w-16 h-16 bg-emerald-100 rounded-2xl flex items-center justify-center mb-4 text-emerald-600 group-hover:bg-emerald-600 group-hover:text-white transition-all">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg>
-                    </div>
-                    <h2 class="text-xl font-bold mb-2">BIENES Y SERVICIOS</h2>
-                    <p class="text-dim text-sm">Mantenimiento y Apoyo Logístico.</p>
-                </div>
-            </div>
-            {% endif %}
-        </div>
-
-            <!-- GESTION DE LA INFORMACION Card -->
-            {% if nav_varios %}
-            <div onclick="showSection('gestion_informacion')" 
-                class="glass-card p-6 cursor-pointer hover:border-amber-600 group transition-all duration-300">
-                <div class="flex flex-col items-center text-center">
-                    <div class="w-16 h-16 bg-amber-100 rounded-2xl flex items-center justify-center mb-4 text-amber-600 group-hover:bg-amber-600 group-hover:text-white transition-all">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
-                    </div>
-                    <h2 class="text-xl font-bold mb-2">GESTIÓN INFORMACIÓN</h2>
-                    <p class="text-dim text-sm">Sistemas y Archivo Clínico.</p>
-                </div>
-            </div>
-            {% endif %}
-        </div>
-    </div>
-
-    <!-- GESTIÓN DE LA INFORMACIÓN (Section) -->
-    <div id="section-gestion_informacion" class="hidden animate-in fade-in slide-in-from-top-2 duration-300">
-        <div class="flex items-center gap-4 mb-6 border-b-2 border-amber-200 pb-2">
-            <button onclick="showSection('subgerencia_financiera')" class="p-2 hover:bg-amber-100 rounded-full transition-colors">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="text-amber-700"><path d="m15 18-6-6 6-6"/></svg>
-            </button>
-            <h2 class="text-2xl font-black text-amber-900 uppercase">GESTIÓN DE LA INFORMACIÓN</h2>
-        </div>
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <div class="glass-card p-6 flex flex-col items-center text-center">
-                <div class="w-16 h-16 bg-amber-50 rounded-2xl flex items-center justify-center mb-4 text-amber-600">
-                    <i class="bi bi-cpu text-3xl"></i>
-                </div>
-                <h3 class="text-xl font-bold mb-1">SISTEMAS</h3>
-                <p class="text-dim text-sm">Soporte y Desarrollo.</p>
-            </div>
-            <div class="glass-card p-6 flex flex-col items-center text-center">
-                <div class="w-16 h-16 bg-amber-50 rounded-2xl flex items-center justify-center mb-4 text-amber-600">
-                    <i class="bi bi-folder text-3xl"></i>
-                </div>
-                <h3 class="text-xl font-bold mb-1">ARCHIVO CLÍNICO</h3>
-                <p class="text-dim text-sm">Historias y Registros.</p>
-            </div>
-            <div class="glass-card p-6 flex flex-col items-center text-center">
-                <div class="w-16 h-16 bg-amber-50 rounded-2xl flex items-center justify-center mb-4 text-amber-600">
-                    <i class="bi bi-box text-3xl"></i>
-                </div>
-                <h3 class="text-xl font-bold mb-1">ARCHIVO GENERAL</h3>
-                <p class="text-dim text-sm">Documentación Institucional.</p>
-            </div>
-        </div>
-    </div>
-
-    <!-- FINANZAS DETALLE (Acceso Directo a Módulos) -->
-    <div id="section-financiera_detallada" class="hidden animate-in fade-in slide-in-from-top-2 duration-300">
-        <div class="flex items-center gap-4 mb-8 border-b-2 border-slate-200 pb-4">
-            <button onclick="showSection('subgerencia_financiera')" class="p-2 hover:bg-slate-100 rounded-full transition-colors">
+        <div class="flex items-center gap-4 mb-10 border-b-2 border-green-900/20 pb-4">
+            <button onclick="showSection('gerencia_nive1')" class="p-2 hover:bg-slate-100 rounded-full transition-colors">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="text-blue-900"><path d="m15 18-6-6 6-6"/></svg>
             </button>
-            <h2 class="text-3xl font-black text-blue-950 uppercase tracking-tighter">FINANZAS</h2>
+            <h2 class="text-3xl font-black text-blue-950 uppercase tracking-tighter">SUBGERENCIA FINANCIERA</h2>
         </div>
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {% for module in nav_financiera %}
-            <a href="{{ module.url }}" class="glass-card p-10 flex flex-col items-center text-center border-b-4 border-blue-500 hover:border-blue-700 transition-all hover:-translate-y-2 group">
-                <div class="w-20 h-20 bg-blue-50 rounded-3xl flex items-center justify-center mb-6 text-blue-500 group-hover:bg-blue-600 group-hover:text-white transition-all">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="{{ module.icon|default:'M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6' }}"></path></svg>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {% for item in nav_financiera_cat %}
+            {% with cat=item.category %}
+            <div onclick="showSection('{{ cat.slug }}')" 
+                class="glass-card p-6 cursor-pointer hover:border-green-500 group transition-all duration-300">
+                <div class="flex flex-col items-center text-center">
+                    <div class="w-16 h-16 bg-green-100 rounded-2xl flex items-center justify-center mb-4 text-green-500 group-hover:bg-green-500 group-hover:text-white transition-all">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="{{ cat.icon|default:'M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6' }}"></path>
+                        </svg>
+                    </div>
+                    <h2 class="text-xl font-black mb-2 uppercase">{{ cat.name }}</h2>
+                    <p class="text-dim text-sm">{{ cat.description }}</p>
                 </div>
-                <h3 class="text-2xl font-black mb-2 text-blue-950 uppercase tracking-tight">{{ module.name }}</h3>
-                <p class="text-slate-500 text-lg font-medium">{{ module.description }}</p>
-                <div class="mt-4 text-blue-600 font-bold text-sm opacity-0 group-hover:opacity-100 transition-opacity">ABRIR MÓDULO</div>
-            </a>
+            </div>
+            {% endwith %}
             {% endfor %}
         </div>
+    </div>
+
+    <!-- SECCIONES DINÁMICAS (Nivel 3: Lista de Módulos por Categoría) -->
+    {% for item in active_structure %}
+    {% with cat=item.category %}
+    <div id="section-{{ cat.slug }}" class="hidden animate-in fade-in slide-in-from-top-2 duration-300">
+        <div class="flex items-center gap-4 mb-8 border-b-2 border-slate-200 pb-4">
+            <button onclick="{% if cat.slug in 'hospitalizacion quirofanos gineco_obstetricia asistencial urgencias consulta_externa' %}showSection('asistencial'){% else %}showSection('subgerencia_financiera'){% endif %}" class="p-2 hover:bg-slate-100 rounded-full transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="text-blue-900"><path d="m15 18-6-6 6-6"/></svg>
+            </button>
+            <div>
+                <h2 class="text-3xl font-black text-blue-950 uppercase tracking-tighter">{{ cat.name }}</h2>
+                <p class="text-slate-500 font-medium">{{ cat.description }}</p>
+            </div>
+        </div>
+
+        {% if item.modules %}
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {% for module in item.modules %}
+                <a href="{{ module.url }}" class="glass-card p-8 flex flex-col items-center text-center border-b-4 border-blue-500 hover:border-blue-700 transition-all hover:-translate-y-2 group">
+                    <div class="w-20 h-20 bg-blue-50 rounded-3xl flex items-center justify-center mb-6 text-blue-500 group-hover:bg-blue-600 group-hover:text-white transition-all">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="{{ module.icon|default:'M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5' }}"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-2xl font-black mb-2 text-blue-950 uppercase tracking-tight">{{ module.name }}</h3>
+                    <p class="text-slate-500 text-lg font-medium">{{ module.description }}</p>
+                    <div class="mt-4 text-blue-600 font-bold text-sm opacity-0 group-hover:opacity-100 transition-opacity">ABRIR APLICACIÓN</div>
+                </a>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="p-20 text-center glass-card">
+                <div class="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-6 text-slate-400">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+                </div>
+                <h3 class="text-2xl font-bold text-slate-400 uppercase">Sin módulos asignados</h3>
+                <p class="text-slate-500">No tienes permisos para aplicaciones en esta categoría.</p>
+            </div>
+        {% endif %}
+    </div>
+    {% endwith %}
+    {% endfor %}
+
+    <!-- Sección Consultas (Módulo Especial Especial) -->
+    <div id="section-consultas_panel" class="hidden animate-in fade-in slide-in-from-top-2 duration-300">
+        <!-- Renderizado manual solo para reportes específicos si no son dinámicos -->
     </div>
 
 
