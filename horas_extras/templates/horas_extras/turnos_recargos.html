@@ -53,8 +53,20 @@
         <h2 class="font-black text-slate-800 text-lg">Selecciona el Área</h2>
         <button onclick="cargarAreas()" class="text-slate-500 hover:text-blue-600 text-xl font-bold" title="Recargar">↻</button>
       </div>
+      <input type="text" id="buscar-area-t1" placeholder="Buscar área..."
+        oninput="busquedaAreasT1()" autocomplete="off"
+        class="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm mb-3 focus:outline-none focus:ring-2 focus:ring-blue-300">
       <div id="areas-container">
         <p class="text-slate-400 text-sm">Cargando áreas...</p>
+      </div>
+      <div id="areas-pag-t1" class="flex items-center justify-between mt-3 hidden">
+        <span id="areas-info-t1" class="text-xs text-slate-400"></span>
+        <div class="flex gap-2">
+          <button onclick="cambiarPaginaAreasT1(-1)" id="areas-prev-t1"
+            class="px-3 py-1 text-xs font-bold bg-slate-100 rounded-lg hover:bg-slate-200 disabled:opacity-40">← Ant</button>
+          <button onclick="cambiarPaginaAreasT1(1)" id="areas-next-t1"
+            class="px-3 py-1 text-xs font-bold bg-slate-100 rounded-lg hover:bg-slate-200 disabled:opacity-40">Sig →</button>
+        </div>
       </div>
     </div>
 
@@ -88,14 +100,24 @@
   <!-- ── PASO 2: Empleados ─────────────────────────────────────────────── -->
   <div id="paso2" class="hidden">
     <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
-      <div class="flex items-center gap-3 mb-5">
+      <div class="flex items-center gap-3 mb-4">
         <button onclick="irPaso1()" class="px-3 py-1 bg-slate-100 rounded-lg text-sm font-bold hover:bg-slate-200">← Volver</button>
         <div>
           <div class="font-black text-slate-800 text-lg" id="paso2-titulo"></div>
           <div class="text-slate-400 text-sm" id="paso2-subtitulo"></div>
         </div>
       </div>
+      <input type="text" id="buscar-emp-t2" placeholder="Buscar funcionario por nombre o cédula..."
+        oninput="busquedaEmpleadosPaso2()"
+        class="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm mb-4 focus:outline-none focus:ring-2 focus:ring-blue-300">
       <div id="empleados-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3"></div>
+      <div id="emp-pag-t2" class="flex items-center justify-between mt-4 hidden">
+        <span id="emp-info-t2" class="text-xs text-slate-400"></span>
+        <div class="flex gap-2">
+          <button onclick="cambiarPaginaT2(-1)" class="px-3 py-1 text-sm font-bold bg-slate-100 rounded-lg hover:bg-slate-200">← Ant</button>
+          <button onclick="cambiarPaginaT2(1)"  class="px-3 py-1 text-sm font-bold bg-slate-100 rounded-lg hover:bg-slate-200">Sig →</button>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -263,17 +285,42 @@ function getMonthState(year, month) {
 function canEdit(year, month) { return getMonthState(year,month)==='editable'; }
 
 // ── Paso 1 ──────────────────────────────────────────────────────────────────
-async function cargarAreas() {
+let areaT1Pagina = 1;
+let areaT1Busqueda = '';
+let areaT1Timer = null;
+let areaT1Pages = 1;
+
+async function cargarAreas(pagina=1) {
+  areaT1Pagina = pagina;
   document.getElementById('areas-container').innerHTML = '<p class="text-slate-400 text-sm">Cargando...</p>';
-  const r = await api('areas/');
-  areas = await r.json();
-  renderAreas();
+  const qs = `?page=${pagina}&page_size=5${areaT1Busqueda ? '&q='+encodeURIComponent(areaT1Busqueda) : ''}`;
+  const r    = await api('areas/' + qs);
+  const data = await r.json();
+  areas = data.results || data;
+  areaT1Pages = data.pages || 1;
+  renderAreas(data);
 }
 
-function renderAreas() {
-  const c = document.getElementById('areas-container');
+function busquedaAreasT1() {
+  clearTimeout(areaT1Timer);
+  areaT1Timer = setTimeout(() => {
+    areaT1Busqueda = document.getElementById('buscar-area-t1').value.trim();
+    cargarAreas(1);
+  }, 350);
+}
+
+function cambiarPaginaAreasT1(delta) {
+  const nueva = areaT1Pagina + delta;
+  if (nueva < 1 || nueva > areaT1Pages) return;
+  cargarAreas(nueva);
+}
+
+function renderAreas(resp={}) {
+  const c   = document.getElementById('areas-container');
+  const pag = document.getElementById('areas-pag-t1');
   if (!areas.length) {
     c.innerHTML = '<p class="text-slate-400 text-sm">No hay áreas. Ve a <strong>Configuración</strong> para crearlas.</p>';
+    pag.classList.add('hidden');
     return;
   }
   c.innerHTML = areas.map(a => `
@@ -284,6 +331,17 @@ function renderAreas() {
       ${a.descripcion?`<div class="text-slate-500 text-xs">${a.descripcion}</div>`:''}
       <div class="text-xs text-slate-400 mt-1">${a.total_trabajadores??0} empleado(s)</div>
     </div>`).join('');
+
+  if (resp.total > 5) {
+    const inicio = (resp.page - 1) * 5 + 1;
+    const fin    = Math.min(resp.page * 5, resp.total);
+    document.getElementById('areas-info-t1').textContent = `${inicio}–${fin} de ${resp.total}`;
+    document.getElementById('areas-prev-t1').disabled = resp.page <= 1;
+    document.getElementById('areas-next-t1').disabled = resp.page >= resp.pages;
+    pag.classList.remove('hidden');
+  } else {
+    pag.classList.add('hidden');
+  }
 }
 
 function selArea(id) {
@@ -343,8 +401,15 @@ function irPaso1() {
 }
 
 // ── Paso 2 ──────────────────────────────────────────────────────────────────
-async function irPaso2() {
+let empT2Pagina = 1;
+let empT2Busqueda = '';
+let empT2Timer = null;
+let empT2Total = 0;
+let empT2Pages = 1;
+
+async function irPaso2(pagina=1) {
   if (!areaSeleccionada || !mesSeleccionado) return;
+  empT2Pagina = pagina;
   paso = 2;
   setStep(2);
   document.getElementById('paso2-titulo').textContent =
@@ -353,21 +418,39 @@ async function irPaso2() {
   document.getElementById('empleados-container').innerHTML =
     '<p class="text-slate-400 col-span-3">Cargando empleados...</p>';
 
-  const r = await api(`empleados/?area=${areaSeleccionada.id}`);
-  const empleados = await r.json();
+  let qs = `?page=${pagina}&page_size=12&area=${areaSeleccionada.id}`;
+  if (empT2Busqueda) qs += `&q=${encodeURIComponent(empT2Busqueda)}`;
+  const r    = await api(`empleados/${qs}`);
+  const data = await r.json();
+  const empleados = data.results || data;
+  empT2Total = data.total || empleados.length;
+  empT2Pages = data.pages || 1;
 
   const c = document.getElementById('empleados-container');
   if (!empleados.length) {
     c.innerHTML = '<p class="text-slate-400 col-span-3">No hay empleados en esta área. Ve a <strong>Configuración</strong>.</p>';
+    document.getElementById('emp-pag-t2').classList.add('hidden');
     return;
   }
-  c.innerHTML = empleados.map(e => `
-    <div class="p-4 rounded-xl border-2 border-slate-200 hover:border-blue-400 transition">
+  const TIPO_CARD = {
+    permanente: {border:'#93c5fd', bg:'#eff6ff', badge:'#1d4ed8', badgeBg:'#dbeafe', label:'Permanente'},
+    temporal:   {border:'#fcd34d', bg:'#fffbeb', badge:'#92400e', badgeBg:'#fef3c7', label:'Temporal'},
+    ops:        {border:'#c4b5fd', bg:'#f5f3ff', badge:'#5b21b6', badgeBg:'#ede9fe', label:'OPS'},
+  };
+  c.innerHTML = empleados.map(e => {
+    const tc = TIPO_CARD[e.tipo] || TIPO_CARD.temporal;
+    return `
+    <div class="p-4 rounded-xl border-2 hover:opacity-90 transition"
+         style="border-color:${tc.border};background:${tc.bg}">
       <div onclick="selEmpleado(${JSON.stringify(e).replace(/"/g,'&quot;')})"
-           class="cursor-pointer hover:opacity-80 transition mb-3">
-        <div class="font-bold text-slate-800">${e.nombre}</div>
+           class="cursor-pointer transition mb-3">
+        <div class="flex items-start justify-between gap-1 mb-1">
+          <div class="font-bold text-slate-800 text-sm leading-tight">${e.nombre}</div>
+          <span class="text-[10px] font-black px-1.5 py-0.5 rounded-full shrink-0"
+                style="color:${tc.badge};background:${tc.badgeBg}">${tc.label}</span>
+        </div>
         <div class="text-xs text-slate-500">${e.documento}</div>
-        <div class="text-xs text-slate-400">${e.cargo||'—'} · ${e.tipo_display}</div>
+        <div class="text-xs text-slate-400">${e.cargo||'—'}</div>
       </div>
       <div class="flex gap-1">
         <button onclick="selEmpleado(${JSON.stringify(e).replace(/"/g,'&quot;')})"
@@ -381,7 +464,29 @@ async function irPaso2() {
           ⇄ Área
         </button>` : ''}
       </div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
+
+  // Paginación
+  const pag   = document.getElementById('emp-pag-t2');
+  const inicio = (pagina - 1) * 12 + 1;
+  const fin    = Math.min(pagina * 12, empT2Total);
+  document.getElementById('emp-info-t2').textContent = `Mostrando ${inicio}–${fin} de ${empT2Total}`;
+  pag.classList.toggle('hidden', empT2Total <= 12);
+}
+
+function busquedaEmpleadosPaso2() {
+  clearTimeout(empT2Timer);
+  empT2Timer = setTimeout(() => {
+    empT2Busqueda = document.getElementById('buscar-emp-t2').value.trim();
+    irPaso2(1);
+  }, 350);
+}
+
+function cambiarPaginaT2(delta) {
+  const nueva = empT2Pagina + delta;
+  if (nueva < 1 || nueva > empT2Pages) return;
+  irPaso2(nueva);
 }
 
 function selEmpleado(emp) {
