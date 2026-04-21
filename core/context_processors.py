@@ -3,6 +3,8 @@ from .models import DashboardModule
 from usuarios.models import PermisoApp
 
 
+def modules_processor(request):
+    """Provides navigation modules filtered by user permissions."""
     if not request.user.is_authenticated:
         return {}
 
