@@ -45,8 +45,23 @@
         </button>
         {% endif %}
       </div>
+      <!-- Buscador áreas -->
+      <div class="mb-4">
+        <input type="text" id="buscar-area" placeholder="Buscar área / servicio..."
+          oninput="busquedaAreas()" autocomplete="off"
+          class="w-full border border-slate-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300">
+      </div>
       <div id="areas-body">
         <p class="text-slate-400 text-sm py-4">Cargando...</p>
+      </div>
+      <div id="areas-paginacion" class="flex items-center justify-between mt-4 hidden">
+        <span id="areas-info" class="text-xs text-slate-400"></span>
+        <div class="flex gap-2">
+          <button onclick="cambiarPaginaAreas(-1)" id="areas-prev"
+            class="px-3 py-1 text-sm font-bold bg-slate-100 rounded-lg hover:bg-slate-200 disabled:opacity-40">← Ant</button>
+          <button onclick="cambiarPaginaAreas(1)" id="areas-next"
+            class="px-3 py-1 text-sm font-bold bg-slate-100 rounded-lg hover:bg-slate-200 disabled:opacity-40">Sig →</button>
+        </div>
       </div>
     </div>
   </div>
@@ -72,17 +87,28 @@
         </div>
       </div>
 
-      <!-- Filtro -->
-      <div class="flex items-center gap-3 mb-4">
-        <label class="text-sm font-medium text-slate-600">Filtrar área:</label>
+      <!-- Buscador + Filtro área -->
+      <div class="flex flex-wrap gap-3 mb-4">
+        <input type="text" id="buscar-emp" placeholder="Buscar por nombre o cédula..."
+          oninput="busquedaEmpleados()"
+          class="flex-1 min-w-[200px] border border-slate-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300">
         <select id="filtro-area-emp" onchange="filtrarEmpleados()"
-          class="border border-slate-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400">
+          class="border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400">
           <option value="">Todas las áreas</option>
         </select>
       </div>
 
       <div id="empleados-body">
         <p class="text-slate-400 text-sm py-4">Cargando...</p>
+      </div>
+      <div id="emp-paginacion" class="flex items-center justify-between mt-4 hidden">
+        <span id="emp-info" class="text-xs text-slate-400"></span>
+        <div class="flex gap-2">
+          <button onclick="cambiarPaginaEmp(-1)" id="emp-prev"
+            class="px-3 py-1 text-sm font-bold bg-slate-100 rounded-lg hover:bg-slate-200 disabled:opacity-40">← Ant</button>
+          <button onclick="cambiarPaginaEmp(1)" id="emp-next"
+            class="px-3 py-1 text-sm font-bold bg-slate-100 rounded-lg hover:bg-slate-200 disabled:opacity-40">Sig →</button>
+        </div>
       </div>
     </div>
   </div>
@@ -98,6 +124,9 @@
           + Nuevo Coordinador
         </button>
       </div>
+      <input type="text" id="buscar-coord" placeholder="Buscar por nombre o cédula..." autocomplete="off"
+        oninput="filtrarCoords()"
+        class="w-full border border-slate-200 rounded-xl px-4 py-2 text-sm mb-4 focus:outline-none focus:ring-2 focus:ring-blue-300">
       <div id="coords-body">
         <p class="text-slate-400 text-sm py-4">Cargando...</p>
       </div>
@@ -187,9 +216,23 @@
     <h3 id="modal-coord-title" class="text-xl font-black text-slate-800 mb-4">Nuevo Coordinador</h3>
     <div id="modal-coord-error" class="hidden mb-3 px-4 py-2 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm"></div>
 
+    <!-- Búsqueda por cédula desde personal -->
+    <div class="mb-4 p-3 bg-slate-50 rounded-xl border border-slate-200">
+      <label class="block text-xs font-black text-slate-500 uppercase tracking-wide mb-2">Buscar en personal</label>
+      <div class="flex gap-2">
+        <input id="coord-buscar-cedula" type="text" placeholder="Ingresa la cédula..." autocomplete="off"
+          onkeydown="if(event.key==='Enter') buscarCoordEnPersonal()"
+          class="flex-1 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400">
+        <button onclick="buscarCoordEnPersonal()" style="background:#1e3a5f;color:white"
+          class="px-4 py-2 rounded-xl text-sm font-bold hover:opacity-90 transition">Buscar</button>
+      </div>
+      <div id="coord-buscar-resultado" class="hidden mt-2 text-xs text-emerald-700 font-bold bg-emerald-50 px-3 py-2 rounded-lg border border-emerald-200"></div>
+      <div id="coord-buscar-error" class="hidden mt-2 text-xs text-rose-600 font-bold bg-rose-50 px-3 py-2 rounded-lg border border-rose-200"></div>
+    </div>
+
     <div id="coord-username-row" class="mb-4">
       <label class="block text-sm font-semibold text-slate-700 mb-1">Nombre de usuario *</label>
-      <input id="coord-username" type="text" placeholder="Ej: jperez"
+      <input id="coord-username" type="text" placeholder="Ej: jperez" autocomplete="off"
         class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400">
     </div>
     <div class="mb-4">
@@ -385,21 +428,44 @@ function setTab(tab) {
 // ══════════════════════════════════════════════════════════════════════
 // ÁREAS
 // ══════════════════════════════════════════════════════════════════════
-async function cargarAreas() {
+let areasPagina = 1;
+let areasBusqueda = '';
+let areasTimer = null;
+
+async function cargarAreas(pagina=1) {
+  areasPagina = pagina;
+  const el = document.getElementById('areas-body');
+  el.innerHTML = '<p class="text-slate-400 text-sm py-4">Cargando...</p>';
   try {
-    areas = await api('areas/');
-    renderAreas();
+    const pageSize = areasBusqueda ? 10 : 50;
+    const qs = `?page=${pagina}&page_size=${pageSize}${areasBusqueda ? '&q='+encodeURIComponent(areasBusqueda) : ''}`;
+    const resp = await api('areas/' + qs);
+    areas = resp.results;
+    renderAreas(resp);
     poblarSelectAreas();
   } catch(e) {
-    document.getElementById('areas-body').innerHTML =
-      '<p class="text-red-500 text-sm py-4">Error al cargar áreas.</p>';
+    el.innerHTML = '<p class="text-red-500 text-sm py-4">Error al cargar áreas.</p>';
   }
 }
 
-function renderAreas() {
+function busquedaAreas() {
+  clearTimeout(areasTimer);
+  areasTimer = setTimeout(() => {
+    areasBusqueda = document.getElementById('buscar-area').value.trim();
+    cargarAreas(1);
+  }, 350);
+}
+
+function cambiarPaginaAreas(delta) {
+  cargarAreas(areasPagina + delta);
+}
+
+function renderAreas(resp) {
   const el = document.getElementById('areas-body');
+  const pag = document.getElementById('areas-paginacion');
   if (!areas.length) {
     el.innerHTML = '<p class="text-slate-400 text-sm py-4">No hay servicios. Crea el primero para comenzar.</p>';
+    pag.classList.add('hidden');
     return;
   }
   let html = `<div class="overflow-x-auto"><table class="w-full text-sm">
@@ -426,18 +492,34 @@ function renderAreas() {
   });
   html += '</tbody></table></div>';
   el.innerHTML = html;
+
+  // Paginación
+  const inicio = (resp.page - 1) * resp.page_size + 1;
+  const fin    = Math.min(resp.page * resp.page_size, resp.total);
+  document.getElementById('areas-info').textContent = `Mostrando ${inicio}–${fin} de ${resp.total}`;
+  document.getElementById('areas-prev').disabled = resp.page <= 1;
+  document.getElementById('areas-next').disabled = resp.page >= resp.pages;
+  pag.classList.toggle('hidden', resp.total <= resp.page_size);
 }
 
-function poblarSelectAreas() {
-  const filtro = document.getElementById('filtro-area-emp');
+async function poblarSelectAreas() {
+  // Carga todas las áreas para los selects (sin paginación)
+  let todasAreas = areas;
+  if (!todasAreas.length) {
+    try {
+      const resp = await api('areas/?page_size=50&page=1');
+      todasAreas = resp.results || [];
+    } catch { todasAreas = []; }
+  }
+  const filtro  = document.getElementById('filtro-area-emp');
   const empArea = document.getElementById('emp-area');
   if (filtro) {
     filtro.innerHTML = '<option value="">Todas las áreas</option>' +
-      areas.map(a => `<option value="${a.id}">${a.nombre}</option>`).join('');
+      todasAreas.map(a => `<option value="${a.id}">${a.nombre}</option>`).join('');
   }
   if (empArea) {
     empArea.innerHTML = '<option value="">— Seleccionar —</option>' +
-      areas.map(a => `<option value="${a.id}">${a.nombre}</option>`).join('');
+      todasAreas.map(a => `<option value="${a.id}">${a.nombre}</option>`).join('');
   }
 }
 
@@ -488,29 +570,55 @@ async function eliminarArea(id, nombre) {
 // ══════════════════════════════════════════════════════════════════════
 // EMPLEADOS
 // ══════════════════════════════════════════════════════════════════════
-async function cargarEmpleados(areaId='') {
+let empPagina = 1;
+let empBusqueda = '';
+let empTimer = null;
+
+async function cargarEmpleados(areaId='', pagina=1) {
+  empPagina = pagina;
   const el = document.getElementById('empleados-body');
   el.innerHTML = '<p class="text-slate-400 text-sm py-4">Cargando...</p>';
   try {
-    const qs = areaId ? `?area=${areaId}` : '';
-    empleados = await api(`empleados/${qs}`);
-    renderEmpleados();
+    let qs = `?page=${pagina}&page_size=10`;
+    if (areaId) qs += `&area=${areaId}`;
+    if (empBusqueda) qs += `&q=${encodeURIComponent(empBusqueda)}`;
+    const resp = await api(`empleados/${qs}`);
+    empleados = resp.results;
+    renderEmpleados(resp);
   } catch {
     el.innerHTML = '<p class="text-red-500 text-sm py-4">Error al cargar funcionarios.</p>';
   }
 }
 
 function filtrarEmpleados() {
+  empBusqueda = '';
+  document.getElementById('buscar-emp').value = '';
   const areaId = document.getElementById('filtro-area-emp').value;
-  cargarEmpleados(areaId);
+  cargarEmpleados(areaId, 1);
+}
+
+function busquedaEmpleados() {
+  clearTimeout(empTimer);
+  empTimer = setTimeout(() => {
+    empBusqueda = document.getElementById('buscar-emp').value.trim();
+    const areaId = document.getElementById('filtro-area-emp').value;
+    cargarEmpleados(areaId, 1);
+  }, 350);
+}
+
+function cambiarPaginaEmp(delta) {
+  const areaId = document.getElementById('filtro-area-emp').value;
+  cargarEmpleados(areaId, empPagina + delta);
 }
 
 const TIPO_COLORS = {permanente:'bg-blue-100 text-blue-800', temporal:'bg-amber-100 text-amber-800', ops:'bg-purple-100 text-purple-800'};
 
-function renderEmpleados() {
-  const el = document.getElementById('empleados-body');
+function renderEmpleados(resp) {
+  const el  = document.getElementById('empleados-body');
+  const pag = document.getElementById('emp-paginacion');
   if (!empleados.length) {
     el.innerHTML = '<p class="text-slate-400 text-sm py-4">No hay funcionarios.</p>';
+    pag.classList.add('hidden');
     return;
   }
   let html = `<div class="overflow-x-auto"><table class="w-full text-sm">
@@ -544,6 +652,14 @@ function renderEmpleados() {
   });
   html += '</tbody></table></div>';
   el.innerHTML = html;
+
+  // Paginación empleados
+  const inicio = (resp.page - 1) * resp.page_size + 1;
+  const fin    = Math.min(resp.page * resp.page_size, resp.total);
+  document.getElementById('emp-info').textContent = `Mostrando ${inicio}–${fin} de ${resp.total}`;
+  document.getElementById('emp-prev').disabled = resp.page <= 1;
+  document.getElementById('emp-next').disabled = resp.page >= resp.pages;
+  pag.classList.toggle('hidden', resp.total <= resp.page_size);
 }
 
 function abrirModalEmpleado(id=null) {
@@ -581,7 +697,7 @@ async function guardarEmpleado() {
       await api('empleados/', {method:'POST', body: JSON.stringify({nombre,documento,cargo,area,tipo})});
     }
     cerrarModalEmpleado();
-    cargarEmpleados(document.getElementById('filtro-area-emp').value);
+    cargarEmpleados(document.getElementById('filtro-area-emp').value, 1);
   } catch(e) {
     errEl.textContent = e.error || e.documento?.[0] || 'Error al guardar';
     errEl.classList.remove('hidden');
@@ -594,7 +710,7 @@ async function eliminarEmpleado(id, nombre) {
   if (!confirm(`¿Eliminar a ${nombre}? Se borrarán todos sus turnos.`)) return;
   try {
     await api(`empleados/${id}/`, {method:'DELETE'});
-    cargarEmpleados(document.getElementById('filtro-area-emp').value);
+    cargarEmpleados(document.getElementById('filtro-area-emp').value, 1);
   } catch { alert('Error al eliminar'); }
 }
 
@@ -613,9 +729,54 @@ async function cargarCoords() {
   }
 }
 
-function renderCoords() {
-  const el = document.getElementById('coords-body');
-  if (!coordsList.length) {
+function filtrarCoords() {
+  const q = document.getElementById('buscar-coord').value.trim().toLowerCase();
+  if (!q) { renderCoords(coordsList); return; }
+  const filtrados = coordsList.filter(c =>
+    (c.nombre||'').toLowerCase().includes(q) ||
+    (c.username||'').toLowerCase().includes(q) ||
+    (c.documento||'').includes(q)
+  );
+  renderCoords(filtrados);
+}
+
+async function buscarCoordEnPersonal() {
+  const cedula   = document.getElementById('coord-buscar-cedula').value.trim();
+  const resOk    = document.getElementById('coord-buscar-resultado');
+  const resErr   = document.getElementById('coord-buscar-error');
+  resOk.classList.add('hidden');
+  resErr.classList.add('hidden');
+  if (!cedula) return;
+
+  try {
+    // Busca en TrabajadorRecargos por documento
+    const data = await api(`empleados/?q=${encodeURIComponent(cedula)}&page_size=5&page=1`);
+    const resultados = data.results || [];
+    const emp = resultados.find(e => e.documento === cedula) || resultados[0];
+
+    if (emp) {
+      // Separar nombre en partes (apellidos nombre)
+      const partes = emp.nombre.trim().split(' ');
+      const mitad  = Math.ceil(partes.length / 2);
+      document.getElementById('coord-documento').value  = emp.documento;
+      document.getElementById('coord-first-name').value = partes.slice(mitad).join(' ');
+      document.getElementById('coord-last-name').value  = partes.slice(0, mitad).join(' ');
+      resOk.textContent = `✓ Encontrado: ${emp.nombre} — ${emp.cargo || emp.area_nombre}`;
+      resOk.classList.remove('hidden');
+    } else {
+      resErr.textContent = 'No se encontró ningún funcionario con esa cédula en el personal.';
+      resErr.classList.remove('hidden');
+    }
+  } catch {
+    resErr.textContent = 'Error al buscar. Intenta de nuevo.';
+    resErr.classList.remove('hidden');
+  }
+}
+
+function renderCoords(lista=null) {
+  const el   = document.getElementById('coords-body');
+  const datos = lista || coordsList;
+  if (!datos.length) {
     el.innerHTML = '<p class="text-slate-400 text-sm py-4">No hay coordinadores registrados.</p>';
     return;
   }
@@ -627,7 +788,7 @@ function renderCoords() {
       <th class="px-4 py-2 font-bold text-slate-600">Servicios asignados</th>
       <th class="px-4 py-2 font-bold text-slate-600">Acciones</th>
     </tr></thead><tbody>`;
-  coordsList.forEach(c => {
+  datos.forEach(c => {
     const areasHtml = c.areas.length
       ? c.areas.map(a=>`<span class="px-2 py-0.5 rounded-full text-xs font-bold bg-blue-100 text-blue-800 mr-1">${a.nombre}</span>`).join('')
       : '<span class="text-slate-400">Sin áreas</span>';
@@ -653,8 +814,11 @@ function renderCoords() {
 async function abrirModalCoord(id=null) {
   editCoordId = id;
   const c = id ? coordsList.find(x=>x.id===id) : null;
-  // Cargar áreas disponibles para los checkboxes
-  if (!areas.length) areas = await api('areas/');
+  // Cargar áreas si no están en memoria (usa caché del backend — rápido)
+  if (!areas.length) {
+    const resp = await api('areas/?page_size=50&page=1');
+    areas = resp.results || [];
+  }
   document.getElementById('modal-coord-title').textContent = id ? `Editar: ${c.nombre||c.username}` : 'Nuevo Coordinador';
   document.getElementById('coord-username-row').style.display = id ? 'none' : '';
   document.getElementById('coord-username').value   = '';
@@ -676,6 +840,9 @@ async function abrirModalCoord(id=null) {
     </label>`;
   }).join('');
 
+  document.getElementById('coord-buscar-cedula').value = '';
+  document.getElementById('coord-buscar-resultado').classList.add('hidden');
+  document.getElementById('coord-buscar-error').classList.add('hidden');
   document.getElementById('modal-coord-error').classList.add('hidden');
   document.getElementById('modal-coord').classList.remove('hidden');
 }
@@ -844,7 +1011,7 @@ async function ejecutarImportacion() {
     const msg = document.getElementById('imp-result');
     msg.textContent = `✓ ${res.creados} importado(s). ${res.omitidos} omitido(s) (ya existían).`;
     msg.classList.remove('hidden');
-    cargarEmpleados(document.getElementById('filtro-area-emp').value);
+    cargarEmpleados(document.getElementById('filtro-area-emp').value, 1);
   } catch(e) {
     mostrarErrorImp(e.error || 'Error al importar');
   } finally {
@@ -904,7 +1071,7 @@ async function guardarMover() {
       body: JSON.stringify({ area: parseInt(areaId) })
     });
     cerrarModalMover();
-    cargarEmpleados(document.getElementById('filtro-area-emp').value);
+    cargarEmpleados(document.getElementById('filtro-area-emp').value, 1);
   } catch(e) {
     errEl.textContent = e.error || 'No tienes permiso para mover a ese área';
     errEl.classList.remove('hidden');

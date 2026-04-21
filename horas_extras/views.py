@@ -632,18 +632,49 @@ class ReporteRecargosView(LoginRequiredMixin, TemplateView):
 
 # ── API: Áreas ────────────────────────────────────────────────────────────────
 
+def _invalidar_cache_areas():
+    """Llama esto después de crear/editar/eliminar áreas o mover empleados."""
+    from django.core.cache import cache
+    cache.delete_many([k for k in [] or []] + ['areas_all'])
+    # Borra por patrón usando prefijo
+    cache.delete('areas_all')
+
+
+def _get_areas_cached(ids_filter=None):
+    """Devuelve todas las áreas con conteo, usando caché de 10 minutos."""
+    cache_key = f'areas_all_{"_".join(map(str, sorted(ids_filter))) if ids_filter else "admin"}'
+    data = cache.get(cache_key)
+    if data is None:
+        qs = AreaRecargos.objects.annotate(total_trabajadores=Count('trabajadores'))
+        if ids_filter is not None:
+            qs = qs.filter(id__in=ids_filter)
+        data = [{'id': a.id, 'nombre': a.nombre, 'descripcion': a.descripcion,
+                 'total_trabajadores': a.total_trabajadores} for a in qs]
+        cache.set(cache_key, data, 600)  # 10 minutos
+    return data
+
+
 @login_required
 @require_http_methods(['GET', 'POST'])
 def api_areas(request):
     ids = _areas_ids_recargos(request.user)
 
     if request.method == 'GET':
-        qs = AreaRecargos.objects.annotate(total_trabajadores=Count('trabajadores'))
-        if ids is not None:
-            qs = qs.filter(id__in=ids)
-        data = [{'id': a.id, 'nombre': a.nombre, 'descripcion': a.descripcion,
-                 'total_trabajadores': a.total_trabajadores} for a in qs]
-        return JsonResponse(data, safe=False)
+        q         = request.GET.get('q', '').strip()
+        page      = max(1, int(request.GET.get('page', 1)))
+        page_size = min(50, max(1, int(request.GET.get('page_size', 10))))
+
+        # Filtrar desde caché (evita hit a BD en cada request)
+        todas = _get_areas_cached(ids)
+        if q:
+            palabras = q.lower().split()
+            todas = [a for a in todas if all(p in a['nombre'].lower() for p in palabras)]
+
+        total  = len(todas)
+        offset = (page - 1) * page_size
+        data   = todas[offset: offset + page_size]
+        return JsonResponse({'results': data, 'total': total, 'page': page,
+                             'page_size': page_size, 'pages': max(1, -(-total // page_size))}, safe=False)
 
     if not _es_admin_recargos(request.user):
         return JsonResponse({'error': 'Solo el administrador puede crear áreas'}, status=403)
@@ -652,6 +683,7 @@ def api_areas(request):
     if not nombre:
         return JsonResponse({'error': 'El nombre es obligatorio'}, status=400)
     area = AreaRecargos.objects.create(nombre=nombre, descripcion=body.get('descripcion', ''))
+    _invalidar_cache_areas()
     return JsonResponse({'id': area.id, 'nombre': area.nombre,
                          'descripcion': area.descripcion, 'total_trabajadores': 0}, status=201)
 
@@ -666,15 +698,42 @@ def api_area_detail(request, pk):
         return JsonResponse({'error': 'Sin permiso'}, status=403)
     if request.method == 'DELETE':
         area.delete()
+        _invalidar_cache_areas()
         return JsonResponse({'ok': True})
     body = json.loads(request.body)
     area.nombre      = body.get('nombre', area.nombre).strip()
     area.descripcion = body.get('descripcion', area.descripcion)
     area.save()
+    _invalidar_cache_areas()
     return JsonResponse({'id': area.id, 'nombre': area.nombre, 'descripcion': area.descripcion})
 
 
 # ── API: Empleados ────────────────────────────────────────────────────────────
+
+TIPO_DISPLAY_MAP = {'permanente': 'Planta Permanente', 'temporal': 'Planta Temporal', 'ops': 'OPS'}
+
+def _get_empleados_cached(area_id=None, ids_filter=None):
+    """Devuelve empleados desde caché. Clave por área."""
+    cache_key = f'emp_area_{area_id or "all"}'
+    data = cache.get(cache_key)
+    if data is None:
+        qs = TrabajadorRecargos.objects.select_related('area').all()
+        if area_id:
+            qs = qs.filter(area_id=area_id)
+        if ids_filter is not None:
+            qs = qs.filter(area_id__in=ids_filter)
+        data = [{'id': t.id, 'nombre': t.nombre, 'documento': t.documento,
+                 'cargo': t.cargo, 'area': t.area_id, 'area_nombre': t.area.nombre,
+                 'tipo': t.tipo, 'tipo_display': TIPO_DISPLAY_MAP.get(t.tipo, t.tipo)} for t in qs]
+        cache.set(cache_key, data, 300)  # 5 minutos
+    return data
+
+def _invalidar_cache_empleados(area_id=None):
+    if area_id:
+        cache.delete(f'emp_area_{area_id}')
+    cache.delete('emp_area_all')
+    _invalidar_cache_areas()  # el conteo de trabajadores cambia
+
 
 @login_required
 @require_http_methods(['GET', 'POST'])
@@ -683,15 +742,29 @@ def api_empleados(request):
     area_id = request.GET.get('area')
 
     if request.method == 'GET':
-        qs = TrabajadorRecargos.objects.select_related('area').all()
-        if area_id:
-            qs = qs.filter(area_id=area_id)
-        if ids is not None:
-            qs = qs.filter(area_id__in=ids)
-        data = [{'id': t.id, 'nombre': t.nombre, 'documento': t.documento,
-                 'cargo': t.cargo, 'area': t.area_id, 'area_nombre': t.area.nombre,
-                 'tipo': t.tipo, 'tipo_display': t.get_tipo_display()} for t in qs]
-        return JsonResponse(data, safe=False)
+        q         = request.GET.get('q', '').strip()
+        page_param = request.GET.get('page')
+
+        # Filtrar desde caché
+        todos = _get_empleados_cached(area_id, ids)
+
+        if q:
+            palabras = q.lower().split()
+            if len(palabras) > 1:
+                todos = [e for e in todos if all(p in e['nombre'].lower() for p in palabras)]
+            else:
+                p = palabras[0]
+                todos = [e for e in todos if p in e['nombre'].lower() or p in e['documento'].lower()]
+
+        if page_param is not None:
+            page      = max(1, int(page_param))
+            page_size = min(100, max(1, int(request.GET.get('page_size', 10))))
+            total     = len(todos)
+            offset    = (page - 1) * page_size
+            data      = todos[offset: offset + page_size]
+            return JsonResponse({'results': data, 'total': total, 'page': page,
+                                 'page_size': page_size, 'pages': max(1, -(-total // page_size))}, safe=False)
+        return JsonResponse(todos, safe=False)
 
     body = json.loads(request.body)
     a_id = body.get('area')
@@ -708,6 +781,7 @@ def api_empleados(request):
         area=area,
         tipo=body.get('tipo', 'permanente'),
     )
+    _invalidar_cache_empleados(area.id)
     return JsonResponse({'id': t.id, 'nombre': t.nombre, 'documento': t.documento,
                          'cargo': t.cargo, 'area': t.area_id, 'area_nombre': t.area.nombre,
                          'tipo': t.tipo, 'tipo_display': t.get_tipo_display()}, status=201)
@@ -724,9 +798,12 @@ def api_empleado_detail(request, pk):
         return JsonResponse({'id': t.id, 'nombre': t.nombre, 'documento': t.documento,
                              'cargo': t.cargo, 'area': t.area_id, 'tipo': t.tipo})
     if request.method == 'DELETE':
+        area_id_viejo = t.area_id
         t.delete()
+        _invalidar_cache_empleados(area_id_viejo)
         return JsonResponse({'ok': True})
     body = json.loads(request.body)
+    area_id_viejo = t.area_id
     if 'nombre'    in body: t.nombre    = body['nombre'].strip()
     if 'documento' in body: t.documento = body['documento'].strip()
     if 'cargo'     in body: t.cargo     = body['cargo'].strip()
@@ -738,6 +815,9 @@ def api_empleado_detail(request, pk):
         t.area_id = a_id
     t.save()
     t.refresh_from_db()
+    _invalidar_cache_empleados(area_id_viejo)
+    if t.area_id != area_id_viejo:
+        _invalidar_cache_empleados(t.area_id)
     return JsonResponse({'id': t.id, 'nombre': t.nombre, 'documento': t.documento,
                          'cargo': t.cargo, 'area': t.area_id, 'area_nombre': t.area.nombre,
                          'tipo': t.tipo, 'tipo_display': t.get_tipo_display()})
