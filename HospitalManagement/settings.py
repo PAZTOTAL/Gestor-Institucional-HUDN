@@ -99,6 +99,7 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'usuarios.middleware.UserPermissionsMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'core.middleware.DatabaseCheckMiddleware',
@@ -139,7 +140,7 @@ DATABASES = {
         'PASSWORD': 'ConsultasPantojaHUDN_2026$', 
         'HOST': '172.20.100.209',
         'PORT': '',
-        'CONN_MAX_AGE': 0,  # No reusar conexiones — MSSQL cierra las inactivas y causa errores
+        'CONN_MAX_AGE': 60,  # Habilitar Connection Pooling (60s) para reducir overhead de red
         'OPTIONS': {
             'driver': 'ODBC Driver 17 for SQL Server',
             'timeout': 60,
@@ -152,7 +153,7 @@ DATABASES = {
         'PASSWORD': 'ConsultaHUDN2026*/$',
         'HOST': '172.20.100.209',
         'PORT': '',
-        'CONN_MAX_AGE': 0,  # No reusar conexiones
+        'CONN_MAX_AGE': 60,  # Habilitar Connection Pooling (60s)
         'OPTIONS': {
             'driver': 'ODBC Driver 17 for SQL Server',
             'host_is_server': True,

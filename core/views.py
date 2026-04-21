@@ -208,10 +208,7 @@ class HomeView(AccessControlMixin, TemplateView):
 
     def dispatch(self, request, *args, **kwargs):
         if request.user.is_authenticated and not request.user.is_superuser:
-            allowed_apps = set(
-                PermisoApp.objects.filter(user=request.user, permitido=True)
-                .values_list('app_label', flat=True)
-            )
+            allowed_apps = getattr(request.user, '_permisos_apps_cache', set())
             
             equiv_map = {
                 'certificados_laborales': 'mvp',
@@ -254,6 +251,15 @@ class HomeView(AccessControlMixin, TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         user = self.request.user
+        cache_key = f"dashboard_structure_{user.id}"
+        
+        # Intentar obtener el dashboard estructurado desde cache
+        from django.core.cache import cache
+        cached_data = cache.get(cache_key)
+        if cached_data:
+            context.update(cached_data)
+            return context
+
         is_superuser = user.is_superuser
         allowed_apps = getattr(self.request, '_allowed_apps', set())
         
@@ -366,14 +372,6 @@ class HomeView(AccessControlMixin, TemplateView):
         # Decide if we show the "Direct View"
         show_direct_modules = (1 <= len(all_permitted_modules) <= 6) and not is_superuser
 
-        context.update({
-            'active_structure': active_structure,
-            'dashboard_categories': [item['category'] for item in active_structure],
-            'all_permitted_modules': all_permitted_modules,
-            'show_direct_modules': show_direct_modules,
-            'is_superuser': is_superuser
-        })
-
         # Consultas section
         if has_permission('consultas'):
              context.update({
@@ -394,6 +392,24 @@ class HomeView(AccessControlMixin, TemplateView):
         else:
             context.update({'consultas': [], 'admin_reports': [], 'salud_reports': []})
 
+        # Datos a cachear (estructura y flag de visualización)
+        to_cache = {
+            'active_structure': active_structure,
+            'dashboard_categories': [item['category'] for item in active_structure],
+            'all_permitted_modules': all_permitted_modules,
+            'show_direct_modules': show_direct_modules,
+            'consultas': context.get('consultas', []),
+            'admin_reports': context.get('admin_reports', []),
+            'salud_reports': context.get('salud_reports', []),
+        }
+        # Inyectar las variables nav_ dinámicas al cache
+        for item in active_structure:
+            to_cache[f"nav_{item['category']['slug']}"] = item['modules']
+        
+        cache.set(cache_key, to_cache, 300) # Cache por 5 minutos
+
+        context.update(to_cache)
+        context['is_superuser'] = is_superuser
         return context
 
 class ModuleDetailView(AccessControlMixin, TemplateView):

@@ -1,0 +1,31 @@
+from .models import PerfilUsuario, PermisoApp
+
+class UserPermissionsMiddleware:
+    """
+    Middleware para consolidar la carga de perfil y permisos del usuario
+    en una sola consulta al inicio del request.
+    """
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        if request.user.is_authenticated:
+            # 1. Precargar Perfil (Evita múltiples get_or_create)
+            if not hasattr(request.user, '_perfil_cache'):
+                try:
+                    # Intentamos obtener el perfil relacionado
+                    request.user._perfil_cache = request.user.perfil
+                except (PerfilUsuario.DoesNotExist, AttributeError):
+                    # Si no existe, lo creamos una sola vez
+                    p, _ = PerfilUsuario.objects.get_or_create(user=request.user)
+                    request.user._perfil_cache = p
+
+            # 2. Precargar Permisos de Aplicaciones
+            if not hasattr(request.user, '_permisos_apps_cache'):
+                perms = set(
+                    PermisoApp.objects.filter(user=request.user, permitido=True)
+                    .values_list('app_label', flat=True)
+                )
+                request.user._permisos_apps_cache = perms
+
+        return self.get_response(request)

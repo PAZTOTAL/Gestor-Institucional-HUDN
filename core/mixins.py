@@ -15,8 +15,10 @@ class AccessControlMixin(LoginRequiredMixin):
         if request.user.is_superuser:
             return super().dispatch(request, *args, **kwargs)
 
-        # 2. Perfil Check (using get_or_create to be safe)
-        perfil, created = PerfilUsuario.objects.get_or_create(user=request.user)
+        # 2. Perfil Check (Usar cache del middleware)
+        perfil = getattr(request.user, '_perfil_cache', None)
+        if not perfil:
+            perfil, _ = PerfilUsuario.objects.get_or_create(user=request.user)
             
         # 3. App/Model Permission Check
         module_name = kwargs.get('module_name')
@@ -28,18 +30,17 @@ class AccessControlMixin(LoginRequiredMixin):
         model_name = kwargs.get('model_name')
         
         if module_name:
-            # Check App Permission
-            app_perm = PermisoApp.objects.filter(user=request.user, app_label=module_name).first()
-            if not app_perm or not app_perm.permitido:
-                raise PermissionDenied(f"No tienes permiso para acceder al módulo {module_name}.")
+            # Check App Permission (Usar cache del middleware)
+            allowed_apps = getattr(request.user, '_permisos_apps_cache', set())
+            if module_name not in allowed_apps:
+                # Caso especial para equivalencias (opcional, pero seguro)
+                equivs = {'mvp': 'certificados_laborales', 'certificados_laborales': 'mvp'}
+                if module_name not in equivs or equivs[module_name] not in allowed_apps:
+                    raise PermissionDenied(f"No tienes permiso para acceder al módulo {module_name}.")
             
             # Check Model Permission if specified
             if model_name:
                 mod_perm = PermisoModelo.objects.filter(user=request.user, app_label=module_name, model_name=model_name).first()
-                # Logic: If app is allowed (passed above), we allow model UNLESS explicitly denied.
-                # If mod_perm exists and is False -> DENY
-                # If mod_perm is None -> ALLOW (Inherit)
-                # If mod_perm is True -> ALLOW
                 if mod_perm and not mod_perm.permitido:
                     raise PermissionDenied(f"No tienes permiso para acceder a la tabla {model_name}.")
 

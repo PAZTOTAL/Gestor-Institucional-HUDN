@@ -174,6 +174,11 @@ class GestionPermisosView(AccessControlMixin, TemplateView):
             perm.permitido = True
             perm.save()
             
+        # Invalidar cache del dashboard para el usuario modificado
+        from django.core.cache import cache
+        cache.delete(f'user_dashboard_nav_{target_user.id}')
+        cache.delete(f'dashboard_structure_{target_user.id}')
+
         return redirect('gestion_usuarios')
 
 class ConfigPerfilView(LoginRequiredMixin, TemplateView):

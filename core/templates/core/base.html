@@ -109,7 +109,9 @@
                 <a href="{% url 'home' %}" class="flex items-center gap-2">
                     <span class="text-2xl font-bold text-gradient">Gestor Institucional Digital  HUDN</span>
                 </a>
+                    {% load cache %}
                 <nav class="flex gap-4">
+                    {% cache 300 header_nav user.id %}
                     <a href="{% url 'home' %}"
                         class="nav-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}">Inicio</a>
 
@@ -142,6 +144,7 @@
                         Configuración
                     </a>
                     {% endif %}
+                    {% endcache %}
 
                     <!-- Autenticación -->
                     <div class="flex items-center space-x-4 ml-4 pl-4 border-l-2" style="border-color:#93c5fd">
