@@ -156,7 +156,7 @@ SESSION_SAVE_EVERY_REQUEST = True
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-AUTH_USER_MODEL = 'legal.Usuario'
+# AUTH_USER_MODEL = 'legal.Usuario'
 
 # ─── FTP / NAS (opcional; espejo de adjuntos como defenjur-back ftpService.js) ───
 DEFENJUR_FTP_ENABLED = os.environ.get('DEFENJUR_FTP_ENABLED', 'False').lower() in ('1', 'true', 'yes')

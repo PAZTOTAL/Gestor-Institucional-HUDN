@@ -15,6 +15,9 @@
             <i data-lucide="plus" style="width:18px;"></i> Nueva Tutela
         </a>
         {% include 'legal/includes/export_excel_btn.html' with modulo='tutelas' %}
+        <a href="?fecha_desde={% now 'd/m/Y' %}&fecha_hasta={% now 'd/m/Y' %}" class="btn-premium" style="text-decoration:none;display:inline-flex;align-items:center;gap:6px;background:#fd7e14;">
+            <i data-lucide="zap" style="width:18px;"></i> Cargados del Día
+        </a>
     </div>
 
     <details style="margin-bottom:1rem;" {% if abogado_filter %}open{% endif %}>
