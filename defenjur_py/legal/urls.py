@@ -22,6 +22,8 @@ urlpatterns = [
     # ─── Comunes / Utilidades ──────────────────────────────────────────────────
     path('exportar/<slug:modulo>/', views.exportar_modulo_excel, name='exportar_excel'),
     path('archivos/<str:tipo>/<int:id_obj>/', views.lista_archivos_view, name='lista_archivos'),
+    path('adjunto/<int:pk>/download/', views.descargar_adjunto_smart_view, name='descargar_adjunto_smart'),
+    path('adjunto/legacy/<str:tipo>/<int:id_obj>/<str:pref>/<str:filename>/', views.descargar_adjunto_legacy_view, name='descargar_adjunto_legacy'),
     path('eliminar/<str:tipo>/<int:id_obj>/', views.eliminar_registro, name='eliminar_registro'),
 
     # ─── Extrajudicial ─────────────────────────────────────────────────────────

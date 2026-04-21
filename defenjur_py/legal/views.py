@@ -12,6 +12,9 @@ Mapeo resumido:
 - API JSON por entidad: legal/api_entities.py (getAll/getDetail).
 """
 from datetime import date
+import logging
+
+logger = logging.getLogger(__name__)
 
 from django.views.generic import TemplateView, ListView, CreateView, UpdateView
 from django.urls import reverse_lazy
@@ -201,8 +204,143 @@ class ModalUpdateView(LoginRequiredMixin, RoleFilteringMixin, UpdateView):
 
 @login_required
 def lista_archivos_view(request, tipo, id_obj):
-    archivos = ArchivoAdjunto.objects.filter(tipo_asociado=tipo, id_asociado=id_obj).order_by('-fecha_carga')
-    return render(request, 'legal/lista_archivos_modal.html', {'archivos': archivos})
+    """
+    Lista archivos de la DB y también escanea la NAS para archivos 'históricos'
+    que no estén registrados en la tabla ArchivoAdjunto.
+    """
+    from .ftp_service import _ftp_config, FTP_ENTITY_FOLDER
+    from ftplib import FTP
+    
+    # 1. Archivos en DB
+    archivos_db = list(ArchivoAdjunto.objects.filter(tipo_asociado=tipo, id_asociado=id_obj).order_by('-fecha_carga'))
+    nombres_en_db = {a.nombre_original for a in archivos_db}
+    
+    # 2. Escaneo de NAS para archivos históricos
+    cfg = _ftp_config()
+    folder = FTP_ENTITY_FOLDER.get(tipo)
+    archivos_nas = []
+    
+    if cfg['enabled'] and cfg['host'] and folder:
+        try:
+            # Probar múltiples combinaciones de carpetas históricas
+            # El usuario mencionó prefijo 2 para tutelas (168 -> 2168, 18 -> 218)
+            # También hemos detectado carpetas con prefijo 3 y carpetas directas.
+            prefijos = ['', '2', '3', '1']
+            
+            with FTP() as ftp:
+                ftp.encoding = 'latin-1' # Para soportar eñes y tildes en servidores NAS antiguos
+                ftp.connect(cfg['host'], timeout=10)
+                ftp.login(cfg['user'], cfg['password'])
+                
+                for pref in prefijos:
+                    remote_dir = f"{cfg['base_path']}/{folder}/{pref}{id_obj}"
+                    try:
+                        ftp.cwd(remote_dir)
+                        files = ftp.nlst()
+                        for f in files:
+                            fname = f.split('/')[-1]
+                            if not fname or fname in ['.', '..']: continue
+                            
+                            # Asegurar que el nombre del archivo se visualice bien en UTF-8
+                            try:
+                                # Si viene en latin-1 pero Python lo leyó raro
+                                display_name = fname.encode('latin-1').decode('utf-8')
+                            except:
+                                display_name = fname
+
+                            if display_name not in nombres_en_db and display_name not in {x['nombre'] for x in archivos_nas}:
+                                archivos_nas.append({
+                                    'id': None,
+                                    'nombre': display_name,
+                                    'es_historico': True,
+                                    'url': f"/defenjur/adjunto/legacy/{tipo}/{id_obj}/{pref}/{fname}" 
+                                })
+                    except:
+                        continue
+        except Exception as e:
+            logger.warning("Fallo escaneo NAS para lista: %s", e)
+
+    return render(request, 'legal/lista_archivos_modal.html', {
+        'archivos': archivos_db,
+        'archivos_nas': archivos_nas,
+        'tipo': tipo,
+        'id_obj': id_obj
+    })
+
+@login_required
+def descargar_adjunto_legacy_view(request, tipo, id_obj, pref, filename):
+    """
+    Descarga archivos que solo existen en la NAS (sin registro en DB).
+    """
+    from .ftp_service import _ftp_config, FTP_ENTITY_FOLDER
+    from ftplib import FTP
+    import io
+
+    cfg = _ftp_config()
+    folder = FTP_ENTITY_FOLDER.get(tipo)
+    if not cfg['enabled'] or not folder:
+        raise Http404
+
+    try:
+        remote_dir = f"{cfg['base_path']}/{folder}/{pref}{id_obj}"
+        out = io.BytesIO()
+        with FTP() as ftp:
+            ftp.encoding = 'latin-1'
+            ftp.connect(cfg['host'], timeout=15)
+            ftp.login(cfg['user'], cfg['password'])
+            ftp.cwd(remote_dir)
+            ftp.retrbinary(f'RETR {filename}', out.write)
+        
+        out.seek(0)
+        response = HttpResponse(out.read(), content_type="application/octet-stream")
+        response['Content-Disposition'] = f'inline; filename="{filename}"'
+        return response
+    except Exception as e:
+        logger.error("Error descarga legacy %s: %s", filename, e)
+        raise Http404("Archivo no encontrado en la NAS.")
+
+@login_required
+def descargar_adjunto_smart_view(request, pk):
+    """
+    Intenta servir desde MEDIA local. Si no existe, intenta bajarlo de la NAS (FTP).
+    """
+    from .ftp_service import _ftp_config, _navigate_to_remote_dir, FTP_ENTITY_FOLDER
+    from ftplib import FTP
+    import os
+
+    adjunto = get_object_or_404(ArchivoAdjunto, pk=pk)
+    path_local = getattr(adjunto.archivo, 'path', None)
+    
+    # 1. Intentar local
+    if path_local and os.path.exists(path_local):
+        with open(path_local, 'rb') as f:
+            response = HttpResponse(f.read(), content_type="application/octet-stream")
+            response['Content-Disposition'] = f'inline; filename="{adjunto.nombre_original}"'
+            return response
+
+    # 2. Intentar NAS vía FTP
+    cfg = _ftp_config()
+    folder = FTP_ENTITY_FOLDER.get(adjunto.tipo_asociado)
+    if cfg['enabled'] and cfg['host'] and folder:
+        try:
+            remote_dir = f"{cfg['base_path']}/{folder}/2{adjunto.id_asociado}"
+            import io
+            out = io.BytesIO()
+            with FTP() as ftp:
+                ftp.encoding = 'latin-1'
+                ftp.connect(cfg['host'], timeout=10)
+                ftp.login(cfg['user'], cfg['password'])
+                ftp.cwd(remote_dir)
+                ftp.retrbinary(f'RETR {adjunto.nombre_original}', out.write)
+            
+            out.seek(0)
+            response = HttpResponse(out.read(), content_type="application/octet-stream")
+            response['Content-Disposition'] = f'inline; filename="{adjunto.nombre_original}"'
+            return response
+        except Exception as e:
+            logger.warning("Fallo descarga desde NAS para PK %s: %s", pk, e)
+
+    raise Http404("El archivo no se encuentra en el servidor local ni en la NAS.")
 
 # ─── Dashboard ────────────────────────────────────────────────────────────────
 class HomeView(LoginRequiredMixin, TemplateView):
@@ -272,8 +410,8 @@ class TutelaListView(LoginRequiredMixin, RoleFilteringMixin, SearchMixin, ListVi
     context_object_name = 'tutelas'
     paginate_by = 10
     search_fields = (
-        'accionante', 'identificacion_accionante', 'num_proceso', 'despacho_judicial',
-        'abogado_responsable', 'tipo_tramite', 'observaciones',
+        'accionante', 'num_proceso', 'despacho_judicial',
+        'abogado_responsable'
     )
 
     def get_queryset(self):
@@ -292,6 +430,11 @@ class TutelaListView(LoginRequiredMixin, RoleFilteringMixin, SearchMixin, ListVi
                 qs = qs.filter(fecha_llegada__icontains=fd)
             if fh:
                 qs = qs.filter(fecha_llegada__icontains=fh)
+
+        abogado = self.request.GET.get('abogado', '').strip()
+        if abogado:
+            qs = qs.filter(abogado_responsable=abogado)
+
         return qs
 
     def get_paginate_by(self, queryset):
@@ -306,6 +449,20 @@ class TutelaListView(LoginRequiredMixin, RoleFilteringMixin, SearchMixin, ListVi
         ctx['mes'] = self.request.GET.get('mes', '')
         ctx['anio'] = self.request.GET.get('anio', '')
         ctx['per_page_sel'] = str(self.request.GET.get('per_page', '10'))
+        
+        # Lista única de abogados normalizada (Mayúsculas)
+        from django.db.models.functions import Upper
+        ctx['lista_abogados'] = AccionTutela.objects.annotate(
+            nombre_up=Upper('abogado_responsable')
+        ).exclude(
+            nombre_up__isnull=True
+        ).exclude(
+            nombre_up=''
+        ).exclude(
+            nombre_up__icontains='AUDITORIA' # Filtrar ruidos
+        ).values_list('nombre_up', flat=True).distinct().order_by('nombre_up')
+        
+        ctx['abogado_filter'] = self.request.GET.get('abogado', '')
         return ctx
 
 class TutelaCreateView(LoginRequiredMixin, CreateView):
@@ -336,6 +493,29 @@ class PeticionListView(LoginRequiredMixin, RoleFilteringMixin, SearchMixin, List
         'causa_peticion', 'abogado_responsable', 'cedula_persona_solicitante',
         'num_rad_interno',
     )
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        abogado = self.request.GET.get('abogado', '').strip()
+        if abogado:
+            qs = qs.filter(abogado_responsable=abogado)
+        return qs
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        from django.db.models.functions import Upper
+        ctx['lista_abogados'] = DerechoPeticion.objects.annotate(
+            nombre_up=Upper('abogado_responsable')
+        ).exclude(
+            nombre_up__isnull=True
+        ).exclude(
+            nombre_up=''
+        ).exclude(
+            nombre_up__icontains='AUDITORIA'
+        ).values_list('nombre_up', flat=True).distinct().order_by('nombre_up')
+        ctx['abogado_filter'] = self.request.GET.get('abogado', '')
+        ctx['per_page_sel'] = str(self.request.GET.get('per_page', '10'))
+        return ctx
 
 class PeticionCreateView(LoginRequiredMixin, CreateView):
     model = DerechoPeticion

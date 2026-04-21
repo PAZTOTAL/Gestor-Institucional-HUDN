@@ -17,18 +17,37 @@
                     {{ a.fecha_carga|date:"d/m/Y H:i" }}
                 </td>
                 <td style="padding:0.75rem;">
-                    <a href="{{ a.archivo.url }}" target="_blank" class="btn-premium" style="padding:0.3rem 0.8rem; font-size:0.8rem; text-decoration:none;">
+                    <a href="{% url 'descargar_adjunto_smart' a.pk %}" target="_blank" class="btn-premium" style="padding:0.3rem 0.8rem; font-size:0.8rem; text-decoration:none;">
                         <i data-lucide="download" style="width:14px; height:14px;"></i> Ver / Descargar
                     </a>
                 </td>
             </tr>
-            {% empty %}
+            {% endfor %}
+            
+            {% for an in archivos_nas %}
+            <tr style="border-bottom:1px solid rgba(255,255,255,0.05); background: rgba(59, 130, 246, 0.05);">
+                <td style="padding:0.75rem;">
+                    <div style="font-weight:500; font-size:0.9rem;">{{ an.nombre }}</div>
+                    <span style="font-size:0.7rem; color:#3b82f6; text-transform:uppercase; font-weight:bold;">Archivo Histórico (NAS)</span>
+                </td>
+                <td style="padding:0.75rem; font-size:0.85rem; color:var(--text-muted);">
+                    N/A
+                </td>
+                <td style="padding:0.75rem;">
+                    <a href="{{ an.url }}" target="_blank" class="btn-premium" style="padding:0.3rem 0.8rem; font-size:0.8rem; text-decoration:none; background:#3b82f6;">
+                        <i data-lucide="eye" style="width:14px; height:14px;"></i> Ver Histórico
+                    </a>
+                </td>
+            </tr>
+            {% endfor %}
+
+            {% if not archivos and not archivos_nas %}
             <tr>
                 <td colspan="3" style="padding:2rem; text-align:center; color:var(--text-muted);">
                     No hay archivos adjuntos para este registro.
                 </td>
             </tr>
-            {% endfor %}
+            {% endif %}
         </tbody>
     </table>
     <div style="margin-top:2rem;text-align:right;">

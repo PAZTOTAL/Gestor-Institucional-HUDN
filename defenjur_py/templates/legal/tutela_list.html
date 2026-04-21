@@ -17,6 +17,29 @@
         {% include 'legal/includes/export_excel_btn.html' with modulo='tutelas' %}
     </div>
 
+    <details style="margin-bottom:1rem;" {% if abogado_filter %}open{% endif %}>
+        <summary class="btn-premium" style="cursor:pointer;display:inline-flex;align-items:center;gap:6px;background:#6f42c1;width:auto;list-style:none;">
+            <i data-lucide="user-check" style="width:18px;"></i> Abogados Responsables
+        </summary>
+        <form method="get" style="margin-top:0.75rem;padding:1rem;background:#f8f9fa;border-radius:8px;border:1px solid #dee2e6;">
+            <div style="display:flex;flex-wrap:wrap;gap:1rem;align-items:flex-end;">
+                <div style="flex:1; min-width:250px;">
+                    <label style="display:block;font-size:0.75rem;color:#6c757d;margin-bottom:0.25rem;">Seleccione el Abogado Responsable</label>
+                    <select name="abogado" class="premium-input" style="width:100%;height:45px;" onchange="this.form.submit()">
+                        <option value="">-- Todos los Abogados --</option>
+                        {% for ab in lista_abogados %}
+                        <option value="{{ ab }}" {% if abogado_filter == ab %}selected{% endif %}>{{ ab }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <input type="hidden" name="q" value="{{ search_query }}">
+                <input type="hidden" name="per_page" value="{{ per_page_sel }}">
+                <button type="submit" class="btn-premium" style="padding:0.5rem 1rem;">Filtrar</button>
+                <a href="{% url 'tutelas' %}" class="btn-premium" style="padding:0.5rem 1rem;background:#6c757d;text-decoration:none;">Limpiar</a>
+            </div>
+        </form>
+    </details>
+
     <details style="margin-bottom:1rem;" {% if fecha_desde or fecha_hasta or mes or anio %}open{% endif %}>
         <summary class="btn-premium" style="cursor:pointer;display:inline-flex;align-items:center;gap:6px;background:#0d6efd;width:auto;list-style:none;">
             <i data-lucide="calendar" style="width:18px;"></i> Consultar por fechas

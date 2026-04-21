@@ -69,7 +69,7 @@ def mirror_archivo_adjunto_to_ftp(tipo_asociado: str, id_asociado: int, archivo_
     path_local = getattr(archivo_field, 'path', None)
     if not path_local:
         return
-    remote_dir = f"{cfg['base_path']}/{folder}/{id_asociado}"
+    remote_dir = f"{cfg['base_path']}/{folder}/2{id_asociado}"
     try:
         with FTP() as ftp:
             ftp.connect(cfg['host'], timeout=30)
