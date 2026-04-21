@@ -108,7 +108,7 @@
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {% for item in nav_asistenciales %}
             {% with cat=item.category %}
-            <div onclick="showSection('{{ cat.slug }}')" 
+            <div onclick="{% if item.modules|length == 1 %}window.location.href='{{ item.modules.0.url }}'{% else %}showSection('{{ cat.slug }}'){% endif %}" 
                 class="glass-card p-6 cursor-pointer hover:border-blue-500 group transition-all duration-300">
                 <div class="flex flex-col items-center text-center">
                     <div class="w-16 h-16 bg-blue-100 rounded-2xl flex items-center justify-center mb-4 text-blue-500 group-hover:bg-blue-500 group-hover:text-white transition-all">
@@ -136,7 +136,7 @@
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {% for item in nav_financiera_cat %}
             {% with cat=item.category %}
-            <div onclick="showSection('{{ cat.slug }}')" 
+            <div onclick="{% if item.modules|length == 1 %}window.location.href='{{ item.modules.0.url }}'{% else %}showSection('{{ cat.slug }}'){% endif %}" 
                 class="glass-card p-6 cursor-pointer hover:border-green-500 group transition-all duration-300">
                 <div class="flex flex-col items-center text-center">
                     <div class="w-16 h-16 bg-green-100 rounded-2xl flex items-center justify-center mb-4 text-green-500 group-hover:bg-green-500 group-hover:text-white transition-all">
@@ -289,7 +289,7 @@
             <button onclick="showSelection()" class="p-2 hover:bg-orange-100 rounded-full transition-colors">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="text-orange-700"><path d="m15 18-6-6 6-6"/></svg>
             </button>
-            <h2 class="text-2xl font-black text-orange-900 uppercase">VARIOS Y UTILIDADES</h2>
+            <h2 class="text-2xl font-black text-orange-900 uppercase">FORMATOS HUDN</h2>
         </div>
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {% for module in nav_varios %}

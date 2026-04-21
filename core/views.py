@@ -295,10 +295,27 @@ class HomeView(AccessControlMixin, TemplateView):
                 'modules': [
                     {'name': 'Consentimientos Informados', 'slug': 'ConsentimientosInformados', 'description': 'Autorizaciones y Firmas Electrónicas', 'url': '/consentimientos/', 'icon': 'M12 20h9 M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z'},
                     {'name': 'Registro de Anestesia', 'slug': 'registro_anestesia', 'description': 'Registro Clínico de Anestesia (FRQUI-032)', 'url': '/registro-anestesia/create/', 'icon': 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z'},
-                    {'name': 'Central de Mezclas', 'slug': 'CentralDeMezclas', 'description': 'Laboratorio de Preparaciones Estériles', 'url': '/central-mezclas/', 'icon': 'M11 10.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5z M5.5 15.5l1.5-2 M17 15.5l-1.5-2 M2 22h20 M7 22l1-4.5 M17 22l-1-4.5'},
                     {'name': 'Trasplantes y Donación', 'slug': 'trasplantes_donacion', 'description': 'Gestión de Alertas y Trasplantes', 'url': '/modulo/trasplantes_donacion/', 'icon': 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z M12 8v4 M12 16h.01'},
                     {'name': 'Frecuencia Fetal', 'slug': 'frecuenciafetal', 'description': 'Monitoreo de Frecuencia Cardíaca Fetal', 'url': '/modulo/frecuenciafetal/', 'icon': 'M13 2L3 14h9l-1 8 10-12h-9l1-8z'},
                 ]
+            },
+            {
+                'category': {'name': 'URGENCIAS', 'slug': 'urgencias', 'icon': 'M13 10V3L4 14h7v7l9-11h-7z', 'description': 'Atención Médica de Emergencia'},
+                'modules': []
+            },
+            {
+                'category': {'name': 'SERVICIO FARMACÉUTICO', 'slug': 'servicio_farmaceutico', 'icon': 'M4.83 17H19.17l-1.5-3H6.33l-1.5 3z M12 3v11 M12 14L8 18 M12 14l4 4', 'description': 'Medicamentos e Insumos'},
+                'modules': [
+                    {'name': 'Central de Mezclas', 'slug': 'CentralDeMezclas', 'description': 'Laboratorio de Preparaciones Estériles', 'url': '/central-mezclas/', 'icon': 'M11 10.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5z M5.5 15.5l1.5-2 M17 15.5l-1.5-2 M2 22h20 M7 22l1-4.5 M17 22l-1-4.5'},
+                ]
+            },
+            {
+                'category': {'name': 'SERVICIOS TERAPÉUTICOS', 'slug': 'servicios_terapeuticos', 'icon': 'M12 21s-8-4.5-8-11.8A5.2 5.2 0 0 1 12 4.02a5.2 5.2 0 0 1 8 5.18c0 7.3-8 11.8-8 11.8z', 'description': 'Rehabilitación y Terapias'},
+                'modules': []
+            },
+            {
+                'category': {'name': 'AUDITORIA DISCIPLINARIA', 'slug': 'auditoria_disciplinaria', 'icon': 'M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z', 'description': 'Control y Seguimiento Asistencial'},
+                'modules': []
             },
             {
                 'category': {'name': 'SALA DE PARTOS', 'slug': 'gineco_obstetricia', 'icon': 'M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6', 'description': 'Maternidad y Neonatal'},
@@ -319,6 +336,12 @@ class HomeView(AccessControlMixin, TemplateView):
                 'modules': [
                     {'name': 'Presupuesto', 'slug': 'presupuesto', 'description': 'Gestión Presupuestal', 'url': '/presupuesto/', 'icon': 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2'},
                     {'name': 'Caja y Tesorería', 'slug': 'tesoreria', 'description': 'Control de pagos y recaudos', 'url': '/modulo/tesoreria/', 'icon': 'M3 10h18M7 15h1m4 0h1m4 0h1'},
+                ]
+            },
+            {
+                'category': {'name': 'JURÍDICA', 'slug': 'juridica', 'icon': 'M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z', 'description': 'Asesoría y Defensa Legal'},
+                'modules': [
+                    {'name': 'Defenjur', 'slug': 'defenjur', 'description': 'Defensa Jurídica Institucional', 'url': '/defenjur/', 'icon': 'M3 6l3 12h12l3-12H3z'},
                 ]
             }
         ]
@@ -363,7 +386,11 @@ class HomeView(AccessControlMixin, TemplateView):
 
         # --- SEPARACIÓN ESTRICTA DE SUBGERENCIAS ---
         # Salud: Solo lo médico (clínico)
-        salud_slugs = ['hospitalizacion', 'quirofanos', 'gineco_obstetricia', 'urgencias', 'consulta_externa', 'asistencial']
+        salud_slugs = [
+            'hospitalizacion', 'quirofanos', 'gineco_obstetricia', 'urgencias', 
+            'consulta_externa', 'asistencial', 'servicio_farmaceutico', 
+            'servicios_terapeuticos', 'auditoria_disciplinaria'
+        ]
         
         # Finanzas: Solo administrativo, legal y financiero
         finanzas_slugs = ['financiera', 'talento_humano', 'contabilidad', 'administrativo', 'juridica', 'varios', 'presupuesto', 'consultas']

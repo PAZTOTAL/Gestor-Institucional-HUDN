@@ -11,24 +11,90 @@
     <script src="https://cdn.tailwindcss.com" defer></script>
 
     <style>
-        {% if perfil %}
-        :root {
-            --theme-primary: {{ perfil.color_primario }};
-            --theme-secondary: {{ perfil.color_secundario }};
-            --theme-bg: {{ perfil.color_fondo }};
-
-            {% if perfil.estilo_fondo == 'gradient' %}
-                --theme-bg-full: linear-gradient(135deg, {{ perfil.color_fondo }} 0%, #ffffff 100%);
-                --theme-pattern: none;
-            {% elif perfil.estilo_fondo == 'pattern' %}
-                --theme-bg-full: {{ perfil.color_fondo }};
-                --theme-pattern: radial-gradient({{ perfil.color_primario }} 0.5px, transparent 0.5px);
-            {% else %}
-                --theme-bg-full: {{ perfil.color_fondo }};
-                --theme-pattern: none;
-            {% endif %}
+        {
+            % if perfil %
         }
-        {% else %}
+
+        :root {
+            --theme-primary: {
+                    {
+                    perfil.color_primario
+                }
+            }
+
+            ;
+
+            --theme-secondary: {
+                    {
+                    perfil.color_secundario
+                }
+            }
+
+            ;
+
+            --theme-bg: {
+                    {
+                    perfil.color_fondo
+                }
+            }
+
+            ;
+
+                {
+                % if perfil.estilo_fondo=='gradient' %
+            }
+
+            --theme-bg-full: linear-gradient(135deg, {
+                    {
+                    perfil.color_fondo
+                }
+            }
+
+            0%, #ffffff 100%);
+        --theme-pattern: none;
+
+            {
+            % elif perfil.estilo_fondo=='pattern' %
+        }
+
+        --theme-bg-full: {
+                {
+                perfil.color_fondo
+            }
+        }
+
+        ;
+
+        --theme-pattern: radial-gradient({
+                {
+                perfil.color_primario
+            }
+        }
+
+        0.5px, transparent 0.5px);
+
+            {
+            % else %
+        }
+
+        --theme-bg-full: {
+                {
+                perfil.color_fondo
+            }
+        }
+
+        ;
+        --theme-pattern: none;
+
+            {
+            % endif %
+        }
+        }
+
+            {
+            % else %
+        }
+
         :root {
             --theme-primary: #2563eb;
             --theme-secondary: #1e40af;
@@ -36,7 +102,10 @@
             --theme-bg-full: #f8fafc;
             --theme-pattern: none;
         }
-        {% endif %}
+
+            {
+            % endif %
+        }
     </style>
 
     <script>
@@ -62,8 +131,11 @@
     </script>
 
     <!-- Select2 CSS - preloaded -->
-    <link rel="preload" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
-    <noscript><link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" /></noscript>
+    <link rel="preload" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" as="style"
+        onload="this.onload=null;this.rel='stylesheet'">
+    <noscript>
+        <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    </noscript>
     <style>
         .select2-container--default .select2-selection--single {
             background-color: #ffffff !important;
@@ -89,88 +161,98 @@
 
 <body>
     {% if db_caidas %}
-    <div class="bg-red-600 text-white text-center py-3 px-4 font-bold sticky top-0 z-50 animate-pulse shadow-2xl flex flex-col items-center justify-center gap-1">
+    <div
+        class="bg-red-600 text-white text-center py-3 px-4 font-bold sticky top-0 z-50 animate-pulse shadow-2xl flex flex-col items-center justify-center gap-1">
         <div class="flex items-center gap-2">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
+                stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
             </svg>
             <span class="text-lg">¡ALERTA DE CONEXIÓN SQL!</span>
         </div>
         <div class="bg-white/20 px-4 py-1 rounded-full text-xs backdrop-blur-sm border border-white/30">
             BASES AFECTADAS: <span class="text-yellow-200">{{ db_caidas }}</span>
         </div>
-        <p class="text-[10px] opacity-80 uppercase mt-1">REVISE BLOQUEO DEL ADMINISTRADOR SQL - EL ADMINISTRADOR BLOQUEÓ OTRA VEZ</p>
+        <p class="text-[10px] opacity-80 uppercase mt-1">REVISE BLOQUEO DEL ADMINISTRADOR SQL - EL ADMINISTRADOR BLOQUEÓ
+            OTRA VEZ</p>
     </div>
     {% endif %}
     <div class="flex flex-col min-h-screen">
-        <!-- Header -->
-        <header>
-            <div class="container flex justify-between items-center">
-                <a href="{% url 'home' %}" class="flex items-center gap-2">
-                    <span class="text-2xl font-bold text-gradient">Gestor Institucional Digital  HUDN</span>
+        <header class="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b-2 border-blue-100 shadow-sm">
+            <div class="container mx-auto flex justify-between items-center h-20 px-4">
+                <a href="{% url 'home' %}" class="flex items-center gap-3 group">
+                    <div class="w-10 h-10 bg-blue-700 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+                        <span class="text-white font-black text-xl">H</span>
+                    </div>
+                    <span class="text-xl font-black tracking-tighter text-blue-950 uppercase hidden lg:block">Gestor <span class="text-blue-600">HUDN</span></span>
                 </a>
+
+                <nav class="flex items-center gap-1 md:gap-2">
                     {% load cache %}
-                <nav class="flex gap-4">
-                    {% cache 300 header_nav user.id %}
+                    {% cache 300 header_nav_v3 user.id %}
                     <a href="{% url 'home' %}"
-                        class="nav-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}">Inicio</a>
+                        class="px-3 py-2 rounded-xl text-xs md:text-sm font-bold transition-all {% if not request.GET.section and request.resolver_match.url_name == 'home' %}bg-blue-50 text-blue-700 shadow-sm{% else %}text-slate-600 hover:bg-slate-50 hover:text-blue-600{% endif %}">
+                        Inicio
+                    </a>
 
                     {% if nav_asistenciales %}
-                    <a href="{% url 'home' %}?section=asistencial" class="nav-link flex items-center gap-1">
-                        Asistencial
+                    <a href="{% url 'home' %}?section=asistencial" 
+                        class="px-3 py-2 rounded-xl text-xs md:text-sm font-bold transition-all {% if request.GET.section == 'asistencial' %}bg-blue-50 text-blue-700 shadow-sm{% else %}text-slate-600 hover:bg-slate-50 hover:text-blue-600{% endif %}">
+                        Subgerencia De Salud
                     </a>
                     {% endif %}
 
                     {% if nav_administrativos or nav_talento_humano or nav_financiera or nav_juridica or nav_contabilidad %}
-                    <a href="{% url 'home' %}?section=administrativo" class="nav-link flex items-center gap-1">
-                        Administrativo
+                    <a href="{% url 'home' %}?section=subgerencia_financiera" 
+                        class="px-3 py-2 rounded-xl text-xs md:text-sm font-bold transition-all {% if request.GET.section == 'subgerencia_financiera' %}bg-green-50 text-green-700 shadow-sm{% else %}text-slate-600 hover:bg-slate-50 hover:text-green-600{% endif %}">
+                        Subgerencia Financiera
                     </a>
                     {% endif %}
 
                     {% if nav_varios %}
-                    <a href="{% url 'home' %}?section=varios" class="nav-link flex items-center gap-1">
-                        Varios
+                    <a href="{% url 'home' %}?section=varios" 
+                        class="px-3 py-2 rounded-xl text-xs md:text-sm font-bold transition-all {% if request.GET.section == 'varios' %}bg-orange-50 text-orange-700 shadow-sm{% else %}text-slate-600 hover:bg-slate-50 hover:text-orange-600{% endif %}">
+                        Formatos Hudn
                     </a>
                     {% endif %}
 
                     {% if nav_consultas %}
-                    <a href="{% url 'home' %}?section=consultas" class="nav-link flex items-center gap-1">
+                    <a href="{% url 'home' %}?section=consultas" 
+                        class="px-3 py-2 rounded-xl text-xs md:text-sm font-bold transition-all {% if request.GET.section == 'consultas' %}bg-purple-50 text-purple-700 shadow-sm{% else %}text-slate-600 hover:bg-slate-50 hover:text-purple-600{% endif %}">
                         Consultas
                     </a>
                     {% endif %}
 
                     {% if is_admin %}
-                    <a href="{% url 'home' %}?section=config" class="nav-link flex items-center gap-1">
+                    <a href="{% url 'home' %}?section=config" 
+                        class="px-3 py-2 rounded-xl text-xs md:text-sm font-bold transition-all {% if request.GET.section == 'config' %}bg-slate-100 text-slate-900 shadow-sm{% else %}text-slate-600 hover:bg-slate-50 hover:text-slate-900{% endif %}">
                         Configuración
                     </a>
                     {% endif %}
                     {% endcache %}
 
-                    <!-- Autenticación -->
-                    <div class="flex items-center space-x-4 ml-4 pl-4 border-l-2" style="border-color:#93c5fd">
+                    <!-- Perfil / Salir -->
+                    <div class="flex items-center gap-2 md:gap-3 ml-2 md:ml-4 pl-2 md:pl-4 border-l-2 border-slate-100">
                         {% if user.is_authenticated %}
-                        <div class="flex items-center space-x-2">
-                            <div class="w-8 h-8 rounded-full flex items-center justify-center border-2"
-                                 style="background:#1e3a5f;border-color:#1e40af">
-                                <span class="text-xs font-black text-white">{{ user.username|slice:":1"|upper }}</span>
+                        <div class="flex items-center gap-2 md:gap-3">
+                            <div class="hidden sm:flex flex-col items-end">
+                                <span class="text-[10px] md:text-xs font-black text-slate-900 leading-none uppercase">{{ user.username }}</span>
+                                <a href="{% url 'config_perfil' %}" class="text-[8px] md:text-[10px] font-bold text-blue-600 hover:underline uppercase">Apariencia</a>
                             </div>
-                            <span class="text-sm font-black text-black">{{ user.username }}</span>
-                        </div>
-                        <div class="flex items-center space-x-3">
-                            <a href="{% url 'config_perfil' %}"
-                                class="text-xs font-black hover:opacity-70 transition-colors uppercase underline"
-                                style="color:#1e3a5f">Apariencia</a>
+                            <div class="w-8 h-8 md:w-10 md:h-10 rounded-xl bg-gradient-to-br from-blue-700 to-blue-900 flex items-center justify-center text-white shadow-md border-2 border-white ring-1 ring-blue-100">
+                                <span class="font-black text-xs md:text-base">{{ user.username|slice:":1"|upper }}</span>
+                            </div>
                             <form action="{% url 'logout' %}" method="post" class="inline">
                                 {% csrf_token %}
-                                <button type="submit"
-                                    class="text-sm font-black text-red-700 hover:text-red-900 transition-colors underline">Salir</button>
+                                <button type="submit" class="p-1 md:p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all" title="Cerrar Sesión">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+                                </button>
                             </form>
                         </div>
                         {% else %}
-                        <a href="{% url 'login' %}"
-                            class="text-sm font-black text-black hover:text-blue-700 transition-colors">Entrar</a>
-                        <a href="{% url 'registro' %}"
-                            class="px-3 py-1.5 rounded-lg bg-blue-700 hover:bg-blue-800 text-white text-xs font-black shadow-lg shadow-blue-500/40 transition-all duration-300 transform hover:scale-105 active:scale-95">Registro</a>
+                        <a href="{% url 'login' %}" class="text-xs md:text-sm font-bold text-slate-600 hover:text-blue-700">Entrar</a>
+                        <a href="{% url 'registro' %}" class="px-3 py-2 md:px-4 md:py-2 bg-blue-700 text-white rounded-xl text-xs md:text-sm font-bold shadow-lg shadow-blue-200 hover:bg-blue-800 transition-all">Registro</a>
                         {% endif %}
                     </div>
                 </nav>
@@ -200,7 +282,7 @@
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js" defer></script>
     <script>
         // Wait for deferred jQuery to load before initializing Select2
-        window.addEventListener('load', function() {
+        window.addEventListener('load', function () {
             if (typeof $ !== 'undefined') {
                 $('select').select2({
                     width: '100%',
