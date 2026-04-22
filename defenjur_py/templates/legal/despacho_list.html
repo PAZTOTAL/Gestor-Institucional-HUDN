@@ -1,0 +1,110 @@
+{% extends 'base.html' %}
+
+{% block title %}Despachos Judiciales | DEFENJUR{% endblock %}
+{% block header_title %}Despachos Judiciales{% endblock %}
+
+{% block content %}
+
+{% if messages %}
+{% for msg in messages %}
+<div class="card animate-fade" style="border-left:4px solid #10b981; background:rgba(16,185,129,0.1); margin-bottom:1rem; padding:1rem;">
+    ✅ {{ msg }}
+</div>
+{% endfor %}
+{% endif %}
+
+{% if tabla_pendiente %}
+<div class="card animate-fade" style="border-left:4px solid #f59e0b; background:rgba(245,158,11,0.1); margin-bottom:1rem; padding:1rem; display:flex; align-items:center; gap:1rem;">
+    <i data-lucide="alert-triangle" style="color:#f59e0b; width:22px; flex-shrink:0;"></i>
+    <div>
+        <strong>Tabla pendiente de inicialización.</strong>
+        Ve al <a href="{% url 'defenjur_home' %}">panel de Defenjur</a> y haz clic en 
+        <strong>"Cargar / Actualizar Despachos Judiciales"</strong> para crear la tabla y cargar los datos.
+    </div>
+</div>
+{% endif %}
+
+
+<div class="card animate-fade" style="margin-bottom:1.5rem;">
+    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem;">
+        <div>
+            <h3 style="margin:0; font-size:1.1rem;">
+                <i data-lucide="landmark" style="width:18px; vertical-align:middle;"></i>
+                Catálogo de Despachos Judiciales
+                <span style="background:rgba(99,102,241,0.15); color:#6366f1; font-size:0.8rem; padding:2px 10px; border-radius:20px; margin-left:8px;">{{ total }} registros</span>
+            </h3>
+        </div>
+        <div style="display:flex; gap:0.75rem; align-items:center; flex-wrap:wrap;">
+            <form method="get" style="display:flex; gap:0.5rem;">
+                <input type="text" name="q" value="{{ q }}" class="premium-input" placeholder="Buscar por nombre o ciudad..." style="min-width:260px;">
+                <button type="submit" class="btn-premium" style="padding:0.5rem 1rem; font-size:0.85rem;">
+                    <i data-lucide="search" style="width:14px;"></i> Buscar
+                </button>
+            </form>
+            <a href="{% url 'despacho_crear' %}" class="btn-premium" style="background:linear-gradient(135deg,#10b981,#059669); display:inline-flex; align-items:center; gap:6px; font-size:0.85rem;">
+                <i data-lucide="plus-circle" style="width:15px;"></i> Nuevo Despacho
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="card animate-fade" style="padding:0; overflow:hidden;">
+    <table style="width:100%; border-collapse:collapse; font-size:0.9rem;">
+        <thead>
+            <tr style="background:rgba(99,102,241,0.1); border-bottom:2px solid rgba(99,102,241,0.2);">
+                <th style="padding:0.85rem 1rem; text-align:left; font-weight:600; color:#6366f1;">#</th>
+                <th style="padding:0.85rem 1rem; text-align:left; font-weight:600; color:#6366f1;">Ciudad</th>
+                <th style="padding:0.85rem 1rem; text-align:left; font-weight:600; color:#6366f1;">Nombre del Despacho</th>
+                <th style="padding:0.85rem 1rem; text-align:left; font-weight:600; color:#6366f1;">Correo Institucional</th>
+                <th style="padding:0.85rem 1rem; text-align:center; font-weight:600; color:#6366f1;">Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for d in despachos %}
+            <tr style="border-bottom:1px solid rgba(255,255,255,0.05); transition:background 0.2s;" onmouseover="this.style.background='rgba(99,102,241,0.05)'" onmouseout="this.style.background=''">
+                <td style="padding:0.75rem 1rem; color:var(--text-muted);">{{ d.id }}</td>
+                <td style="padding:0.75rem 1rem; font-weight:500;">{{ d.ciudad }}</td>
+                <td style="padding:0.75rem 1rem;">{{ d.nombre }}</td>
+                <td style="padding:0.75rem 1rem; font-size:0.82rem; color:var(--text-muted);">{{ d.correo|default:"—" }}</td>
+                <td style="padding:0.75rem 1rem; text-align:center; display:flex; gap:0.5rem; justify-content:center;">
+                    <a href="{% url 'despacho_editar' d.pk %}" style="background:rgba(99,102,241,0.15); color:#6366f1; border:none; padding:4px 12px; border-radius:6px; font-size:0.8rem; text-decoration:none; display:inline-flex; align-items:center; gap:4px; cursor:pointer;">
+                        <i data-lucide="pencil" style="width:13px;"></i> Editar
+                    </a>
+                    {% if user.is_superuser %}
+                    <form method="post" action="{% url 'despacho_eliminar' d.pk %}" style="display:inline;" onsubmit="return confirm('¿Eliminar este despacho?');">
+                        {% csrf_token %}
+                        <button type="submit" style="background:rgba(239,68,68,0.15); color:#ef4444; border:none; padding:4px 12px; border-radius:6px; font-size:0.8rem; display:inline-flex; align-items:center; gap:4px; cursor:pointer;">
+                            <i data-lucide="trash-2" style="width:13px;"></i> Eliminar
+                        </button>
+                    </form>
+                    {% endif %}
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="5" style="padding:2rem; text-align:center; color:var(--text-muted);">
+                    <i data-lucide="inbox" style="width:32px; height:32px; display:block; margin:0 auto 0.5rem;"></i>
+                    No hay despachos registrados{% if q %} para "{{ q }}"{% endif %}.
+                    {% if not q %}<br><a href="{% url 'despacho_crear' %}">Crear el primero</a>{% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% if is_paginated %}
+<div style="display:flex; justify-content:center; gap:0.5rem; margin-top:1.5rem; flex-wrap:wrap;">
+    {% if page_obj.has_previous %}
+    <a href="?page={{ page_obj.previous_page_number }}{% if q %}&q={{ q }}{% endif %}" class="btn-premium" style="padding:6px 14px; font-size:0.85rem;">‹ Anterior</a>
+    {% endif %}
+    <span style="padding:6px 14px; background:rgba(99,102,241,0.1); border-radius:8px; font-size:0.85rem; color:#6366f1;">
+        Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+    </span>
+    {% if page_obj.has_next %}
+    <a href="?page={{ page_obj.next_page_number }}{% if q %}&q={{ q }}{% endif %}" class="btn-premium" style="padding:6px 14px; font-size:0.85rem;">Siguiente ›</a>
+    {% endif %}
+</div>
+{% endif %}
+
+{% endblock %}

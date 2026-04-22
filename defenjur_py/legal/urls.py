@@ -19,6 +19,14 @@ urlpatterns = [
     path('api/entities/<slug:slug>/', api_entities.api_entity_list_view, name='api_entity_list'),
     path('api/entities/<slug:slug>/<int:pk>/', api_entities.api_entity_detail_view, name='api_entity_detail'),
     path('api/buscar-tercero/', views.buscar_tercero_nexus, name='buscar_tercero_nexus'),
+    path('api/admin/cargar-despachos/', views.cargar_despachos_judiciales, name='cargar_despachos'),
+
+    # ─── Despachos Judiciales ──────────────────────────────────────────────────
+    path('despachos/', views.DespachoJudicialListView.as_view(), name='despachos_lista'),
+    path('despachos/nuevo/', views.DespachoJudicialCreateView.as_view(), name='despacho_crear'),
+    path('despachos/<int:pk>/editar/', views.DespachoJudicialUpdateView.as_view(), name='despacho_editar'),
+    path('despachos/<int:pk>/eliminar/', views.despacho_eliminar, name='despacho_eliminar'),
+
 
     # ─── Comunes / Utilidades ──────────────────────────────────────────────────
     path('exportar/<slug:modulo>/', views.exportar_modulo_excel, name='exportar_excel'),

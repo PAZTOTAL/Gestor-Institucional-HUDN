@@ -388,3 +388,24 @@ class RequerimientoEnteControl(models.Model):
             models.Index(fields=['num_reparto']),
             models.Index(fields=['abogado_responsable']),
         ]
+
+
+class DespachoJudicial(models.Model):
+    """
+    Catálogo de Despachos Judiciales.
+    Fuente: despachoJudicial.xlsx — 55 registros.
+    Tabla en BD: despachoJudicial
+    """
+    ciudad = models.CharField('Ciudad', max_length=100)
+    nombre = models.CharField('Nombre del Despacho', max_length=255)
+    correo = models.EmailField('Correo Institucional', max_length=255, blank=True, null=True)
+
+    class Meta:
+        db_table = 'defenjur_app_despachojudicial'
+        verbose_name = 'Despacho Judicial'
+        verbose_name_plural = 'Despachos Judiciales'
+        ordering = ['ciudad', 'nombre']
+
+    def __str__(self):
+        return f"{self.nombre} ({self.ciudad})"
+

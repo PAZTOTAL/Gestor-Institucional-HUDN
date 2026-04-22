@@ -31,7 +31,8 @@ from django.views.decorators.http import require_GET, require_POST, require_http
 from .models import (
     AccionTutela, ProcesoExtrajudicial, ProcesoJudicialActiva, ProcesoJudicialPasiva,
     DerechoPeticion, ArchivoAdjunto, Peritaje, PagoSentenciaJudicial,
-    ProcesoJudicialTerminado, ProcesoAdministrativoSancionatorio, RequerimientoEnteControl
+    ProcesoJudicialTerminado, ProcesoAdministrativoSancionatorio, RequerimientoEnteControl,
+    DespachoJudicial
 )
 from .forms import (
     AccionTutelaForm, DerechoPeticionForm, ProcesoExtrajudicialForm, ProcesoJudicialActivaForm,
@@ -925,4 +926,157 @@ def buscar_tercero_nexus(request):
             return JsonResponse({'success': False, 'message': 'No encontrado en Nexus'})
     except Exception as e:
         logger.error(f"Error buscando tercero en Nexus: {e}")
-        return JsonResponse({'success': False, 'message': 'Error de conexión con la base de datos'})
+        return JsonResponse({'success': False, 'message': 'Error de conexion con la base de datos'})
+
+
+@require_GET
+def cargar_despachos_judiciales(request):
+    """
+    Vista temporal de administracion: crea la tabla despachoJudicial y carga los datos del Excel.
+    Solo accesible por superusuarios.
+    """
+    import os, openpyxl
+    from django.db import connection as default_conn
+
+    if not request.user.is_superuser:
+        return JsonResponse({'success': False, 'message': 'Acceso denegado'}, status=403)
+
+    excel_path = os.path.join(
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+        '..', 'despachoJudicial.xlsx'
+    )
+    excel_path = os.path.normpath(excel_path)
+
+    if not os.path.exists(excel_path):
+        return JsonResponse({'success': False, 'message': f'Excel no encontrado en: {excel_path}'})
+
+    try:
+        # Leer Excel
+        wb = openpyxl.load_workbook(excel_path)
+        ws = wb.active
+        rows = []
+        for row_num in range(2, ws.max_row + 1):
+            ciudad = ws.cell(row_num, 2).value
+            nombre = ws.cell(row_num, 3).value
+            correo = ws.cell(row_num, 4).value
+            if nombre:
+                rows.append((
+                    str(ciudad).strip() if ciudad else '',
+                    str(nombre).strip(),
+                    str(correo).strip() if correo else None
+                ))
+
+        with default_conn.cursor() as cursor:
+            # Crear tabla si no existe
+            cursor.execute("""
+                IF NOT EXISTS (
+                    SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'defenjur_app_despachojudicial'
+                )
+                CREATE TABLE defenjur_app_despachojudicial (
+                    id     INT IDENTITY(1,1) PRIMARY KEY,
+                    ciudad NVARCHAR(100) NOT NULL,
+                    nombre NVARCHAR(255) NOT NULL,
+                    correo NVARCHAR(255) NULL
+                )
+            """)
+            default_conn.commit()
+
+            # TRUNCATE reinicia el contador de ID a 1
+            cursor.execute("TRUNCATE TABLE defenjur_app_despachojudicial")
+            for row in rows:
+                cursor.execute(
+                    "INSERT INTO defenjur_app_despachojudicial (ciudad, nombre, correo) VALUES (%s, %s, %s)",
+                    list(row)
+                )
+            default_conn.commit()
+
+            cursor.execute("SELECT COUNT(*) FROM defenjur_app_despachojudicial")
+            total = cursor.fetchone()[0]
+
+        return JsonResponse({
+            'success': True,
+            'message': f'Tabla creada y {total} despachos cargados correctamente.',
+            'total': total
+        })
+
+    except Exception as e:
+        logger.error(f"Error cargando despachos: {e}")
+        return JsonResponse({'success': False, 'message': str(e)})
+
+
+# ─── CRUD Despachos Judiciales ────────────────────────────────────────────────
+
+class DespachoJudicialListView(LoginRequiredMixin, ListView):
+    model = DespachoJudicial
+    template_name = 'legal/despacho_list.html'
+    context_object_name = 'despachos'
+    paginate_by = 20
+
+    def get_queryset(self):
+        try:
+            qs = DespachoJudicial.objects.all()
+            q = self.request.GET.get('q', '').strip()
+            if q:
+                qs = qs.filter(Q(nombre__icontains=q) | Q(ciudad__icontains=q))
+            return qs
+        except Exception:
+            return DespachoJudicial.objects.none()
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx['q'] = self.request.GET.get('q', '')
+        try:
+            ctx['total'] = DespachoJudicial.objects.count()
+        except Exception:
+            ctx['total'] = 0
+            ctx['tabla_pendiente'] = True
+        return ctx
+
+
+class DespachoJudicialCreateView(LoginRequiredMixin, CreateView):
+    model = DespachoJudicial
+    fields = ['ciudad', 'nombre', 'correo']
+    template_name = 'legal/despacho_form.html'
+    success_url = reverse_lazy('despachos_lista')
+
+    def get_form(self, form_class=None):
+        form = super().get_form(form_class)
+        for field in form.fields.values():
+            field.widget.attrs['class'] = 'premium-input'
+            field.widget.attrs.setdefault('placeholder', field.label)
+        return form
+
+    def form_valid(self, form):
+        messages.success(self.request, 'Despacho judicial registrado correctamente.')
+        return super().form_valid(form)
+
+
+class DespachoJudicialUpdateView(LoginRequiredMixin, UpdateView):
+    model = DespachoJudicial
+    fields = ['ciudad', 'nombre', 'correo']
+    template_name = 'legal/despacho_form.html'
+    success_url = reverse_lazy('despachos_lista')
+
+    def get_form(self, form_class=None):
+        form = super().get_form(form_class)
+        for field in form.fields.values():
+            field.widget.attrs['class'] = 'premium-input'
+            field.widget.attrs.setdefault('placeholder', field.label)
+        return form
+
+    def form_valid(self, form):
+        messages.success(self.request, 'Despacho judicial actualizado correctamente.')
+        return super().form_valid(form)
+
+
+@login_required
+@require_POST
+def despacho_eliminar(request, pk):
+    if not _is_app_admin(request.user):
+        raise PermissionDenied
+    obj = get_object_or_404(DespachoJudicial, pk=pk)
+    obj.delete()
+    messages.success(request, 'Despacho eliminado correctamente.')
+    return redirect('despachos_lista')
+
+

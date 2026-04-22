@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+
+{% block title %}{% if object %}Editar Despacho{% else %}Nuevo Despacho{% endif %} | DEFENJUR{% endblock %}
+{% block header_title %}{% if object %}Editar Despacho Judicial{% else %}Registrar Nuevo Despacho Judicial{% endif %}{% endblock %}
+
+{% block content %}
+<div class="card animate-fade" style="max-width:600px; margin:0 auto;">
+    <form method="post">
+        {% csrf_token %}
+        <div class="form-grid" style="grid-template-columns:1fr;">
+
+            {% for field in form %}
+            <div class="form-group">
+                <label for="{{ field.id_for_label }}" style="font-size:0.8rem; font-weight:600; text-transform:uppercase; letter-spacing:1px;">{{ field.label }}</label>
+                {{ field }}
+                {% if field.errors %}
+                <div style="color:#ef4444; font-size:0.8rem; margin-top:4px;">{{ field.errors }}</div>
+                {% endif %}
+            </div>
+            {% endfor %}
+
+        </div>
+
+        <div style="margin-top:1.5rem; display:flex; gap:1rem; justify-content:flex-end;">
+            <a href="{% url 'despachos_lista' %}" class="btn-premium" style="background:rgba(255,255,255,0.1); text-decoration:none;">Cancelar</a>
+            <button type="submit" class="btn-premium" style="background:linear-gradient(135deg,#6366f1,#4f46e5);">
+                {% if object %}💾 Guardar Cambios{% else %}✅ Registrar Despacho{% endif %}
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}
