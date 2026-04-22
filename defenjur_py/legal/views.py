@@ -25,6 +25,7 @@ from django.core.exceptions import PermissionDenied
 from django.db.models import Count, Q
 from django.db.models.functions import TruncMonth
 from django.http import JsonResponse, HttpResponse, Http404
+from django.db import connections
 from django.shortcuts import render, redirect, get_object_or_404
 from django.views.decorators.http import require_GET, require_POST, require_http_methods
 from .models import (
@@ -877,3 +878,51 @@ def usuario_eliminar(request, pk):
 
 def permission_denied_view(request, exception=None):
     return render(request, '403.html', status=403)
+
+@require_GET
+def buscar_tercero_nexus(request):
+    """
+    Consulta el nombre de un tercero en la base de datos de Nexus (GENTERCER) por su cédula.
+    """
+    cedula = request.GET.get('cedula', '').strip()
+    if not cedula:
+        return JsonResponse({'success': False, 'message': 'Cédula requerida'})
+    
+    try:
+        with connections['readonly'].cursor() as cursor:
+            # Según usuarios/views.py, los campos correctos en HUDN son:
+            # Identificación: TERNUMDOC
+            # Nombres: TERPRINOM, TERSEGNOM, TERPRIAPE, TERSEGAPE
+            sql = """
+                SELECT 
+                    LTRIM(RTRIM(
+                        ISNULL(TERPRINOM, '') + ' ' + 
+                        ISNULL(TERSEGNOM, '') + ' ' + 
+                        ISNULL(TERPRIAPE, '') + ' ' + 
+                        ISNULL(TERSEGAPE, '')
+                    )) 
+                FROM GENTERCER 
+                WHERE TERNUMDOC = %s
+            """
+            cursor.execute(sql, [cedula])
+            row = cursor.fetchone()
+            
+            if row and row[0].strip():
+                return JsonResponse({
+                    'success': True,
+                    'nombre': row[0].strip()
+                })
+            
+            # Intento alternativo por si es un Usuario de Sistema (GENUSUARIO)
+            cursor.execute("SELECT USUDESCRI FROM GENUSUARIO WHERE NumeroDocumento = %s", [cedula])
+            row = cursor.fetchone()
+            if row:
+                return JsonResponse({
+                    'success': True,
+                    'nombre': row[0].strip()
+                })
+
+            return JsonResponse({'success': False, 'message': 'No encontrado en Nexus'})
+    except Exception as e:
+        logger.error(f"Error buscando tercero en Nexus: {e}")
+        return JsonResponse({'success': False, 'message': 'Error de conexión con la base de datos'})

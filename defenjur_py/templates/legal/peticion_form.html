@@ -23,7 +23,7 @@
             </h3>
             <div class="form-grid">
                 {% for field in form %}
-                    {% if field.name in 'num_reparto,fecha_correo,nombre_persona_solicitante,peticionario,causa_peticion,abogado_responsable' %}
+                    {% if field.name in 'cedula_accionante,num_reparto,fecha_correo,nombre_persona_solicitante,peticionario,causa_peticion,cedula_abogado,abogado_responsable' %}
                     <div class="form-group {% if field.name == 'causa_peticion' %}full-width{% endif %}">
                         <label for="{{ field.id_for_label }}">{{ field.label }}</label>
                         {{ field }}
@@ -101,4 +101,72 @@
         </div>
     </form>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const cedulaInput = document.getElementById('id_cedula_accionante');
+    const nombreInput = document.getElementById('id_nombre_persona_solicitante');
+
+    if (cedulaInput && nombreInput) {
+        cedulaInput.addEventListener('blur', function() {
+            const cedula = this.value.trim();
+            if (cedula && cedula.length > 3) {
+                console.log('Buscando solicitante:', cedula);
+                cedulaInput.style.border = "2px solid #6366f1";
+                
+                fetch('{% url "buscar_tercero_nexus" %}?cedula=' + cedula)
+                    .then(response => response.json())
+                    .then(data => {
+                        console.log('Respuesta recibida:', data);
+                        cedulaInput.style.border = "";
+                        if (data.success) {
+                            nombreInput.value = data.nombre;
+                            nombreInput.style.backgroundColor = "rgba(16, 185, 129, 0.2)";
+                            nombreInput.style.fontWeight = "bold";
+                            setTimeout(() => nombreInput.style.backgroundColor = "", 2000);
+                        } else {
+                            console.warn('Solicitante no encontrado:', data.message);
+                        }
+                    })
+                    .catch(error => {
+                        cedulaInput.style.border = "2px solid #f43f5e";
+                        console.error('Error en fetch:', error);
+                    });
+            }
+        });
+    }
+
+    // Lógica para Abogado Responsable
+    const cedulaAbogadoInput = document.getElementById('id_cedula_abogado');
+    const abogadoInput = document.getElementById('id_abogado_responsable');
+
+    if (cedulaAbogadoInput && abogadoInput) {
+        cedulaAbogadoInput.addEventListener('blur', function() {
+            const cedula = this.value.trim();
+            if (cedula && cedula.length > 3) {
+                console.log('Buscando abogado:', cedula);
+                cedulaAbogadoInput.style.border = "2px solid #6366f1";
+                fetch('{% url "buscar_tercero_nexus" %}?cedula=' + cedula)
+                    .then(response => response.json())
+                    .then(data => {
+                        cedulaAbogadoInput.style.border = "";
+                        if (data.success) {
+                            abogadoInput.value = data.nombre;
+                            abogadoInput.style.backgroundColor = "rgba(99, 102, 241, 0.2)";
+                            abogadoInput.style.fontWeight = "bold";
+                            setTimeout(() => abogadoInput.style.backgroundColor = "", 2000);
+                        }
+                    })
+                    .catch(error => {
+                        cedulaAbogadoInput.style.border = "2px solid #f43f5e";
+                        console.error('Error abogado:', error);
+                    });
+            }
+        });
+    }
+});
+
+</script>
 {% endblock %}

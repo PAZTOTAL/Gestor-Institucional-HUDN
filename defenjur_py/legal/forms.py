@@ -17,17 +17,43 @@ class PremiumModelForm(forms.ModelForm):
                 field.widget.attrs['rows'] = 4
 
 class AccionTutelaForm(PremiumModelForm):
+    cedula_accionante = forms.CharField(
+        label='CÉDULA ACCIONANTE', 
+        required=False, 
+        widget=forms.TextInput(attrs={'placeholder': 'Digite cédula para buscar...'})
+    )
+    cedula_abogado = forms.CharField(
+        label='CÉDULA ABOGADO', 
+        required=False, 
+        widget=forms.TextInput(attrs={'placeholder': 'Buscar abogado...'})
+    )
     class Meta:
         model = AccionTutela
-        fields = ['num_proceso', 'fecha_llegada', 'despacho_judicial', 'accionante', 'accionado', 'abogado_responsable']
+        fields = ['num_proceso', 'fecha_llegada', 'despacho_judicial', 'cedula_accionante', 'accionante', 'accionado', 'cedula_abogado', 'abogado_responsable']
         widgets = {
             'fecha_llegada': forms.DateInput(attrs={'type': 'date'}),
         }
 
 class DerechoPeticionForm(PremiumModelForm):
+    cedula_accionante = forms.CharField(
+        label='CÉDULA SOLICITANTE', 
+        required=False, 
+        widget=forms.TextInput(attrs={'placeholder': 'Digite cédula para buscar...'})
+    )
+    cedula_abogado = forms.CharField(
+        label='CÉDULA ABOGADO', 
+        required=False, 
+        widget=forms.TextInput(attrs={'placeholder': 'Buscar abogado...'})
+    )
     class Meta:
         model = DerechoPeticion
-        fields = '__all__'
+        fields = [
+            'cedula_accionante', 'nombre_persona_solicitante', 'fecha_correo', 'num_reparto', 
+            'fecha_reparto', 'num_rad_interno', 'fecha_remitente_peticion', 
+            'cedula_persona_solicitante', 'peticionario_int_ext', 'peticionario', 
+            'causa_peticion', 'cedula_abogado', 'abogado_responsable', 'modalidad_peticion', 
+            'tramite_impartido', 'area_remitir_informacion', 'observaciones'
+        ]
         widgets = {
             'fecha_correo': forms.DateInput(attrs={'type': 'date'}),
             'fecha_reparto': forms.DateInput(attrs={'type': 'date'}),

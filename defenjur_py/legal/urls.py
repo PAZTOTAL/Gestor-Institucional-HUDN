@@ -18,6 +18,7 @@ urlpatterns = [
     # API REST JSON (getAll / getDetail por entidad, mismo criterio de rol que listas web)
     path('api/entities/<slug:slug>/', api_entities.api_entity_list_view, name='api_entity_list'),
     path('api/entities/<slug:slug>/<int:pk>/', api_entities.api_entity_detail_view, name='api_entity_detail'),
+    path('api/buscar-tercero/', views.buscar_tercero_nexus, name='buscar_tercero_nexus'),
 
     # ─── Comunes / Utilidades ──────────────────────────────────────────────────
     path('exportar/<slug:modulo>/', views.exportar_modulo_excel, name='exportar_excel'),
