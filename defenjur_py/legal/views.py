@@ -474,10 +474,12 @@ class TutelaCreateView(LoginRequiredMixin, CreateView):
     success_url = reverse_lazy('tutelas')
 
     def form_valid(self, form):
-        response = super().form_valid(form)
-        _guardar_adjuntos(self.request.FILES.getlist('adjuntos'), 'tutela', self.object.id)
+        obj = form.save(commit=False)
+        obj.usuario_carga = self.request.user.get_username()
+        obj.save()
+        _guardar_adjuntos(self.request.FILES.getlist('adjuntos'), 'tutela', obj.id)
         messages.success(self.request, 'Acción de Tutela registrada correctamente.')
-        return response
+        return redirect(self.success_url)
 
 class TutelaUpdateView(ModalUpdateView):
     model = AccionTutela
@@ -1001,6 +1003,34 @@ def cargar_despachos_judiciales(request):
 
     except Exception as e:
         logger.error(f"Error cargando despachos: {e}")
+        return JsonResponse({'success': False, 'message': str(e)})
+
+
+@require_GET
+def aplicar_migracion_auditoria(request):
+    """Vista temporal: aplica ALTER TABLE para agregar columnas de auditoría a AccionTutela."""
+    if not request.user.is_superuser:
+        return JsonResponse({'success': False, 'message': 'Acceso denegado'}, status=403)
+    from django.db import connection
+    resultados = []
+    sqls = [
+        ("fecha_registro", "ALTER TABLE defenjur_app_acciontutela ADD fecha_registro DATETIME2 NULL"),
+        ("usuario_carga",  "ALTER TABLE defenjur_app_acciontutela ADD usuario_carga NVARCHAR(150) NULL"),
+    ]
+    try:
+        with connection.cursor() as cursor:
+            for col, sql in sqls:
+                cursor.execute(f"""
+                    IF NOT EXISTS (
+                        SELECT * FROM INFORMATION_SCHEMA.COLUMNS
+                        WHERE TABLE_NAME='defenjur_app_acciontutela' AND COLUMN_NAME='{col}'
+                    ) EXEC('{sql}')
+                """)
+                resultados.append(f"Columna '{col}': OK")
+            connection.commit()
+        return JsonResponse({'success': True, 'resultados': resultados})
+    except Exception as e:
+        logger.error(f"Error aplicando migración auditoría: {e}")
         return JsonResponse({'success': False, 'message': str(e)})
 
 

@@ -3,8 +3,21 @@ from django.contrib.auth import get_user_model
 from .models import (
     AccionTutela, DerechoPeticion, ProcesoExtrajudicial, ProcesoJudicialActiva, ProcesoJudicialPasiva,
     Peritaje, PagoSentenciaJudicial, ProcesoJudicialTerminado,
-    ProcesoAdministrativoSancionatorio, RequerimientoEnteControl
+    ProcesoAdministrativoSancionatorio, RequerimientoEnteControl, DespachoJudicial
 )
+
+
+def get_despacho_choices():
+    """Devuelve lista de opciones para el select de Despacho Judicial."""
+    try:
+        opciones = [('', '— Seleccione un despacho —')]
+        opciones += [
+            (d.nombre, f"{d.ciudad} — {d.nombre}")
+            for d in DespachoJudicial.objects.order_by('ciudad', 'nombre')
+        ]
+        return opciones
+    except Exception:
+        return [('', '— Sin despachos disponibles —')]
 
 class PremiumModelForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
@@ -27,6 +40,16 @@ class AccionTutelaForm(PremiumModelForm):
         required=False, 
         widget=forms.TextInput(attrs={'placeholder': 'Buscar abogado...'})
     )
+    despacho_judicial = forms.ChoiceField(
+        label='DESPACHO JUDICIAL',
+        required=False,
+        widget=forms.Select(attrs={'class': 'premium-input'})
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['despacho_judicial'].choices = get_despacho_choices()
+
     class Meta:
         model = AccionTutela
         fields = ['num_proceso', 'fecha_llegada', 'despacho_judicial', 'cedula_accionante', 'accionante', 'accionado', 'cedula_abogado', 'abogado_responsable']

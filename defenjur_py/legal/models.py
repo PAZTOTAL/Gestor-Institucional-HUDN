@@ -184,6 +184,10 @@ class AccionTutela(models.Model):
     # Campo para indexación obligatoria solicitada anteriormente
     num_reparto = models.CharField('N° REPARTO', max_length=255, db_column='num_reparto', null=True, blank=True)
 
+    # Auditoría — se llenan automáticamente al guardar
+    fecha_registro = models.DateTimeField('Fecha de registro', auto_now_add=True, null=True)
+    usuario_carga = models.CharField('Usuario que cargó', max_length=150, null=True, blank=True)
+
     class Meta:
         db_table = 'defenjur_app_acciontutela'
         verbose_name_plural = "Acciones de Tutela"
