@@ -1,0 +1,29 @@
+{% extends "tercerizadas/base.html" %}
+{% block title %}Registrar Afiliación — Tercerizadas | HUDN{% endblock %}
+{% block breadcrumb %} / <a href="{% url 'tercerizadas:detalle_servidor' servidor.pk %}" style="color:var(--terc-primary);text-decoration:none;">{{ servidor.nombre_completo }}</a> / <strong>Afiliación</strong>{% endblock %}
+
+{% block content %}
+<header style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;flex-wrap:wrap;gap:1rem;">
+    <h1 style="margin:0;font-size:1.4rem;font-weight:800;color:#1a2332;">Registrar Afiliación — {{ servidor.nombre_completo }}</h1>
+    <a href="{% url 'tercerizadas:detalle_servidor' servidor.pk %}" class="btn-terc btn-terc-outline"><i data-lucide="arrow-left"></i> Volver</a>
+</header>
+<form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    <div class="form-section">
+        <div class="form-section-title"><i data-lucide="shield-check" style="width:16px;"></i> Datos de Afiliación</div>
+        <div class="form-grid">
+            <div class="form-group"><label class="form-label">Tipo *</label>{{ form.tipo }}</div>
+            <div class="form-group"><label class="form-label">Entidad *</label>{{ form.nombre_entidad }}</div>
+            <div class="form-group"><label class="form-label">N° de Afiliación</label>{{ form.numero_afiliacion }}</div>
+            <div class="form-group"><label class="form-label">Fecha de Afiliación</label>{{ form.fecha_afiliacion }}</div>
+            <div class="form-group"><label class="form-label">Fecha de Vencimiento</label>{{ form.fecha_vencimiento }}</div>
+            <div class="form-group"><label class="form-label">Soporte (PDF)</label>{{ form.documento_soporte }}</div>
+            <div class="form-group"><label class="form-check">{{ form.vigente }}<span class="form-label" style="margin:0;">Vigente</span></label></div>
+        </div>
+    </div>
+    <div style="display:flex;gap:0.75rem;justify-content:flex-end;">
+        <a href="{% url 'tercerizadas:detalle_servidor' servidor.pk %}" class="btn-terc btn-terc-outline"><i data-lucide="x"></i> Cancelar</a>
+        <button type="submit" class="btn-terc btn-terc-primary"><i data-lucide="save"></i> Guardar Afiliación</button>
+    </div>
+</form>
+{% endblock %}

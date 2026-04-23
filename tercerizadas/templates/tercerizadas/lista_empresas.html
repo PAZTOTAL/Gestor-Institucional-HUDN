@@ -1,0 +1,89 @@
+{% extends "tercerizadas/base.html" %}
+{% block title %}Empresas — Tercerizadas | HUDN{% endblock %}
+{% block breadcrumb %} / <strong>Empresas</strong>{% endblock %}
+
+{% block content %}
+<header style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem;flex-wrap:wrap;gap:1rem;">
+    <h1 style="margin:0;font-size:1.5rem;font-weight:800;color:#1a2332;">Empresas Tercerizadas</h1>
+    <a href="{% url 'tercerizadas:crear_empresa' %}" class="btn-terc btn-terc-primary">
+        <i data-lucide="plus"></i> Nueva Empresa
+    </a>
+</header>
+
+<form method="get" style="margin-bottom:1.25rem;">
+    <div class="search-box" style="max-width:420px;">
+        <i data-lucide="search"></i>
+        <input type="text" name="q" value="{{ q }}" placeholder="Buscar por NIT o razón social…">
+        <button type="submit" style="border:none;background:transparent;cursor:pointer;color:var(--terc-primary);font-weight:600;padding:0 0.25rem;">Buscar</button>
+    </div>
+</form>
+
+<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:1.25rem;">
+    {% for empresa in empresas %}
+    <div class="terc-card" style="position:relative;">
+        <div style="display:flex;align-items:flex-start;gap:1rem;margin-bottom:1rem;">
+            <div style="width:50px;height:50px;border-radius:12px;background:linear-gradient(135deg,#8b5cf6,#7c3aed);
+                        display:flex;align-items:center;justify-content:center;flex-shrink:0;
+                        font-weight:800;font-size:1.1rem;color:#fff;">
+                {{ empresa.razon_social|slice:":1" }}
+            </div>
+            <div style="flex:1;min-width:0;">
+                <div style="font-weight:700;font-size:0.95rem;color:#1a2332;margin-bottom:0.1rem;
+                            overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"
+                     title="{{ empresa.razon_social }}">{{ empresa.razon_social }}</div>
+                <div style="font-size:0.78rem;color:#6c757d;">NIT: {{ empresa.nit }}</div>
+            </div>
+            {% if empresa.activa %}
+                <span class="status-pill activo" style="flex-shrink:0;">Activa</span>
+            {% else %}
+                <span class="status-pill inactivo" style="flex-shrink:0;">Inactiva</span>
+            {% endif %}
+        </div>
+
+        <div style="font-size:0.82rem;color:#475569;margin-bottom:0.5rem;">
+            <i data-lucide="briefcase" style="width:14px;vertical-align:middle;color:#94a3b8;"></i>
+            {{ empresa.tipo_servicio }}
+        </div>
+        {% if empresa.representante_legal %}
+        <div style="font-size:0.82rem;color:#475569;margin-bottom:0.5rem;">
+            <i data-lucide="user" style="width:14px;vertical-align:middle;color:#94a3b8;"></i>
+            {{ empresa.representante_legal }}
+        </div>
+        {% endif %}
+        {% if empresa.telefono %}
+        <div style="font-size:0.82rem;color:#475569;margin-bottom:0.5rem;">
+            <i data-lucide="phone" style="width:14px;vertical-align:middle;color:#94a3b8;"></i>
+            {{ empresa.telefono }}
+        </div>
+        {% endif %}
+
+        <div style="margin-top:1rem;padding-top:1rem;border-top:1px solid #f1f5f9;
+                    display:flex;justify-content:space-between;align-items:center;">
+            <span style="font-size:0.8rem;font-weight:700;color:var(--terc-primary);">
+                <i data-lucide="users" style="width:14px;vertical-align:middle;"></i>
+                {{ empresa.total_servidores }} servidor{{ empresa.total_servidores|pluralize:"es" }}
+            </span>
+            <div style="display:flex;gap:0.4rem;">
+                <a href="{% url 'tercerizadas:lista_servidores' %}?empresa={{ empresa.pk }}"
+                   class="btn-terc btn-terc-outline" style="padding:0.3rem 0.65rem;font-size:0.78rem;" title="Ver servidores">
+                    <i data-lucide="users" style="width:14px;"></i>
+                </a>
+                <a href="{% url 'tercerizadas:editar_empresa' empresa.pk %}"
+                   class="btn-terc" style="padding:0.3rem 0.65rem;font-size:0.78rem;background:#fef3c7;color:#b45309;border:1.5px solid #fcd34d;" title="Editar">
+                    <i data-lucide="pencil" style="width:14px;"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="terc-card empty-state" style="grid-column:1/-1;padding:3.5rem;">
+        <i data-lucide="building-2" style="width:56px;height:56px;color:#cbd5e1;"></i>
+        <h3 style="color:#64748b;margin:0.75rem 0 0.5rem;">Sin empresas registradas</h3>
+        <p style="color:#94a3b8;margin:0 0 1.25rem;">Registre la primera empresa tercerizada del hospital.</p>
+        <a href="{% url 'tercerizadas:crear_empresa' %}" class="btn-terc btn-terc-primary">
+            <i data-lucide="plus"></i> Nueva Empresa
+        </a>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

@@ -45,6 +45,7 @@ urlpatterns = [
     path('organigrama/', include('A_00_Organigrama.urls')),
     path('visor-soportes/', include('visor_soportes.urls')),
     path('atencion/', include('unificador_v1.urls')),
+    path('tercerizadas/', include('tercerizadas.urls', namespace='tercerizadas')),
 ]
 
 
