@@ -1,4 +1,5 @@
 {% extends 'core/base.html' %}
+{% load static %}
 
 {% block title %}Inicio - Hospital Management{% endblock %}
 
@@ -157,28 +158,48 @@
     {% for item in active_structure %}
     {% with cat=item.category %}
     <div id="section-{{ cat.slug }}" class="hidden animate-in fade-in slide-in-from-top-2 duration-300">
-        <div class="flex items-center gap-4 mb-8 border-b-2 border-slate-200 pb-4">
-            <button onclick="{% if cat.slug in 'hospitalizacion quirofanos gineco_obstetricia asistencial urgencias consulta_externa' %}showSection('asistencial'){% else %}showSection('subgerencia_financiera'){% endif %}" class="p-2 hover:bg-slate-100 rounded-full transition-colors">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="text-blue-900"><path d="m15 18-6-6 6-6"/></svg>
+        <div class="flex flex-col md:flex-row items-center gap-6 mb-8 border-b-2 border-slate-200 pb-6">
+            <button onclick="{% if cat.slug in 'hospitalizacion quirofanos gineco_obstetricia asistencial urgencias consulta_externa' %}showSection('asistencial'){% else %}showSection('subgerencia_financiera'){% endif %}" class="p-3 bg-white hover:bg-slate-50 rounded-2xl shadow-sm border border-slate-100 transition-all group">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="text-blue-900 group-hover:-translate-x-1 transition-transform"><path d="m15 18-6-6 6-6"/></svg>
             </button>
-            <div>
-                <h2 class="text-3xl font-black text-blue-950 uppercase tracking-tighter">{{ cat.name }}</h2>
-                <p class="text-slate-500 font-medium">{{ cat.description }}</p>
+            <div class="flex-grow">
+                <div class="flex items-center gap-4">
+                    <div class="p-3 bg-blue-100 rounded-2xl text-blue-700">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="{{ cat.icon }}"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <h2 class="text-4xl font-black text-blue-950 uppercase tracking-tighter">{{ cat.name }}</h2>
+                        <p class="text-slate-500 font-bold text-lg">{{ cat.description }}</p>
+                    </div>
+                </div>
             </div>
+            {% if cat.slug == 'talento_humano' %}
+            <div class="hidden lg:block w-48 h-24 relative overflow-hidden rounded-2xl">
+                <img src="{% static 'core/img/hr_hero.png' %}" class="absolute inset-0 w-full h-full object-cover transform scale-110">
+                <div class="absolute inset-0 bg-gradient-to-r from-white via-transparent to-transparent"></div>
+            </div>
+            {% endif %}
         </div>
 
         {% if item.modules %}
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                 {% for module in item.modules %}
-                <a href="{{ module.url }}" class="glass-card p-8 flex flex-col items-center text-center border-b-4 border-blue-500 hover:border-blue-700 transition-all hover:-translate-y-2 group">
-                    <div class="w-20 h-20 bg-blue-50 rounded-3xl flex items-center justify-center mb-6 text-blue-500 group-hover:bg-blue-600 group-hover:text-white transition-all">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="{{ module.icon|default:'M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5' }}"></path>
-                        </svg>
+                <a href="{{ module.url }}" class="glass-card p-4 flex flex-col items-center text-center border-b-4 border-blue-500 hover:border-blue-700 transition-all hover:-translate-y-1 group relative overflow-hidden">
+                    <div class="absolute top-0 right-0 w-16 h-16 bg-blue-500/5 -mr-8 -mt-8 rounded-full group-hover:scale-150 transition-transform duration-500"></div>
+                    <div class="w-12 h-12 bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl flex items-center justify-center mb-3 text-blue-600 group-hover:from-blue-600 group-hover:to-blue-700 group-hover:text-white transition-all shadow-sm">
+                        {% if module.image %}
+                            <img src="{% static module.image %}" class="w-10 h-10 object-contain drop-shadow-md">
+                        {% else %}
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="{{ module.icon|default:'M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5' }}"></path>
+                            </svg>
+                        {% endif %}
                     </div>
-                    <h3 class="text-2xl font-black mb-2 text-blue-950 uppercase tracking-tight">{{ module.name }}</h3>
-                    <p class="text-slate-500 text-lg font-medium">{{ module.description }}</p>
-                    <div class="mt-4 text-blue-600 font-bold text-sm opacity-0 group-hover:opacity-100 transition-opacity">ABRIR APLICACIÓN</div>
+                    <h3 class="text-xs font-black mb-1 text-blue-950 uppercase tracking-tight group-hover:text-blue-700 transition-colors leading-tight">{{ module.name }}</h3>
+                    <p class="text-[10px] text-slate-400 font-bold leading-tight line-clamp-2">{{ module.description }}</p>
+                    <div class="mt-2 text-[8px] text-blue-600 font-black opacity-0 group-hover:opacity-100 transition-opacity uppercase tracking-widest">Entrar</div>
                 </a>
                 {% endfor %}
             </div>
