@@ -1,8 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "Bash('./venv/Scripts/python.exe' manage.py check paz_y_salvo)",
-      "Bash(venv/Scripts/python.exe -c ' *)"
-    ]
-  }
-}
