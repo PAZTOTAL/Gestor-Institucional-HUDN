@@ -251,9 +251,20 @@ class HomeView(AccessControlMixin, TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         user = self.request.user
-        cache_key = f"dashboard_structure_{user.id}"
         
-        # Intentar obtener el dashboard estructurado desde cache
+        # Superuser Bypass para velocidad máxima
+        if user.is_superuser:
+            context['is_superuser'] = True
+            # Intentamos cache pero si no, seguimos rápido
+            cache_key = f"dashboard_structure_{user.id}"
+            from django.core.cache import cache
+            cached_data = cache.get(cache_key)
+            if cached_data:
+                context.update(cached_data)
+                return context
+
+        # Resto del proceso (con cache)
+        cache_key = f"dashboard_structure_{user.id}"
         from django.core.cache import cache
         cached_data = cache.get(cache_key)
         if cached_data:

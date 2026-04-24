@@ -144,10 +144,11 @@ DATABASES = {
         'PASSWORD': 'ConsultasPantojaHUDN_2026$', 
         'HOST': '172.20.100.209',
         'PORT': '',
-        'CONN_MAX_AGE': 60,  # Habilitar Connection Pooling (60s) para reducir overhead de red
+        'CONN_MAX_AGE': 600,  # Pooling de 10 min
         'OPTIONS': {
             'driver': 'ODBC Driver 17 for SQL Server',
-            'timeout': 60,
+            'timeout': 30,
+            'connection_timeout': 5,
         },
     },
     'readonly': {
@@ -157,7 +158,7 @@ DATABASES = {
         'PASSWORD': 'ConsultaHUDN2026*/$',
         'HOST': '172.20.100.209',
         'PORT': '',
-        'CONN_MAX_AGE': 60,  # Habilitar Connection Pooling (60s)
+        'CONN_MAX_AGE': 300,  # Habilitar Connection Pooling (300s)
         'OPTIONS': {
             'driver': 'ODBC Driver 17 for SQL Server',
             'host_is_server': True,
@@ -224,7 +225,7 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+STATICFILES_STORAGE = 'whitenoise.storage.StaticFilesStorage'
 STATICFILES_DIRS = [
     BASE_DIR / 'static',
     BASE_DIR / 'defenjur_py' / 'static',

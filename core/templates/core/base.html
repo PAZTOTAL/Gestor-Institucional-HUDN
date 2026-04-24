@@ -6,7 +6,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Hospital Management{% endblock %}</title>
-    <link rel="stylesheet" href="{% static 'core/css/index.css' %}?v=5">
+    <link rel="stylesheet" href="{% static 'core/css/index.css' %}?v=10">
     <!-- Tailwind CSS - loaded early but non-blocking -->
     <script src="https://cdn.tailwindcss.com" defer></script>
 
@@ -162,8 +162,8 @@
 
 <body class="relative">
     <!-- Fondo Institucional Sutil (Watermark) -->
-    <div class="fixed inset-0 pointer-events-none z-[-1] opacity-[0.15] flex items-center justify-center p-10 overflow-hidden">
-        <img src="{% static 'core/img/logo_hudn_50_small.png' %}" class="w-full max-w-6xl object-contain opacity-80">
+    <div class="fixed inset-0 pointer-events-none z-[-1] opacity-[0.12] flex items-center justify-center p-10 overflow-hidden">
+        <img src="{% static 'core/img/logo_hudn_50_tiny.png' %}" class="w-full max-w-4xl object-contain opacity-70">
     </div>
     {% if db_caidas %}
     <div

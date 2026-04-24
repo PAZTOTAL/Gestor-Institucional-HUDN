@@ -15,22 +15,30 @@ class UserPermissionsMiddleware:
             return self.get_response(request)
 
         if request.user.is_authenticated:
-            # 1. Precargar Perfil (Evita múltiples get_or_create)
-            if not hasattr(request.user, '_perfil_cache'):
-                try:
-                    # Intentamos obtener el perfil relacionado
-                    request.user._perfil_cache = request.user.perfil
-                except (PerfilUsuario.DoesNotExist, AttributeError):
-                    # Si no existe, lo creamos una sola vez
-                    p, _ = PerfilUsuario.objects.get_or_create(user=request.user)
-                    request.user._perfil_cache = p
+            cache_key = f'user_data_cache_{request.user.id}'
+            from django.core.cache import cache
+            user_data = cache.get(cache_key)
 
-            # 2. Precargar Permisos de Aplicaciones
-            if not hasattr(request.user, '_permisos_apps_cache'):
+            if user_data:
+                request.user._perfil_cache = user_data['perfil']
+                request.user._permisos_apps_cache = user_data['permisos']
+            else:
+                # 1. Precargar Perfil
+                try:
+                    perfil = request.user.perfil
+                except (PerfilUsuario.DoesNotExist, AttributeError):
+                    perfil, _ = PerfilUsuario.objects.get_or_create(user=request.user)
+                
+                request.user._perfil_cache = perfil
+
+                # 2. Precargar Permisos de Aplicaciones
                 perms = set(
                     PermisoApp.objects.filter(user=request.user, permitido=True)
                     .values_list('app_label', flat=True)
                 )
                 request.user._permisos_apps_cache = perms
+
+                # Guardar en cache por 5 minutos
+                cache.set(cache_key, {'perfil': perfil, 'permisos': perms}, 300)
 
         return self.get_response(request)
