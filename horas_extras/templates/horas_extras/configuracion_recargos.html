@@ -271,36 +271,27 @@
       <div id="coord-buscar-error" class="hidden mt-2 text-xs text-rose-600 font-bold bg-rose-50 px-3 py-2 rounded-lg border border-rose-200"></div>
     </div>
 
-    <div id="coord-username-row" class="mb-4">
-      <label class="block text-sm font-semibold text-slate-700 mb-1">Nombre de usuario *</label>
-      <input id="coord-username" type="text" placeholder="Ej: jperez" autocomplete="off"
+    <div class="mb-4">
+      <label class="block text-sm font-semibold text-slate-700 mb-1">Nombre completo *</label>
+      <input id="coord-nombre" type="text" placeholder="Nombre del coordinador" autocomplete="off"
         class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400">
     </div>
     <div class="mb-4">
-      <label class="block text-sm font-semibold text-slate-700 mb-1">Número de identificación</label>
-      <input id="coord-documento" type="text" placeholder="Cédula del coordinador"
+      <label class="block text-sm font-semibold text-slate-700 mb-1">Número de identificación *</label>
+      <input id="coord-documento" type="text" placeholder="Cédula del coordinador" autocomplete="off"
         class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400">
     </div>
-    <div class="grid grid-cols-2 gap-4 mb-4">
-      <div>
-        <label class="block text-sm font-semibold text-slate-700 mb-1">Nombre</label>
-        <input id="coord-first-name" type="text" placeholder="Juan"
-          class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400">
-      </div>
-      <div>
-        <label class="block text-sm font-semibold text-slate-700 mb-1">Apellido</label>
-        <input id="coord-last-name" type="text" placeholder="Pérez"
-          class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400">
-      </div>
-    </div>
     <div class="mb-4">
-      <label class="block text-sm font-semibold text-slate-700 mb-1" id="coord-pass-label">Contraseña *</label>
-      <input id="coord-password" type="password" placeholder="Mín. 6 caracteres"
+      <label class="block text-sm font-semibold text-slate-700 mb-1">Cargo</label>
+      <input id="coord-cargo" type="text" placeholder="Cargo del coordinador" autocomplete="off"
         class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400">
     </div>
     <div class="mb-5">
-      <label class="block text-sm font-semibold text-slate-700 mb-2">Servicios / Áreas asignadas *</label>
-      <div id="coord-areas-checkboxes" class="flex flex-wrap gap-2"></div>
+      <label class="block text-sm font-semibold text-slate-700 mb-2">Servicios / Áreas asignadas</label>
+      <input id="coord-buscar-area" type="text" placeholder="Buscar área..." autocomplete="off"
+        oninput="filtrarAreasCoord()"
+        class="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm mb-2 focus:outline-none focus:ring-2 focus:ring-blue-400">
+      <div id="coord-areas-checkboxes" class="flex flex-wrap gap-2 max-h-40 overflow-y-auto pr-1"></div>
     </div>
     <div class="flex justify-end gap-3">
       <button onclick="cerrarModalCoord()" class="px-5 py-2 rounded-xl border border-slate-200 text-slate-700 text-sm font-bold hover:bg-slate-50 transition">Cancelar</button>
@@ -439,6 +430,7 @@ function api(path, opts={}) {
 
 // ── Estado global ──────────────────────────────────────────────────────────
 let areas      = [];
+let areasModal = [];   // copia independiente para el modal de coordinadores
 let empleados  = [];
 let coordsList = [];
 let editAreaId   = null;
@@ -777,7 +769,7 @@ function filtrarCoords() {
   if (!q) { renderCoords(coordsList); return; }
   const filtrados = coordsList.filter(c =>
     (c.nombre||'').toLowerCase().includes(q) ||
-    (c.username||'').toLowerCase().includes(q) ||
+    (c.cargo||'').toLowerCase().includes(q) ||
     (c.documento||'').includes(q)
   );
   renderCoords(filtrados);
@@ -798,12 +790,9 @@ async function buscarCoordEnPersonal() {
     const emp = resultados.find(e => e.documento === cedula) || resultados[0];
 
     if (emp) {
-      // Separar nombre en partes (apellidos nombre)
-      const partes = emp.nombre.trim().split(' ');
-      const mitad  = Math.ceil(partes.length / 2);
-      document.getElementById('coord-documento').value  = emp.documento;
-      document.getElementById('coord-first-name').value = partes.slice(mitad).join(' ');
-      document.getElementById('coord-last-name').value  = partes.slice(0, mitad).join(' ');
+      document.getElementById('coord-nombre').value    = emp.nombre;
+      document.getElementById('coord-documento').value = emp.documento;
+      document.getElementById('coord-cargo').value     = emp.cargo || '';
       resOk.textContent = `✓ Encontrado: ${emp.nombre} — ${emp.cargo || emp.area_nombre}`;
       resOk.classList.remove('hidden');
     } else {
@@ -827,7 +816,7 @@ function renderCoords(lista=null) {
     <thead><tr class="bg-slate-50 text-left">
       <th class="px-4 py-2 font-bold text-slate-600">Nombre</th>
       <th class="px-4 py-2 font-bold text-slate-600">Identificación</th>
-      <th class="px-4 py-2 font-bold text-slate-600">Usuario</th>
+      <th class="px-4 py-2 font-bold text-slate-600">Cargo</th>
       <th class="px-4 py-2 font-bold text-slate-600">Servicios asignados</th>
       <th class="px-4 py-2 font-bold text-slate-600">Acciones</th>
     </tr></thead><tbody>`;
@@ -836,15 +825,15 @@ function renderCoords(lista=null) {
       ? c.areas.map(a=>`<span class="px-2 py-0.5 rounded-full text-xs font-bold bg-blue-100 text-blue-800 mr-1">${a.nombre}</span>`).join('')
       : '<span class="text-slate-400">Sin áreas</span>';
     html += `<tr class="border-t border-slate-100 hover:bg-slate-50">
-      <td class="px-4 py-2.5 font-bold text-slate-800">${c.nombre || c.username}</td>
+      <td class="px-4 py-2.5 font-bold text-slate-800">${c.nombre}</td>
       <td class="px-4 py-2.5 text-slate-500">${c.documento||'—'}</td>
-      <td class="px-4 py-2.5 text-slate-500">${c.username}</td>
+      <td class="px-4 py-2.5 text-slate-500">${c.cargo||'—'}</td>
       <td class="px-4 py-2.5">${areasHtml}</td>
       <td class="px-4 py-2.5">
         <div class="flex gap-2">
           <button onclick="abrirModalCoord(${c.id})"
             class="px-3 py-1 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg text-xs font-bold transition">Editar</button>
-          <button onclick="eliminarCoord(${c.id},'${(c.nombre||c.username).replace(/'/g,"\\'")}' )"
+          <button onclick="eliminarCoord(${c.id},'${c.nombre.replace(/'/g,"\\'")}' )"
             class="px-3 py-1 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg text-xs font-bold transition">Eliminar</button>
         </div>
       </td>
@@ -858,23 +847,20 @@ async function abrirModalCoord(id=null) {
   editCoordId = id;
   const c = id ? coordsList.find(x=>x.id===id) : null;
   // Cargar áreas si no están en memoria (usa caché del backend — rápido)
-  if (!areas.length) {
-    const resp = await api('areas/?page_size=50&page=1');
-    areas = resp.results || [];
+  if (!areasModal.length) {
+    const resp = await api('areas/?page_size=500&page=1');
+    areasModal = resp.results || [];
   }
-  document.getElementById('modal-coord-title').textContent = id ? `Editar: ${c.nombre||c.username}` : 'Nuevo Coordinador';
-  document.getElementById('coord-username-row').style.display = id ? 'none' : '';
-  document.getElementById('coord-username').value   = '';
-  document.getElementById('coord-documento').value  = c ? (c.documento||'') : '';
-  document.getElementById('coord-first-name').value = c ? (c.first_name||'') : '';
-  document.getElementById('coord-last-name').value  = c ? (c.last_name||'')  : '';
-  document.getElementById('coord-password').value   = '';
-  document.getElementById('coord-pass-label').textContent = id ? 'Nueva contraseña (dejar vacío para no cambiar)' : 'Contraseña *';
+  document.getElementById('modal-coord-title').textContent = id ? `Editar: ${c.nombre}` : 'Nuevo Coordinador';
+  document.getElementById('coord-nombre').value    = c ? (c.nombre||'') : '';
+  document.getElementById('coord-documento').value = c ? (c.documento||'') : '';
+  document.getElementById('coord-cargo').value     = c ? (c.cargo||'') : '';
+  document.getElementById('coord-buscar-area').value = '';
   document.getElementById('btn-guardar-coord').textContent = id ? 'Actualizar' : 'Crear';
 
   const selectedAreas = c ? c.areas.map(a=>a.id) : [];
   const chkDiv = document.getElementById('coord-areas-checkboxes');
-  chkDiv.innerHTML = areas.map(a => {
+  chkDiv.innerHTML = areasModal.map(a => {
     const sel = selectedAreas.includes(a.id);
     return `<label data-area="${a.id}" onclick="toggleAreaCoord(${a.id},this)"
       class="cursor-pointer select-none px-3 py-1.5 rounded-full border text-sm font-medium transition
@@ -889,7 +875,19 @@ async function abrirModalCoord(id=null) {
   document.getElementById('modal-coord-error').classList.add('hidden');
   document.getElementById('modal-coord').classList.remove('hidden');
 }
-function cerrarModalCoord() { document.getElementById('modal-coord').classList.add('hidden'); }
+
+function cerrarModalCoord() {
+  document.getElementById('modal-coord').classList.add('hidden');
+  document.getElementById('coord-buscar-area').value = '';
+  filtrarAreasCoord();
+}
+
+function filtrarAreasCoord() {
+  const q = document.getElementById('coord-buscar-area').value.trim().toLowerCase();
+  document.querySelectorAll('#coord-areas-checkboxes label[data-area]').forEach(label => {
+    label.style.display = (!q || label.textContent.trim().toLowerCase().includes(q)) ? '' : 'none';
+  });
+}
 
 function toggleAreaCoord(areaId, el) {
   const on = el.classList.contains('border-blue-700');
@@ -908,33 +906,30 @@ function getSelectedAreas() {
 }
 
 async function guardarCoord() {
-  const first_name = document.getElementById('coord-first-name').value.trim();
-  const last_name  = document.getElementById('coord-last-name').value.trim();
+  const nombre     = document.getElementById('coord-nombre').value.trim();
   const documento  = document.getElementById('coord-documento').value.trim();
-  const password   = document.getElementById('coord-password').value;
+  const cargo      = document.getElementById('coord-cargo').value.trim();
   const areasSelec = getSelectedAreas();
   const errEl      = document.getElementById('modal-coord-error');
 
-  if (areasSelec.length === 0) {
-    errEl.textContent = 'Asigna al menos un área'; errEl.classList.remove('hidden'); return;
-  }
+  if (!nombre)    { errEl.textContent='El nombre es obligatorio';          errEl.classList.remove('hidden'); return; }
+  if (!documento) { errEl.textContent='El documento es obligatorio';       errEl.classList.remove('hidden'); return; }
   errEl.classList.add('hidden');
   const btn = document.getElementById('btn-guardar-coord');
   btn.disabled=true; btn.textContent='Guardando...';
 
   try {
+    let guardado;
     if (editCoordId) {
-      const body = {first_name, last_name, documento, areas: areasSelec};
-      if (password) body.password = password;
-      await api(`coordinadores/${editCoordId}/`, {method:'PUT', body: JSON.stringify(body)});
+      guardado = await api(`coordinadores/${editCoordId}/`, {method:'PUT', body: JSON.stringify({nombre, documento, cargo, areas: areasSelec})});
+      const idx = coordsList.findIndex(x => x.id === editCoordId);
+      if (idx !== -1) coordsList[idx] = guardado;
     } else {
-      const username = document.getElementById('coord-username').value.trim();
-      if (!username) { errEl.textContent='El nombre de usuario es obligatorio'; errEl.classList.remove('hidden'); btn.disabled=false; btn.textContent='Crear'; return; }
-      if (!password) { errEl.textContent='La contraseña es obligatoria'; errEl.classList.remove('hidden'); btn.disabled=false; btn.textContent='Crear'; return; }
-      await api('coordinadores/', {method:'POST', body: JSON.stringify({username, first_name, last_name, documento, password, areas: areasSelec})});
+      guardado = await api('coordinadores/', {method:'POST', body: JSON.stringify({nombre, documento, cargo, areas: areasSelec})});
+      coordsList.push(guardado);
     }
     cerrarModalCoord();
-    cargarCoords();
+    renderCoords(coordsList);
   } catch(e) {
     errEl.textContent = e.error || 'Error al guardar';
     errEl.classList.remove('hidden');
