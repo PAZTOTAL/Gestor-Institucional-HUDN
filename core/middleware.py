@@ -45,6 +45,13 @@ class DatabaseCheckMiddleware:
     def __call__(self, request):
         path = request.path_info
         
+        # 0. Saltar validaciones para rutas críticas (Login/Logout/Admin)
+        if any(path.startswith(p) for p in _SKIP_PATHS):
+            request.readonly_db_available = True
+            request.default_db_available = True
+            request.db_caidas = None
+            return self.get_response(request)
+
         # Obtener estados del cache
         readonly_ok = cache.get('readonly_db_available')
         default_ok = cache.get('default_db_available')

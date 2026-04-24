@@ -9,6 +9,11 @@ class UserPermissionsMiddleware:
         self.get_response = get_response
 
     def __call__(self, request):
+        # 0. Saltar para rutas públicas/críticas
+        path = request.path_info
+        if any(path.startswith(p) for p in ['/login', '/logout', '/accounts/login', '/accounts/logout', '/admin/login']):
+            return self.get_response(request)
+
         if request.user.is_authenticated:
             # 1. Precargar Perfil (Evita múltiples get_or_create)
             if not hasattr(request.user, '_perfil_cache'):
