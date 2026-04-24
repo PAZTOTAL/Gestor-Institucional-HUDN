@@ -113,20 +113,21 @@ def build_dashboard_chart_context(user=None):
     
     # Obtener lista global de usuarios activos en la App (para filtrar estadísticas)
     active_usernames = list(User.objects.filter(
-        permisos_app__app_label='defenjur', 
-        permisos_app__permitido=True
-    ).values_list('username', flat=True))
+        Q(permisos_app__app_label__in=['defenjur', 'legal'], permisos_app__permitido=True) |
+        ~Q(perfil__legal_rol='INVITADO') |
+        Q(is_superuser=True)
+    ).values_list('username', flat=True).distinct())
 
     if user:
         perfil = getattr(user, 'perfil', None)
         rol = (getattr(user, 'rol', None) or getattr(perfil, 'legal_rol', '') or '').lower()
         is_admin_global = user.is_superuser or rol == 'administrador'
         if not is_admin_global:
-            user_perms = {p.model_name: p.permitido for p in PermisoModelo.objects.filter(user=user, app_label='defenjur')}
+            user_perms = {p.model_name: p.permitido for p in PermisoModelo.objects.filter(user=user, app_label__in=['defenjur', 'legal'])}
 
     def _get_qs_count(model_class, model_name):
         # Filtro centralizado en access_control.py (incluye Permiso Principal y Rol)
-        qs = filter_queryset_by_role(model_class.objects.all(), user, model_class)
+        qs = filter_queryset_by_role(model_class.objects.all(), user, model_class, active_usernames=active_usernames)
         
         # Filtro granular por permiso de módulo (solo si hay usuario)
         if user and not is_admin_global:
@@ -469,13 +470,21 @@ class UsuarioListView(AdminRequiredMixin, ListView):
     ordering = ['username']
 
     def get_queryset(self):
-        # Mostramos solo los que tienen permiso explícito, rol legal o son Superusuario
-        from django.db.models import Q
+        # Optimizamos: Usamos Exists en lugar de distinct() para mayor velocidad en SQL Server
+        from django.db.models import Q, Exists, OuterRef
+        from usuarios.models import PermisoApp
+
+        perm_exists = PermisoApp.objects.filter(
+            user=OuterRef('pk'),
+            app_label__in=['defenjur', 'legal'],
+            permitido=True
+        )
+        
         return super().get_queryset().filter(
-            Q(permisos_app__app_label='defenjur', permisos_app__permitido=True) |
+            Q(Exists(perm_exists)) |
             ~Q(perfil__legal_rol='INVITADO') |
             Q(is_superuser=True)
-        ).select_related('perfil').prefetch_related('permisos_modelo').distinct()
+        ).select_related('perfil').prefetch_related('permisos_modelo')
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
@@ -1077,14 +1086,36 @@ def api_estadisticas_rango(request):
 @login_required
 @require_POST
 def usuario_eliminar(request, pk):
+    """
+    Modificado: En lugar de borrar al usuario de la DB (global), 
+    le quita el acceso y permisos del módulo DEFENJUR.
+    """
     if not _is_app_admin(request.user):
         raise PermissionDenied
     usuario = get_object_or_404(Usuario, pk=pk)
     if usuario.pk == request.user.pk:
-        messages.error(request, 'No puede eliminar su propia cuenta.')
+        messages.error(request, 'No puede revocar sus propios permisos.')
         return redirect('usuarios')
-    usuario.delete()
-    messages.success(request, 'Usuario eliminado correctamente.')
+        
+    from usuarios.models import PermisoApp, PermisoModelo, PerfilUsuario
+    from django.core.cache import cache
+    
+    # 1. Quitar permiso principal de la App (defenjur y legal)
+    PermisoApp.objects.filter(user=usuario, app_label__in=['defenjur', 'legal']).update(permitido=False)
+    
+    # 2. Resetear Rol en Perfil
+    perfil, _ = PerfilUsuario.objects.get_or_create(user=usuario)
+    perfil.legal_rol = 'INVITADO'
+    perfil.save()
+    
+    # 3. Quitar permisos granulares de modelos
+    PermisoModelo.objects.filter(user=usuario, app_label__in=['defenjur', 'legal']).update(permitido=False)
+    
+    # 4. Invalidar Cache de Navegación
+    cache.delete(f'user_dashboard_nav_{usuario.id}')
+    cache.delete(f'dashboard_structure_{usuario.id}')
+    
+    messages.success(request, f'Se han revocado los permisos de DEFENJUR para el usuario {usuario.username}.')
     return redirect('usuarios')
 
 
