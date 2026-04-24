@@ -608,15 +608,35 @@ def _es_admin_recargos(user):
 
 
 def _areas_ids_recargos(user):
-    """None = todas las áreas (admin), lista = IDs de áreas del coordinador. Cacheado."""
+    """
+    Devuelve None (todas las áreas) si es admin.
+    Devuelve lista de IDs si es coordinador (por PerfilRecargos o por CoordinadorRecargos).
+    """
     p = _get_perfil_recargos(user)
-    if p is None or p.es_admin():
+    if p is not None and p.es_admin():
         return None
+
     cache_key = f'areas_ids_recargos_{user.pk}'
     ids = cache.get(cache_key)
-    if ids is None:
+    if ids is not None:
+        return ids
+
+    if p is not None:
+        # Coordinador con PerfilRecargos — usa sus áreas asignadas
         ids = list(p.areas.values_list('id', flat=True))
-        cache.set(cache_key, ids, _PERFIL_RECARGOS_TTL)
+    else:
+        # Sin PerfilRecargos — busca por cédula en CoordinadorRecargos
+        try:
+            cedula = user.perfil.cedula
+        except Exception:
+            cedula = None
+        if cedula:
+            coord = CoordinadorRecargos.objects.filter(documento=cedula).first()
+            ids = list(coord.areas.values_list('id', flat=True)) if coord else []
+        else:
+            ids = []
+
+    cache.set(cache_key, ids, _PERFIL_RECARGOS_TTL)
     return ids
 
 
