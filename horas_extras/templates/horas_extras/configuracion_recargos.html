@@ -209,6 +209,47 @@
 </div>
 
 {% if es_admin %}
+<!-- ═══════════════ MODAL PERSONAL DE ÁREA ═══════════════ -->
+<div id="modal-personal-area" class="fixed inset-0 z-50 flex items-center justify-center hidden">
+  <div class="absolute inset-0 bg-black/40" onclick="cerrarModalPersonalArea()"></div>
+  <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl mx-4 z-10 flex flex-col" style="max-height:90vh">
+
+    <!-- Cabecera -->
+    <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+      <div>
+        <h3 id="mpa-titulo" class="text-xl font-black text-slate-800">Personal del área</h3>
+        <p id="mpa-subtitulo" class="text-xs text-slate-400 mt-0.5"></p>
+      </div>
+      <button onclick="cerrarModalPersonalArea()" class="text-slate-400 hover:text-slate-700 font-bold text-xl leading-none">✕</button>
+    </div>
+
+    <div class="flex flex-col flex-1 overflow-hidden">
+
+      <!-- Sección: empleados actuales -->
+      <div class="px-6 pt-4 pb-2">
+        <p class="text-xs font-black text-slate-500 uppercase tracking-wide mb-2">Funcionarios en esta área</p>
+        <div id="mpa-lista" class="space-y-1 max-h-48 overflow-y-auto pr-1">
+          <p class="text-slate-400 text-sm">Cargando...</p>
+        </div>
+      </div>
+
+      <div class="border-t border-slate-100 mx-6"></div>
+
+      <!-- Sección: agregar funcionarios -->
+      <div class="px-6 pt-3 pb-4 flex-1 flex flex-col overflow-hidden">
+        <p class="text-xs font-black text-slate-500 uppercase tracking-wide mb-2">Agregar funcionarios</p>
+        <div class="flex gap-2 mb-1">
+          <input id="mpa-buscar" type="text" placeholder="Buscar por nombre o cédula..." autocomplete="off"
+            oninput="buscarParaAgregarAlArea()"
+            class="flex-1 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400">
+        </div>
+        <p class="text-xs text-slate-400 mb-2">Muestra funcionarios de otras áreas. Al mover, quedan vinculados a esta área.</p>
+        <div id="mpa-resultados" class="space-y-1 overflow-y-auto flex-1 pr-1"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- ═══════════════ MODAL COORDINADOR ═══════════════ -->
 <div id="modal-coord" class="fixed inset-0 z-50 flex items-center justify-center hidden">
   <div class="absolute inset-0 bg-black/40" onclick="cerrarModalCoord()"></div>
@@ -482,6 +523,8 @@ function renderAreas(resp) {
       <td class="px-4 py-2.5 text-slate-600">${a.total_trabajadores}</td>
       ${ES_ADMIN ? `<td class="px-4 py-2.5">
         <div class="flex gap-2">
+          <button onclick="abrirModalPersonalArea(${a.id},'${a.nombre.replace(/'/g,"\\'")}' )"
+            class="px-3 py-1 bg-emerald-100 hover:bg-emerald-200 text-emerald-800 rounded-lg text-xs font-bold transition">Personal</button>
           <button onclick="abrirModalArea(${a.id})"
             class="px-3 py-1 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg text-xs font-bold transition">Editar</button>
           <button onclick="eliminarArea(${a.id},'${a.nombre.replace(/'/g,"\\'")}' )"
@@ -904,8 +947,125 @@ async function eliminarCoord(id, nombre) {
   if (!confirm(`¿Eliminar al coordinador "${nombre}"? Esta acción no se puede deshacer.`)) return;
   try {
     await api(`coordinadores/${id}/`, {method:'DELETE'});
-    cargarCoords();
+    coordsList = coordsList.filter(x => x.id !== id);
+    renderCoords(coordsList);
   } catch { alert('Error al eliminar el coordinador'); }
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// MODAL PERSONAL DE ÁREA
+// ══════════════════════════════════════════════════════════════════════
+let mpaAreaId     = null;
+let mpaAreaNombre = '';
+let mpaTimer      = null;
+let mpaEmpIds     = new Set();
+
+const TIPO_CLS_MPA = {permanente:'bg-blue-100 text-blue-800', temporal:'bg-amber-100 text-amber-800', ops:'bg-purple-100 text-purple-800'};
+
+async function abrirModalPersonalArea(areaId, areaNombre) {
+  mpaAreaId     = areaId;
+  mpaAreaNombre = areaNombre;
+  document.getElementById('mpa-titulo').textContent    = areaNombre;
+  document.getElementById('mpa-subtitulo').textContent = 'Cargando personal...';
+  document.getElementById('mpa-buscar').value          = '';
+  document.getElementById('mpa-resultados').innerHTML  = '';
+  document.getElementById('mpa-lista').innerHTML       = '<p class="text-slate-400 text-sm">Cargando...</p>';
+  document.getElementById('modal-personal-area').classList.remove('hidden');
+  await cargarPersonalArea();
+}
+
+function cerrarModalPersonalArea() {
+  document.getElementById('modal-personal-area').classList.add('hidden');
+  mpaAreaId = null;
+  cargarAreas();
+}
+
+async function cargarPersonalArea() {
+  try {
+    const data = await api(`empleados/?area=${mpaAreaId}&page=1&page_size=500`);
+    const lista = data.results || data;
+    mpaEmpIds = new Set(lista.map(e => e.id));
+    document.getElementById('mpa-subtitulo').textContent = `${lista.length} funcionario(s) en esta área`;
+    const el = document.getElementById('mpa-lista');
+    if (!lista.length) {
+      el.innerHTML = '<p class="text-slate-400 text-sm">Sin funcionarios asignados a esta área.</p>';
+      return;
+    }
+    el.innerHTML = lista.map(e => `
+      <div class="flex items-center justify-between px-3 py-2 rounded-xl bg-slate-50 border border-slate-100">
+        <div class="min-w-0">
+          <span class="font-bold text-slate-800 text-sm">${e.nombre}</span>
+          <span class="text-slate-400 text-xs ml-2">${e.documento}</span>
+          ${e.cargo ? `<span class="text-slate-400 text-xs ml-1">· ${e.cargo}</span>` : ''}
+        </div>
+        <div class="flex items-center gap-2 ml-2 shrink-0">
+          <span class="px-2 py-0.5 rounded-full text-xs font-bold ${TIPO_CLS_MPA[e.tipo]||'bg-slate-100 text-slate-600'}">${e.tipo_display||e.tipo}</span>
+          <button onclick="quitarDelArea(${e.id},'${e.nombre.replace(/'/g,"\\'")}')"
+            class="px-2 py-1 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg text-xs font-bold transition">Quitar</button>
+        </div>
+      </div>`).join('');
+  } catch {
+    document.getElementById('mpa-lista').innerHTML = '<p class="text-red-500 text-sm">Error al cargar personal.</p>';
+  }
+}
+
+async function quitarDelArea(empId, nombre) {
+  if (!confirm(`¿Quitar a "${nombre}" de "${mpaAreaNombre}"?\n\nEl funcionario quedará sin área asignada pero seguirá en el sistema.`)) return;
+  try {
+    await api(`empleados/${empId}/`, {method:'PUT', body: JSON.stringify({area: null})});
+    await cargarPersonalArea();
+    cargarAreas();
+  } catch(e) {
+    alert(e.error || 'Error al quitar el funcionario del área');
+  }
+}
+
+function buscarParaAgregarAlArea() {
+  clearTimeout(mpaTimer);
+  const q = document.getElementById('mpa-buscar').value.trim();
+  if (!q) { document.getElementById('mpa-resultados').innerHTML = ''; return; }
+  mpaTimer = setTimeout(() => _ejecutarBusquedaMpa(q), 350);
+}
+
+async function _ejecutarBusquedaMpa(q) {
+  const el = document.getElementById('mpa-resultados');
+  el.innerHTML = '<p class="text-slate-400 text-sm">Buscando...</p>';
+  try {
+    const data = await api(`empleados/?q=${encodeURIComponent(q)}&page=1&page_size=30`);
+    const todos = data.results || data;
+    const otros = todos.filter(e => !mpaEmpIds.has(e.id));
+    if (!otros.length) {
+      el.innerHTML = '<p class="text-slate-400 text-sm">No se encontraron resultados fuera de esta área.</p>';
+      return;
+    }
+    el.innerHTML = otros.map(e => `
+      <div class="flex items-center justify-between px-3 py-2 rounded-xl border border-slate-200 hover:border-blue-300 bg-white">
+        <div class="min-w-0">
+          <span class="font-bold text-slate-800 text-sm">${e.nombre}</span>
+          <span class="text-slate-400 text-xs ml-2">${e.documento}</span>
+          <span class="text-slate-400 text-xs ml-1">· actualmente en <strong>${e.area_nombre}</strong></span>
+        </div>
+        <div class="flex items-center gap-2 ml-2 shrink-0">
+          <span class="px-2 py-0.5 rounded-full text-xs font-bold ${TIPO_CLS_MPA[e.tipo]||'bg-slate-100 text-slate-600'}">${e.tipo_display||e.tipo}</span>
+          <button onclick="moverAlArea(${e.id},'${e.nombre.replace(/'/g,"\\'")}','${e.area_nombre.replace(/'/g,"\\'")}')"
+            class="px-3 py-1 bg-emerald-600 hover:bg-emerald-800 text-white rounded-lg text-xs font-bold transition">Mover aquí</button>
+        </div>
+      </div>`).join('');
+  } catch {
+    el.innerHTML = '<p class="text-red-500 text-sm">Error al buscar.</p>';
+  }
+}
+
+async function moverAlArea(empId, nombre, areaActual) {
+  if (!confirm(`"${nombre}" pertenece actualmente a "${areaActual}".\n\n¿Deseas moverlo a "${mpaAreaNombre}"?`)) return;
+  try {
+    await api(`empleados/${empId}/`, {method:'PUT', body: JSON.stringify({area: mpaAreaId})});
+    document.getElementById('mpa-buscar').value = '';
+    document.getElementById('mpa-resultados').innerHTML = '';
+    await cargarPersonalArea();
+  } catch(e) {
+    alert(e.error || 'Error al mover el funcionario');
+  }
 }
 {% endif %}
 
