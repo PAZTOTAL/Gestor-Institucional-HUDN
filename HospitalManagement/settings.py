@@ -140,10 +140,10 @@ DATABASES = {
         'PASSWORD': 'ConsultasPantojaHUDN_2026$', 
         'HOST': '172.20.100.209',
         'PORT': '',
-        'CONN_MAX_AGE': 60,  # Habilitar Connection Pooling (60s) para reducir overhead de red
+        'CONN_MAX_AGE': 0,  # MSSQL cierra conexiones inactivas — 0 evita reconexiones dobles
         'OPTIONS': {
             'driver': 'ODBC Driver 17 for SQL Server',
-            'timeout': 60,
+            'timeout': 30,
         },
     },
     'readonly': {
@@ -153,7 +153,7 @@ DATABASES = {
         'PASSWORD': 'ConsultaHUDN2026*/$',
         'HOST': '172.20.100.209',
         'PORT': '',
-        'CONN_MAX_AGE': 60,  # Habilitar Connection Pooling (60s)
+        'CONN_MAX_AGE': 0,  # MSSQL cierra conexiones inactivas — 0 evita reconexiones dobles
         'OPTIONS': {
             'driver': 'ODBC Driver 17 for SQL Server',
             'host_is_server': True,

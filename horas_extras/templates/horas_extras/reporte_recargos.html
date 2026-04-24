@@ -21,12 +21,25 @@
 
     <!-- Panel Áreas -->
     <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
-      <div class="flex justify-between items-center mb-4">
+      <div class="flex justify-between items-center mb-3">
         <h2 class="font-black text-slate-800 text-lg">Área</h2>
         <button onclick="cargarAreas()" class="text-slate-400 hover:text-blue-600 text-xl" title="Recargar">↻</button>
       </div>
+      <input id="buscar-area-rep" type="text" placeholder="Buscar área..." autocomplete="off"
+        oninput="buscarAreaRep()"
+        class="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm mb-3 focus:outline-none focus:ring-2 focus:ring-blue-400">
       <div id="areas-container">
         <p class="text-slate-400 text-sm">Cargando áreas...</p>
+      </div>
+      <div id="areas-paginacion" class="hidden flex items-center justify-between mt-3 text-xs text-slate-500">
+        <span id="areas-info-rep"></span>
+        <div class="flex gap-1">
+          <button onclick="cambiarPaginaAreaRep(-1)" id="btn-prev-area-rep"
+            class="px-2 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 font-bold disabled:opacity-40">◀</button>
+          <span id="areas-pag-rep" class="px-2 py-1 font-bold"></span>
+          <button onclick="cambiarPaginaAreaRep(1)" id="btn-next-area-rep"
+            class="px-2 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 font-bold disabled:opacity-40">▶</button>
+        </div>
       </div>
     </div>
 
@@ -187,6 +200,9 @@ const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio',
 
 // ── Estado ─────────────────────────────────────────────────────────────────
 let areas = [];
+let areasFiltradas    = [];
+let paginaAreaRep     = 1;
+const PAGE_SIZE_AREA  = 25;
 let areaSeleccionada  = null;
 let mesSeleccionado   = null;   // {year, month}
 let yearVista         = new Date().getFullYear();
@@ -255,7 +271,10 @@ function actualizarBtnVer() {
 // ── Áreas ──────────────────────────────────────────────────────────────────
 async function cargarAreas() {
   try {
-    areas = await api('areas/');
+    const resp = await api('areas/?page_size=500&page=1');
+    areas = resp.results || [];
+    areasFiltradas = areas;
+    paginaAreaRep = 1;
     renderAreas();
   } catch {
     document.getElementById('areas-container').innerHTML =
@@ -263,13 +282,35 @@ async function cargarAreas() {
   }
 }
 
+function buscarAreaRep() {
+  const q = document.getElementById('buscar-area-rep').value.trim().toLowerCase();
+  areasFiltradas = q
+    ? areas.filter(a => q.split(' ').every(p => a.nombre.toLowerCase().includes(p)))
+    : areas;
+  paginaAreaRep = 1;
+  renderAreas();
+}
+
+function cambiarPaginaAreaRep(delta) {
+  const totalPags = Math.max(1, Math.ceil(areasFiltradas.length / PAGE_SIZE_AREA));
+  paginaAreaRep = Math.min(totalPags, Math.max(1, paginaAreaRep + delta));
+  renderAreas();
+}
+
 function renderAreas() {
   const el = document.getElementById('areas-container');
-  if (!areas.length) {
+  if (!areasFiltradas.length) {
     el.innerHTML = '<p class="text-slate-400 text-sm">No hay áreas configuradas.</p>';
+    document.getElementById('areas-paginacion').classList.add('hidden');
     return;
   }
-  el.innerHTML = '<div class="space-y-2">' + areas.map(a => {
+  const total     = areasFiltradas.length;
+  const totalPags = Math.max(1, Math.ceil(total / PAGE_SIZE_AREA));
+  paginaAreaRep   = Math.min(totalPags, Math.max(1, paginaAreaRep));
+  const offset    = (paginaAreaRep - 1) * PAGE_SIZE_AREA;
+  const pagina    = areasFiltradas.slice(offset, offset + PAGE_SIZE_AREA);
+
+  el.innerHTML = '<div class="space-y-2">' + pagina.map(a => {
     const sel = areaSeleccionada && areaSeleccionada.id === a.id;
     const cls = sel
       ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-400'
@@ -281,13 +322,25 @@ function renderAreas() {
       <div class="text-slate-400 text-xs mt-0.5">${a.total_trabajadores} funcionario(s)</div>
     </button>`;
   }).join('') + '</div>';
+
+  // Paginación
+  const pagEl = document.getElementById('areas-paginacion');
+  if (totalPags > 1) {
+    pagEl.classList.remove('hidden');
+    document.getElementById('areas-info-rep').textContent = `${offset+1}–${Math.min(offset+PAGE_SIZE_AREA, total)} de ${total}`;
+    document.getElementById('areas-pag-rep').textContent  = `${paginaAreaRep} / ${totalPags}`;
+    document.getElementById('btn-prev-area-rep').disabled = paginaAreaRep === 1;
+    document.getElementById('btn-next-area-rep').disabled = paginaAreaRep === totalPags;
+  } else {
+    pagEl.classList.add('hidden');
+  }
 }
 
 function selArea(id) {
   if (areaSeleccionada && areaSeleccionada.id === id) {
     areaSeleccionada = null;
   } else {
-    areaSeleccionada = areas.find(a => a.id===id) || null;
+    areaSeleccionada = areasFiltradas.find(a => a.id===id) || null;
   }
   renderAreas();
   actualizarBtnVer();
