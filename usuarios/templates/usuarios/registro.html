@@ -114,6 +114,37 @@
                 </div>
             </div>
 
+            <!-- Step: Habeas Data -->
+            <div id="step-habeas" class="fade-section hidden space-y-8">
+                <div class="max-w-2xl mx-auto">
+                    <div class="bg-blue-50/50 p-8 rounded-[2.5rem] border-2 border-blue-100/50 shadow-inner">
+                        <div class="flex items-center gap-4 mb-6">
+                            <div class="p-3 bg-blue-600 rounded-2xl text-white shadow-lg">
+                                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04 Pelic 12.02 12.02 0 00-3.478 8.12c0 5.42 3.3 10.17 8.096 12.223A4.923 4.923 0 0012 21.381c1.248 0 2.421-.465 3.322-1.309a11.94 11.94 0 008.096-12.223z"></path></svg>
+                            </div>
+                            <h2 class="text-3xl font-black text-slate-800 tracking-tighter">Aviso de Privacidad <br><span class="text-blue-600 text-xl tracking-normal">Ley 1581 de 2012 (Habeas Data)</span></h2>
+                        </div>
+                        
+                        <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 max-h-[300px] overflow-y-auto text-slate-600 space-y-4 custom-scrollbar leading-relaxed text-sm">
+                            <p class="font-bold">Autorización para el Tratamiento de Datos Personales</p>
+                            <p>En cumplimiento de la Ley 1581 de 2012 y el Decreto 1377 de 2013, el <strong>Hospital Universitario Departamental de Nariño (HUDN)</strong>, en su calidad de responsable del tratamiento de datos personales, solicita su autorización para recolectar, almacenar, usar y circular sus datos personales proporcionados en este formulario.</p>
+                            <p>Los datos serán tratados con la finalidad exclusiva de gestionar su registro en el ecosistema digital institucional, permitir el acceso a las aplicaciones autorizadas y dar cumplimiento a los procesos administrativos y legales propios de la institución.</p>
+                            <p>Como titular de los datos, usted tiene derecho a conocer, actualizar, rectificar y suprimir su información, así como a revocar esta autorización en los casos previstos por la ley.</p>
+                            <p class="italic text-[10px]">Al hacer clic en "Aceptar y Continuar", usted manifiesta que ha sido informado sobre el tratamiento de sus datos y otorga su consentimiento libre, previo y expreso.</p>
+                        </div>
+
+                        <div class="flex flex-col md:flex-row gap-4 mt-8">
+                            <button type="button" onclick="rejectHabeas()" class="flex-1 bg-white hover:bg-slate-50 text-slate-400 font-bold py-4 rounded-2xl border-2 border-slate-100 transition-all uppercase tracking-widest text-xs">
+                                Rechazar
+                            </button>
+                            <button type="button" onclick="acceptHabeas()" class="flex-[2] btn-premium">
+                                Aceptar y Continuar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Step 2: Data & Account (Initially hidden) -->
             <div id="step-2" class="fade-section hidden space-y-8">
                 <style>
@@ -315,14 +346,15 @@
                     errorDiv.classList.remove('hidden');
                     errorDiv.classList.add('animate-bounce');
                     
-                    // Asegurarnos que el paso 2 esté oculto
+                    // Asegurarnos que el paso 2 y habeas estén ocultos
                     document.getElementById('step-2').classList.add('hidden');
+                    document.getElementById('step-habeas').classList.add('hidden');
                     return; // Detener ejecución
                 }
 
                 if (result.found) {
                     fillForm(result.data);
-                    goToStep2();
+                    showHabeasData(); // <-- Nuevo paso intermedio
                 } else {
                     showError(result.message || "No se encontró información institucional.");
                 }
@@ -334,6 +366,22 @@
                 btn.disabled = false;
                 loader.classList.add('hidden');
             });
+    }
+
+    function showHabeasData() {
+        document.getElementById('step-1').classList.add('hidden');
+        document.getElementById('step-habeas').classList.remove('hidden');
+    }
+
+    function acceptHabeas() {
+        document.getElementById('step-habeas').classList.add('hidden');
+        goToStep2();
+    }
+
+    function rejectHabeas() {
+        document.getElementById('step-habeas').classList.add('hidden');
+        document.getElementById('step-1').classList.remove('hidden');
+        // Opcional: Limpiar el campo de cédula
     }
 
     function fillForm(data) {
@@ -352,9 +400,16 @@
         document.getElementById('id_fecha_nacimiento').value = data.fecha_nacimiento || '';
         
         // Biodemographics Selects
-        if (data.sexo) document.getElementById('id_sexo').value = data.sexo;
-        if (data.grupo_sanguineo) document.getElementById('id_grupo_sanguineo').value = data.grupo_sanguineo;
-        if (data.rh) document.getElementById('id_rh').value = data.rh;
+        const selects = ['id_sexo', 'id_grupo_sanguineo', 'id_rh'];
+        selects.forEach(id => {
+            const el = document.getElementById(id);
+            const val = data[id.replace('id_', '')];
+            if (val) {
+                el.value = val;
+                // Forzar evento change para que la UI se refresque (bordes, etiquetas, etc)
+                el.dispatchEvent(new Event('change'));
+            }
+        });
         
         // Institutional Username & Badges
         const usernameInput = document.getElementById('id_username');

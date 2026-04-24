@@ -256,11 +256,24 @@ def lookup_tercero_por_cedula(request):
             if not data['nombre_completo'] and data['primer_nombre']:
                 data['nombre_completo'] = f"{data['primer_nombre']} {data['segundo_nombre']} {data['primer_apellido']} {data['segundo_apellido']}"
             
-            data['direccion'] = paciente.gpadirrhab or paciente.gpadirresex or ''
-            data['telefono'] = paciente.gpatelresex or ''
-            data['fecha_nacimiento'] = paciente.gpafecnac.strftime('%Y-%m-%d') if paciente.gpafecnac else ''
+            # Dirección y Teléfono (Priorizando habitacional sobre otros)
+            data['direccion'] = paciente.gpadirrhab or paciente.gpadirresex or paciente.gpadiracu or ''
+            data['telefono'] = paciente.gpatelresex or paciente.gpatelacu or ''
+            
+            # Fecha Nacimiento
+            if paciente.gpafecnac:
+                data['fecha_nacimiento'] = paciente.gpafecnac.strftime('%Y-%m-%d')
+            
             data['email_personal'] = paciente.gpaemail or ''
-            data['sexo'] = 'M' if paciente.gpasexpac == 1 else 'F' if paciente.gpasexpac == 2 else ''
+            
+            # Sexo: M=1, F=2 en Dinámica Nexus
+            if paciente.gpasexpac == 1:
+                data['sexo'] = 'M'
+            elif paciente.gpasexpac == 2:
+                data['sexo'] = 'F'
+            else:
+                data['sexo'] = ''
+
         # 3. Buscar Usuario en GENUSUARIO (Dinámica Nexus)
         username_institucional = None
         es_cliente = True
