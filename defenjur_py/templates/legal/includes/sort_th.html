@@ -1,0 +1,15 @@
+{% if sort_field == field %}
+  {% if sort_dir == 'asc' %}
+    <th class="sortable-th active-sort asc" onclick="window.location='?sort={{ field }}&dir=desc{% if filter_query %}&{{ filter_query }}{% endif %}'">
+      {{ label }} <i data-lucide="arrow-up" style="width:13px;height:13px;margin-left:3px;vertical-align:middle;color:#7c3aed;"></i>
+    </th>
+  {% else %}
+    <th class="sortable-th active-sort desc" onclick="window.location='?sort={{ field }}&dir=asc{% if filter_query %}&{{ filter_query }}{% endif %}'">
+      {{ label }} <i data-lucide="arrow-down" style="width:13px;height:13px;margin-left:3px;vertical-align:middle;color:#7c3aed;"></i>
+    </th>
+  {% endif %}
+{% else %}
+  <th class="sortable-th" onclick="window.location='?sort={{ field }}&dir=asc{% if filter_query %}&{{ filter_query }}{% endif %}'">
+    {{ label }} <i data-lucide="chevrons-up-down" style="width:13px;height:13px;margin-left:3px;vertical-align:middle;opacity:0.35;"></i>
+  </th>
+{% endif %}

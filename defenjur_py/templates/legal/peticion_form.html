@@ -144,6 +144,15 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    // Cédula solicitante → Peticionario int./ext. (Identificación adicional)
+    var cedulaSol = document.getElementById('id_cedula_persona_solicitante');
+    var nombreSol = document.getElementById('id_peticionario_int_ext');
+    if (cedulaSol && nombreSol) {
+        cedulaSol.addEventListener('blur', function() {
+            buscarEnNexus(cedulaSol, nombreSol, "rgba(45, 212, 191, 0.2)");
+        });
+    }
+
 });
 </script>
 {% endblock %}

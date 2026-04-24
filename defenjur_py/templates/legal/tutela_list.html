@@ -97,10 +97,10 @@
         <table class="hudn-table">
             <thead>
                 <tr>
-                    <th>ID</th>
-                    <th>NÚMERO DE PROCESO</th>
-                    <th>FECHA DE LLEGADA</th>
-                    <th>DESPACHO JUDICIAL</th>
+                    {% include 'legal/includes/sort_th.html' with field='id' label='ID' %}
+                    {% include 'legal/includes/sort_th.html' with field='num_proceso' label='NÚMERO DE PROCESO' %}
+                    {% include 'legal/includes/sort_th.html' with field='fecha' label='FECHA DE LLEGADA' %}
+                    {% include 'legal/includes/sort_th.html' with field='despacho' label='DESPACHO JUDICIAL' %}
                     <th>ACCIONANTE</th>
                     <th>ACCIONADO</th>
                     <th>ABOGADO RESPONSABLE</th>

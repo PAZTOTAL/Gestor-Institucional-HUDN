@@ -17,12 +17,12 @@
         <table style="width:100%;border-collapse:separate;border-spacing:0 10px;">
             <thead>
                 <tr style="text-align:left;color:var(--text-muted);font-size:0.85rem;">
-                    <th style="padding:1rem;">ID</th>
-                    <th style="padding:1rem;">N° Proceso</th>
+                    {% include 'legal/includes/sort_th.html' with field='id' label='ID' %}
+                    {% include 'legal/includes/sort_th.html' with field='num_proceso' label='N° Proceso' %}
                     <th style="padding:1rem;">Demandante</th>
                     <th style="padding:1rem;">Demandado</th>
                     <th style="padding:1rem;">Apoderado</th>
-                    <th style="padding:1rem;">Despacho</th>
+                    {% include 'legal/includes/sort_th.html' with field='despacho' label='Despacho' %}
                     <th style="padding:1rem;">Acciones</th>
                 </tr>
             </thead>

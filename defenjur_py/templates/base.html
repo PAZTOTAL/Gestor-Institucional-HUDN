@@ -14,6 +14,29 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     {% block extra_css %}{% endblock %}
+    <style>
+        /* ── Sortable column headers ── */
+        .sortable-th {
+            padding: 0.75rem 1rem;
+            cursor: pointer;
+            user-select: none;
+            transition: color 0.15s, background 0.15s;
+            white-space: nowrap;
+        }
+        .sortable-th:hover {
+            color: #a78bfa;
+            background: rgba(111, 66, 193, 0.07);
+            border-radius: 6px;
+        }
+        .sortable-th.active-sort {
+            color: #7c3aed;
+            font-weight: 700;
+        }
+        /* For hudn-table that has its own th padding */
+        .hudn-table .sortable-th {
+            padding: inherit;
+        }
+    </style>
 </head>
 <body class="hudn-app">
     <aside class="sidebar" id="sidebar">
@@ -137,10 +160,17 @@
         });
         document.body.addEventListener('htmx:configRequest', (event) => {
             const csrfToken = document.cookie.split('; ').find(row => row.startsWith('csrftoken='))?.split('=')[1];
-            if (csrfToken) event.detail.headers['X-CSRFToken'] = csrfToken;
+            if (csrfToken) {
+                event.detail.headers['X-CSRFToken'] = csrfToken;
+            }
+        });
+        document.body.addEventListener('htmx:responseError', (event) => {
+            console.error('HTMX Error:', event.detail);
+            alert('Error al procesar la solicitud: ' + event.detail.xhr.status + ' ' + event.detail.xhr.statusText);
         });
         document.body.addEventListener('htmx:afterSwap', function() { lucide.createIcons(); });
     </script>
+    <div style="display:none;">{% csrf_token %}</div>
     {% block extra_js %}{% endblock %}
 </body>
 </html>

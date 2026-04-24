@@ -170,6 +170,47 @@ class SearchMixin:
         ctx['search_query'] = self.request.GET.get(self.search_param, '').strip()
         q = self.request.GET.copy()
         q.pop('page', None)
+        q.pop('sort', None)
+        q.pop('dir', None)
+        ctx['filter_query'] = q.urlencode()
+        return ctx
+
+
+class SortMixin:
+    """
+    Ordenamiento de columnas via parámetros GET: ?sort=<campo>&dir=asc|desc
+    Las subclases deben definir `sort_allowed_fields` como dict:
+        { 'alias_url': 'campo_db' }
+    Por ejemplo: {'num_proceso': 'num_proceso', 'fecha': 'fecha_llegada'}
+    """
+    sort_allowed_fields = {}
+    sort_default_field = 'id'
+    sort_default_dir = 'desc'
+
+    def _get_sort_params(self):
+        sort_alias = self.request.GET.get('sort', '').strip()
+        sort_dir = self.request.GET.get('dir', self.sort_default_dir).strip().lower()
+        if sort_dir not in ('asc', 'desc'):
+            sort_dir = self.sort_default_dir
+        db_field = self.sort_allowed_fields.get(sort_alias, self.sort_default_field)
+        return sort_alias or self.sort_default_field, sort_dir, db_field
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        sort_alias, sort_dir, db_field = self._get_sort_params()
+        prefix = '-' if sort_dir == 'desc' else ''
+        return qs.order_by(f'{prefix}{db_field}')
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        sort_alias, sort_dir, _ = self._get_sort_params()
+        ctx['sort_field'] = sort_alias
+        ctx['sort_dir'] = sort_dir
+        # filter_query sin sort/dir para que los links de th los regeneren limpios
+        q = self.request.GET.copy()
+        q.pop('sort', None)
+        q.pop('dir', None)
+        q.pop('page', None)
         ctx['filter_query'] = q.urlencode()
         return ctx
 
@@ -406,7 +447,7 @@ class UsuarioUpdateView(AdminRequiredMixin, UpdateView):
 
 
 # ─── Tutelas ──────────────────────────────────────────────────────────────────
-class TutelaListView(LoginRequiredMixin, RoleFilteringMixin, SearchMixin, ListView):
+class TutelaListView(LoginRequiredMixin, RoleFilteringMixin, SearchMixin, SortMixin, ListView):
     model = AccionTutela
     template_name = 'legal/tutela_list.html'
     context_object_name = 'tutelas'
@@ -415,6 +456,14 @@ class TutelaListView(LoginRequiredMixin, RoleFilteringMixin, SearchMixin, ListVi
         'accionante', 'num_proceso', 'despacho_judicial',
         'abogado_responsable'
     )
+    sort_allowed_fields = {
+        'id': 'id',
+        'num_proceso': 'num_proceso',
+        'fecha': 'fecha_llegada',
+        'despacho': 'despacho_judicial',
+    }
+    sort_default_field = 'id'
+    sort_default_dir = 'desc'
 
     def get_queryset(self):
         qs = super().get_queryset()
@@ -487,7 +536,7 @@ class TutelaUpdateView(ModalUpdateView):
 
 
 # ─── Derechos de Petición ─────────────────────────────────────────────────────
-class PeticionListView(LoginRequiredMixin, RoleFilteringMixin, SearchMixin, ListView):
+class PeticionListView(LoginRequiredMixin, RoleFilteringMixin, SearchMixin, SortMixin, ListView):
     model = DerechoPeticion
     template_name = 'legal/peticion_list.html'
     context_object_name = 'peticiones'
@@ -497,6 +546,13 @@ class PeticionListView(LoginRequiredMixin, RoleFilteringMixin, SearchMixin, List
         'causa_peticion', 'abogado_responsable', 'cedula_persona_solicitante',
         'num_rad_interno',
     )
+    sort_allowed_fields = {
+        'id': 'id',
+        'num_reparto': 'num_reparto',
+        'fecha': 'fecha_correo',
+    }
+    sort_default_field = 'id'
+    sort_default_dir = 'desc'
 
     def get_queryset(self):
         qs = super().get_queryset()
@@ -539,7 +595,7 @@ class PeticionUpdateView(ModalUpdateView):
 
 
 # ─── Procesos Judiciales ──────────────────────────────────────────────────────
-class ProcesoActivaListView(LoginRequiredMixin, RoleFilteringMixin, SearchMixin, ListView):
+class ProcesoActivaListView(LoginRequiredMixin, RoleFilteringMixin, SearchMixin, SortMixin, ListView):
     model = ProcesoJudicialActiva
     template_name = 'legal/proceso_activa_list.html'
     context_object_name = 'procesos'
@@ -547,6 +603,13 @@ class ProcesoActivaListView(LoginRequiredMixin, RoleFilteringMixin, SearchMixin,
     search_fields = (
         'num_proceso', 'demandante', 'demandado', 'apoderado', 'despacho_actual', 'medio_control',
     )
+    sort_allowed_fields = {
+        'id': 'id',
+        'num_proceso': 'num_proceso',
+        'despacho': 'despacho_actual',
+    }
+    sort_default_field = 'id'
+    sort_default_dir = 'desc'
 
 class ProcesoActivaCreateView(LoginRequiredMixin, CreateView):
     model = ProcesoJudicialActiva
@@ -565,7 +628,7 @@ class ProcesoActivaUpdateView(ModalUpdateView):
     form_class = ProcesoJudicialActivaForm
 
 
-class ProcesoPasivaListView(LoginRequiredMixin, RoleFilteringMixin, SearchMixin, ListView):
+class ProcesoPasivaListView(LoginRequiredMixin, RoleFilteringMixin, SearchMixin, SortMixin, ListView):
     model = ProcesoJudicialPasiva
     template_name = 'legal/proceso_pasiva_list.html'
     context_object_name = 'procesos'
@@ -574,6 +637,13 @@ class ProcesoPasivaListView(LoginRequiredMixin, RoleFilteringMixin, SearchMixin,
         'num_proceso', 'demandante', 'demandado', 'cc_demandante', 'apoderado', 'despacho_actual',
         'medio_control',
     )
+    sort_allowed_fields = {
+        'id': 'id',
+        'num_proceso': 'num_proceso',
+        'despacho': 'despacho_actual',
+    }
+    sort_default_field = 'id'
+    sort_default_dir = 'desc'
 
 class ProcesoPasivaCreateView(LoginRequiredMixin, CreateView):
     model = ProcesoJudicialPasiva
@@ -592,7 +662,7 @@ class ProcesoPasivaUpdateView(ModalUpdateView):
     form_class = ProcesoJudicialPasivaForm
 
 
-class ProcesoTerminadoListView(LoginRequiredMixin, RoleFilteringMixin, SearchMixin, ListView):
+class ProcesoTerminadoListView(LoginRequiredMixin, RoleFilteringMixin, SearchMixin, SortMixin, ListView):
     model = ProcesoJudicialTerminado
     template_name = 'legal/proceso_terminado_list.html'
     context_object_name = 'procesos'
@@ -600,6 +670,13 @@ class ProcesoTerminadoListView(LoginRequiredMixin, RoleFilteringMixin, SearchMix
     search_fields = (
         'num_proceso', 'demandante', 'demandado', 'cc_demandante', 'apoderado', 'despacho_actual', 'medio_control',
     )
+    sort_allowed_fields = {
+        'id': 'id',
+        'num_proceso': 'num_proceso',
+        'despacho': 'despacho_actual',
+    }
+    sort_default_field = 'id'
+    sort_default_dir = 'desc'
 
 class ProcesoTerminadoCreateView(LoginRequiredMixin, CreateView):
     model = ProcesoJudicialTerminado
@@ -619,7 +696,7 @@ class ProcesoTerminadoUpdateView(ModalUpdateView):
 
 
 # ─── Peritajes ────────────────────────────────────────────────────────────────
-class PeritajeListView(LoginRequiredMixin, RoleFilteringMixin, SearchMixin, ListView):
+class PeritajeListView(LoginRequiredMixin, RoleFilteringMixin, SearchMixin, SortMixin, ListView):
     model = Peritaje
     template_name = 'legal/peritaje_list.html'
     context_object_name = 'peritajes'
@@ -628,6 +705,13 @@ class PeritajeListView(LoginRequiredMixin, RoleFilteringMixin, SearchMixin, List
         'num_proceso', 'fecha_correo_electronico', 'entidad_remitente_requerimiento',
         'demandante', 'demandado', 'abogado_responsable', 'perito_asignado', 'asunto', 'num_reparto',
     )
+    sort_allowed_fields = {
+        'id': 'id',
+        'num_proceso': 'num_proceso',
+        'fecha': 'fecha_correo_electronico',
+    }
+    sort_default_field = 'id'
+    sort_default_dir = 'desc'
 
 class PeritajeCreateView(LoginRequiredMixin, CreateView):
     model = Peritaje
@@ -647,7 +731,7 @@ class PeritajeUpdateView(ModalUpdateView):
 
 
 # ─── Pagos de Sentencias ──────────────────────────────────────────────────────
-class PagoListView(LoginRequiredMixin, RoleFilteringMixin, SearchMixin, ListView):
+class PagoListView(LoginRequiredMixin, RoleFilteringMixin, SearchMixin, SortMixin, ListView):
     model = PagoSentenciaJudicial
     template_name = 'legal/pago_list.html'
     context_object_name = 'pagos'
@@ -656,6 +740,14 @@ class PagoListView(LoginRequiredMixin, RoleFilteringMixin, SearchMixin, ListView
         'num_proceso', 'fecha_pago', 'despacho_tramitante', 'medio_control',
         'demandante', 'demandado', 'abogado_responsable', 'valor_pagado', 'estado', 'tipo_pago',
     )
+    sort_allowed_fields = {
+        'id': 'id',
+        'num_proceso': 'num_proceso',
+        'fecha': 'fecha_pago',
+        'despacho': 'despacho_tramitante',
+    }
+    sort_default_field = 'id'
+    sort_default_dir = 'desc'
 
 class PagoCreateView(LoginRequiredMixin, CreateView):
     model = PagoSentenciaJudicial
@@ -675,7 +767,7 @@ class PagoUpdateView(ModalUpdateView):
 
 
 # ─── Proc. Adm. Sancionatorios ────────────────────────────────────────────────
-class SancionatorioListView(LoginRequiredMixin, RoleFilteringMixin, SearchMixin, ListView):
+class SancionatorioListView(LoginRequiredMixin, RoleFilteringMixin, SearchMixin, SortMixin, ListView):
     model = ProcesoAdministrativoSancionatorio
     template_name = 'legal/sancionatorio_list.html'
     context_object_name = 'procesos'
@@ -684,6 +776,13 @@ class SancionatorioListView(LoginRequiredMixin, RoleFilteringMixin, SearchMixin,
         'num_proceso', 'fecha_requerimiento', 'entidad', 'causa', 'estado',
         'entidad_solicitante_requerimiento', 'objeto_requerimiento',
     )
+    sort_allowed_fields = {
+        'id': 'id',
+        'num_proceso': 'num_proceso',
+        'fecha': 'fecha_requerimiento',
+    }
+    sort_default_field = 'id'
+    sort_default_dir = 'desc'
 
 class SancionatorioCreateView(LoginRequiredMixin, CreateView):
     model = ProcesoAdministrativoSancionatorio
@@ -703,7 +802,7 @@ class SancionatorioUpdateView(ModalUpdateView):
 
 
 # ─── Requerimientos Entes de Control ─────────────────────────────────────────
-class RequerimientoListView(LoginRequiredMixin, RoleFilteringMixin, SearchMixin, ListView):
+class RequerimientoListView(LoginRequiredMixin, RoleFilteringMixin, SearchMixin, SortMixin, ListView):
     model = RequerimientoEnteControl
     template_name = 'legal/requerimiento_list.html'
     context_object_name = 'requerimientos'
@@ -712,6 +811,14 @@ class RequerimientoListView(LoginRequiredMixin, RoleFilteringMixin, SearchMixin,
         'num_reparto', 'num_proceso', 'fecha_correo_electronico',
         'entidad_remitente_requerimiento', 'asunto', 'abogado_responsable', 'tipo_tramite',
     )
+    sort_allowed_fields = {
+        'id': 'id',
+        'num_reparto': 'num_reparto',
+        'num_proceso': 'num_proceso',
+        'fecha': 'fecha_correo_electronico',
+    }
+    sort_default_field = 'id'
+    sort_default_dir = 'desc'
 
 class RequerimientoCreateView(LoginRequiredMixin, CreateView):
     model = RequerimientoEnteControl
@@ -731,9 +838,12 @@ class RequerimientoUpdateView(ModalUpdateView):
 
 
 @login_required
-@require_http_methods(['DELETE'])
+@require_http_methods(['DELETE', 'POST'])
 def eliminar_registro(request, tipo, id_obj):
-    # Validar permisos en una app real, pero por ahora como admin está bien.
+    # Log para depuración
+    with open('error_log.txt', 'a') as f:
+        f.write(f"\n[DELETE] Intento eliminar: tipo={tipo}, id={id_obj}, method={request.method}\n")
+    
     mapa = {
         'peticion': DerechoPeticion,
         'tutela': AccionTutela,
@@ -748,13 +858,20 @@ def eliminar_registro(request, tipo, id_obj):
     }
     modelo = mapa.get(tipo)
     if modelo:
-        obj = get_object_or_404(modelo, id=id_obj)
-        # Opcional: Validar si es abogado, solo puede borrar lo suyo.
-        obj.delete()
-        return HttpResponse('') # HTMX vacía el TR
-    return HttpResponse('Error', status=400)
+        try:
+            obj = get_object_or_404(modelo, id=id_obj)
+            obj.delete()
+            with open('error_log.txt', 'a') as f:
+                f.write(f"  -> Eliminado correctamente: {tipo} ID {id_obj}\n")
+            return HttpResponse('') # HTMX vacía el TR
+        except Exception as e:
+            with open('error_log.txt', 'a') as f:
+                f.write(f"  -> ERROR al eliminar: {str(e)}\n")
+            return HttpResponse(f'Error: {str(e)}', status=500)
+    
+    return HttpResponse('Modelo no encontrado', status=400)
 
-class ExtrajudicialListView(LoginRequiredMixin, RoleFilteringMixin, SearchMixin, ListView):
+class ExtrajudicialListView(LoginRequiredMixin, RoleFilteringMixin, SearchMixin, SortMixin, ListView):
     model = ProcesoExtrajudicial
     template_name = 'legal/extrajudicial_list.html'
     context_object_name = 'extrajudiciales'
@@ -763,6 +880,13 @@ class ExtrajudicialListView(LoginRequiredMixin, RoleFilteringMixin, SearchMixin,
         'demandante', 'demandado', 'apoderado', 'medio_control', 'despacho_conocimiento', 'estado', 'clasificacion',
     )
     extrajudicial_filtro = 'todos'
+    sort_allowed_fields = {
+        'id': 'id',
+        'despacho': 'despacho_conocimiento',
+        'estado': 'estado',
+    }
+    sort_default_field = 'id'
+    sort_default_dir = 'desc'
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
