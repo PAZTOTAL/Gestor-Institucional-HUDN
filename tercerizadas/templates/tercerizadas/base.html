@@ -1,0 +1,417 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Tercerizadas | HUDN{% endblock %}</title>
+    <link rel="icon" href="{% static 'favicon.svg' %}" type="image/svg+xml">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/premium.css' %}">
+    <link rel="stylesheet" href="{% static 'css/hudn.css' %}">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        /* ── Variables Tercerizadas ── */
+        :root {
+            --terc-primary: #0ea5e9;
+            --terc-primary-dark: #0284c7;
+            --terc-accent: #06b6d4;
+            --terc-success: #10b981;
+            --terc-warning: #f59e0b;
+            --terc-danger: #f43f5e;
+            --terc-purple: #8b5cf6;
+            --terc-gradient: linear-gradient(135deg, #0ea5e9 0%, #06b6d4 50%, #0284c7 100%);
+            --terc-sidebar-bg: #0c1a2e;
+            --terc-sidebar-hover: rgba(14,165,233,0.15);
+            --terc-sidebar-active: rgba(14,165,233,0.25);
+        }
+
+        /* ── Sidebar override ── */
+        .sidebar { background: var(--terc-sidebar-bg) !important; }
+        .sidebar-logo {
+            background: var(--terc-gradient) !important;
+            font-weight: 800;
+            letter-spacing: 1px;
+        }
+        .nav-item:hover, .nav-sub:hover { background: var(--terc-sidebar-hover) !important; }
+        .nav-item.active, .nav-sub.active {
+            background: var(--terc-sidebar-active) !important;
+            border-left: 3px solid var(--terc-primary) !important;
+            color: var(--terc-primary) !important;
+        }
+
+        /* ── Topbar ── */
+        .hudn-topbar { border-bottom: 2px solid rgba(14,165,233,0.2) !important; }
+
+        /* ── Cards ── */
+        .terc-card {
+            background: #fff;
+            border-radius: 14px;
+            box-shadow: 0 2px 16px rgba(14,165,233,0.08);
+            border: 1px solid rgba(14,165,233,0.1);
+            padding: 1.5rem;
+            transition: box-shadow 0.2s, transform 0.2s;
+        }
+        .terc-card:hover { box-shadow: 0 6px 24px rgba(14,165,233,0.15); transform: translateY(-2px); }
+
+        /* ── Stat Cards ── */
+        .stat-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        .stat-card {
+            background: #fff;
+            border-radius: 14px;
+            padding: 1.25rem 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+            border: 1px solid rgba(0,0,0,0.06);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .stat-card:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(0,0,0,0.1); }
+        .stat-icon {
+            width: 52px; height: 52px;
+            border-radius: 12px;
+            display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0;
+        }
+        .stat-icon svg { width: 26px; height: 26px; stroke: #fff; }
+        .stat-label { font-size: 0.75rem; color: #6c757d; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; }
+        .stat-value { font-size: 1.9rem; font-weight: 800; color: #1a2332; line-height: 1.1; }
+
+        /* ── Badge Dinámica ── */
+        .badge-dinamica {
+            display: inline-flex; align-items: center; gap: 0.35rem;
+            padding: 0.25rem 0.65rem;
+            border-radius: 999px;
+            font-size: 0.72rem;
+            font-weight: 600;
+        }
+        .badge-dinamica.found {
+            background: #d1fae5; color: #065f46;
+            border: 1px solid #6ee7b7;
+        }
+        .badge-dinamica.not-found {
+            background: #fef3c7; color: #92400e;
+            border: 1px solid #fcd34d;
+        }
+
+        /* ── Tabla ── */
+        .terc-table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+        .terc-table thead th {
+            background: linear-gradient(135deg, #0c1a2e, #1a2e4a);
+            color: #fff;
+            padding: 0.85rem 1rem;
+            font-weight: 600;
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            white-space: nowrap;
+        }
+        .terc-table thead th:first-child { border-radius: 10px 0 0 0; }
+        .terc-table thead th:last-child  { border-radius: 0 10px 0 0; }
+        .terc-table tbody tr {
+            border-bottom: 1px solid #f1f5f9;
+            transition: background 0.15s;
+        }
+        .terc-table tbody tr:hover { background: #f0f9ff; }
+        .terc-table td { padding: 0.85rem 1rem; vertical-align: middle; color: #334155; }
+
+        /* ── Avatar ── */
+        .avatar-circle {
+            width: 40px; height: 40px; border-radius: 50%;
+            background: var(--terc-gradient);
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 700; font-size: 1rem; color: #fff;
+            flex-shrink: 0;
+        }
+        .avatar-lg {
+            width: 90px; height: 90px; border-radius: 50%;
+            background: var(--terc-gradient);
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 800; font-size: 2rem; color: #fff;
+        }
+
+        /* ── Botones ── */
+        .btn-terc {
+            display: inline-flex; align-items: center; gap: 0.4rem;
+            padding: 0.55rem 1.1rem;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            border: none; cursor: pointer;
+            transition: all 0.18s;
+            text-decoration: none;
+        }
+        .btn-terc-primary {
+            background: var(--terc-gradient);
+            color: #fff;
+            box-shadow: 0 2px 10px rgba(14,165,233,0.35);
+        }
+        .btn-terc-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 18px rgba(14,165,233,0.45);
+            color: #fff;
+        }
+        .btn-terc-outline {
+            background: transparent;
+            color: var(--terc-primary);
+            border: 1.5px solid var(--terc-primary);
+        }
+        .btn-terc-outline:hover { background: var(--terc-primary); color: #fff; }
+        .btn-terc-danger { background: #fee2e2; color: #b91c1c; border: 1.5px solid #fca5a5; }
+        .btn-terc-danger:hover { background: #f43f5e; color: #fff; }
+        .btn-terc svg { width: 16px; height: 16px; }
+
+        /* ── Forms ── */
+        .form-section {
+            background: #fff;
+            border-radius: 14px;
+            padding: 1.75rem;
+            margin-bottom: 1.25rem;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.05);
+            border: 1px solid #e2e8f0;
+        }
+        .form-section-title {
+            font-size: 0.85rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--terc-primary);
+            margin-bottom: 1.25rem;
+            padding-bottom: 0.65rem;
+            border-bottom: 2px solid rgba(14,165,233,0.15);
+            display: flex; align-items: center; gap: 0.5rem;
+        }
+        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; }
+        .form-group { display: flex; flex-direction: column; gap: 0.35rem; }
+        .form-label { font-size: 0.8rem; font-weight: 600; color: #475569; }
+        .form-control, .form-select {
+            padding: 0.55rem 0.85rem;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            background: #f8fafc;
+            width: 100%;
+        }
+        .form-control:focus, .form-select:focus {
+            border-color: var(--terc-primary);
+            box-shadow: 0 0 0 3px rgba(14,165,233,0.12);
+            background: #fff;
+            outline: none;
+        }
+        .form-check { display: flex; align-items: center; gap: 0.5rem; margin-top: 0.5rem; }
+        .form-check-input { width: 18px; height: 18px; cursor: pointer; }
+
+        /* ── Buscar cédula ── */
+        .doc-search-wrapper { position: relative; }
+        .doc-search-spinner {
+            position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+            display: none;
+        }
+        .badge-dinamica-inline {
+            margin-top: 0.4rem;
+            display: none;
+        }
+
+        /* ── Perfil servidor ── */
+        .perfil-header {
+            background: var(--terc-gradient);
+            border-radius: 16px;
+            padding: 2rem;
+            color: #fff;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+        .perfil-info h2 { margin: 0; font-size: 1.6rem; font-weight: 800; }
+        .perfil-info p { margin: 0.25rem 0 0; opacity: 0.85; font-size: 0.9rem; }
+
+        /* ── Buscador ── */
+        .search-box {
+            display: flex; align-items: center;
+            background: #fff;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 0 0.75rem;
+            gap: 0.5rem;
+            transition: border-color 0.2s;
+        }
+        .search-box:focus-within { border-color: var(--terc-primary); }
+        .search-box input {
+            border: none; background: transparent;
+            padding: 0.6rem 0;
+            font-size: 0.9rem;
+            flex: 1; outline: none;
+        }
+        .search-box svg { width: 18px; height: 18px; color: #94a3b8; }
+
+        /* ── Filtros ── */
+        .filter-bar {
+            display: flex; flex-wrap: wrap; gap: 0.75rem;
+            align-items: center;
+            background: #f8fafc;
+            border-radius: 12px;
+            padding: 1rem;
+            margin-bottom: 1.25rem;
+            border: 1px solid #e2e8f0;
+        }
+
+        /* ── Foto upload preview ── */
+        .foto-preview {
+            width: 100px; height: 100px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid var(--terc-primary);
+            display: none;
+        }
+
+        /* ── Status pill ── */
+        .status-pill {
+            display: inline-flex; align-items: center; gap: 0.3rem;
+            padding: 0.2rem 0.65rem;
+            border-radius: 999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        .status-pill.activo { background: #d1fae5; color: #065f46; }
+        .status-pill.inactivo { background: #fee2e2; color: #991b1b; }
+        .status-pill.vigente { background: #dbeafe; color: #1d4ed8; }
+        .status-pill.vencido { background: #fef3c7; color: #92400e; }
+
+        /* ── Empty state ── */
+        .empty-state {
+            text-align: center; padding: 3rem 1rem;
+            color: #94a3b8;
+        }
+        .empty-state svg { width: 56px; height: 56px; margin-bottom: 1rem; opacity: 0.5; }
+
+        /* ── Responsive ── */
+        @media (max-width: 768px) {
+            .stat-grid { grid-template-columns: repeat(2, 1fr); }
+            .form-grid { grid-template-columns: 1fr; }
+            .perfil-header { flex-direction: column; text-align: center; }
+            .terc-table { font-size: 0.78rem; }
+            .terc-table td, .terc-table th { padding: 0.6rem 0.5rem; }
+            .filter-bar { flex-direction: column; align-items: stretch; }
+            .btn-terc { font-size: 0.8rem; padding: 0.5rem 0.9rem; }
+        }
+        @media (max-width: 480px) {
+            .stat-grid { grid-template-columns: 1fr 1fr; }
+            .stat-value { font-size: 1.5rem; }
+        }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body class="hudn-app">
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-logo">
+            <i data-lucide="briefcase" style="width:20px;height:20px;color:#fff;"></i>
+            TERCERIZADAS
+        </div>
+
+        <div class="sidebar-user" style="margin-bottom:1rem;padding:0 0.25rem;">
+            <div class="sidebar-user-avatar">{{ user.get_full_name|default:user.username|slice:":1"|upper }}</div>
+            <div style="min-width:0;">
+                <div style="font-weight:700;font-size:0.85rem;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+                    {{ user.get_full_name|default:user.username|upper }}
+                </div>
+                <div style="font-size:0.7rem;color:#94a3b8;">{{ user.rol|default:"usuario" }}</div>
+            </div>
+        </div>
+
+        <nav>
+            <a href="{% url 'home' %}" class="nav-item">
+                <i data-lucide="layout-grid"></i> Gestor Principal
+            </a>
+
+            <a href="{% url 'tercerizadas:dashboard' %}"
+               class="nav-item {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+                <i data-lucide="gauge"></i> Dashboard
+            </a>
+
+            <details class="nav-group" {% if 'servidor' in request.resolver_match.url_name %}open{% endif %}>
+                <summary><i data-lucide="users"></i> Servidores</summary>
+                <div class="nav-group-body">
+                    <a href="{% url 'tercerizadas:lista_servidores' %}"
+                       class="nav-sub {% if request.resolver_match.url_name == 'lista_servidores' %}active{% endif %}">
+                       Lista de Servidores
+                    </a>
+                    <a href="{% url 'tercerizadas:crear_servidor' %}"
+                       class="nav-sub {% if request.resolver_match.url_name == 'crear_servidor' %}active{% endif %}">
+                       + Registrar Servidor
+                    </a>
+                </div>
+            </details>
+
+            <details class="nav-group" {% if 'empresa' in request.resolver_match.url_name %}open{% endif %}>
+                <summary><i data-lucide="building-2"></i> Empresas</summary>
+                <div class="nav-group-body">
+                    <a href="{% url 'tercerizadas:lista_empresas' %}"
+                       class="nav-sub {% if request.resolver_match.url_name == 'lista_empresas' %}active{% endif %}">
+                       Lista de Empresas
+                    </a>
+                    <a href="{% url 'tercerizadas:crear_empresa' %}"
+                       class="nav-sub {% if request.resolver_match.url_name == 'crear_empresa' %}active{% endif %}">
+                       + Nueva Empresa
+                    </a>
+                </div>
+            </details>
+
+            <form action="{% url 'logout' %}" method="post" style="margin:0;">
+                {% csrf_token %}
+                <button type="submit" class="btn-sidebar-logout">
+                    <i data-lucide="log-out" style="width:18px;"></i> Salir
+                </button>
+            </form>
+        </nav>
+    </aside>
+
+    <main class="main-content">
+        <div class="hudn-topbar">
+            <div style="display:flex;align-items:center;gap:0.75rem;">
+                <button type="button" id="btnSidebar" aria-label="Menú"
+                        style="border:none;background:#f8f9fa;padding:0.5rem;border-radius:6px;cursor:pointer;">
+                    <i data-lucide="menu" style="width:20px;color:#495057;"></i>
+                </button>
+                <nav class="hudn-breadcrumb">
+                    <a href="{% url 'tercerizadas:dashboard' %}" style="color:var(--terc-primary);text-decoration:none;">Tercerizadas</a>
+                    {% block breadcrumb %}{% endblock %}
+                </nav>
+            </div>
+            <span style="font-size:0.8rem;color:#6c757d;font-weight:600;">HUDN</span>
+        </div>
+
+        {% if messages %}
+            {% for message in messages %}
+                <div class="card animate-fade" role="alert"
+                     style="border-left:4px solid {% if 'error' in message.tags %}#f43f5e{% elif 'success' in message.tags %}#10b981{% elif 'warning' in message.tags %}#f59e0b{% else %}#0ea5e9{% endif %};margin-bottom:1rem;padding:1rem 1.25rem;display:flex;align-items:center;gap:0.75rem;">
+                    <i data-lucide="{% if 'error' in message.tags %}alert-circle{% elif 'success' in message.tags %}check-circle{% else %}info{% endif %}"
+                       style="width:20px;flex-shrink:0;color:{% if 'error' in message.tags %}#f43f5e{% elif 'success' in message.tags %}#10b981{% else %}#0ea5e9{% endif %};"></i>
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        {% block content %}{% endblock %}
+    </main>
+
+    <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+    <script>
+        lucide.createIcons();
+        document.getElementById('btnSidebar')?.addEventListener('click', function() {
+            document.getElementById('sidebar').classList.toggle('hudn-sidebar-open');
+        });
+    </script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

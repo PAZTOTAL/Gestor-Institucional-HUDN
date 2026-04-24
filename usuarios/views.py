@@ -198,6 +198,18 @@ def lookup_tercero_por_cedula(request):
     if not cedula:
         return JsonResponse({'found': False, 'message': 'Cédula no proporcionada'})
     
+    # 0. Verificar si ya existe en el sistema local
+    # Buscamos por username (si es la cédula) o por el campo cedula en el perfil
+    already_exists = User.objects.filter(username=cedula).exists() or \
+                     PerfilUsuario.objects.filter(cedula=cedula).exists()
+    
+    if already_exists:
+        return JsonResponse({
+            'found': False, 
+            'already_registered': True, 
+            'message': 'YA ESTÁ REGISTRADO'
+        })
+    
     try:
         Genpacien = apps.get_model('consultas_externas', 'Genpacien')
         Gentercer = apps.get_model('consultas_externas', 'Gentercer')
@@ -244,11 +256,24 @@ def lookup_tercero_por_cedula(request):
             if not data['nombre_completo'] and data['primer_nombre']:
                 data['nombre_completo'] = f"{data['primer_nombre']} {data['segundo_nombre']} {data['primer_apellido']} {data['segundo_apellido']}"
             
-            data['direccion'] = paciente.gpadirrhab or paciente.gpadirresex or ''
-            data['telefono'] = paciente.gpatelresex or ''
-            data['fecha_nacimiento'] = paciente.gpafecnac.strftime('%Y-%m-%d') if paciente.gpafecnac else ''
+            # Dirección y Teléfono (Priorizando habitacional sobre otros)
+            data['direccion'] = paciente.gpadirrhab or paciente.gpadirresex or paciente.gpadiracu or ''
+            data['telefono'] = paciente.gpatelresex or paciente.gpatelacu or ''
+            
+            # Fecha Nacimiento
+            if paciente.gpafecnac:
+                data['fecha_nacimiento'] = paciente.gpafecnac.strftime('%Y-%m-%d')
+            
             data['email_personal'] = paciente.gpaemail or ''
-            data['sexo'] = 'M' if paciente.gpasexpac == 1 else 'F' if paciente.gpasexpac == 2 else ''
+            
+            # Sexo: M=1, F=2 en Dinámica Nexus
+            if paciente.gpasexpac == 1:
+                data['sexo'] = 'M'
+            elif paciente.gpasexpac == 2:
+                data['sexo'] = 'F'
+            else:
+                data['sexo'] = ''
+
         # 3. Buscar Usuario en GENUSUARIO (Dinámica Nexus)
         username_institucional = None
         es_cliente = True

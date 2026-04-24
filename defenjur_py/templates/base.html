@@ -1,4 +1,4 @@
-{% load static %}
+{% load static %}{% load legal_tags %}
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -14,6 +14,29 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     {% block extra_css %}{% endblock %}
+    <style>
+        /* ── Sortable column headers ── */
+        .sortable-th {
+            padding: 0.75rem 1rem;
+            cursor: pointer;
+            user-select: none;
+            transition: color 0.15s, background 0.15s;
+            white-space: nowrap;
+        }
+        .sortable-th:hover {
+            color: #a78bfa;
+            background: rgba(111, 66, 193, 0.07);
+            border-radius: 6px;
+        }
+        .sortable-th.active-sort {
+            color: #7c3aed;
+            font-weight: 700;
+        }
+        /* For hudn-table that has its own th padding */
+        .hudn-table .sortable-th {
+            padding: inherit;
+        }
+    </style>
 </head>
 <body class="hudn-app">
     <aside class="sidebar" id="sidebar">
@@ -28,7 +51,9 @@
                 <div style="font-weight:700;font-size:0.85rem;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
                     {{ user.get_full_name|default:user.username|upper }}
                 </div>
-                <div style="font-size:0.7rem;color:#adb5bd;text-transform:lowercase;">{{ user.rol|default:"usuario" }}</div>
+                <div style="font-size:0.7rem;color:#adb5bd;text-transform:lowercase;">
+                    {{ user.rol|default:user.perfil.legal_rol|default:"usuario" }}
+                </div>
             </div>
         </div>
 
@@ -44,12 +69,13 @@
             <details class="nav-group" open>
                 <summary><i data-lucide="folder-open"></i> Procesos</summary>
                 <div class="nav-group-body">
-                    <a href="{% url 'tutelas' %}" class="nav-sub {% if 'tutela' in request.resolver_match.url_name %}active{% endif %}">Acciones de Tutela</a>
-                    <a href="{% url 'peticiones' %}" class="nav-sub {% if 'peticion' in request.resolver_match.url_name %}active{% endif %}">Derechos de Petición</a>
-                    <a href="{% url 'pagos' %}" class="nav-sub {% if 'pago' in request.resolver_match.url_name %}active{% endif %}">Pagos Sentencias Judiciales</a>
-                    <a href="{% url 'peritajes' %}" class="nav-sub {% if 'peritaje' in request.resolver_match.url_name %}active{% endif %}">Peritajes</a>
-                    <a href="{% url 'sancionatorios' %}" class="nav-sub {% if 'sancionatorio' in request.resolver_match.url_name %}active{% endif %}">Procs. Adm. Sancionatorios</a>
+                    {% if user|has_module_perm:'acciontutela' %}<a href="{% url 'tutelas' %}" class="nav-sub {% if 'tutela' in request.resolver_match.url_name %}active{% endif %}">Acciones de Tutela</a>{% endif %}
+                    {% if user|has_module_perm:'derechopeticion' %}<a href="{% url 'peticiones' %}" class="nav-sub {% if 'peticion' in request.resolver_match.url_name %}active{% endif %}">Derechos de Petición</a>{% endif %}
+                    {% if user|has_module_perm:'pagosentenciajudicial' %}<a href="{% url 'pagos' %}" class="nav-sub {% if 'pago' in request.resolver_match.url_name %}active{% endif %}">Pagos Sentencias Judiciales</a>{% endif %}
+                    {% if user|has_module_perm:'peritaje' %}<a href="{% url 'peritajes' %}" class="nav-sub {% if 'peritaje' in request.resolver_match.url_name %}active{% endif %}">Peritajes</a>{% endif %}
+                    {% if user|has_module_perm:'procesoadministrativosancionatorio' %}<a href="{% url 'sancionatorios' %}" class="nav-sub {% if 'sancionatorio' in request.resolver_match.url_name %}active{% endif %}">Procs. Adm. Sancionatorios</a>{% endif %}
 
+                    {% if user|has_module_perm:'procesoextrajudicial' %}
                     <details class="nav-group" style="margin-left:0;" {% if 'extrajudicial' in request.resolver_match.url_name %}open{% endif %}>
                         <summary style="padding-left:2.25rem;font-size:0.8rem;font-weight:500;">Procesos Extrajudiciales</summary>
                         <div class="nav-group-body" style="padding-left:0.5rem;">
@@ -58,21 +84,22 @@
                             <a href="{% url 'extrajudiciales' %}" class="nav-sub {% if request.resolver_match.url_name == 'extrajudiciales' %}active{% endif %}">Todos</a>
                         </div>
                     </details>
+                    {% endif %}
 
                     <details class="nav-group" style="margin-left:0;" {% if 'proceso_activ' in request.resolver_match.url_name or 'proceso_pasiv' in request.resolver_match.url_name or 'proceso_terminado' in request.resolver_match.url_name %}open{% endif %}>
                         <summary style="padding-left:2.25rem;font-size:0.8rem;font-weight:500;">Procesos Judiciales</summary>
                         <div class="nav-group-body" style="padding-left:0.5rem;">
-                            <a href="{% url 'procesos_activos' %}" class="nav-sub {% if 'proceso_activ' in request.resolver_match.url_name %}active{% endif %}">Por Activa</a>
-                            <a href="{% url 'procesos_pasivos' %}" class="nav-sub {% if 'proceso_pasiv' in request.resolver_match.url_name %}active{% endif %}">Por Pasiva</a>
-                            <a href="{% url 'procesos_terminados' %}" class="nav-sub {% if 'proceso_terminado' in request.resolver_match.url_name %}active{% endif %}">Procesos Terminados</a>
+                            {% if user|has_module_perm:'procesojudicialactiva' %}<a href="{% url 'procesos_activos' %}" class="nav-sub {% if 'proceso_activ' in request.resolver_match.url_name %}active{% endif %}">Por Activa</a>{% endif %}
+                            {% if user|has_module_perm:'procesojudicialpasiva' %}<a href="{% url 'procesos_pasivos' %}" class="nav-sub {% if 'proceso_pasiv' in request.resolver_match.url_name %}active{% endif %}">Por Pasiva</a>{% endif %}
+                            {% if user|has_module_perm:'procesojudicialterminado' %}<a href="{% url 'procesos_terminados' %}" class="nav-sub {% if 'proceso_terminado' in request.resolver_match.url_name %}active{% endif %}">Procesos Terminados</a>{% endif %}
                         </div>
                     </details>
 
-                    <a href="{% url 'requerimientos' %}" class="nav-sub {% if 'requerimiento' in request.resolver_match.url_name %}active{% endif %}">Req. Entes de Control</a>
+                    {% if user|has_module_perm:'requerimientoentecontrol' %}<a href="{% url 'requerimientos' %}" class="nav-sub {% if 'requerimiento' in request.resolver_match.url_name %}active{% endif %}">Req. Entes de Control</a>{% endif %}
                 </div>
             </details>
 
-            {% if user.is_superuser or user.rol|default:''|lower == 'administrador' %}
+            {% if user.is_superuser or user.rol|lower == 'administrador' or user.perfil.legal_rol|lower == 'administrador' %}
             <a href="{% url 'reportes' %}" class="nav-item {% if request.resolver_match.url_name == 'reportes' %}active{% endif %}">
                 <i data-lucide="bar-chart-3"></i> Reportes
             </a>
@@ -137,10 +164,17 @@
         });
         document.body.addEventListener('htmx:configRequest', (event) => {
             const csrfToken = document.cookie.split('; ').find(row => row.startsWith('csrftoken='))?.split('=')[1];
-            if (csrfToken) event.detail.headers['X-CSRFToken'] = csrfToken;
+            if (csrfToken) {
+                event.detail.headers['X-CSRFToken'] = csrfToken;
+            }
+        });
+        document.body.addEventListener('htmx:responseError', (event) => {
+            console.error('HTMX Error:', event.detail);
+            alert('Error al procesar la solicitud: ' + event.detail.xhr.status + ' ' + event.detail.xhr.statusText);
         });
         document.body.addEventListener('htmx:afterSwap', function() { lucide.createIcons(); });
     </script>
+    <div style="display:none;">{% csrf_token %}</div>
     {% block extra_js %}{% endblock %}
 </body>
 </html>

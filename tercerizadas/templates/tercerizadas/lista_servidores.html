@@ -1,0 +1,152 @@
+{% extends "tercerizadas/base.html" %}
+{% block title %}Servidores — Tercerizadas | HUDN{% endblock %}
+{% block breadcrumb %} / <strong>Servidores</strong>{% endblock %}
+
+{% block content %}
+<header style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem;flex-wrap:wrap;gap:1rem;">
+    <div>
+        <h1 style="margin:0;font-size:1.5rem;font-weight:800;color:#1a2332;">Servidores Tercerizados</h1>
+        <p style="margin:0.2rem 0 0;color:#6c757d;font-size:0.88rem;">{{ total }} servidor{{ total|pluralize:"es" }} encontrado{{ total|pluralize:"s" }}</p>
+    </div>
+    <a href="{% url 'tercerizadas:crear_servidor' %}" class="btn-terc btn-terc-primary">
+        <i data-lucide="user-plus"></i> Registrar Servidor
+    </a>
+</header>
+
+<!-- Filtros -->
+<form method="get" class="filter-bar">
+    <div class="search-box" style="flex:1;min-width:220px;">
+        <i data-lucide="search"></i>
+        <input type="text" name="q" value="{{ q }}" placeholder="Buscar por nombre o documento…">
+    </div>
+    <select name="empresa" class="form-select" style="min-width:180px;max-width:240px;">
+        <option value="">Todas las empresas</option>
+        {% for emp in empresas %}
+        <option value="{{ emp.pk }}" {% if empresa_id == emp.pk|stringformat:"s" %}selected{% endif %}>
+            {{ emp.razon_social }}
+        </option>
+        {% endfor %}
+    </select>
+    <select name="estado" class="form-select" style="min-width:140px;">
+        <option value="">Todos los estados</option>
+        <option value="activo"   {% if estado == 'activo' %}selected{% endif %}>Activos</option>
+        <option value="inactivo" {% if estado == 'inactivo' %}selected{% endif %}>Inactivos</option>
+    </select>
+    <select name="dinamica" class="form-select" style="min-width:160px;">
+        <option value="">Dinámica: todos</option>
+        <option value="si" {% if dinamica == 'si' %}selected{% endif %}>✅ En Dinámica</option>
+        <option value="no" {% if dinamica == 'no' %}selected{% endif %}>⚠️ Sin verificar</option>
+    </select>
+    <button type="submit" class="btn-terc btn-terc-primary">
+        <i data-lucide="filter"></i> Filtrar
+    </button>
+    {% if q or empresa_id or estado or dinamica %}
+    <a href="{% url 'tercerizadas:lista_servidores' %}" class="btn-terc btn-terc-outline">
+        <i data-lucide="x"></i> Limpiar
+    </a>
+    {% endif %}
+</form>
+
+<!-- Tabla -->
+<div class="terc-card" style="padding:0;overflow:hidden;">
+    {% if servidores %}
+    <div style="overflow-x:auto;">
+        <table class="terc-table">
+            <thead>
+                <tr>
+                    <th>Servidor</th>
+                    <th>Documento</th>
+                    <th>Empresa</th>
+                    <th>Sexo</th>
+                    <th>Estado</th>
+                    <th>Dinámica</th>
+                    <th>Ingreso</th>
+                    <th style="text-align:center;">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for s in servidores %}
+                <tr>
+                    <td>
+                        <div style="display:flex;align-items:center;gap:0.75rem;">
+                            {% if s.foto %}
+                                <img src="{{ s.foto.url }}" style="width:38px;height:38px;border-radius:50%;object-fit:cover;border:2px solid var(--terc-primary);">
+                            {% else %}
+                                <div class="avatar-circle" style="width:38px;height:38px;font-size:0.85rem;">
+                                    {{ s.primer_nombre|slice:":1" }}{{ s.primer_apellido|slice:":1" }}
+                                </div>
+                            {% endif %}
+                            <div>
+                                <div style="font-weight:600;color:#1a2332;font-size:0.9rem;">{{ s.nombre_completo }}</div>
+                                <div style="font-size:0.75rem;color:#6c757d;">{{ s.email|default:"—" }}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <span style="font-family:monospace;font-weight:600;color:#0284c7;">{{ s.numero_documento }}</span><br>
+                        <span style="font-size:0.75rem;color:#6c757d;">{{ s.tipo_documento }}</span>
+                    </td>
+                    <td style="max-width:180px;">
+                        <span style="font-weight:500;color:#334155;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"
+                              title="{{ s.empresa.razon_social }}">{{ s.empresa.razon_social }}</span>
+                        <span style="font-size:0.73rem;color:#94a3b8;">{{ s.empresa.tipo_servicio }}</span>
+                    </td>
+                    <td>{{ s.sexo|default:"—" }}</td>
+                    <td>
+                        {% if s.activo_hospital %}
+                            <span class="status-pill activo"><i data-lucide="check-circle" style="width:12px;"></i> Activo</span>
+                        {% else %}
+                            <span class="status-pill inactivo"><i data-lucide="x-circle" style="width:12px;"></i> Inactivo</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if s.en_dinamica %}
+                            <span class="badge-dinamica found">
+                                <i data-lucide="database" style="width:12px;"></i> Dinámica
+                            </span>
+                        {% else %}
+                            <span class="badge-dinamica not-found">
+                                <i data-lucide="alert-circle" style="width:12px;"></i> Sin verificar
+                            </span>
+                        {% endif %}
+                    </td>
+                    <td style="white-space:nowrap;color:#6c757d;font-size:0.83rem;">{{ s.fecha_ingreso|date:"d/m/Y" }}</td>
+                    <td>
+                        <div style="display:flex;justify-content:center;gap:0.4rem;">
+                            <a href="{% url 'tercerizadas:detalle_servidor' s.pk %}"
+                               class="btn-terc btn-terc-outline" style="padding:0.3rem 0.65rem;"
+                               title="Ver perfil">
+                                <i data-lucide="eye" style="width:14px;"></i>
+                            </a>
+                            <a href="{% url 'tercerizadas:editar_servidor' s.pk %}"
+                               class="btn-terc" style="padding:0.3rem 0.65rem;background:#fef3c7;color:#b45309;border:1.5px solid #fcd34d;"
+                               title="Editar">
+                                <i data-lucide="pencil" style="width:14px;"></i>
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state" style="padding:3.5rem;">
+        <i data-lucide="users" style="width:56px;height:56px;color:#cbd5e1;"></i>
+        <h3 style="color:#64748b;margin:0.75rem 0 0.5rem;">No se encontraron servidores</h3>
+        <p style="color:#94a3b8;margin:0 0 1.25rem;">
+            {% if q or empresa_id or estado %}
+            Intente ajustar los filtros de búsqueda.
+            {% else %}
+            Comience registrando el primer servidor tercerizado.
+            {% endif %}
+        </p>
+        {% if not q %}
+        <a href="{% url 'tercerizadas:crear_servidor' %}" class="btn-terc btn-terc-primary">
+            <i data-lucide="user-plus"></i> Registrar Servidor
+        </a>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

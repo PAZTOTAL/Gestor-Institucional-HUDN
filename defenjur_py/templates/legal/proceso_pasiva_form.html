@@ -97,3 +97,38 @@
     </form>
 </div>
 {% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+
+    function buscarEnNexus(cedulaField, nombreField, colorBg) {
+        var cedula = cedulaField.value.trim();
+        if (!cedula || cedula.length <= 3) return;
+        cedulaField.style.border = "2px solid #6366f1";
+        fetch('{% url "buscar_tercero_nexus" %}?cedula=' + cedula)
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                cedulaField.style.border = "";
+                if (data.success) {
+                    nombreField.value = data.nombre;
+                    nombreField.style.backgroundColor = colorBg;
+                    nombreField.style.fontWeight = "bold";
+                    setTimeout(function() { nombreField.style.backgroundColor = ""; }, 2000);
+                }
+            })
+            .catch(function() { cedulaField.style.border = "2px solid #f43f5e"; });
+    }
+
+    // C.C. Demandante → Nombre Demandante
+    var ccDem = document.getElementById('id_cc_demandante');
+    var nomDem = document.getElementById('id_demandante');
+    if (ccDem && nomDem) {
+        ccDem.addEventListener('blur', function() {
+            buscarEnNexus(ccDem, nomDem, "rgba(168, 85, 247, 0.2)");
+        });
+    }
+
+});
+</script>
+{% endblock %}

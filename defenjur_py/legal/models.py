@@ -1,5 +1,31 @@
 from django.db import models
 from django.utils import timezone as django_timezone
+from django.contrib.auth.models import AbstractUser
+
+class Usuario(AbstractUser):
+    nick = models.CharField(max_length=120, unique=True, null=True, blank=True)
+    rol = models.CharField(max_length=120)
+    estado = models.IntegerField(default=1)
+
+    # Evitar choques con el User de auth estándar en el monorepo
+    groups = models.ManyToManyField(
+        'auth.Group',
+        related_name='legal_usuario_groups',
+        blank=True,
+        help_text='The groups this user belongs to.',
+        verbose_name='groups',
+    )
+    user_permissions = models.ManyToManyField(
+        'auth.Permission',
+        related_name='legal_usuario_permissions',
+        blank=True,
+        help_text='Specific permissions for this user.',
+        verbose_name='user permissions',
+    )
+
+    class Meta:
+        verbose_name = 'user'
+        verbose_name_plural = 'users'
 
 # Diccionarios (Enums) para asegurar integridad en dashboard
 ESTADO_CHOICES = [

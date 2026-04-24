@@ -1,0 +1,68 @@
+{% extends "tercerizadas/base.html" %}
+{% block title %}{{ titulo }} — Tercerizadas | HUDN{% endblock %}
+{% block breadcrumb %}
+ / <a href="{% url 'tercerizadas:lista_empresas' %}" style="color:var(--terc-primary);text-decoration:none;">Empresas</a>
+ / <strong>{{ titulo }}</strong>
+{% endblock %}
+
+{% block content %}
+<header style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;flex-wrap:wrap;gap:1rem;">
+    <h1 style="margin:0;font-size:1.4rem;font-weight:800;color:#1a2332;">{{ titulo }}</h1>
+    <a href="{% url 'tercerizadas:lista_empresas' %}" class="btn-terc btn-terc-outline">
+        <i data-lucide="arrow-left"></i> Volver
+    </a>
+</header>
+
+<form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    <div class="form-section">
+        <div class="form-section-title">
+            <i data-lucide="building-2" style="width:16px;"></i> Datos de la Empresa
+        </div>
+        <div class="form-grid">
+            <div class="form-group">
+                <label class="form-label">NIT *</label>{{ form.nit }}
+            </div>
+            <div class="form-group" style="grid-column:span 2;">
+                <label class="form-label">Razón Social *</label>{{ form.razon_social }}
+            </div>
+            <div class="form-group">
+                <label class="form-label">Representante Legal</label>{{ form.representante_legal }}
+            </div>
+            <div class="form-group">
+                <label class="form-label">Tipo de Servicio *</label>{{ form.tipo_servicio }}
+            </div>
+            <div class="form-group">
+                <label class="form-label">Teléfono</label>{{ form.telefono }}
+            </div>
+            <div class="form-group">
+                <label class="form-label">Correo</label>{{ form.email }}
+            </div>
+            <div class="form-group" style="grid-column:span 2;">
+                <label class="form-label">Dirección</label>{{ form.direccion }}
+            </div>
+            <div class="form-group" style="grid-column:span 2;">
+                <label class="form-label">Observaciones</label>{{ form.observaciones }}
+            </div>
+            <div class="form-group">
+                <label class="form-check">
+                    {{ form.activa }}
+                    <span class="form-label" style="margin:0;">Empresa Activa</span>
+                </label>
+            </div>
+        </div>
+    </div>
+    {% if form.errors %}
+    <div style="background:#fee2e2;border:1.5px solid #fca5a5;border-radius:10px;padding:1rem;margin-bottom:1rem;">
+        <strong style="color:#b91c1c;">Corrija los errores:</strong>
+        <ul style="margin:0.5rem 0 0;color:#991b1b;font-size:0.85rem;">
+            {% for field,errors in form.errors.items %}{% for e in errors %}<li>{{ field }}: {{ e }}</li>{% endfor %}{% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+    <div style="display:flex;gap:0.75rem;justify-content:flex-end;">
+        <a href="{% url 'tercerizadas:lista_empresas' %}" class="btn-terc btn-terc-outline"><i data-lucide="x"></i> Cancelar</a>
+        <button type="submit" class="btn-terc btn-terc-primary"><i data-lucide="save"></i> {% if empresa %}Guardar Cambios{% else %}Registrar Empresa{% endif %}</button>
+    </div>
+</form>
+{% endblock %}

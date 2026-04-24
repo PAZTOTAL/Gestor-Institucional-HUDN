@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load legal_tags %}
 {% block title %}Procesos Judiciales Pasivos | DEFENJUR{% endblock %}
 {% block header_title %}Procesos Judiciales Pasivos{% endblock %}
 
@@ -21,12 +22,12 @@
         <table style="width:100%; border-collapse:separate; border-spacing:0 10px;">
             <thead>
                 <tr style="text-align:left; color:var(--text-muted); font-size:0.85rem;">
-                    <th style="padding:1rem;">ID</th>
-                    <th style="padding:1rem;">N° Proceso</th>
+                    {% include 'legal/includes/sort_th.html' with field='id' label='ID' %}
+                    {% include 'legal/includes/sort_th.html' with field='num_proceso' label='N° Proceso' %}
                     <th style="padding:1rem;">Demandante</th>
                     <th style="padding:1rem;">Demandado</th>
                     <th style="padding:1rem;">Apoderado</th>
-                    <th style="padding:1rem;">Despacho</th>
+                    {% include 'legal/includes/sort_th.html' with field='despacho' label='Despacho' %}
                     <th style="padding:1rem;">Acciones</th>
                 </tr>
             </thead>
@@ -50,6 +51,8 @@
                                     hx-get="{% url 'lista_archivos' 'proceso_pasivo' p.id %}" hx-target="#modalBody"
                                     onclick="document.getElementById('modalTitle').innerText='Documentos adjuntos'; document.getElementById('premiumModal').showModal()">
                                 <i data-lucide="paperclip" style="width:18px;height:18px;"></i></button>
+                            
+                            {% if p|can_manage:request.user %}
                             <button type="button" class="hudn-btn-icon" style="color:#ffc107;" title="Editar"
                                     hx-get="{% url 'proceso_pasiva_editar' p.id %}" hx-target="#modalBody"
                                     onclick="document.getElementById('modalTitle').innerText='Editar proceso pasivo'; document.getElementById('premiumModal').showModal()">
@@ -57,6 +60,7 @@
                             <button type="button" class="hudn-btn-icon" style="color:#dc3545;" title="Eliminar"
                                     hx-delete="{% url 'eliminar_registro' 'proceso_pasivo' p.id %}" hx-target="closest tr" hx-swap="outerHTML"
                                     hx-confirm="¿Seguro que desea eliminar el registro?"><i data-lucide="trash-2" style="width:18px;height:18px;"></i></button>
+                            {% endif %}
                         </div>
                     </td>
                 </tr>

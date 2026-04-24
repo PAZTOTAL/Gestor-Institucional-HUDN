@@ -87,6 +87,7 @@ INSTALLED_APPS = [
     'frecuenciafetal',
     'certificados_laborales',
     'visor_soportes',
+    'tercerizadas',
     # Cuando integre el código completo de UNIFICADOR-V1 en la raíz del repo, descomente:
     # 'meows',
     # 'trabajoparto',
@@ -110,7 +111,10 @@ ROOT_URLCONF = 'HospitalManagement.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR / 'defenjur_py' / 'templates'],
+        'DIRS': [
+            BASE_DIR / 'defenjur_py' / 'templates',
+            BASE_DIR / 'tercerizadas' / 'templates',
+        ],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [

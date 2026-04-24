@@ -17,10 +17,10 @@
         <table class="hudn-table">
             <thead>
                 <tr>
-                    <th>ID</th>
-                    <th>N° Proceso</th>
-                    <th>Fecha Pago</th>
-                    <th>Despacho Tramitante</th>
+                    {% include 'legal/includes/sort_th.html' with field='id' label='ID' %}
+                    {% include 'legal/includes/sort_th.html' with field='num_proceso' label='N° Proceso' %}
+                    {% include 'legal/includes/sort_th.html' with field='fecha' label='Fecha Pago' %}
+                    {% include 'legal/includes/sort_th.html' with field='despacho' label='Despacho Tramitante' %}
                     <th>Medio de Control</th>
                     <th>Demandante</th>
                     <th>Demandado</th>

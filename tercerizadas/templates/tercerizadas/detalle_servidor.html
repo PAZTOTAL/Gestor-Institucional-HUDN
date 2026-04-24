@@ -1,0 +1,234 @@
+{% extends "tercerizadas/base.html" %}
+{% block title %}{{ servidor.nombre_completo }} — Tercerizadas | HUDN{% endblock %}
+{% block breadcrumb %}
+ / <a href="{% url 'tercerizadas:lista_servidores' %}" style="color:var(--terc-primary);text-decoration:none;">Servidores</a>
+ / <strong>{{ servidor.primer_apellido }}</strong>
+{% endblock %}
+
+{% block content %}
+<!-- Perfil Header -->
+<div class="perfil-header">
+    {% if servidor.foto %}
+        <img src="{{ servidor.foto.url }}"
+             style="width:90px;height:90px;border-radius:50%;object-fit:cover;border:4px solid rgba(255,255,255,0.4);">
+    {% else %}
+        <div class="avatar-lg">
+            {{ servidor.primer_nombre|slice:":1" }}{{ servidor.primer_apellido|slice:":1" }}
+        </div>
+    {% endif %}
+    <div class="perfil-info" style="flex:1;">
+        <h2>{{ servidor.nombre_completo }}</h2>
+        <p>
+            {{ servidor.tipo_documento }} · {{ servidor.numero_documento }}
+            &nbsp;|&nbsp;
+            {{ servidor.empresa.razon_social }}
+        </p>
+        <div style="display:flex;gap:0.5rem;margin-top:0.6rem;flex-wrap:wrap;">
+            {% if servidor.activo_hospital %}
+                <span style="background:rgba(16,185,129,0.2);color:#d1fae5;padding:0.2rem 0.7rem;border-radius:999px;font-size:0.78rem;font-weight:600;border:1px solid rgba(16,185,129,0.3);">
+                    ✓ Activo en el Hospital
+                </span>
+            {% else %}
+                <span style="background:rgba(244,63,94,0.2);color:#fecdd3;padding:0.2rem 0.7rem;border-radius:999px;font-size:0.78rem;font-weight:600;border:1px solid rgba(244,63,94,0.3);">
+                    ✗ Inactivo
+                </span>
+            {% endif %}
+            {% if servidor.en_dinamica %}
+                <span style="background:rgba(14,165,233,0.2);color:#bae6fd;padding:0.2rem 0.7rem;border-radius:999px;font-size:0.78rem;font-weight:600;border:1px solid rgba(14,165,233,0.3);">
+                    ✅ Registrado en Dinámica
+                </span>
+            {% else %}
+                <span style="background:rgba(245,158,11,0.2);color:#fde68a;padding:0.2rem 0.7rem;border-radius:999px;font-size:0.78rem;font-weight:600;border:1px solid rgba(245,158,11,0.3);">
+                    ⚠️ No encontrado en Dinámica
+                </span>
+            {% endif %}
+        </div>
+    </div>
+    <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+        <a href="{% url 'tercerizadas:editar_servidor' servidor.pk %}"
+           style="background:rgba(255,255,255,0.15);color:#fff;border:1.5px solid rgba(255,255,255,0.3);text-decoration:none;padding:0.5rem 1rem;border-radius:8px;font-size:0.85rem;font-weight:600;display:flex;align-items:center;gap:0.4rem;transition:background 0.18s;"
+           onmouseover="this.style.background='rgba(255,255,255,0.25)'"
+           onmouseout="this.style.background='rgba(255,255,255,0.15)'">
+            <i data-lucide="pencil" style="width:16px;"></i> Editar
+        </a>
+    </div>
+</div>
+
+<!-- Datos en 2 columnas -->
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;margin-bottom:1.25rem;">
+
+    <!-- Datos Personales -->
+    <div class="terc-card">
+        <div class="form-section-title">
+            <i data-lucide="id-card" style="width:16px;"></i> Datos Personales
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;font-size:0.88rem;">
+            {% include "tercerizadas/_dato.html" with label="Primer Nombre" value=servidor.primer_nombre %}
+            {% include "tercerizadas/_dato.html" with label="Segundo Nombre" value=servidor.segundo_nombre|default:"—" %}
+            {% include "tercerizadas/_dato.html" with label="Primer Apellido" value=servidor.primer_apellido %}
+            {% include "tercerizadas/_dato.html" with label="Segundo Apellido" value=servidor.segundo_apellido|default:"—" %}
+            {% include "tercerizadas/_dato.html" with label="Fecha Nacimiento" value=servidor.fecha_nacimiento|date:"d/m/Y"|default:"—" %}
+            {% include "tercerizadas/_dato.html" with label="Grupo Sanguíneo" value=servidor.grupo_sanguineo|default:"—" %}
+            {% include "tercerizadas/_dato.html" with label="Sexo" value=servidor.sexo|default:"—" %}
+            {% include "tercerizadas/_dato.html" with label="Teléfono" value=servidor.telefono|default:"—" %}
+            {% include "tercerizadas/_dato.html" with label="Correo" value=servidor.email|default:"—" %}
+        </div>
+    </div>
+
+    <!-- Empresa y Contrato -->
+    <div class="terc-card">
+        <div class="form-section-title">
+            <i data-lucide="building-2" style="width:16px;"></i> Empresa y Contrato
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;font-size:0.88rem;">
+            {% include "tercerizadas/_dato.html" with label="Empresa" value=servidor.empresa.razon_social %}
+            {% include "tercerizadas/_dato.html" with label="NIT" value=servidor.empresa.nit %}
+            {% include "tercerizadas/_dato.html" with label="Tipo de Servicio" value=servidor.empresa.tipo_servicio %}
+            {% include "tercerizadas/_dato.html" with label="Contrato" value=servidor.contrato.numero_contrato|default:"—" %}
+            {% include "tercerizadas/_dato.html" with label="Fecha Ingreso" value=servidor.fecha_ingreso|date:"d/m/Y" %}
+            {% include "tercerizadas/_dato.html" with label="Fecha Retiro" value=servidor.fecha_retiro|date:"d/m/Y"|default:"Vigente" %}
+        </div>
+
+        {% if servidor.documento_pdf %}
+        <div style="margin-top:1rem;padding-top:1rem;border-top:1px solid #f1f5f9;">
+            <a href="{{ servidor.documento_pdf.url }}" target="_blank"
+               class="btn-terc btn-terc-outline" style="font-size:0.8rem;">
+                <i data-lucide="file-text"></i> Ver Documento de Identidad
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Lugar de nacimiento y residencia -->
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;margin-bottom:1.25rem;">
+    <div class="terc-card">
+        <div class="form-section-title"><i data-lucide="map-pin" style="width:16px;"></i> Lugar de Nacimiento</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;font-size:0.88rem;">
+            {% include "tercerizadas/_dato.html" with label="País" value=servidor.pais_nacimiento|default:"—" %}
+            {% include "tercerizadas/_dato.html" with label="Departamento" value=servidor.departamento_nacimiento|default:"—" %}
+            {% include "tercerizadas/_dato.html" with label="Municipio" value=servidor.municipio_nacimiento|default:"—" %}
+        </div>
+    </div>
+    <div class="terc-card">
+        <div class="form-section-title"><i data-lucide="home" style="width:16px;"></i> Residencia</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;font-size:0.88rem;">
+            {% include "tercerizadas/_dato.html" with label="Dirección" value=servidor.direccion_residencia|default:"—" %}
+            {% include "tercerizadas/_dato.html" with label="Municipio" value=servidor.municipio_residencia|default:"—" %}
+        </div>
+    </div>
+</div>
+
+<!-- Asignaciones de Área -->
+<div class="terc-card" style="margin-bottom:1.25rem;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.1rem;flex-wrap:wrap;gap:0.75rem;">
+        <div class="form-section-title" style="margin:0;border:none;padding:0;">
+            <i data-lucide="map" style="width:16px;"></i> Áreas Asignadas
+        </div>
+        <a href="{% url 'tercerizadas:agregar_asignacion' servidor.pk %}" class="btn-terc btn-terc-primary" style="padding:0.4rem 0.9rem;font-size:0.8rem;">
+            <i data-lucide="plus"></i> Asignar Área
+        </a>
+    </div>
+    {% if asignaciones %}
+    <div style="overflow-x:auto;">
+        <table class="terc-table">
+            <thead>
+                <tr>
+                    <th>Nivel 1</th>
+                    <th>Nivel 2</th>
+                    <th>Área Específica</th>
+                    <th>Actividad</th>
+                    <th>Desde</th>
+                    <th>Hasta</th>
+                    <th>Estado</th>
+                    <th>Verificado por</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for a in asignaciones %}
+                <tr>
+                    <td>{{ a.organigrama_nivel1.descripcion }}</td>
+                    <td>{{ a.organigrama_nivel2.descripcion }}</td>
+                    <td>{{ a.area_display }}</td>
+                    <td>{{ a.actividad }}</td>
+                    <td>{{ a.fecha_inicio|date:"d/m/Y" }}</td>
+                    <td>{{ a.fecha_fin|date:"d/m/Y"|default:"Vigente" }}</td>
+                    <td>
+                        {% if a.activa %}
+                            <span class="status-pill activo">Activa</span>
+                        {% else %}
+                            <span class="status-pill inactivo">Inactiva</span>
+                        {% endif %}
+                    </td>
+                    <td style="font-size:0.8rem;color:#6c757d;">{{ a.verificado_por|default:"—" }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state" style="padding:2rem;">
+        <i data-lucide="map" style="width:40px;height:40px;color:#cbd5e1;"></i>
+        <p style="color:#94a3b8;margin:0.5rem 0 0;">Sin áreas asignadas.</p>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Afiliaciones Seguridad Social -->
+<div class="terc-card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.1rem;flex-wrap:wrap;gap:0.75rem;">
+        <div class="form-section-title" style="margin:0;border:none;padding:0;">
+            <i data-lucide="shield-check" style="width:16px;"></i> Seguridad Social
+        </div>
+        <a href="{% url 'tercerizadas:agregar_afiliacion' servidor.pk %}" class="btn-terc btn-terc-primary" style="padding:0.4rem 0.9rem;font-size:0.8rem;">
+            <i data-lucide="plus"></i> Registrar Afiliación
+        </a>
+    </div>
+    {% if afiliaciones %}
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:1rem;">
+        {% for af in afiliaciones %}
+        <div style="background:#f8fafc;border-radius:12px;padding:1.1rem;border:1px solid #e2e8f0;">
+            <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:0.75rem;">
+                <div style="width:40px;height:40px;border-radius:10px;
+                    background:{% if af.tipo == 'ARL' %}linear-gradient(135deg,#f59e0b,#d97706){% elif af.tipo == 'EPS' %}linear-gradient(135deg,#0ea5e9,#0284c7){% elif af.tipo == 'IPS' %}linear-gradient(135deg,#10b981,#059669){% else %}linear-gradient(135deg,#8b5cf6,#7c3aed){% endif %};
+                    display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:0.8rem;">
+                    {{ af.tipo }}
+                </div>
+                <div>
+                    <div style="font-weight:700;font-size:0.9rem;color:#1a2332;">{{ af.nombre_entidad }}</div>
+                    <div style="font-size:0.75rem;color:#6c757d;">{{ af.get_tipo_display }}</div>
+                </div>
+            </div>
+            {% if af.numero_afiliacion %}
+            <div style="font-size:0.78rem;color:#475569;"><strong>N°:</strong> {{ af.numero_afiliacion }}</div>
+            {% endif %}
+            {% if af.fecha_afiliacion %}
+            <div style="font-size:0.78rem;color:#475569;"><strong>Afiliado:</strong> {{ af.fecha_afiliacion|date:"d/m/Y" }}</div>
+            {% endif %}
+            {% if af.fecha_vencimiento %}
+            <div style="font-size:0.78rem;color:#475569;"><strong>Vence:</strong> {{ af.fecha_vencimiento|date:"d/m/Y" }}</div>
+            {% endif %}
+            <div style="margin-top:0.6rem;">
+                {% if af.vigente %}
+                    <span class="status-pill vigente">Vigente</span>
+                {% else %}
+                    <span class="status-pill vencido">Vencido</span>
+                {% endif %}
+            </div>
+            {% if af.documento_soporte %}
+            <a href="{{ af.documento_soporte.url }}" target="_blank"
+               style="font-size:0.75rem;color:var(--terc-primary);display:flex;align-items:center;gap:0.3rem;margin-top:0.5rem;text-decoration:none;">
+               <i data-lucide="file-text" style="width:14px;"></i> Ver soporte
+            </a>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state" style="padding:2rem;">
+        <i data-lucide="shield" style="width:40px;height:40px;color:#cbd5e1;"></i>
+        <p style="color:#94a3b8;margin:0.5rem 0 0;">Sin afiliaciones registradas.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

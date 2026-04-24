@@ -22,7 +22,7 @@
             </h3>
             <div class="form-grid">
                 {% for field in form %}
-                    {% if field.name in 'num_proceso,demandante,demandado,apoderado,despacho_actual' %}
+                    {% if field.name in 'num_proceso,cc_demandante,demandante,demandado,apoderado,despacho_actual' %}
                     <div class="form-group">
                         <label for="{{ field.id_for_label }}">{{ field.label }}</label>
                         {{ field }}
@@ -79,4 +79,8 @@
         </div>
     </form>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+{% include 'legal/includes/nexus_lookup_js.html' %}
 {% endblock %}

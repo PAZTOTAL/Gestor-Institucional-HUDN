@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load legal_tags %}
 {% block title %}Derechos de Petición | DEFENJUR{% endblock %}
 {% block header_title %}Derechos de Petición{% endblock %}
 
@@ -44,9 +45,9 @@
         <table style="width:100%; border-collapse:separate; border-spacing:0 10px;">
             <thead>
                 <tr style="text-align:left; color:var(--text-muted); font-size:0.85rem;">
-                    <th style="padding:1rem;">ID</th>
-                    <th style="padding:1rem;">N° Reparto</th>
-                    <th style="padding:1rem;">Fecha Correo</th>
+                    {% include 'legal/includes/sort_th.html' with field='id' label='ID' %}
+                    {% include 'legal/includes/sort_th.html' with field='num_reparto' label='N° Reparto' %}
+                    {% include 'legal/includes/sort_th.html' with field='fecha' label='Fecha Correo' %}
                     <th style="padding:1rem;">Solicitante</th>
                     <th style="padding:1rem;">Peticionario</th>
                     <th style="padding:1rem;">Causa</th>
@@ -79,6 +80,7 @@
                                     hx-get="{% url 'lista_archivos' 'peticion' p.id %}" hx-target="#modalBody"
                                     onclick="document.getElementById('modalTitle').innerText='Documentos adjuntos'; document.getElementById('premiumModal').showModal()">
                                 <i data-lucide="paperclip" style="width:18px;height:18px;"></i></button>
+                            {% if p|can_manage:request.user %}
                             <button type="button" class="hudn-btn-icon" style="color:#ffc107;" title="Editar"
                                     hx-get="{% url 'peticion_editar' p.id %}" hx-target="#modalBody"
                                     onclick="document.getElementById('modalTitle').innerText='Editar petición'; document.getElementById('premiumModal').showModal()">
@@ -86,6 +88,7 @@
                             <button type="button" class="hudn-btn-icon" style="color:#dc3545;" title="Eliminar"
                                     hx-delete="{% url 'eliminar_registro' 'peticion' p.id %}" hx-target="closest tr" hx-swap="outerHTML" hx-confirm="¿Seguro que desea eliminar el registro? La eliminación es permanente.">
                                 <i data-lucide="trash-2" style="width:18px;height:18px;"></i></button>
+                            {% endif %}
                         </div>
                     </td>
                 </tr>

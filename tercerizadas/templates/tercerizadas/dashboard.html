@@ -1,0 +1,203 @@
+{% extends "tercerizadas/base.html" %}
+{% block title %}Dashboard — Tercerizadas | HUDN{% endblock %}
+{% block breadcrumb %} / <strong>Dashboard</strong>{% endblock %}
+
+{% block content %}
+<header style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;flex-wrap:wrap;gap:1rem;">
+    <div>
+        <h1 style="margin:0;font-size:1.65rem;font-weight:800;background:var(--terc-gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+            Personal Tercerizado
+        </h1>
+        <p style="margin:0.25rem 0 0;color:#6c757d;font-size:0.9rem;">
+            Gestión de servidores de empresas contratistas del HUDN
+        </p>
+    </div>
+    <div style="display:flex;gap:0.75rem;flex-wrap:wrap;">
+        <a href="{% url 'tercerizadas:crear_servidor' %}" class="btn-terc btn-terc-primary">
+            <i data-lucide="user-plus"></i> Registrar Servidor
+        </a>
+        <a href="{% url 'tercerizadas:lista_servidores' %}" class="btn-terc btn-terc-outline">
+            <i data-lucide="list"></i> Ver Todos
+        </a>
+    </div>
+</header>
+
+<!-- ── Estadísticas ── -->
+<div class="stat-grid">
+    <div class="stat-card">
+        <div class="stat-icon" style="background:linear-gradient(135deg,#0ea5e9,#0284c7);">
+            <i data-lucide="users"></i>
+        </div>
+        <div>
+            <div class="stat-label">Total Servidores</div>
+            <div class="stat-value">{{ total_servidores }}</div>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon" style="background:linear-gradient(135deg,#10b981,#059669);">
+            <i data-lucide="user-check"></i>
+        </div>
+        <div>
+            <div class="stat-label">Activos</div>
+            <div class="stat-value" style="color:#10b981;">{{ activos }}</div>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon" style="background:linear-gradient(135deg,#f43f5e,#e11d48);">
+            <i data-lucide="user-x"></i>
+        </div>
+        <div>
+            <div class="stat-label">Inactivos</div>
+            <div class="stat-value" style="color:#f43f5e;">{{ inactivos }}</div>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon" style="background:linear-gradient(135deg,#8b5cf6,#7c3aed);">
+            <i data-lucide="building-2"></i>
+        </div>
+        <div>
+            <div class="stat-label">Empresas Activas</div>
+            <div class="stat-value" style="color:#8b5cf6;">{{ total_empresas }}</div>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon" style="background:linear-gradient(135deg,#f59e0b,#d97706);">
+            <i data-lucide="database"></i>
+        </div>
+        <div>
+            <div class="stat-label">En Dinámica</div>
+            <div class="stat-value" style="color:#f59e0b;">{{ en_dinamica }}</div>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon" style="background:linear-gradient(135deg,#6b7280,#4b5563);">
+            <i data-lucide="alert-circle"></i>
+        </div>
+        <div>
+            <div class="stat-label">Sin Verificar</div>
+            <div class="stat-value" style="color:#6b7280;">{{ sin_dinamica }}</div>
+        </div>
+    </div>
+</div>
+
+<!-- ── Contenido principal ── -->
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;margin-bottom:1.5rem;">
+
+    <!-- Últimos registrados -->
+    <div class="terc-card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem;">
+            <h3 style="margin:0;font-size:1rem;font-weight:700;color:#1a2332;">
+                <i data-lucide="clock" style="width:18px;vertical-align:middle;color:var(--terc-primary);"></i>
+                Últimos Registrados
+            </h3>
+            <a href="{% url 'tercerizadas:lista_servidores' %}" class="btn-terc btn-terc-outline" style="padding:0.3rem 0.75rem;font-size:0.78rem;">
+                Ver todos
+            </a>
+        </div>
+        {% if ultimos %}
+            <div style="display:flex;flex-direction:column;gap:0.75rem;">
+                {% for s in ultimos %}
+                <div style="display:flex;align-items:center;gap:0.85rem;padding:0.6rem;border-radius:10px;background:#f8fafc;transition:background 0.15s;"
+                     onmouseover="this.style.background='#e0f2fe'" onmouseout="this.style.background='#f8fafc'">
+                    {% if s.foto %}
+                        <img src="{{ s.foto.url }}" style="width:38px;height:38px;border-radius:50%;object-fit:cover;border:2px solid var(--terc-primary);">
+                    {% else %}
+                        <div class="avatar-circle" style="width:38px;height:38px;font-size:0.9rem;">
+                            {{ s.primer_nombre|slice:":1" }}{{ s.primer_apellido|slice:":1" }}
+                        </div>
+                    {% endif %}
+                    <div style="flex:1;min-width:0;">
+                        <div style="font-weight:600;font-size:0.88rem;color:#1a2332;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+                            {{ s.nombre_completo }}
+                        </div>
+                        <div style="font-size:0.75rem;color:#6c757d;">{{ s.empresa.razon_social }}</div>
+                    </div>
+                    <div>
+                        {% if s.en_dinamica %}
+                            <span class="badge-dinamica found" title="Registrado en Dinámica">✓</span>
+                        {% else %}
+                            <span class="badge-dinamica not-found" title="No en Dinámica">!</span>
+                        {% endif %}
+                    </div>
+                    <a href="{% url 'tercerizadas:detalle_servidor' s.pk %}"
+                       style="color:var(--terc-primary);" title="Ver perfil">
+                        <i data-lucide="arrow-right" style="width:16px;"></i>
+                    </a>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="empty-state">
+                <i data-lucide="users"></i>
+                <p>Aún no hay servidores registrados.</p>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Distribución por empresa -->
+    <div class="terc-card">
+        <div style="margin-bottom:1.25rem;">
+            <h3 style="margin:0;font-size:1rem;font-weight:700;color:#1a2332;">
+                <i data-lucide="pie-chart" style="width:18px;vertical-align:middle;color:var(--terc-primary);"></i>
+                Personal por Empresa
+            </h3>
+        </div>
+        {% if por_empresa %}
+            {% for emp in por_empresa %}
+            <div style="margin-bottom:0.85rem;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.3rem;">
+                    <span style="font-size:0.83rem;font-weight:600;color:#334155;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"
+                          title="{{ emp.razon_social }}">{{ emp.razon_social }}</span>
+                    <span style="font-size:0.8rem;font-weight:700;color:var(--terc-primary);">{{ emp.total }}</span>
+                </div>
+                <div style="height:7px;background:#e2e8f0;border-radius:999px;overflow:hidden;">
+                    {% if total_servidores > 0 %}
+                    <div style="height:100%;width:{% widthratio emp.total total_servidores 100 %}%;
+                                background:var(--terc-gradient);border-radius:999px;
+                                transition:width 1s ease;">
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="empty-state">
+                <i data-lucide="building-2"></i>
+                <p>Sin empresas registradas.</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- ── Acceso rápido ── -->
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem;">
+    <a href="{% url 'tercerizadas:crear_servidor' %}" class="terc-card" style="text-decoration:none;text-align:center;padding:1.5rem;">
+        <div style="width:52px;height:52px;background:linear-gradient(135deg,#0ea5e9,#0284c7);border-radius:14px;display:flex;align-items:center;justify-content:center;margin:0 auto 0.85rem;">
+            <i data-lucide="user-plus" style="width:26px;color:#fff;"></i>
+        </div>
+        <div style="font-weight:700;color:#1a2332;margin-bottom:0.25rem;">Registrar Servidor</div>
+        <div style="font-size:0.78rem;color:#6c757d;">Nuevo personal tercerizado</div>
+    </a>
+    <a href="{% url 'tercerizadas:crear_empresa' %}" class="terc-card" style="text-decoration:none;text-align:center;padding:1.5rem;">
+        <div style="width:52px;height:52px;background:linear-gradient(135deg,#8b5cf6,#7c3aed);border-radius:14px;display:flex;align-items:center;justify-content:center;margin:0 auto 0.85rem;">
+            <i data-lucide="building-2" style="width:26px;color:#fff;"></i>
+        </div>
+        <div style="font-weight:700;color:#1a2332;margin-bottom:0.25rem;">Nueva Empresa</div>
+        <div style="font-size:0.78rem;color:#6c757d;">Agregar empresa contratista</div>
+    </a>
+    <a href="{% url 'tercerizadas:lista_servidores' %}?estado=activo" class="terc-card" style="text-decoration:none;text-align:center;padding:1.5rem;">
+        <div style="width:52px;height:52px;background:linear-gradient(135deg,#10b981,#059669);border-radius:14px;display:flex;align-items:center;justify-content:center;margin:0 auto 0.85rem;">
+            <i data-lucide="user-check" style="width:26px;color:#fff;"></i>
+        </div>
+        <div style="font-weight:700;color:#1a2332;margin-bottom:0.25rem;">Activos</div>
+        <div style="font-size:0.78rem;color:#6c757d;">{{ activos }} servidores activos</div>
+    </a>
+    <a href="{% url 'tercerizadas:lista_servidores' %}?dinamica=no" class="terc-card" style="text-decoration:none;text-align:center;padding:1.5rem;">
+        <div style="width:52px;height:52px;background:linear-gradient(135deg,#f59e0b,#d97706);border-radius:14px;display:flex;align-items:center;justify-content:center;margin:0 auto 0.85rem;">
+            <i data-lucide="alert-triangle" style="width:26px;color:#fff;"></i>
+        </div>
+        <div style="font-weight:700;color:#1a2332;margin-bottom:0.25rem;">Sin Verificar</div>
+        <div style="font-size:0.78rem;color:#6c757d;">{{ sin_dinamica }} sin validar en Dinámica</div>
+    </a>
+</div>
+{% endblock %}
