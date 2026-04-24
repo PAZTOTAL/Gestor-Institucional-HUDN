@@ -209,46 +209,95 @@ Usuario = get_user_model()
 
 
 class UsuarioHudnCreateForm(PremiumModelForm):
-    password = forms.CharField(widget=forms.PasswordInput, label='Contraseña inicial', required=True)
+    user_select = forms.ModelChoiceField(
+        queryset=Usuario.objects.all(),
+        label='Seleccionar Usuario del Sistema',
+        help_text='Busque el funcionario por su nombre de usuario o cédula.',
+        widget=forms.Select(attrs={'class': 'premium-input select2-enabled'})
+    )
     rol = forms.ChoiceField(choices=[('administrador', 'Administrador'), ('abogado', 'Abogado'), ('invitado', 'Invitado')], required=True)
-    nick = forms.CharField(required=False)
+
+    # Matriz de Permisos
+    perm_tutela = forms.BooleanField(label='Tutelas', required=False)
+    perm_peticion = forms.BooleanField(label='Peticiones', required=False)
+    perm_activa = forms.BooleanField(label='Proc. Activa', required=False)
+    perm_pasiva = forms.BooleanField(label='Proc. Pasiva', required=False)
+    perm_terminado = forms.BooleanField(label='Proc. Terminados', required=False)
+    perm_peritaje = forms.BooleanField(label='Peritajes', required=False)
+    perm_pago = forms.BooleanField(label='Pagos Sentencias', required=False)
+    perm_sancionatorio = forms.BooleanField(label='Sancionatorios', required=False)
+    perm_requerimiento = forms.BooleanField(label='Requerimientos', required=False)
+    perm_extrajudicial = forms.BooleanField(label='Extrajudiciales', required=False)
+
+    MAP_PERMS = {
+        'perm_tutela': 'acciontutela',
+        'perm_peticion': 'derechopeticion',
+        'perm_activa': 'procesojudicialactiva',
+        'perm_pasiva': 'procesojudicialpasiva',
+        'perm_terminado': 'procesojudicialterminado',
+        'perm_peritaje': 'peritaje',
+        'perm_pago': 'pagosentenciajudicial',
+        'perm_sancionatorio': 'procesoadministrativosancionatorio',
+        'perm_requerimiento': 'requerimientoentecontrol',
+        'perm_extrajudicial': 'procesoextrajudicial',
+    }
 
     class Meta:
         model = Usuario
-        fields = ['username', 'email', 'first_name', 'last_name', 'is_active']
+        fields = []
 
-    def clean_username(self):
-        username = self.cleaned_data.get('username')
-        if Usuario.objects.filter(username=username).exists():
-            raise forms.ValidationError(f"La cédula/usuario '{username}' ya se encuentra registrado en el sistema.")
-        return username
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        from usuarios.models import PermisoApp
+        users_with_perm = PermisoApp.objects.filter(
+            app_label__in=['defenjur', 'legal'], 
+            permitido=True
+        ).values_list('user_id', flat=True)
+        
+        self.fields['user_select'].queryset = Usuario.objects.exclude(
+            id__in=users_with_perm
+        ).order_by('username')
+        
+        self.fields['user_select'].label_from_instance = lambda obj: f"{obj.username} - {obj.get_full_name()}"
 
     def save(self, commit=True):
-        user = super().save(commit=False)
-        user.set_password(self.cleaned_data['password'])
+        from django.db import transaction
+        user = self.cleaned_data.get('user_select')
         if commit:
-            user.save()
-            from usuarios.models import PerfilUsuario, PermisoApp
-            perfil, created = PerfilUsuario.objects.get_or_create(user=user)
-            perfil.legal_rol = self.cleaned_data.get('rol')
-            perfil.legal_nick = self.cleaned_data.get('nick') or user.username
-            perfil.save()
+            from usuarios.models import PerfilUsuario, PermisoApp, PermisoModelo
+            from django.core.cache import cache
             
-            # Asegurar que el usuario aparezca en la lista (Permiso Principal)
-            PermisoApp.objects.update_or_create(
-                user=user, app_label='defenjur',
-                defaults={'permitido': True}
-            )
+            with transaction.atomic():
+                perfil, created = PerfilUsuario.objects.get_or_create(user=user)
+                perfil.legal_rol = self.cleaned_data.get('rol')
+                perfil.legal_nick = user.username
+                perfil.save()
+                
+                # Otorgar permiso principal
+                PermisoApp.objects.update_or_create(user=user, app_label='defenjur', defaults={'permitido': True})
+                PermisoApp.objects.update_or_create(user=user, app_label='legal', defaults={'permitido': True})
+                
+                # Guardar Matriz de Permisos
+                for field_name, model_name in self.MAP_PERMS.items():
+                    val = self.cleaned_data.get(field_name, False)
+                    PermisoModelo.objects.update_or_create(
+                        user=user, app_label='defenjur', model_name=model_name,
+                        defaults={'permitido': val}
+                    )
+                    # También para 'legal' para evitar fallos de filtro
+                    PermisoModelo.objects.update_or_create(
+                        user=user, app_label='legal', model_name=model_name,
+                        defaults={'permitido': val}
+                    )
+                
+                cache.delete(f'user_dashboard_nav_{user.id}')
+                cache.delete(f'dashboard_structure_{user.id}')
+                
         return user
 
 
 class UsuarioHudnUpdateForm(PremiumModelForm):
-    password = forms.CharField(
-        widget=forms.PasswordInput, label='Nueva contraseña', required=False,
-        help_text='Dejar en blanco para no cambiar.',
-    )
     rol = forms.ChoiceField(choices=[('administrador', 'Administrador'), ('abogado', 'Abogado'), ('invitado', 'Invitado')], required=False)
-    nick = forms.CharField(required=False)
 
     # Matriz de Permisos DEFENJUR
     perm_tutela = forms.BooleanField(label='Tutelas', required=False)
@@ -285,7 +334,6 @@ class UsuarioHudnUpdateForm(PremiumModelForm):
             perfil = getattr(self.instance, 'perfil', None)
             if perfil:
                 self.fields['rol'].initial = perfil.legal_rol
-                self.fields['nick'].initial = perfil.legal_nick
             
             # Cargar permisos existentes
             from usuarios.models import PermisoModelo
@@ -295,28 +343,47 @@ class UsuarioHudnUpdateForm(PremiumModelForm):
                 self.fields[field_name].initial = perm_dict.get(model_name, False)
 
     def save(self, commit=True):
-        user = super().save(commit=False)
-        pwd = self.cleaned_data.get('password')
-        if pwd:
-            user.set_password(pwd)
-        if commit:
-            user.save()
-            from usuarios.models import PerfilUsuario
-            perfil, created = PerfilUsuario.objects.get_or_create(user=user)
-            if self.cleaned_data.get('rol'):
-                perfil.legal_rol = self.cleaned_data.get('rol')
-            if self.cleaned_data.get('nick'):
-                perfil.legal_nick = self.cleaned_data.get('nick')
-            perfil.save()
+        from django.db import transaction
+        from usuarios.models import PerfilUsuario, PermisoModelo
+        from django.core.cache import cache
 
-            # Guardar Permisos de Módulo
-            from usuarios.models import PermisoModelo
-            for field_name, model_name in self.MAP_PERMS.items():
-                val = self.cleaned_data.get(field_name, False)
-                PermisoModelo.objects.update_or_create(
-                    user=user, app_label='defenjur', model_name=model_name,
-                    defaults={'permitido': val}
-                )
+        user = super().save(commit=False)
+        
+        if commit:
+            with transaction.atomic():
+                user.save()
+                
+                # 1. Actualizar Perfil
+                perfil, created = PerfilUsuario.objects.get_or_create(user=user)
+                if self.cleaned_data.get('rol'):
+                    perfil.legal_rol = self.cleaned_data.get('rol')
+                perfil.legal_nick = user.username
+                perfil.save()
+
+                # 2. Guardar Permisos de Módulo (Optimizado con Bulk)
+                permisos_actuales = {p.model_name: p for p in PermisoModelo.objects.filter(user=user, app_label='defenjur')}
+                objs_to_update = []
+                objs_to_create = []
+                
+                for field_name, model_name in self.MAP_PERMS.items():
+                    val = self.cleaned_data.get(field_name, False)
+                    if model_name in permisos_actuales:
+                        p = permisos_actuales[model_name]
+                        if p.permitido != val:
+                            p.permitido = val
+                            objs_to_update.append(p)
+                    else:
+                        objs_to_create.append(PermisoModelo(user=user, app_label='defenjur', model_name=model_name, permitido=val))
+                
+                if objs_to_update:
+                    PermisoModelo.objects.bulk_update(objs_to_update, ['permitido'])
+                if objs_to_create:
+                    PermisoModelo.objects.bulk_create(objs_to_create)
+
+                # 3. Invalidar Cache de Navegación
+                cache.delete(f'user_dashboard_nav_{user.id}')
+                cache.delete(f'dashboard_structure_{user.id}')
+            
         return user
 
 
