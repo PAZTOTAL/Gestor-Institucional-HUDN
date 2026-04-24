@@ -217,6 +217,12 @@ class UsuarioHudnCreateForm(PremiumModelForm):
         model = Usuario
         fields = ['username', 'email', 'first_name', 'last_name', 'is_active']
 
+    def clean_username(self):
+        username = self.cleaned_data.get('username')
+        if Usuario.objects.filter(username=username).exists():
+            raise forms.ValidationError(f"La cédula/usuario '{username}' ya se encuentra registrado en el sistema.")
+        return username
+
     def save(self, commit=True):
         user = super().save(commit=False)
         user.set_password(self.cleaned_data['password'])

@@ -198,6 +198,18 @@ def lookup_tercero_por_cedula(request):
     if not cedula:
         return JsonResponse({'found': False, 'message': 'Cédula no proporcionada'})
     
+    # 0. Verificar si ya existe en el sistema local
+    # Buscamos por username (si es la cédula) o por el campo cedula en el perfil
+    already_exists = User.objects.filter(username=cedula).exists() or \
+                     PerfilUsuario.objects.filter(cedula=cedula).exists()
+    
+    if already_exists:
+        return JsonResponse({
+            'found': False, 
+            'already_registered': True, 
+            'message': 'YA ESTÁ REGISTRADO'
+        })
+    
     try:
         Genpacien = apps.get_model('consultas_externas', 'Genpacien')
         Gentercer = apps.get_model('consultas_externas', 'Gentercer')
