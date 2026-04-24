@@ -282,3 +282,29 @@ DEFENJUR_FTP_HOST = os.getenv('FTP_HOST', '172.20.100.25')
 DEFENJUR_FTP_USER = os.getenv('FTP_USER', '')
 DEFENJUR_FTP_PASSWORD = os.getenv('FTP_PASSWORD', '')
 DEFENJUR_FTP_BASE_PATH = '/web/defenjur_files/'
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'simple': {'format': '[%(asctime)s] %(levelname)s %(name)s: %(message)s'},
+    },
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'simple',
+        },
+    },
+    'loggers': {
+        'horas_extras': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'django.db.backends': {
+            'handlers': ['console'],
+            'level': 'WARNING',  # Cambiar a DEBUG para ver cada query SQL
+            'propagate': False,
+        },
+    },
+}
