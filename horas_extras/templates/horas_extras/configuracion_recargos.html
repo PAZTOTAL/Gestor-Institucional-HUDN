@@ -663,7 +663,7 @@ function renderEmpleados(resp) {
       <th class="px-4 py-2 font-bold text-slate-600">Cargo</th>
       <th class="px-4 py-2 font-bold text-slate-600">Área</th>
       <th class="px-4 py-2 font-bold text-slate-600">Tipo</th>
-      <th class="px-4 py-2 font-bold text-slate-600">Acciones</th>
+      ${ES_ADMIN ? '<th class="px-4 py-2 font-bold text-slate-600">Acciones</th>' : ''}
     </tr></thead><tbody>`;
   empleados.forEach(e => {
     const tipoCls = TIPO_COLORS[e.tipo] || 'bg-slate-100 text-slate-700';
@@ -673,7 +673,7 @@ function renderEmpleados(resp) {
       <td class="px-4 py-2.5 text-slate-500">${e.cargo||'—'}</td>
       <td class="px-4 py-2.5 text-slate-600">${e.area_nombre}</td>
       <td class="px-4 py-2.5"><span class="px-2 py-0.5 rounded-full text-xs font-bold ${tipoCls}">${e.tipo_display}</span></td>
-      <td class="px-4 py-2.5">
+      ${ES_ADMIN ? `<td class="px-4 py-2.5">
         <div class="flex gap-2 flex-wrap">
           <button onclick="abrirModalEmpleado(${e.id})"
             class="px-3 py-1 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg text-xs font-bold transition">Editar</button>
@@ -682,7 +682,7 @@ function renderEmpleados(resp) {
           <button onclick="eliminarEmpleado(${e.id},'${e.nombre.replace(/'/g,"\\'")}' )"
             class="px-3 py-1 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg text-xs font-bold transition">Eliminar</button>
         </div>
-      </td>
+      </td>` : ''}
     </tr>`;
   });
   html += '</tbody></table></div>';
