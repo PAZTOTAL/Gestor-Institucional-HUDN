@@ -11,16 +11,37 @@
 <div class="card animate-fade" style="max-width:560px;">
     <form method="post">
         {% csrf_token %}
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:1rem; margin-bottom:1.5rem;">
         {% for field in form %}
-        <div class="form-group" style="margin-bottom:1rem;">
-            <label for="{{ field.id_for_label }}" style="display:block;font-size:0.85rem;color:#495057;margin-bottom:0.35rem;">{{ field.label }}</label>
-            {{ field }}
-            {% if field.help_text %}<small style="color:#6c757d;">{{ field.help_text }}</small>{% endif %}
-            {% if field.errors %}<div style="color:#dc3545;font-size:0.8rem;">{{ field.errors }}</div>{% endif %}
-        </div>
+            {% if "perm_" not in field.name %}
+            <div class="form-group">
+                <label for="{{ field.id_for_label }}" style="display:block;font-size:0.85rem;color:#495057;margin-bottom:0.35rem;">{{ field.label }}</label>
+                {{ field }}
+                {% if field.help_text %}<small style="color:#6c757d;">{{ field.help_text }}</small>{% endif %}
+                {% if field.errors %}<div style="color:#dc3545;font-size:0.8rem;">{{ field.errors }}</div>{% endif %}
+            </div>
+            {% endif %}
         {% endfor %}
+        </div>
+
+        <div style="background:rgba(0,0,0,0.03); padding:1.25rem; border-radius:12px; border:1px solid rgba(0,0,0,0.05); margin-bottom:1.5rem;">
+            <h3 style="font-size:0.9rem; margin-top:0; color:var(--text-muted); text-transform:uppercase; letter-spacing:1px; display:flex; align-items:center; gap:8px;">
+                <i data-lucide="shield-check" style="width:18px;"></i> Matriz de Permisos DEFENJUR
+            </h3>
+            <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap:0.75rem;">
+                {% for field in form %}
+                    {% if "perm_" in field.name %}
+                    <label class="premium-checkbox-container" style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:0.85rem; padding:0.5rem; background:rgba(255,255,255,0.05); border-radius:8px; transition:all 0.2s;">
+                        {{ field }}
+                        <span>{{ field.label }}</span>
+                    </label>
+                    {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+
         <div style="display:flex;gap:0.75rem;margin-top:1.5rem;">
-            <button type="submit" class="btn-premium">Guardar</button>
+            <button type="submit" class="btn-premium">Guardar Cambios</button>
             <a href="{% url 'usuarios' %}" class="btn-premium" style="text-decoration:none;background:#6c757d;">Cancelar</a>
         </div>
     </form>

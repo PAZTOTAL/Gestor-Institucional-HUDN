@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load legal_tags %}
 
 {% block title %}Acciones de Tutela | DEFENJUR{% endblock %}
 {% block breadcrumb %}<a href="{% url 'defenjur_home' %}" style="color:#6c757d;text-decoration:none;">Home</a> / <strong>Acciones de Tutela</strong>{% endblock %}
@@ -119,6 +120,7 @@
                     <td>{{ tutela.abogado_responsable|default:"—"|truncatechars:24 }}</td>
                     <td>
                         <div style="display:flex;gap:2px;align-items:center;">
+                            {% if tutela|can_manage:request.user %}
                             <button type="button" class="hudn-btn-icon" style="color:#ffc107;" title="Editar"
                                     hx-get="{% url 'tutela_editar' tutela.id %}" hx-target="#modalBody"
                                     onclick="document.getElementById('modalTitle').innerText='Editar Tutela'; document.getElementById('premiumModal').showModal()">
@@ -129,6 +131,7 @@
                                     hx-confirm="¿Eliminar permanentemente este registro?">
                                 <i data-lucide="trash-2" style="width:18px;"></i>
                             </button>
+                            {% endif %}
                             <button type="button" class="hudn-btn-icon" style="color:#0d6efd;" title="Archivos adjuntos"
                                     hx-get="{% url 'lista_archivos' 'tutela' tutela.id %}" hx-target="#modalBody"
                                     onclick="document.getElementById('modalTitle').innerText='Archivos adjuntos'; document.getElementById('premiumModal').showModal()">

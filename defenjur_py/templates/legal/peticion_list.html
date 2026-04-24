@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load legal_tags %}
 {% block title %}Derechos de Petición | DEFENJUR{% endblock %}
 {% block header_title %}Derechos de Petición{% endblock %}
 
@@ -79,6 +80,7 @@
                                     hx-get="{% url 'lista_archivos' 'peticion' p.id %}" hx-target="#modalBody"
                                     onclick="document.getElementById('modalTitle').innerText='Documentos adjuntos'; document.getElementById('premiumModal').showModal()">
                                 <i data-lucide="paperclip" style="width:18px;height:18px;"></i></button>
+                            {% if p|can_manage:request.user %}
                             <button type="button" class="hudn-btn-icon" style="color:#ffc107;" title="Editar"
                                     hx-get="{% url 'peticion_editar' p.id %}" hx-target="#modalBody"
                                     onclick="document.getElementById('modalTitle').innerText='Editar petición'; document.getElementById('premiumModal').showModal()">
@@ -86,6 +88,7 @@
                             <button type="button" class="hudn-btn-icon" style="color:#dc3545;" title="Eliminar"
                                     hx-delete="{% url 'eliminar_registro' 'peticion' p.id %}" hx-target="closest tr" hx-swap="outerHTML" hx-confirm="¿Seguro que desea eliminar el registro? La eliminación es permanente.">
                                 <i data-lucide="trash-2" style="width:18px;height:18px;"></i></button>
+                            {% endif %}
                         </div>
                     </td>
                 </tr>

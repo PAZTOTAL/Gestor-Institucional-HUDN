@@ -84,9 +84,9 @@ class AdminRequiredMixin(LoginRequiredMixin):
         return super().dispatch(request, *args, **kwargs)
 
 
-def _monthly_counts_for_year(model, year):
+def _monthly_counts_for_year(queryset, year):
     rows = (
-        model.objects.filter(fecha_registro__year=year)
+        queryset.filter(fecha_registro__year=year)
         .annotate(m=TruncMonth('fecha_registro'))
         .values('m')
         .annotate(c=Count('id'))
@@ -98,19 +98,52 @@ def _monthly_counts_for_year(model, year):
     return [by_m.get(m, 0) for m in range(1, 13)]
 
 
-def build_dashboard_chart_context():
+def build_dashboard_chart_context(user=None):
     """Datos para gráficos tipo sistema legacy (donut + barras mensuales)."""
     y = date.today().year
-    c_ext = ProcesoExtrajudicial.objects.count()
-    c_act = ProcesoJudicialActiva.objects.count()
-    c_pas = ProcesoJudicialPasiva.objects.count()
-    c_tut = AccionTutela.objects.count()
-    c_pet = DerechoPeticion.objects.count()
-    c_req = RequerimientoEnteControl.objects.count()
-    c_per = Peritaje.objects.count()
-    c_pag = PagoSentenciaJudicial.objects.count()
-    c_san = ProcesoAdministrativoSancionatorio.objects.count()
-    c_ter = ProcesoJudicialTerminado.objects.count()
+    
+    # Cache de permisos y lista de usuarios activos
+    user_perms = {}
+    active_usernames = []
+    is_admin_global = False
+    
+    from django.contrib.auth import get_user_model
+    User = get_user_model()
+    from usuarios.models import PermisoApp, PermisoModelo
+    
+    # Obtener lista global de usuarios activos en la App (para filtrar estadísticas)
+    active_usernames = list(User.objects.filter(
+        permisos_app__app_label='defenjur', 
+        permisos_app__permitido=True
+    ).values_list('username', flat=True))
+
+    if user:
+        perfil = getattr(user, 'perfil', None)
+        rol = (getattr(user, 'rol', None) or getattr(perfil, 'legal_rol', '') or '').lower()
+        is_admin_global = user.is_superuser or rol == 'administrador'
+        if not is_admin_global:
+            user_perms = {p.model_name: p.permitido for p in PermisoModelo.objects.filter(user=user, app_label='defenjur')}
+
+    def _get_qs_count(model_class, model_name):
+        # Filtro centralizado en access_control.py (incluye Permiso Principal y Rol)
+        qs = filter_queryset_by_role(model_class.objects.all(), user, model_class)
+        
+        # Filtro granular por permiso de módulo (solo si hay usuario)
+        if user and not is_admin_global:
+            if not user_perms.get(model_name, False):
+                return 0, qs.none()
+        return qs.count(), qs
+
+    c_ext, qs_ext = _get_qs_count(ProcesoExtrajudicial, 'procesoextrajudicial')
+    c_act, qs_act = _get_qs_count(ProcesoJudicialActiva, 'procesojudicialactiva')
+    c_pas, qs_pas = _get_qs_count(ProcesoJudicialPasiva, 'procesojudicialpasiva')
+    c_tut, qs_tut = _get_qs_count(AccionTutela, 'acciontutela')
+    c_pet, qs_pet = _get_qs_count(DerechoPeticion, 'derechopeticion')
+    c_req, qs_req = _get_qs_count(RequerimientoEnteControl, 'requerimientoentecontrol')
+    c_per, qs_per = _get_qs_count(Peritaje, 'peritaje')
+    c_pag, qs_pag = _get_qs_count(PagoSentenciaJudicial, 'pagosentenciajudicial')
+    c_san, qs_san = _get_qs_count(ProcesoAdministrativoSancionatorio, 'procesoadministrativosancionatorio')
+    c_ter, qs_ter = _get_qs_count(ProcesoJudicialTerminado, 'procesojudicialterminado')
 
     donut_labels = [
         'Proc. extrajudiciales', 'Proc. jud. activa', 'Proc. jud. pasiva', 'Tutelas',
@@ -121,8 +154,8 @@ def build_dashboard_chart_context():
     donut_data = [c_ext, c_act, c_pas, c_tut, c_pet, c_req, c_per, c_pag, c_san]
 
     meses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic']
-    bar_activa = _monthly_counts_for_year(ProcesoJudicialActiva, y)
-    bar_pasiva = _monthly_counts_for_year(ProcesoJudicialPasiva, y)
+    bar_activa = _monthly_counts_for_year(qs_act, y)
+    bar_pasiva = _monthly_counts_for_year(qs_pas, y)
 
     chart_config = {
         'donut': {'labels': donut_labels, 'data': donut_data},
@@ -145,6 +178,28 @@ def build_dashboard_chart_context():
 
 
 class RoleFilteringMixin:
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return super().dispatch(request, *args, **kwargs)
+        
+        # Saltarse chequeo si es superusuario o administrador global
+        perfil = getattr(request.user, 'perfil', None)
+        rol = (getattr(request.user, 'rol', None) or getattr(perfil, 'legal_rol', '') or '').lower()
+        if request.user.is_superuser or rol == 'administrador':
+            return super().dispatch(request, *args, **kwargs)
+
+        # Verificar permiso granular por modelo
+        if self.model:
+            model_name = self.model._meta.model_name
+            from usuarios.models import PermisoModelo
+            has_perm = PermisoModelo.objects.filter(
+                user=request.user, app_label='legal', model_name=model_name, permitido=True
+            ).exists()
+            if not has_perm:
+                raise PermissionDenied(f"No tiene permisos para acceder al módulo: {model_name}")
+
+        return super().dispatch(request, *args, **kwargs)
+
     def get_queryset(self):
         qs = super().get_queryset()
         return filter_queryset_by_role(qs, self.request.user, self.model)
@@ -391,7 +446,7 @@ class HomeView(LoginRequiredMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context.update(build_dashboard_chart_context())
+        context.update(build_dashboard_chart_context(self.request.user))
         context['count_procesos'] = context['count_procesos_activa'] + context['count_procesos_pasiva']
         return context
 
@@ -414,7 +469,13 @@ class UsuarioListView(AdminRequiredMixin, ListView):
     ordering = ['username']
 
     def get_queryset(self):
-        return Usuario.objects.all().order_by('username')
+        # Mostramos solo los que tienen permiso explícito, rol legal o son Superusuario
+        from django.db.models import Q
+        return super().get_queryset().filter(
+            Q(permisos_app__app_label='defenjur', permisos_app__permitido=True) |
+            ~Q(perfil__legal_rol='INVITADO') |
+            Q(is_superuser=True)
+        ).select_related('perfil').prefetch_related('permisos_modelo').distinct()
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
@@ -524,7 +585,15 @@ class TutelaCreateView(LoginRequiredMixin, CreateView):
 
     def form_valid(self, form):
         obj = form.save(commit=False)
-        obj.usuario_carga = self.request.user.get_username()
+        user = self.request.user
+        obj.usuario_carga = user.get_username()
+        
+        # Auto-asignar abogado si el campo está vacío
+        if not obj.abogado_responsable:
+            perfil = getattr(user, 'perfil', None)
+            nick = getattr(user, 'nick', None) or getattr(perfil, 'legal_nick', '') or ''
+            obj.abogado_responsable = nick or user.get_full_name() or user.username
+            
         obj.save()
         _guardar_adjuntos(self.request.FILES.getlist('adjuntos'), 'tutela', obj.id)
         messages.success(self.request, 'Acción de Tutela registrada correctamente.')
@@ -584,10 +653,19 @@ class PeticionCreateView(LoginRequiredMixin, CreateView):
     success_url = reverse_lazy('peticiones')
 
     def form_valid(self, form):
-        response = super().form_valid(form)
+        obj = form.save(commit=False)
+        user = self.request.user
+        # Auto-asignar abogado si el campo está vacío
+        if not obj.abogado_responsable:
+            perfil = getattr(user, 'perfil', None)
+            nick = getattr(user, 'nick', None) or getattr(perfil, 'legal_nick', '') or ''
+            obj.abogado_responsable = nick or user.get_full_name() or user.username
+        
+        obj.save()
+        self.object = obj
         _guardar_adjuntos(self.request.FILES.getlist('adjuntos'), 'peticion', self.object.id)
         messages.success(self.request, 'Derecho de Petición registrado correctamente.')
-        return response
+        return redirect(self.success_url)
 
 class PeticionUpdateView(ModalUpdateView):
     model = DerechoPeticion
@@ -842,7 +920,7 @@ class RequerimientoUpdateView(ModalUpdateView):
 def eliminar_registro(request, tipo, id_obj):
     # Log para depuración
     with open('error_log.txt', 'a') as f:
-        f.write(f"\n[DELETE] Intento eliminar: tipo={tipo}, id={id_obj}, method={request.method}\n")
+        f.write(f"\n[DELETE] Intento eliminar: tipo={tipo}, id={id_obj}, method={request.method}, user={request.user.username}\n")
     
     mapa = {
         'peticion': DerechoPeticion,
@@ -859,11 +937,18 @@ def eliminar_registro(request, tipo, id_obj):
     modelo = mapa.get(tipo)
     if modelo:
         try:
-            obj = get_object_or_404(modelo, id=id_obj)
+            # Validar permisos: un abogado solo puede borrar lo suyo
+            qs = filter_queryset_by_role(modelo.objects.all(), request.user, modelo)
+            obj = get_object_or_404(qs, id=id_obj)
+            
             obj.delete()
             with open('error_log.txt', 'a') as f:
                 f.write(f"  -> Eliminado correctamente: {tipo} ID {id_obj}\n")
             return HttpResponse('') # HTMX vacía el TR
+        except (Http404, PermissionDenied) as e:
+            with open('error_log.txt', 'a') as f:
+                f.write(f"  -> ACCESO DENEGADO al eliminar: {str(e)}\n")
+            return HttpResponse('No tiene permisos para eliminar este registro.', status=403)
         except Exception as e:
             with open('error_log.txt', 'a') as f:
                 f.write(f"  -> ERROR al eliminar: {str(e)}\n")
@@ -961,7 +1046,7 @@ def exportar_modulo_excel(request, modulo):
 @require_GET
 def api_consultas_totales(request):
     """Igual que consultas_generales.js → total (conteos por tabla)."""
-    ctx = build_dashboard_chart_context()
+    ctx = build_dashboard_chart_context(request.user)
     return JsonResponse({
         'total_acciones_tutela': ctx['count_tutelas'],
         'derechos_peticion': ctx['count_peticiones'],

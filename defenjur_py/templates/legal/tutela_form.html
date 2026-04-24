@@ -38,46 +38,5 @@
 {% endblock %}
 
 {% block extra_js %}
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-
-    function buscarEnNexus(cedulaField, nombreField, colorBg) {
-        var cedula = cedulaField.value.trim();
-        if (!cedula || cedula.length <= 3) return;
-        cedulaField.style.border = "2px solid #6366f1";
-        fetch('{% url "buscar_tercero_nexus" %}?cedula=' + cedula)
-            .then(function(response) { return response.json(); })
-            .then(function(data) {
-                cedulaField.style.border = "";
-                if (data.success) {
-                    nombreField.value = data.nombre;
-                    nombreField.style.backgroundColor = colorBg;
-                    nombreField.style.fontWeight = "bold";
-                    setTimeout(function() { nombreField.style.backgroundColor = ""; }, 2000);
-                }
-            })
-            .catch(function(error) {
-                cedulaField.style.border = "2px solid #f43f5e";
-                console.error('Error:', error);
-            });
-    }
-
-    var cedulaAcc = document.getElementById('id_cedula_accionante');
-    var nombreAcc = document.getElementById('id_accionante');
-    if (cedulaAcc && nombreAcc) {
-        cedulaAcc.addEventListener('blur', function() {
-            buscarEnNexus(cedulaAcc, nombreAcc, "rgba(16, 185, 129, 0.2)");
-        });
-    }
-
-    var cedulaAbo = document.getElementById('id_cedula_abogado');
-    var nombreAbo = document.getElementById('id_abogado_responsable');
-    if (cedulaAbo && nombreAbo) {
-        cedulaAbo.addEventListener('blur', function() {
-            buscarEnNexus(cedulaAbo, nombreAbo, "rgba(99, 102, 241, 0.2)");
-        });
-    }
-
-});
-</script>
+{% include 'legal/includes/nexus_lookup_js.html' %}
 {% endblock %}

@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load legal_tags %}
 {% block title %}Proc. Terminados | DEFENJUR{% endblock %}
 {% block header_title %}Procesos Judiciales Terminados{% endblock %}
 {% block content %}
@@ -46,6 +47,8 @@
                                     hx-get="{% url 'lista_archivos' 'proceso_terminado' p.id %}" hx-target="#modalBody"
                                     onclick="document.getElementById('modalTitle').innerText='Documentos adjuntos'; document.getElementById('premiumModal').showModal()">
                                 <i data-lucide="paperclip" style="width:18px;height:18px;"></i></button>
+                            
+                            {% if p|can_manage:request.user %}
                             <button type="button" class="hudn-btn-icon" style="color:#ffc107;" title="Editar"
                                     hx-get="{% url 'proceso_terminado_editar' p.id %}" hx-target="#modalBody"
                                     onclick="document.getElementById('modalTitle').innerText='Editar proceso terminado'; document.getElementById('premiumModal').showModal()">
@@ -53,6 +56,7 @@
                             <button type="button" class="hudn-btn-icon" style="color:#dc3545;" title="Eliminar"
                                     hx-delete="{% url 'eliminar_registro' 'proceso_terminado' p.id %}" hx-target="closest tr" hx-swap="outerHTML"
                                     hx-confirm="¿Seguro? La eliminación es permanente y no se puede deshacer."><i data-lucide="trash-2" style="width:18px;height:18px;"></i></button>
+                            {% endif %}
                         </div>
                     </td>
                 </tr>
