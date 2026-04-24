@@ -238,8 +238,9 @@ MEDIA_ROOT = BASE_DIR / 'media'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# Sesiones en caché (RAM) + BD de respaldo — evita query a SQL Server en cada request
-SESSION_ENGINE = 'django.contrib.sessions.backends.cached_db'
+# Sesiones en RAM pura — sin escritura a SQL Server (django_session es lento ~13s)
+# Las sesiones se pierden al reiniciar el servidor, pero el login es instantáneo
+SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
 CACHES = {
     'default': {
         'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
