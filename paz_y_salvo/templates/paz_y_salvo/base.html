@@ -1,0 +1,336 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="pys-token" content="{{ pys_token }}">
+  <meta name="pys-user" content="{{ pys_user_json }}">
+  <title>{% block title %}Paz y Salvo — HUDN{% endblock %}</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root {
+      --sidebar-w: 224px;
+    }
+    * { box-sizing: border-box; }
+    body { font-family: 'DM Sans', 'Segoe UI', Arial, sans-serif; background: #f0f4f8; color: #1e293b; margin: 0; }
+    @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap');
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: #f0f4f8; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+
+    /* Sidebar */
+    .pys-sidebar {
+      position: fixed; left: 0; top: 0; bottom: 0;
+      width: var(--sidebar-w); background: #ffffff;
+      border-right: 1px solid #e2e8f0; display: flex;
+      flex-direction: column; z-index: 100;
+      box-shadow: 2px 0 12px rgba(0,0,0,0.06);
+    }
+    .pys-main { margin-left: var(--sidebar-w); padding: 28px 32px; min-height: 100vh; }
+
+    /* Nav items */
+    .pys-nav-item {
+      display: flex; align-items: center; gap: 9px;
+      padding: 9px 16px; cursor: pointer; font-size: 13.5px; font-weight: 600;
+      color: #64748b; border-left: 3px solid transparent;
+      transition: all 0.12s; user-select: none; text-decoration: none;
+    }
+    .pys-nav-item:hover { background: #f0f9ff; color: #0284c7; }
+    .pys-nav-item.active {
+      color: #0284c7; background: #e0f2fe;
+      border-left-color: #0284c7; font-weight: 700;
+    }
+    .pys-nav-sub {
+      padding-left: 36px; font-size: 12.5px;
+    }
+
+    /* Cards */
+    .pys-card {
+      background: #ffffff; border: 1px solid #e2e8f0;
+      border-radius: 14px; padding: 22px 20px;
+      margin-bottom: 16px; box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    }
+    .pys-card-title {
+      font-size: 11.5px; font-weight: 700; color: #0284c7;
+      letter-spacing: 1px; text-transform: uppercase;
+      margin-bottom: 16px; display: flex; align-items: center; gap: 7px;
+    }
+
+    /* Table */
+    .pys-table { width: 100%; border-collapse: collapse; }
+    .pys-table th {
+      text-align: left; font-size: 10.5px; font-weight: 700;
+      color: #94a3b8; text-transform: uppercase; letter-spacing: 0.7px;
+      padding: 10px 12px; border-bottom: 2px solid #f1f5f9;
+      white-space: nowrap; background: #fafbfc;
+    }
+    .pys-table th:first-child { border-radius: 8px 0 0 0; }
+    .pys-table th:last-child  { border-radius: 0 8px 0 0; }
+    .pys-table td { padding: 11px 12px; font-size: 13px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
+    .pys-table tr:last-child td { border-bottom: none; }
+    .pys-table tbody tr:hover td { background: #f8fbff; }
+    .pys-table tr { cursor: pointer; }
+
+    /* Badges */
+    .badge {
+      display: inline-block; padding: 3px 9px; border-radius: 20px;
+      font-size: 10px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase;
+    }
+    .badge-tramite  { background: #e0f2fe; color: #0369a1; }
+    .badge-validado { background: #dcfce7; color: #15803d; }
+    .badge-rechazado { background: #fee2e2; color: #dc2626; }
+    .badge-cancelado { background: #f1f5f9; color: #64748b; }
+
+    /* Progress bar */
+    .progress-wrap { background: #e2e8f0; border-radius: 999px; height: 6px; overflow: hidden; }
+    .progress-bar  { height: 100%; border-radius: 999px; background: linear-gradient(90deg,#0284c7,#38bdf8); transition: width 0.4s; }
+
+    /* Buttons */
+    .btn-primary {
+      background: linear-gradient(135deg, #0284c7, #0369a1); color: #fff;
+      border: none; border-radius: 10px; padding: 10px 20px;
+      font-size: 13px; font-weight: 700; cursor: pointer;
+      display: inline-flex; align-items: center; gap: 7px;
+      box-shadow: 0 2px 12px rgba(2,132,199,0.3); transition: opacity 0.15s, transform 0.12s;
+    }
+    .btn-primary:hover { opacity: 0.88; transform: translateY(-1px); }
+    .btn-sm {
+      background: transparent; border: 1px solid #e2e8f0;
+      border-radius: 6px; padding: 4px 8px; cursor: pointer;
+      color: #0284c7; display: inline-flex; align-items: center; font-size: 12px;
+    }
+    .btn-sm:hover { background: #f0f9ff; }
+    .btn-danger-sm {
+      background: rgba(220,38,38,0.08); border: 1px solid rgba(220,38,38,0.25);
+      border-radius: 6px; padding: 4px 8px; cursor: pointer; color: #dc2626;
+      display: inline-flex; align-items: center; gap: 4px; font-size: 12px;
+    }
+
+    /* Inputs */
+    .pys-input {
+      background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px;
+      padding: 8px 12px; font-size: 13px; color: #1e293b; outline: none;
+      transition: border-color 0.15s;
+    }
+    .pys-input:focus { border-color: #0284c7; background: #fff; }
+    select.pys-input { cursor: pointer; }
+
+    /* Modal overlay */
+    .pys-modal-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.45);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 500; padding: 16px;
+    }
+    .pys-modal {
+      background: #ffffff; border-radius: 16px; width: 100%;
+      max-width: 620px; max-height: 90vh; overflow-y: auto;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.18);
+    }
+    .pys-modal-header {
+      padding: 20px 24px 16px; border-bottom: 1px solid #e2e8f0;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .pys-modal-body { padding: 20px 24px; }
+    .pys-modal-footer { padding: 16px 24px; border-top: 1px solid #e2e8f0; display: flex; justify-content: flex-end; gap: 10px; }
+
+    /* Form groups */
+    .form-group { margin-bottom: 16px; }
+    .form-group label { display: block; font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.7px; margin-bottom: 6px; }
+    .form-group .pys-input, .form-group select { width: 100%; }
+
+    /* Stat card */
+    .stat-card {
+      background: #fff; border-radius: 12px; padding: 14px 16px;
+      border: 1px solid #e2e8f0; box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+    }
+
+    /* Mobile topbar */
+    .pys-topbar {
+      display: none; position: fixed; top: 0; left: 0; right: 0; height: 54px;
+      background: #fff; border-bottom: 1px solid #e2e8f0; z-index: 200;
+      align-items: center; padding: 0 12px; gap: 10px;
+    }
+
+    @media (max-width: 768px) {
+      .pys-sidebar { display: none; }
+      .pys-main { margin-left: 0; padding: 68px 14px 24px; }
+      .pys-topbar { display: flex; }
+    }
+
+    /* Spinner */
+    @keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+    .spin { animation: spin 0.8s linear infinite; display: inline-block; }
+
+    /* Dot notification */
+    .notif-dot {
+      width: 8px; height: 8px; border-radius: 50%; background: #0ea5e9;
+      display: inline-block; flex-shrink: 0;
+      box-shadow: 0 0 0 3px rgba(14,165,233,0.25);
+    }
+
+    /* Textarea */
+    textarea.pys-input { resize: vertical; min-height: 80px; }
+  </style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<nav class="pys-sidebar">
+  <div style="padding:18px 16px 16px; border-bottom:1px solid #e2e8f0; display:flex; align-items:center; justify-content:center;
+              background:linear-gradient(175deg,#f0f9ff 0%,#ffffff 65%);">
+    <img src="{% static 'logos-hudn/logo-hudn-colores-vertical.png' %}" alt="HUDN" style="height:144px; object-fit:contain;"
+         onerror="this.style.display='none'; this.nextElementSibling.style.display='block'">
+    <span style="display:none; font-size:16px; font-weight:800; color:#0284c7;">HUDN</span>
+  </div>
+
+  {% if pys_user %}
+  <div style="padding:12px 14px; border-bottom:1px solid #f1f5f9; display:flex; align-items:center; gap:10px;">
+    <div style="width:38px; height:38px; border-radius:50%; background:linear-gradient(135deg,#e0f2fe,#bae6fd);
+                border:2px solid rgba(125,211,252,0.4);
+                display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:800; color:#0284c7; flex-shrink:0;">
+      {{ pys_user.avatar }}
+    </div>
+    <div style="flex:1; overflow:hidden;">
+      <div style="font-size:13px; font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:#0f172a;">
+        {{ pys_user.nombre }}
+      </div>
+      <div style="font-size:11px; color:#94a3b8; font-weight:500; margin-top:1px;">
+        {% if pys_user.rol == 'paz_salvo' %}Paz y Salvo
+        {% elif pys_user.rol == 'validador' %}{{ pys_user.area_nombre|default:"Validador" }}
+        {% elif pys_user.rol == 'admin' %}Administrador
+        {% else %}{{ pys_user.rol }}{% endif %}
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <div style="padding:10px 0; flex:1; overflow-y:auto;">
+    <div style="display:flex; align-items:center; gap:10px; padding:8px 14px 6px;">
+      <span style="flex:1; height:1.5px; background:linear-gradient(to right, transparent, #bae6fd); border-radius:2px;"></span>
+      <span style="font-size:10.5px; color:#0284c7; font-weight:800; letter-spacing:2.5px; text-transform:uppercase; white-space:nowrap; padding:3px 8px; background:linear-gradient(135deg,rgba(224,242,254,0.8),rgba(186,230,253,0.5)); border-radius:20px; border:1px solid rgba(2,132,199,0.15);">Módulos</span>
+      <span style="flex:1; height:1.5px; background:linear-gradient(to left, transparent, #bae6fd); border-radius:2px;"></span>
+    </div>
+
+    {% block sidebar_nav %}{% endblock %}
+  </div>
+
+  <div style="padding:14px; border-top:1px solid #e2e8f0; display:flex; flex-direction:column; gap:8px;">
+    <a href="{% url 'home' %}"
+       style="width:100%; background:#f1f5f9; border:1.5px solid #cbd5e1; border-radius:10px; padding:11px 14px;
+              cursor:pointer; color:#475569; display:flex; align-items:center; gap:9px; font-size:13px;
+              font-weight:700; text-decoration:none; transition:background 0.15s;">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      Inicio
+    </a>
+    <a href="{% url 'paz_y_salvo:pys_landing' %}"
+       style="width:100%; background:#f1f5f9; border:1.5px solid #cbd5e1; border-radius:10px;
+              padding:11px 14px; cursor:pointer; color:#475569; display:flex; align-items:center; gap:9px;
+              font-size:13px; font-weight:700; text-decoration:none; transition:background 0.15s;">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+      Volver
+    </a>
+  </div>
+</nav>
+
+<!-- Topbar móvil -->
+<div class="pys-topbar">
+  <button onclick="document.getElementById('mobile-drawer').classList.remove('hidden')"
+    style="background:transparent; border:1px solid #e2e8f0; border-radius:7px; padding:6px 8px; cursor:pointer; color:#64748b; display:flex; align-items:center;">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+  </button>
+  <span style="font-size:13px; font-weight:800; color:#0284c7;">Paz y Salvo — HUDN</span>
+</div>
+
+<!-- Drawer móvil -->
+<div id="mobile-drawer" class="hidden" style="position:fixed; inset:0; z-index:300;">
+  <div onclick="document.getElementById('mobile-drawer').classList.add('hidden')" style="position:absolute; inset:0; background:rgba(0,0,0,0.5);"></div>
+  <div style="position:absolute; left:0; top:0; bottom:0; width:256px; background:#fff; border-right:1px solid #e2e8f0; overflow-y:auto;">
+    <div style="padding:16px; border-bottom:1px solid #e2e8f0; font-size:14px; font-weight:800; color:#0284c7;">Paz y Salvo — HUDN</div>
+    {% block sidebar_nav_mobile %}{% endblock %}
+    <div style="padding:12px 14px; border-top:1px solid #e2e8f0; margin-top:16px;">
+      <a href="{% url 'paz_y_salvo:pys_landing' %}" style="display:flex; align-items:center; gap:8px; font-size:13px; color:#64748b; font-weight:700; text-decoration:none;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+        Volver
+      </a>
+    </div>
+  </div>
+</div>
+
+<!-- Contenido principal -->
+<main class="pys-main">
+  {% block content %}{% endblock %}
+</main>
+
+<script>
+// Token JWT disponible globalmente
+const PYS_TOKEN = document.querySelector('meta[name="pys-token"]')?.content || '';
+const PYS_USER  = JSON.parse(document.querySelector('meta[name="pys-user"]')?.content || 'null');
+
+function pysFetch(method, path, body, isForm) {
+  const headers = { 'Authorization': 'Bearer ' + PYS_TOKEN };
+  let init = { method, headers };
+  if (body && !isForm) {
+    headers['Content-Type'] = 'application/json';
+    init.body = JSON.stringify(body);
+  } else if (body && isForm) {
+    init.body = body;
+  }
+  return fetch(path, init).then(async r => {
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(data.detail || 'Error ' + r.status);
+    return data;
+  });
+}
+
+function badgeHtml(estado) {
+  const map = {
+    'EN_TRAMITE': ['badge-tramite','En Trámite'],
+    'VALIDADO':   ['badge-validado','Validado'],
+    'RECHAZADO':  ['badge-rechazado','Rechazado'],
+    'CANCELADO':  ['badge-cancelado','Cancelado'],
+    'PENDIENTE':  ['badge-tramite','Pendiente'],
+    'PROCESADA':  ['badge-validado','Procesada'],
+  };
+  const [cls, label] = map[estado] || ['badge-cancelado', estado];
+  return `<span class="badge ${cls}">${label}</span>`;
+}
+
+function progressHtml(validaciones) {
+  if (!validaciones || !validaciones.length) return '';
+  const total = validaciones.length;
+  const done  = validaciones.filter(v => v.estado === 'VALIDADO').length;
+  const pct   = Math.round(done / total * 100);
+  return `<div style="display:flex; align-items:center; gap:6px;">
+    <div class="progress-wrap" style="flex:1; min-width:60px;">
+      <div class="progress-bar" style="width:${pct}%"></div>
+    </div>
+    <span style="font-size:10px; color:#94a3b8; white-space:nowrap;">${done}/${total}</span>
+  </div>`;
+}
+
+function fmtDate(d) {
+  if (!d) return '';
+  const p = d.split('T')[0].split('-');
+  return p.length === 3 ? `${p[2]}/${p[1]}/${p[0]}` : d;
+}
+
+function showToast(msg, type) {
+  const t = document.createElement('div');
+  const bg = type === 'error' ? '#fef2f2' : '#f0fdf4';
+  const border = type === 'error' ? '#fca5a5' : '#86efac';
+  const color = type === 'error' ? '#dc2626' : '#15803d';
+  t.style.cssText = `position:fixed; top:20px; right:20px; z-index:9999; background:${bg}; border:1px solid ${border}; color:${color}; padding:12px 18px; border-radius:10px; font-size:13px; font-weight:600; box-shadow:0 4px 16px rgba(0,0,0,0.12); max-width:320px;`;
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 3200);
+}
+
+function openModal(id) { document.getElementById(id).style.display = 'flex'; }
+function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+</script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>
