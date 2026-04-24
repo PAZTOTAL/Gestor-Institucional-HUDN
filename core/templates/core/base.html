@@ -6,7 +6,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Hospital Management{% endblock %}</title>
-    <link rel="stylesheet" href="{% static 'core/css/index.css' %}?v=5">
+    <link rel="stylesheet" href="{% static 'core/css/index.css' %}?v=10">
     <!-- Tailwind CSS - loaded early but non-blocking -->
     <script src="https://cdn.tailwindcss.com" defer></script>
 
@@ -136,6 +136,7 @@
     <noscript>
         <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
     </noscript>
+    <link rel="shortcut icon" href="{% static 'core/img/logo_hudn_50_small.png' %}" type="image/x-icon">
     <style>
         .select2-container--default .select2-selection--single {
             background-color: #ffffff !important;
@@ -159,7 +160,11 @@
     {% block extra_head %}{% endblock %}
 </head>
 
-<body>
+<body class="relative">
+    <!-- Fondo Institucional Sutil (Watermark) -->
+    <div class="fixed inset-0 pointer-events-none z-[-1] opacity-[0.12] flex items-center justify-center p-10 overflow-hidden">
+        <img src="{% static 'core/img/logo_hudn_50_tiny.png' %}" class="w-full max-w-4xl object-contain opacity-70">
+    </div>
     {% if db_caidas %}
     <div
         class="bg-red-600 text-white text-center py-3 px-4 font-bold sticky top-0 z-50 animate-pulse shadow-2xl flex flex-col items-center justify-center gap-1">
@@ -182,10 +187,9 @@
         <header class="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b-2 border-blue-100 shadow-sm">
             <div class="container mx-auto flex justify-between items-center h-20 px-4">
                 <a href="{% url 'home' %}" class="flex items-center gap-3 group">
-                    <div class="w-10 h-10 bg-blue-700 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
-                        <span class="text-white font-black text-xl">H</span>
+                    <div class="h-14 w-auto flex items-center justify-center overflow-hidden transition-transform group-hover:scale-105 duration-300">
+                        <img src="{% static 'core/img/logo_hudn_50_small.png' %}" alt="HUDN 50 Años" class="h-full w-auto object-contain">
                     </div>
-                    <span class="text-xl font-black tracking-tighter text-blue-950 uppercase hidden lg:block">Gestor <span class="text-blue-600">HUDN</span></span>
                 </a>
 
                 <nav class="flex items-center gap-1 md:gap-2">
