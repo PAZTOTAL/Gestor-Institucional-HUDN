@@ -43,9 +43,9 @@ MESES_ES = [
 # Nocturno: 18:00–06:00  |  Diurno: 06:00–18:00
 TURNOS_HORAS = {
     'manana':       (6,  0),   # 07:00–13:00 → 6h diurnas
-    'tarde':        (5,  1),   # 13:00–19:00 → 5h diurnas + 1h nocturna (18–19)
+    'tarde':        (6,  0),   # 13:00–19:00 → 6h diurnas (18:00–19:00 no es recargo nocturno)
     'noche':        (1, 11),   # 19:00–07:00 → 11h nocturnas + 1h diurna (06–07)
-    'manana_tarde': (11, 1),   # 07:00–19:00 → 11h diurnas + 1h nocturna (18–19)
+    'manana_tarde': (12, 0),   # 07:00–19:00 → 12h diurnas (sin nocturna, 18–19 no es recargo)
     'veinticuatro': (12, 12),  # 07:00–07:00 → 12h diurnas + 12h nocturnas
     'libre':        (0,  0),   # sin cálculo
 }
