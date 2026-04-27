@@ -409,7 +409,7 @@ class HomeView(AccessControlMixin, TemplateView):
         ]
         
         # Finanzas: Solo administrativo, legal y financiero
-        finanzas_slugs = ['financiera', 'talento_humano', 'contabilidad', 'administrativo', 'juridica', 'varios', 'presupuesto', 'consultas']
+        finanzas_slugs = ['financiera', 'talento_humano', 'administrativo', 'juridica', 'varios', 'presupuesto', 'consultas']
 
         nav_asistenciales = [cat for cat in active_structure if cat['category']['slug'] in salud_slugs]
         nav_financiera_cat = [cat for cat in active_structure if cat['category']['slug'] in finanzas_slugs]

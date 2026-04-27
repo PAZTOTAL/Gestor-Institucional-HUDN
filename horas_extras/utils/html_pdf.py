@@ -34,6 +34,23 @@ def _img_base64(filename: str) -> str:
     return ''
 
 
+_POR_PAGINA = 16
+
+
+def _chunk_empleados(empleados_data: list, page_size: int = _POR_PAGINA) -> list:
+    """Divide la lista en páginas de `page_size` empleados con sus subtotales."""
+    paginas = []
+    for i in range(0, max(1, len(empleados_data)), page_size):
+        chunk = empleados_data[i:i + page_size]
+        paginas.append({
+            'empleados':  chunk,
+            'total_hon':  sum(int(e.get('hon') or 0) for e in chunk),
+            'total_hdf':  sum(int(e.get('hdf') or 0) for e in chunk),
+            'total_hnf':  sum(int(e.get('hnf') or 0) for e in chunk),
+        })
+    return paginas
+
+
 def generar_pdf_html(area_nombre: str, year: int, month: int,
                      empleados_data: list,
                      tipo: str = None,
@@ -44,10 +61,12 @@ def generar_pdf_html(area_nombre: str, year: int, month: int,
     empleados_data: lista de dicts con claves:
         documento, nombre, hon, hdf, hnf, observaciones
     tipo: 'temporal' | 'permanente' | None
+
+    Si hay más de 16 empleados se generan varias páginas, cada una con
+    su propio encabezado, listado (máx. 16) y sección de firmas.
     """
-    total_hon = sum(int(e.get('hon') or 0) for e in empleados_data)
-    total_hdf = sum(int(e.get('hdf') or 0) for e in empleados_data)
-    total_hnf = sum(int(e.get('hnf') or 0) for e in empleados_data)
+    paginas       = _chunk_empleados(empleados_data)
+    total_paginas = len(paginas)
 
     env      = Environment(loader=FileSystemLoader(TEMPLATE_DIR), autoescape=False)
     template = env.get_template(TEMPLATE_FILE)
@@ -57,10 +76,8 @@ def generar_pdf_html(area_nombre: str, year: int, month: int,
         fecha_expedicion   = date.today().strftime('%d/%m/%Y'),
         responsable        = coordinador_nombre,
         coordinador_nombre = coordinador_nombre,
-        empleados          = empleados_data,
-        total_hon          = total_hon if total_hon else '',
-        total_hdf          = total_hdf if total_hdf else '',
-        total_hnf          = total_hnf if total_hnf else '',
+        paginas            = paginas,
+        total_paginas      = total_paginas,
         tipo               = tipo,
         logo_hospital      = _img_base64('logo_hospital.png'),
         logo_acreditacion  = _img_base64('logo_acreditacion.png'),
