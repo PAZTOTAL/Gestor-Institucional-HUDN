@@ -124,7 +124,12 @@ class SecurityProtectionMiddleware:
             'acunetix', 'metasploit', 'zaproxy', 'nessus', 'w3af'
         ]
 
+    # Rutas exentas de rate limit (estáticos, media, favicon)
+    _SKIP_RATE = ('/static/', '/media/', '/favicon')
+
     def __call__(self, request):
+        path = request.path
+
         # 1. Verificar User-Agent
         user_agent = request.META.get('HTTP_USER_AGENT', '').lower()
         if any(agent in user_agent for agent in self._blocked_agents):
@@ -132,25 +137,25 @@ class SecurityProtectionMiddleware:
             from django.http import HttpResponseForbidden
             return HttpResponseForbidden("Acceso denegado por políticas de seguridad.")
 
-        # 2. Rate Limiting Básico (Usando cache)
-        ip = request.META.get('REMOTE_ADDR')
-        cache_key = f'ratelimit_{ip}'
-        requests_count = cache.get(cache_key, 0)
-        
-        # Límite: 100 peticiones cada 60 segundos por IP
-        if requests_count > 100:
-            logger.warning(f"Rate Limit excedido para IP: {ip}")
-            from django.http import HttpResponse
-            return HttpResponse("Demasiadas peticiones. Por favor, espere un minuto.", status=429)
-        
-        cache.set(cache_key, requests_count + 1, 60)
+        # 2. Rate Limiting — solo rutas de aplicación, no archivos estáticos
+        if not any(path.startswith(p) for p in self._SKIP_RATE):
+            ip = request.META.get('REMOTE_ADDR')
+            cache_key = f'ratelimit_{ip}'
+            requests_count = cache.get(cache_key, 0)
+
+            if requests_count > 200:
+                logger.warning(f"Rate Limit excedido para IP: {ip}")
+                from django.http import HttpResponse
+                return HttpResponse("Demasiadas peticiones. Por favor, espere un minuto.", status=429)
+
+            cache.set(cache_key, requests_count + 1, 60)
 
         # 3. Filtro básico de inyección en URLs (XSS/SQLi simple)
-        path = request.path.lower()
+        path_lower = path.lower()
         malicious_patterns = ["<script", "javascript:", "union select", "waitfor delay", "sysdatabases", "sysobjects"]
-        if any(pattern in path for pattern in malicious_patterns):
-             logger.warning(f"Bloqueado patrón malicioso en URL: {path} desde {ip}")
-             from django.http import HttpResponseBadRequest
-             return HttpResponseBadRequest("Petición malformada o potencialmente peligrosa.")
+        if any(pattern in path_lower for pattern in malicious_patterns):
+            logger.warning(f"Bloqueado patrón malicioso en URL: {path} desde {request.META.get('REMOTE_ADDR')}")
+            from django.http import HttpResponseBadRequest
+            return HttpResponseBadRequest("Petición malformada o potencialmente peligrosa.")
 
         return self.get_response(request)

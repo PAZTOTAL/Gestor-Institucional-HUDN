@@ -20,6 +20,32 @@ import string
 from .forms import RegistroForm, PasswordResetRequestForm, PasswordResetCodeForm, PasswordResetConfirmForm
 from .models import PerfilUsuario, PermisoApp, PermisoModelo
 
+
+def _activar_permiso_coordinador(user):
+    """
+    Si la cédula del usuario coincide con un CoordinadorRecargos,
+    activa el permiso de acceso a la app horas_extras y limpia el caché.
+    """
+    try:
+        cedula = user.perfil.cedula
+    except Exception:
+        return
+    if not cedula:
+        return
+    try:
+        from horas_extras.models import CoordinadorRecargos
+        if CoordinadorRecargos.objects.filter(documento=cedula).exists():
+            PermisoApp.objects.update_or_create(
+                user=user,
+                app_label='horas_extras',
+                defaults={'permitido': True},
+            )
+            from django.core.cache import cache
+            cache.delete(f'user_perms_{user.pk}')
+            cache.delete(f'areas_ids_recargos_{user.pk}')
+    except Exception:
+        pass
+
 class CustomLoginView(LoginView):
     template_name = 'usuarios/login.html'
     redirect_authenticated_user = True
@@ -36,10 +62,13 @@ class RegistroView(CreateView):
         response = super().form_valid(form)
         # Create profile for new user
         PerfilUsuario.objects.get_or_create(user=self.object)
-        
-        # Otorga permiso automáticamente SOLO para la app CertificadosDIAN por defecto
+
+        # Permiso por defecto para CertificadosDIAN
         PermisoApp.objects.get_or_create(user=self.object, app_label="CertificadosDIAN", defaults={"permitido": True})
-        
+
+        # Si es coordinador, activar acceso a horas_extras automáticamente
+        _activar_permiso_coordinador(self.object)
+
         return response
 
 class PanelUsuariosView(AccessControlMixin, TemplateView):
