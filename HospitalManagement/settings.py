@@ -143,7 +143,6 @@ DATABASES = {
         'OPTIONS': {
             'driver': 'ODBC Driver 17 for SQL Server',
             'timeout': 30,
-            'connection_timeout': 5,
         },
     },
     'readonly': {
@@ -235,6 +234,16 @@ MEDIA_ROOT = BASE_DIR / 'media'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+# Sesiones en RAM pura — sin escritura a SQL Server (django_session es lento ~13s)
+# Las sesiones se pierden al reiniciar el servidor, pero el login es instantáneo
+SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'gestor-cache',
+    }
+}
+
 # Authentication configurations
 LOGIN_URL = 'login'
 LOGIN_REDIRECT_URL = 'home'
@@ -305,3 +314,28 @@ if not DEBUG:
 # Content Security Policy (Optional but recommended)
 # We can use django-csp if installed, otherwise we can set headers manually in middleware.
 
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'simple': {'format': '[%(asctime)s] %(levelname)s %(name)s: %(message)s'},
+    },
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'simple',
+        },
+    },
+    'loggers': {
+        'horas_extras': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'django.db.backends': {
+            'handlers': ['console'],
+            'level': 'WARNING',  # Cambiar a DEBUG para ver cada query SQL
+            'propagate': False,
+        },
+    },
+}

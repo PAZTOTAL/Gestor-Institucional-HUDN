@@ -43,3 +43,4 @@ staticfiles/
 # Otros
 .DS_Store
 *.log
+.claude/settings.local.json

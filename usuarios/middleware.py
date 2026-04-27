@@ -1,44 +1,41 @@
+from django.core.cache import cache
 from .models import PerfilUsuario, PermisoApp
+
+# TTL del caché de permisos por usuario (5 minutos)
+_PERMS_TTL = 300
 
 class UserPermissionsMiddleware:
     """
-    Middleware para consolidar la carga de perfil y permisos del usuario
-    en una sola consulta al inicio del request.
+    Precarga perfil y permisos del usuario usando Django cache.
+    Así no se hacen queries a BD en cada request.
     """
     def __init__(self, get_response):
         self.get_response = get_response
 
     def __call__(self, request):
-        # 0. Saltar para rutas públicas/críticas
-        path = request.path_info
-        if any(path.startswith(p) for p in ['/login', '/logout', '/accounts/login', '/accounts/logout', '/admin/login']):
-            return self.get_response(request)
-
         if request.user.is_authenticated:
-            cache_key = f'user_data_cache_{request.user.id}'
-            from django.core.cache import cache
-            user_data = cache.get(cache_key)
+            uid = request.user.pk
 
-            if user_data:
-                request.user._perfil_cache = user_data['perfil']
-                request.user._permisos_apps_cache = user_data['permisos']
-            else:
-                # 1. Precargar Perfil
+            # 1. Perfil — caché por user id
+            perfil_key = f'user_perfil_{uid}'
+            perfil = cache.get(perfil_key)
+            if perfil is None:
                 try:
                     perfil = request.user.perfil
                 except (PerfilUsuario.DoesNotExist, AttributeError):
                     perfil, _ = PerfilUsuario.objects.get_or_create(user=request.user)
-                
-                request.user._perfil_cache = perfil
+                cache.set(perfil_key, perfil, _PERMS_TTL)
+            request.user._perfil_cache = perfil
 
-                # 2. Precargar Permisos de Aplicaciones
+            # 2. Permisos de apps — caché por user id
+            perms_key = f'user_perms_{uid}'
+            perms = cache.get(perms_key)
+            if perms is None:
                 perms = set(
                     PermisoApp.objects.filter(user=request.user, permitido=True)
                     .values_list('app_label', flat=True)
                 )
-                request.user._permisos_apps_cache = perms
-
-                # Guardar en cache por 5 minutos
-                cache.set(cache_key, {'perfil': perfil, 'permisos': perms}, 300)
+                cache.set(perms_key, perms, _PERMS_TTL)
+            request.user._permisos_apps_cache = perms
 
         return self.get_response(request)
