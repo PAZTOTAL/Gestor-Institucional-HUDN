@@ -1,0 +1,111 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Trasplantes - Donación | Reporte Diario{% endblock %}
+
+{% block content %}
+<link rel="stylesheet" href="{% static 'css/trasplantes.css' %}">
+
+<div class="trasplantes-container">
+    <header class="d-flex justify-content-between align-items-center mb-5">
+        <div>
+            <h1 class="display-4 font-weight-bold" style="background: linear-gradient(135deg, #0ea5e9 0%, #2563eb 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Reporte Diario de Glasgow</h1>
+            <p class="text-muted">Pacientes con registros de Glasgow el día de hoy: {{ hoy|date:"d/m/Y" }}</p>
+        </div>
+        <div>
+            <a href="{% url 'trasplantes_donacion:dashboard' %}" class="btn btn-outline-secondary d-flex align-items-center gap-2" style="border-radius: 0.5rem;">
+                <span class="icon">⬅️</span>
+                Volver al Dashboard
+            </a>
+        </div>
+    </header>
+
+    <div class="dashboard-stats mb-5">
+        <div class="stat-card">
+            <div class="stat-label">Registros Hoy</div>
+            <div class="stat-value text-info">{{ evaluaciones|length }}</div>
+            <div class="progress" style="height: 4px; background: rgba(0,0,0,0.05);">
+                <div class="progress-bar bg-info" style="width: 100%"></div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Pacientes Únicos</div>
+            <div class="stat-value" style="color: #6366f1;">{{ pacientes_unicos }}</div>
+            <div class="progress" style="height: 4px; background: rgba(0,0,0,0.05);">
+                <div class="progress-bar" style="width: 100%; background: #6366f1;"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="pacientes-table-container shadow-lg" style="border-radius: 1.5rem; overflow: hidden; background: white; border: 1px solid rgba(0,0,0,0.05);">
+        <table class="table mb-0">
+            <thead>
+                <tr style="background: #f8fafc; border-bottom: 2px solid #e2e8f0;">
+                    <th class="py-4 px-4 text-uppercase text-xs font-weight-bold text-muted">Identificación</th>
+                    <th class="py-4 px-4 text-uppercase text-xs font-weight-bold text-muted">Paciente</th>
+                    <th class="py-4 px-4 text-uppercase text-xs font-weight-bold text-muted text-center">Glasgow</th>
+                    <th class="py-4 px-4 text-uppercase text-xs font-weight-bold text-muted">Fecha/Hora</th>
+                    <th class="py-4 px-4 text-uppercase text-xs font-weight-bold text-muted">Médico / Especialidad</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for ev in evaluaciones %}
+                <tr class="paciente-row align-middle" style="transition: all 0.2s;">
+                    <td class="py-4 px-4">
+                        <span class="font-weight-bold text-dark">{{ ev.pac_doc }}</span>
+                    </td>
+                    <td class="py-4 px-4">
+                        <div class="d-flex align-items-center">
+                            <div class="avatar-circle mr-3" style="background: {% if ev.pac_sexo == 'M' %}#e0f2fe; color: #0369a1;{% else %}#fce7f3; color: #be185d;{% endif %} width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold;">
+                                {{ ev.pac_nombre|slice:":1" }}
+                            </div>
+                            <div>
+                                <div class="font-weight-bold text-dark">{{ ev.pac_nombre }}</div>
+                                <div class="text-xs text-muted">{{ ev.pac_sexo }} | {{ ev.pac_edad }} años</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="py-4 px-4 text-center">
+                        <span class="badge badge-pill {% if ev.glasgow <= 5 %}badge-danger{% elif ev.glasgow <= 12 %}badge-warning{% else %}badge-success{% endif %}" 
+                              style="padding: 0.5rem 1rem; font-size: 1rem; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
+                            {{ ev.glasgow }}
+                        </span>
+                    </td>
+                    <td class="py-4 px-4">
+                        <div class="text-dark">{{ ev.fecha|date:"d/m/Y" }}</div>
+                        <div class="text-xs text-muted">{{ ev.fecha|date:"H:i" }}</div>
+                    </td>
+                    <td class="py-4 px-4">
+                        <div class="text-dark">{{ ev.medico|default:"SISTEMA" }}</div>
+                        <div class="text-xs text-info">{{ ev.especialidad|default:"VALORACIÓN" }}</div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5" class="py-5 text-center text-muted italic">
+                        <div class="mb-3" style="font-size: 3rem;">🔍</div>
+                        No se encontraron registros de Glasgow para el día de hoy.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="mt-5 p-4 alert alert-light shadow-sm" style="border-radius: 1rem; border-left: 5px solid #0ea5e9;">
+        <h5 class="font-weight-bold text-info"><span class="icon">💡</span> Nota de Investigación</h5>
+        <p class="mb-0 text-muted">
+            Este reporte consolida los datos registrados en el módulo de <strong>Interconsultas y Evaluaciones</strong> (HCNINTERR). 
+            Estamos investigando otras posibles fuentes como Triage y Notas de Evolución para asegurar que no se pierda ningún registro médico.
+        </p>
+    </div>
+</div>
+
+<style>
+    .paciente-row:hover {
+        background-color: #f8fafc;
+        transform: scale(1.005);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    }
+</style>
+{% endblock %}

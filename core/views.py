@@ -209,22 +209,7 @@ class HomeView(AccessControlMixin, TemplateView):
     def dispatch(self, request, *args, **kwargs):
         if request.user.is_authenticated and not request.user.is_superuser:
             allowed_apps = getattr(request.user, '_permisos_apps_cache', set())
-            
-            equiv_map = {
-                'certificados_laborales': 'mvp',
-                'mvp': 'certificados_laborales',
-                'consultas': 'consultas_externas',
-                'consultas_externas': 'consultas',
-                'defenjur': 'defenjur_py',
-                'defenjur_py': 'defenjur',
-                'legal': 'defenjur',
-            }
-            
-            # Expandir allowed_apps con equivalencias
             final_perms = allowed_apps.copy()
-            for app in allowed_apps:
-                if app in equiv_map:
-                    final_perms.add(equiv_map[app])
             
             # 2. Redirección Directa para Usuarios con 1 solo módulo (Skip Dashboard)
             if len(allowed_apps) == 1:
@@ -256,47 +241,38 @@ class HomeView(AccessControlMixin, TemplateView):
         if user.is_superuser:
             context['is_superuser'] = True
             # Intentamos cache pero si no, seguimos rápido
-            cache_key = f"dashboard_structure_{user.id}"
-            from django.core.cache import cache
-            cached_data = cache.get(cache_key)
-            if cached_data:
-                context.update(cached_data)
-                return context
+            # cache_key = f"dashboard_structure_{user.id}"
+            # from django.core.cache import cache
+            # cached_data = cache.get(cache_key)
+            # if cached_data:
+            #     context.update(cached_data)
+            #     return context
 
-        # Resto del proceso (con cache)
-        cache_key = f"dashboard_structure_{user.id}"
-        from django.core.cache import cache
-        cached_data = cache.get(cache_key)
-        if cached_data:
-            context.update(cached_data)
-            return context
+        # Resto del proceso (Desactivado cache temporalmente para asegurar refresco)
+        # cache_key = f"dashboard_structure_{user.id}"
+        # from django.core.cache import cache
+        # cached_data = cache.get(cache_key)
+        # if cached_data:
+        #    context.update(cached_data)
+        #    return context
 
         is_superuser = user.is_superuser
         allowed_apps = getattr(self.request, '_allowed_apps', set())
         
-        # Función de validación robusta (Flexible para herencia)
+        # Función de validación estricta (Sin herencia)
         def has_permission(slug):
             if is_superuser: return True
             if slug in allowed_apps: return True
-            
-            # Lógica de Prefijos / Herencia (Ej: th_ -> horas_extras)
-            # Esto permite que al dar permiso a la App principal, se vean sus reportes
-            if 'horas_extras' in allowed_apps and (slug.startswith('th_') or slug.startswith('hora_extra')):
-                return True
-            
-            if ('CertificadosDIAN' in allowed_apps or 'CertificadosDIAN_SOL' in allowed_apps) and slug.startswith('CertificadosDIAN'):
-                return True
-            
-            if 'consultas' in allowed_apps and (slug.startswith('consultas_') or slug.startswith('produccion-medico')):
-                return True
-
-            if 'defenjur' in allowed_apps and (slug.startswith('defenjur_') or slug == 'legal'):
-                return True
-                
             return False
 
         # Estructura jerárquica original (Subgerencias)
         structure = [
+            {
+                'category': {'name': 'TRASPLANTES', 'slug': 'trasplantes_cat', 'icon': 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z M12 8v4 M12 16h.01', 'description': 'Gestión de Trasplantes y Donación'},
+                'modules': [
+                    {'name': 'Trasplantes y Donación', 'slug': 'trasplantes_donacion', 'description': 'Gestión de Alertas y Trasplantes', 'url': '/trasplantes-donacion/', 'icon': 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z M12 8v4 M12 16h.01'},
+                ]
+            },
             {
                 'category': {'name': 'HOSPITALIZACION', 'slug': 'hospitalizacion', 'icon': 'M19 14l-7 7-7-7m14-8l-7 7-7-7', 'description': 'Gestión de pacientes en piso'},
                 'modules': []
@@ -306,7 +282,6 @@ class HomeView(AccessControlMixin, TemplateView):
                 'modules': [
                     {'name': 'Consentimientos Informados', 'slug': 'ConsentimientosInformados', 'description': 'Autorizaciones y Firmas Electrónicas', 'url': '/consentimientos/', 'icon': 'M12 20h9 M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z'},
                     {'name': 'Registro de Anestesia', 'slug': 'registro_anestesia', 'description': 'Registro Clínico de Anestesia (FRQUI-032)', 'url': '/registro-anestesia/create/', 'icon': 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z'},
-                    {'name': 'Trasplantes y Donación', 'slug': 'trasplantes_donacion', 'description': 'Gestión de Alertas y Trasplantes', 'url': '/modulo/trasplantes_donacion/', 'icon': 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z M12 8v4 M12 16h.01'},
                     {'name': 'Frecuencia Fetal', 'slug': 'frecuenciafetal', 'description': 'Monitoreo de Frecuencia Cardíaca Fetal', 'url': '/modulo/frecuenciafetal/', 'icon': 'M13 2L3 14h9l-1 8 10-12h-9l1-8z'},
                 ]
             },
@@ -405,7 +380,7 @@ class HomeView(AccessControlMixin, TemplateView):
         salud_slugs = [
             'hospitalizacion', 'quirofanos', 'gineco_obstetricia', 'urgencias', 
             'consulta_externa', 'asistencial', 'servicio_farmaceutico', 
-            'servicios_terapeuticos', 'auditoria_disciplinaria'
+            'servicios_terapeuticos', 'auditoria_disciplinaria', 'trasplantes_cat'
         ]
         
         # Finanzas: Solo administrativo, legal y financiero
@@ -422,7 +397,7 @@ class HomeView(AccessControlMixin, TemplateView):
         context['gineco_modules'] = next((m['modules'] for m in active_structure if m['category']['slug'] == 'gineco_obstetricia'), [])
 
         # Decide if we show the "Direct View"
-        show_direct_modules = (1 <= len(all_permitted_modules) <= 6) and not is_superuser
+        show_direct_modules = (len(all_permitted_modules) > 0) and not is_superuser
 
         # Consultas section
         if has_permission('consultas'):
@@ -460,7 +435,7 @@ class HomeView(AccessControlMixin, TemplateView):
         for item in active_structure:
             to_cache[f"nav_{item['category']['slug']}"] = item['modules']
         
-        cache.set(cache_key, to_cache, 300) # Cache por 5 minutos
+        # cache.set(cache_key, to_cache, 300) # Cache por 5 minutos
 
         context.update(to_cache)
         context['is_superuser'] = is_superuser

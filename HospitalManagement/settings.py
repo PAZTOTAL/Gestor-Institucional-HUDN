@@ -152,9 +152,9 @@ DATABASES = {
     },
     'readonly': {
         'ENGINE': 'mssql',
-        'NAME': 'DGEMPRES03',
-        'USER': 'DSOLARTE',
-        'PASSWORD': 'ConsultaHUDN2026*/$',
+        'NAME': 'DGEMPRES_NEXUS',
+        'USER': 'apantoja',
+        'PASSWORD': 'ConsultasPantojaHUDN_2026$',
         'HOST': '172.20.100.209',
         'PORT': '',
         'CONN_MAX_AGE': 0,  # MSSQL cierra conexiones inactivas — 0 evita reconexiones dobles
@@ -318,3 +318,4 @@ LOGGING = {
         },
     },
 }
+
