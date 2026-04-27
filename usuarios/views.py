@@ -10,7 +10,14 @@ from core.mixins import AccessControlMixin
 from django.apps import apps
 from django.db import connections
 from django.http import JsonResponse
-from .forms import RegistroForm
+from django.core.mail import send_mail
+from django.conf import settings
+from django.contrib import messages
+from django.utils import timezone
+from datetime import timedelta
+import random
+import string
+from .forms import RegistroForm, PasswordResetRequestForm, PasswordResetCodeForm, PasswordResetConfirmForm
 from .models import PerfilUsuario, PermisoApp, PermisoModelo
 
 class CustomLoginView(LoginView):
@@ -333,3 +340,101 @@ def lookup_tercero_por_cedula(request):
             
     except Exception as e:
         return JsonResponse({'found': False, 'message': f'Error en la búsqueda: {str(e)}'})
+
+class PasswordResetRequestView(TemplateView):
+    template_name = 'usuarios/password_reset_request.html'
+
+    def get(self, request, *args, **kwargs):
+        form = PasswordResetRequestForm()
+        return render(request, self.template_name, {'form': form})
+
+    def post(self, request, *args, **kwargs):
+        form = PasswordResetRequestForm(request.POST)
+        if form.is_valid():
+            email = form.cleaned_data['email']
+            user = User.objects.get(email=email)
+            perfil, _ = PerfilUsuario.objects.get_or_create(user=user)
+            
+            # Generar código de 6 dígitos
+            code = ''.join(random.choices(string.digits, k=6))
+            perfil.reset_code = code
+            perfil.reset_code_expires_at = timezone.now() + timedelta(minutes=15)
+            perfil.save()
+            
+            # Enviar correo
+            subject = 'Código de Recuperación de Contraseña - Gestor Institucional HUDN'
+            message = f'Hola {user.first_name},\n\nSu código para recuperar la contraseña es: {code}\n\nEste código expira en 15 minutos.'
+            email_from = settings.DEFAULT_FROM_EMAIL
+            recipient_list = [email]
+            
+            try:
+                send_mail(subject, message, email_from, recipient_list)
+                request.session['reset_email'] = email
+                messages.success(request, 'Se ha enviado un código a su correo electrónico.')
+                return redirect('password_reset_verify')
+            except Exception as e:
+                messages.error(request, f'Error al enviar el correo: {str(e)}')
+        
+        return render(request, self.template_name, {'form': form})
+
+class PasswordResetVerifyView(TemplateView):
+    template_name = 'usuarios/password_reset_verify.html'
+
+    def get(self, request, *args, **kwargs):
+        if 'reset_email' not in request.session:
+            return redirect('password_reset_request')
+        form = PasswordResetCodeForm()
+        return render(request, self.template_name, {'form': form})
+
+    def post(self, request, *args, **kwargs):
+        if 'reset_email' not in request.session:
+            return redirect('password_reset_request')
+            
+        form = PasswordResetCodeForm(request.POST)
+        if form.is_valid():
+            code = form.cleaned_data['code']
+            email = request.session['reset_email']
+            user = User.objects.get(email=email)
+            perfil = user.perfil
+            
+            if perfil.reset_code == code and perfil.reset_code_expires_at > timezone.now():
+                request.session['code_verified'] = True
+                return redirect('password_reset_confirm')
+            else:
+                messages.error(request, 'Código inválido o expirado.')
+        
+        return render(request, self.template_name, {'form': form})
+
+class PasswordResetConfirmView(TemplateView):
+    template_name = 'usuarios/password_reset_confirm.html'
+
+    def get(self, request, *args, **kwargs):
+        if not request.session.get('code_verified'):
+            return redirect('password_reset_request')
+        form = PasswordResetConfirmForm()
+        return render(request, self.template_name, {'form': form})
+
+    def post(self, request, *args, **kwargs):
+        if not request.session.get('code_verified'):
+            return redirect('password_reset_request')
+            
+        form = PasswordResetConfirmForm(request.POST)
+        if form.is_valid():
+            email = request.session['reset_email']
+            user = User.objects.get(email=email)
+            user.set_password(form.cleaned_data['password'])
+            user.save()
+            
+            # Limpiar datos de sesión y código
+            perfil = user.perfil
+            perfil.reset_code = None
+            perfil.reset_code_expires_at = None
+            perfil.save()
+            
+            del request.session['reset_email']
+            del request.session['code_verified']
+            
+            messages.success(request, 'Contraseña actualizada con éxito. Ya puede iniciar sesión.')
+            return redirect('login')
+            
+        return render(request, self.template_name, {'form': form})

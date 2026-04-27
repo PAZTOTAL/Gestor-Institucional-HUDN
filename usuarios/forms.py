@@ -107,3 +107,42 @@ class RegistroForm(UserCreationForm):
             perfil.rh = self.cleaned_data.get("rh")
             perfil.save()
         return user
+
+class PasswordResetRequestForm(forms.Form):
+    email = forms.EmailField(
+        label="Correo Electrónico",
+        widget=forms.EmailInput(attrs={'placeholder': 'Ingrese su correo electrónico registrado', 'class': 'form-input'})
+    )
+
+    def clean_email(self):
+        email = self.cleaned_data.get('email')
+        if not User.objects.filter(email=email).exists():
+            raise ValidationError("No existe ningún usuario registrado con este correo electrónico.")
+        return email
+
+class PasswordResetCodeForm(forms.Form):
+    code = forms.CharField(
+        max_length=6,
+        min_length=6,
+        label="Código de Recuperación",
+        widget=forms.TextInput(attrs={'placeholder': '000000', 'class': 'form-input text-center tracking-widest text-2xl font-bold'})
+    )
+
+class PasswordResetConfirmForm(forms.Form):
+    password = forms.CharField(
+        label="Nueva Contraseña",
+        widget=forms.PasswordInput(attrs={'placeholder': 'Nueva contraseña', 'class': 'form-input'})
+    )
+    confirm_password = forms.CharField(
+        label="Confirmar Contraseña",
+        widget=forms.PasswordInput(attrs={'placeholder': 'Confirmar contraseña', 'class': 'form-input'})
+    )
+
+    def clean(self):
+        cleaned_data = super().clean()
+        password = cleaned_data.get("password")
+        confirm_password = cleaned_data.get("confirm_password")
+
+        if password and confirm_password and password != confirm_password:
+            raise ValidationError("Las contraseñas no coinciden.")
+        return cleaned_data
