@@ -492,8 +492,8 @@ function descargarPdf(tipo) {
   descargarUrl(url, `FRRHU-030_${tipo}.pdf`, () => {
     showFlash('success', `PDF ${tipoLabel} descargado.`);
     btn.disabled = false;
-  }, () => {
-    showFlash('error', 'Error al generar el PDF. Verifica que Playwright esté instalado.');
+  }, (msg) => {
+    showFlash('error', msg || 'Error al generar el PDF.');
     btn.disabled = false;
   });
 }
@@ -507,8 +507,12 @@ function descargarEmpXlsx(empId, nombre) {
 
 function descargarUrl(url, filename, onDone, onError) {
   fetch(url, {headers:{'X-CSRFToken':CSRF}})
-    .then(r => {
-      if (!r.ok) throw new Error('Error');
+    .then(async r => {
+      if (!r.ok) {
+        let msg = `Error ${r.status}`;
+        try { const d = await r.json(); msg = d.error || msg; } catch {}
+        throw new Error(msg);
+      }
       return r.blob();
     })
     .then(blob => {
@@ -519,7 +523,10 @@ function descargarUrl(url, filename, onDone, onError) {
       URL.revokeObjectURL(a.href);
       if (onDone) onDone();
     })
-    .catch(() => { if (onError) onError(); else showFlash('error', 'Error al generar el archivo.'); });
+    .catch(e => {
+      if (onError) onError(e.message);
+      else showFlash('error', e.message || 'Error al generar el archivo.');
+    });
 }
 
 // ── Flash ──────────────────────────────────────────────────────────────────
