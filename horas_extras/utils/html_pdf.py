@@ -8,6 +8,12 @@ from datetime import date
 
 from jinja2 import Environment, FileSystemLoader
 
+# Si está definido en .env, apunta Playwright a la ruta compartida
+# (necesario cuando el servidor corre como servicio/SYSTEM)
+_pw_path = os.getenv('PLAYWRIGHT_BROWSERS_PATH')
+if _pw_path:
+    os.environ['PLAYWRIGHT_BROWSERS_PATH'] = _pw_path
+
 _HERE = os.path.dirname(os.path.abspath(__file__))
 # Plantilla e imágenes dentro de horas_extras/utils/format/
 TEMPLATE_DIR = os.path.join(_HERE, 'format')
