@@ -29,7 +29,7 @@ class TrabajadorRecargos(models.Model):
     nombre    = models.CharField(max_length=150)
     documento = models.CharField(max_length=20, unique=True)
     cargo     = models.CharField(max_length=100, blank=True, default='')
-    area      = models.ForeignKey(AreaRecargos, on_delete=models.CASCADE, related_name='trabajadores')
+    area      = models.ForeignKey(AreaRecargos, on_delete=models.SET_NULL, null=True, blank=True, related_name='trabajadores')
     tipo      = models.CharField(max_length=15, choices=TIPO_CHOICES, default='permanente')
 
     class Meta:
@@ -81,6 +81,21 @@ class ObservacionMensualRecargos(models.Model):
 
     def __str__(self):
         return f"Emp {self.empleado_id} — {self.year}/{self.month}"
+
+
+class CoordinadorRecargos(models.Model):
+    nombre    = models.CharField(max_length=150)
+    documento = models.CharField(max_length=20, unique=True)
+    cargo     = models.CharField(max_length=100, blank=True, default='')
+    areas     = models.ManyToManyField(AreaRecargos, blank=True, related_name='coordinadores_recargos')
+
+    class Meta:
+        ordering     = ['nombre']
+        verbose_name = 'Coordinador (Recargos)'
+        verbose_name_plural = 'Coordinadores (Recargos)'
+
+    def __str__(self):
+        return f"{self.nombre} ({self.documento})"
 
 
 class PerfilRecargos(models.Model):

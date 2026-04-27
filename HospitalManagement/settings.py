@@ -144,10 +144,10 @@ DATABASES = {
         'PASSWORD': 'ConsultasPantojaHUDN_2026$', 
         'HOST': '172.20.100.209',
         'PORT': '',
-        'CONN_MAX_AGE': 60,  # Habilitar Connection Pooling (60s) para reducir overhead de red
+        'CONN_MAX_AGE': 0,  # MSSQL cierra conexiones inactivas — 0 evita reconexiones dobles
         'OPTIONS': {
             'driver': 'ODBC Driver 17 for SQL Server',
-            'timeout': 60,
+            'timeout': 30,
         },
     },
     'readonly': {
@@ -157,7 +157,7 @@ DATABASES = {
         'PASSWORD': 'ConsultaHUDN2026*/$',
         'HOST': '172.20.100.209',
         'PORT': '',
-        'CONN_MAX_AGE': 60,  # Habilitar Connection Pooling (60s)
+        'CONN_MAX_AGE': 0,  # MSSQL cierra conexiones inactivas — 0 evita reconexiones dobles
         'OPTIONS': {
             'driver': 'ODBC Driver 17 for SQL Server',
             'host_is_server': True,
@@ -224,7 +224,7 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+STATICFILES_STORAGE = 'whitenoise.storage.StaticFilesStorage'
 STATICFILES_DIRS = [
     BASE_DIR / 'static',
     BASE_DIR / 'defenjur_py' / 'static',
@@ -237,6 +237,16 @@ MEDIA_ROOT = BASE_DIR / 'media'
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Sesiones en RAM pura — sin escritura a SQL Server (django_session es lento ~13s)
+# Las sesiones se pierden al reiniciar el servidor, pero el login es instantáneo
+SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'gestor-cache',
+    }
+}
 
 # Authentication configurations
 LOGIN_URL = 'login'
@@ -282,3 +292,29 @@ DEFENJUR_FTP_HOST = os.getenv('FTP_HOST', '172.20.100.25')
 DEFENJUR_FTP_USER = os.getenv('FTP_USER', '')
 DEFENJUR_FTP_PASSWORD = os.getenv('FTP_PASSWORD', '')
 DEFENJUR_FTP_BASE_PATH = '/web/defenjur_files/'
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'simple': {'format': '[%(asctime)s] %(levelname)s %(name)s: %(message)s'},
+    },
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'simple',
+        },
+    },
+    'loggers': {
+        'horas_extras': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'django.db.backends': {
+            'handlers': ['console'],
+            'level': 'WARNING',  # Cambiar a DEBUG para ver cada query SQL
+            'propagate': False,
+        },
+    },
+}

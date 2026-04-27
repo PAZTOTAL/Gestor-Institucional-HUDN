@@ -152,39 +152,63 @@ class GestionPermisosView(AccessControlMixin, TemplateView):
             perfil.save()
             
         # PROCESAMIENTO DE PERMISOS
-        # 1. Resetear todos los permisos actuales para este usuario
+        from django.core.cache import cache as _cache
+        from django.db.models import Q
+
+        selected_apps   = set(request.POST.getlist('apps'))
+        selected_models = []  # lista de (app_label, model_name)
+        for full_name in request.POST.getlist('models'):
+            if '.' in full_name:
+                app_label, model_name = full_name.split('.', 1)
+                selected_apps.add(app_label)
+                selected_models.append((app_label, model_name))
+
+        # Leer registros existentes ANTES de resetear (1 query cada uno)
+        existing_modelos = set(
+            PermisoModelo.objects.filter(user=target_user)
+            .values_list('app_label', 'model_name')
+        )
+        existing_apps = set(
+            PermisoApp.objects.filter(user=target_user)
+            .values_list('app_label', flat=True)
+        )
+
+        # 1. Resetear en bulk (1 query cada uno)
         PermisoApp.objects.filter(user=target_user).update(permitido=False)
         PermisoModelo.objects.filter(user=target_user).update(permitido=False)
-        
-        selected_apps = set(request.POST.getlist('apps'))
-        selected_models = request.POST.getlist('models') # Formato: app_label.model_name
-        
-        # 2. Guardar permisos de modelos y recolectar apps implícitas
-        apps_to_enable = selected_apps.copy()
-        
-        for full_name in selected_models:
-            if '.' in full_name:
-                app_label, model_name = full_name.split('.')
-                apps_to_enable.add(app_label) # Asegurar que la app esté activa si un modelo lo está
-                
-                perm_m, created = PermisoModelo.objects.get_or_create(
-                    user=target_user, 
-                    app_label=app_label, 
-                    model_name=model_name
-                )
-                perm_m.permitido = True
-                perm_m.save()
 
-        # 3. Guardar permisos de aplicaciones
-        for app_slug in apps_to_enable:
-            perm, created = PermisoApp.objects.get_or_create(user=target_user, app_label=app_slug)
-            perm.permitido = True
-            perm.save()
-            
-        # Invalidar cache del dashboard para el usuario modificado
-        from django.core.cache import cache
-        cache.delete(f'user_dashboard_nav_{target_user.id}')
-        cache.delete(f'dashboard_structure_{target_user.id}')
+        # 2. Habilitar modelos seleccionados en bulk
+        if selected_models:
+            q = Q()
+            for app_label, model_name in selected_models:
+                q |= Q(app_label=app_label, model_name=model_name)
+            PermisoModelo.objects.filter(user=target_user).filter(q).update(permitido=True)
+
+            nuevos_modelos = [
+                PermisoModelo(user=target_user, app_label=a, model_name=m, permitido=True)
+                for a, m in selected_models if (a, m) not in existing_modelos
+            ]
+            if nuevos_modelos:
+                PermisoModelo.objects.bulk_create(nuevos_modelos)
+
+        # 3. Habilitar apps seleccionadas en bulk
+        if selected_apps:
+            PermisoApp.objects.filter(
+                user=target_user, app_label__in=selected_apps
+            ).update(permitido=True)
+
+            nuevas_apps = [
+                PermisoApp(user=target_user, app_label=a, permitido=True)
+                for a in selected_apps if a not in existing_apps
+            ]
+            if nuevas_apps:
+                PermisoApp.objects.bulk_create(nuevas_apps)
+
+        # Invalidar caché del usuario modificado
+        _cache.delete(f'user_dashboard_nav_{target_user.id}')
+        _cache.delete(f'dashboard_structure_{target_user.id}')
+        _cache.delete(f'user_perfil_{target_user.id}')
+        _cache.delete(f'user_perms_{target_user.id}')
 
         return redirect('gestion_usuarios')
 
