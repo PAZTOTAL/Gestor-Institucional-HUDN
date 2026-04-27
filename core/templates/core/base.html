@@ -11,89 +11,36 @@
     <script src="https://cdn.tailwindcss.com" defer></script>
 
     <style>
-        {
-            % if perfil %
-        }
+        {% if perfil %}
 
         :root {
-            --theme-primary: {
-                    {
-                    perfil.color_primario
-                }
-            }
+            --theme-primary: {{ perfil.color_primario }};
 
-            ;
+            --theme-secondary: {{ perfil.color_secundario }};
 
-            --theme-secondary: {
-                    {
-                    perfil.color_secundario
-                }
-            }
+            --theme-bg: {{ perfil.color_fondo }};
 
-            ;
+            {% if perfil.estilo_fondo == 'gradient' %}
 
-            --theme-bg: {
-                    {
-                    perfil.color_fondo
-                }
-            }
-
-            ;
-
-                {
-                % if perfil.estilo_fondo=='gradient' %
-            }
-
-            --theme-bg-full: linear-gradient(135deg, {
-                    {
-                    perfil.color_fondo
-                }
-            }
-
-            0%, #ffffff 100%);
+            --theme-bg-full: linear-gradient(135deg, {{ perfil.color_fondo }} 0%, #ffffff 100%);
         --theme-pattern: none;
 
-            {
-            % elif perfil.estilo_fondo=='pattern' %
-        }
+            {% elif perfil.estilo_fondo == 'pattern' %}
 
-        --theme-bg-full: {
-                {
-                perfil.color_fondo
-            }
-        }
+        --theme-bg-full: {{ perfil.color_fondo }};
 
-        ;
+        --theme-pattern: radial-gradient({{ perfil.color_primario }} 0.5px, transparent 0.5px);
 
-        --theme-pattern: radial-gradient({
-                {
-                perfil.color_primario
-            }
-        }
-
-        0.5px, transparent 0.5px);
-
-            {
-            % else %
-        }
-
-        --theme-bg-full: {
-                {
-                perfil.color_fondo
-            }
-        }
+            {% else %}
+            --theme-bg-full: {{ perfil.color_fondo }};
 
         ;
         --theme-pattern: none;
 
-            {
-            % endif %
-        }
+        {% endif %}
         }
 
-            {
-            % else %
-        }
+        {% else %}
 
         :root {
             --theme-primary: #2563eb;
@@ -103,9 +50,7 @@
             --theme-pattern: none;
         }
 
-            {
-            % endif %
-        }
+        {% endif %}
     </style>
 
     <script>

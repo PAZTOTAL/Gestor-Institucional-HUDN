@@ -351,6 +351,10 @@ class HomeView(AccessControlMixin, TemplateView):
                 ]
             },
             {
+                'category': {'name': 'CONTABILIDAD', 'slug': 'contabilidad', 'icon': 'M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5', 'description': 'Certificados DIAN y procesos contables'},
+                'modules': []
+            },
+            {
                 'category': {'name': 'JURÍDICA', 'slug': 'juridica', 'icon': 'M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z', 'description': 'Asesoría y Defensa Legal'},
                 'modules': [
                     {'name': 'Defenjur', 'slug': 'defenjur', 'description': 'Defensa Jurídica Institucional', 'url': '/defenjur/', 'icon': 'M3 6l3 12h12l3-12H3z'},
@@ -405,7 +409,7 @@ class HomeView(AccessControlMixin, TemplateView):
         ]
         
         # Finanzas: Solo administrativo, legal y financiero
-        finanzas_slugs = ['financiera', 'talento_humano', 'contabilidad', 'administrativo', 'juridica', 'varios', 'presupuesto', 'consultas']
+        finanzas_slugs = ['financiera', 'talento_humano', 'administrativo', 'juridica', 'varios', 'presupuesto', 'consultas']
 
         nav_asistenciales = [cat for cat in active_structure if cat['category']['slug'] in salud_slugs]
         nav_financiera_cat = [cat for cat in active_structure if cat['category']['slug'] in finanzas_slugs]

@@ -80,3 +80,49 @@ class DatabaseCheckMiddleware:
 
         response = self.get_response(request)
         return response
+
+class SecurityProtectionMiddleware:
+    """
+    Middleware para protección adicional contra ataques comunes:
+    - Bloqueo de User-Agents sospechosos (Scanners, Bots).
+    - Limitación básica de peticiones (Rate Limiting por IP).
+    - Detección de patrones maliciosos en parámetros.
+    """
+    def __init__(self, get_response):
+        self.get_response = get_response
+        self._blocked_agents = [
+            'sqlmap', 'nmap', 'nikto', 'dirbuster', 'gobuster', 'burp', 'hydra',
+            'acunetix', 'metasploit', 'zaproxy', 'nessus', 'w3af'
+        ]
+
+    def __call__(self, request):
+        # 1. Verificar User-Agent
+        user_agent = request.META.get('HTTP_USER_AGENT', '').lower()
+        if any(agent in user_agent for agent in self._blocked_agents):
+            logger.warning(f"Bloqueado User-Agent sospechoso: {user_agent} desde {request.META.get('REMOTE_ADDR')}")
+            from django.http import HttpResponseForbidden
+            return HttpResponseForbidden("Acceso denegado por políticas de seguridad.")
+
+        # 2. Rate Limiting Básico (Usando cache)
+        ip = request.META.get('REMOTE_ADDR')
+        cache_key = f'ratelimit_{ip}'
+        requests_count = cache.get(cache_key, 0)
+        
+        # Límite: 100 peticiones cada 60 segundos por IP
+        if requests_count > 100:
+            logger.warning(f"Rate Limit excedido para IP: {ip}")
+            from django.http import HttpResponse
+            return HttpResponse("Demasiadas peticiones. Por favor, espere un minuto.", status=429)
+        
+        cache.set(cache_key, requests_count + 1, 60)
+
+        # 3. Filtro básico de inyección en URLs (XSS/SQLi simple)
+        path = request.path.lower()
+        malicious_patterns = ["<script", "javascript:", "union select", "waitfor delay", "sysdatabases", "sysobjects"]
+        if any(pattern in path for pattern in malicious_patterns):
+             logger.warning(f"Bloqueado patrón malicioso en URL: {path} desde {ip}")
+             from django.http import HttpResponseBadRequest
+             return HttpResponseBadRequest("Petición malformada o potencialmente peligrosa.")
+
+        return self.get_response(request)
+
