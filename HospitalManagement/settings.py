@@ -304,9 +304,10 @@ if not DEBUG:
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = True
     
-    # Secure Cookies
-    SESSION_COOKIE_SECURE = True
-    CSRF_COOKIE_SECURE = True
+    # Secure Cookies — solo si hay HTTPS real (proxy/ngrok/cloudflare)
+    _https = os.getenv('SECURE_SSL_REDIRECT', 'False') == 'True'
+    SESSION_COOKIE_SECURE = _https
+    CSRF_COOKIE_SECURE = _https
     
     # Referrer Policy
     SECURE_REFERRER_POLICY = 'same-origin'
