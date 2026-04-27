@@ -1,4 +1,4 @@
-from django.views.generic import TemplateView, ListView, CreateView, UpdateView, DeleteView
+﻿from django.views.generic import TemplateView, ListView, CreateView, UpdateView, DeleteView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.apps import apps
 from django.core.paginator import Paginator
@@ -226,7 +226,7 @@ class HomeView(AccessControlMixin, TemplateView):
                 if app in equiv_map:
                     final_perms.add(equiv_map[app])
             
-            # 2. Redirección Directa para Usuarios con 1 solo módulo (Skip Dashboard)
+            # 2. Redirecci├│n Directa para Usuarios con 1 solo m├│dulo (Skip Dashboard)
             if len(allowed_apps) == 1:
                 unica_app = next(iter(allowed_apps))
                 redirect_map = {
@@ -252,10 +252,10 @@ class HomeView(AccessControlMixin, TemplateView):
         context = super().get_context_data(**kwargs)
         user = self.request.user
         
-        # Superuser Bypass para velocidad máxima
+        # Superuser Bypass para velocidad m├íxima
         if user.is_superuser:
             context['is_superuser'] = True
-            # Intentamos cache pero si no, seguimos rápido
+            # Intentamos cache pero si no, seguimos r├ípido
             cache_key = f"dashboard_structure_{user.id}"
             from django.core.cache import cache
             cached_data = cache.get(cache_key)
@@ -274,12 +274,12 @@ class HomeView(AccessControlMixin, TemplateView):
         is_superuser = user.is_superuser
         allowed_apps = getattr(self.request, '_allowed_apps', set())
         
-        # Función de validación robusta (Flexible para herencia)
+        # Funci├│n de validaci├│n robusta (Flexible para herencia)
         def has_permission(slug):
             if is_superuser: return True
             if slug in allowed_apps: return True
             
-            # Lógica de Prefijos / Herencia (Ej: th_ -> horas_extras)
+            # L├│gica de Prefijos / Herencia (Ej: th_ -> horas_extras)
             # Esto permite que al dar permiso a la App principal, se vean sus reportes
             if 'horas_extras' in allowed_apps and (slug.startswith('th_') or slug.startswith('hora_extra')):
                 return True
@@ -295,33 +295,33 @@ class HomeView(AccessControlMixin, TemplateView):
                 
             return False
 
-        # Estructura jerárquica original (Subgerencias)
+        # Estructura jer├írquica original (Subgerencias)
         structure = [
             {
-                'category': {'name': 'HOSPITALIZACION', 'slug': 'hospitalizacion', 'icon': 'M19 14l-7 7-7-7m14-8l-7 7-7-7', 'description': 'Gestión de pacientes en piso'},
+                'category': {'name': 'HOSPITALIZACION', 'slug': 'hospitalizacion', 'icon': 'M19 14l-7 7-7-7m14-8l-7 7-7-7', 'description': 'Gesti├│n de pacientes en piso'},
                 'modules': []
             },
             {
-                'category': {'name': 'QUIRÚRGICAS', 'slug': 'quirofanos', 'icon': 'M22 12h-4l-3 9L9 3l-3 9H2', 'description': 'Cirugía, Anestesia y Procedimientos'},
+                'category': {'name': 'QUIR├ÜRGICAS', 'slug': 'quirofanos', 'icon': 'M22 12h-4l-3 9L9 3l-3 9H2', 'description': 'Cirug├¡a, Anestesia y Procedimientos'},
                 'modules': [
-                    {'name': 'Consentimientos Informados', 'slug': 'ConsentimientosInformados', 'description': 'Autorizaciones y Firmas Electrónicas', 'url': '/consentimientos/', 'icon': 'M12 20h9 M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z'},
-                    {'name': 'Registro de Anestesia', 'slug': 'registro_anestesia', 'description': 'Registro Clínico de Anestesia (FRQUI-032)', 'url': '/registro-anestesia/create/', 'icon': 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z'},
-                    {'name': 'Trasplantes y Donación', 'slug': 'trasplantes_donacion', 'description': 'Gestión de Alertas y Trasplantes', 'url': '/modulo/trasplantes_donacion/', 'icon': 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z M12 8v4 M12 16h.01'},
-                    {'name': 'Frecuencia Fetal', 'slug': 'frecuenciafetal', 'description': 'Monitoreo de Frecuencia Cardíaca Fetal', 'url': '/modulo/frecuenciafetal/', 'icon': 'M13 2L3 14h9l-1 8 10-12h-9l1-8z'},
+                    {'name': 'Consentimientos Informados', 'slug': 'ConsentimientosInformados', 'description': 'Autorizaciones y Firmas Electr├│nicas', 'url': '/consentimientos/', 'icon': 'M12 20h9 M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z'},
+                    {'name': 'Registro de Anestesia', 'slug': 'registro_anestesia', 'description': 'Registro Cl├¡nico de Anestesia (FRQUI-032)', 'url': '/registro-anestesia/create/', 'icon': 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z'},
+                    {'name': 'Trasplantes y Donaci├│n', 'slug': 'trasplantes_donacion', 'description': 'Gesti├│n de Alertas y Trasplantes', 'url': '/modulo/trasplantes_donacion/', 'icon': 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z M12 8v4 M12 16h.01'},
+                    {'name': 'Frecuencia Fetal', 'slug': 'frecuenciafetal', 'description': 'Monitoreo de Frecuencia Card├¡aca Fetal', 'url': '/modulo/frecuenciafetal/', 'icon': 'M13 2L3 14h9l-1 8 10-12h-9l1-8z'},
                 ]
             },
             {
-                'category': {'name': 'URGENCIAS', 'slug': 'urgencias', 'icon': 'M13 10V3L4 14h7v7l9-11h-7z', 'description': 'Atención Médica de Emergencia'},
+                'category': {'name': 'URGENCIAS', 'slug': 'urgencias', 'icon': 'M13 10V3L4 14h7v7l9-11h-7z', 'description': 'Atenci├│n M├®dica de Emergencia'},
                 'modules': []
             },
             {
-                'category': {'name': 'SERVICIO FARMACÉUTICO', 'slug': 'servicio_farmaceutico', 'icon': 'M4.83 17H19.17l-1.5-3H6.33l-1.5 3z M12 3v11 M12 14L8 18 M12 14l4 4', 'description': 'Medicamentos e Insumos'},
+                'category': {'name': 'SERVICIO FARMAC├ëUTICO', 'slug': 'servicio_farmaceutico', 'icon': 'M4.83 17H19.17l-1.5-3H6.33l-1.5 3z M12 3v11 M12 14L8 18 M12 14l4 4', 'description': 'Medicamentos e Insumos'},
                 'modules': [
-                    {'name': 'Central de Mezclas', 'slug': 'CentralDeMezclas', 'description': 'Laboratorio de Preparaciones Estériles', 'url': '/central-mezclas/', 'icon': 'M11 10.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5z M5.5 15.5l1.5-2 M17 15.5l-1.5-2 M2 22h20 M7 22l1-4.5 M17 22l-1-4.5'},
+                    {'name': 'Central de Mezclas', 'slug': 'CentralDeMezclas', 'description': 'Laboratorio de Preparaciones Est├®riles', 'url': '/central-mezclas/', 'icon': 'M11 10.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5z M5.5 15.5l1.5-2 M17 15.5l-1.5-2 M2 22h20 M7 22l1-4.5 M17 22l-1-4.5'},
                 ]
             },
             {
-                'category': {'name': 'SERVICIOS TERAPÉUTICOS', 'slug': 'servicios_terapeuticos', 'icon': 'M12 21s-8-4.5-8-11.8A5.2 5.2 0 0 1 12 4.02a5.2 5.2 0 0 1 8 5.18c0 7.3-8 11.8-8 11.8z', 'description': 'Rehabilitación y Terapias'},
+                'category': {'name': 'SERVICIOS TERAP├ëUTICOS', 'slug': 'servicios_terapeuticos', 'icon': 'M12 21s-8-4.5-8-11.8A5.2 5.2 0 0 1 12 4.02a5.2 5.2 0 0 1 8 5.18c0 7.3-8 11.8-8 11.8z', 'description': 'Rehabilitaci├│n y Terapias'},
                 'modules': []
             },
             {
@@ -331,43 +331,43 @@ class HomeView(AccessControlMixin, TemplateView):
             {
                 'category': {'name': 'SALA DE PARTOS', 'slug': 'gineco_obstetricia', 'icon': 'M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6', 'description': 'Maternidad y Neonatal'},
                 'modules': [
-                    {'name': 'SALA DE PARTOS', 'slug': 'unificador_v1', 'description': 'Consolidado de Atención de Partos', 'url': '/atencion/', 'icon': 'M19 14l-7 7-7-7m14-8l-7 7-7-7'},
+                    {'name': 'SALA DE PARTOS', 'slug': 'unificador_v1', 'description': 'Consolidado de Atenci├│n de Partos', 'url': '/atencion/', 'icon': 'M19 14l-7 7-7-7m14-8l-7 7-7-7'},
                 ]
             },
             {
-                'category': {'name': 'TALENTO HUMANO', 'slug': 'talento_humano', 'icon': 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z', 'description': 'Gestión de personal y nómina'},
+                'category': {'name': 'TALENTO HUMANO', 'slug': 'talento_humano', 'icon': 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z', 'description': 'Gesti├│n de personal y n├│mina'},
                 'modules': [
-                    {'name': 'Organigrama Institucional', 'slug': 'A_00_Organigrama', 'description': 'Estructura Jerárquica - 6 Niveles', 'url': '/organigrama/', 'icon': 'M4 5h16v14H4z'},
-                    {'name': 'Certificación por OPS', 'slug': 'mvp', 'description': 'Generación de documentos de contratación', 'url': '/certificados-laborales/', 'icon': 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z'},
-                    {'name': 'Paz y Salvo', 'slug': 'paz-y-salvo', 'description': 'Trámite de desvinculación', 'url': '/modulo/paz-y-salvo/', 'icon': 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z'},
-                    {'name': 'Tercerizados', 'slug': 'tercerizadas', 'description': 'Gestión de personal externo y empresas', 'url': '/tercerizadas/', 'icon': 'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4'},
+                    {'name': 'Organigrama Institucional', 'slug': 'A_00_Organigrama', 'description': 'Estructura Jer├írquica - 6 Niveles', 'url': '/organigrama/', 'icon': 'M4 5h16v14H4z'},
+                    {'name': 'Certificaci├│n por OPS', 'slug': 'mvp', 'description': 'Generaci├│n de documentos de contrataci├│n', 'url': '/certificados-laborales/', 'icon': 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z'},
+                    {'name': 'Paz y Salvo', 'slug': 'paz-y-salvo', 'description': 'Tr├ímite de desvinculaci├│n', 'url': '/modulo/paz-y-salvo/', 'icon': 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z'},
+                    {'name': 'Tercerizados', 'slug': 'tercerizadas', 'description': 'Gesti├│n de personal externo y empresas', 'url': '/tercerizadas/', 'icon': 'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4'},
                 ]
             },
             {
-                'category': {'name': 'FINANCIERA', 'slug': 'financiera', 'icon': 'M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6', 'description': 'Gestión contable y presupuestal'},
+                'category': {'name': 'FINANCIERA', 'slug': 'financiera', 'icon': 'M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6', 'description': 'Gesti├│n contable y presupuestal'},
                 'modules': [
-                    {'name': 'Presupuesto', 'slug': 'presupuesto', 'description': 'Gestión Presupuestal', 'url': '/presupuesto/', 'icon': 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2'},
-                    {'name': 'Caja y Tesorería', 'slug': 'tesoreria', 'description': 'Control de pagos y recaudos', 'url': '/modulo/tesoreria/', 'icon': 'M3 10h18M7 15h1m4 0h1m4 0h1'},
+                    {'name': 'Presupuesto', 'slug': 'presupuesto', 'description': 'Gesti├│n Presupuestal', 'url': '/presupuesto/', 'icon': 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2'},
+                    {'name': 'Caja y Tesorer├¡a', 'slug': 'tesoreria', 'description': 'Control de pagos y recaudos', 'url': '/modulo/tesoreria/', 'icon': 'M3 10h18M7 15h1m4 0h1m4 0h1'},
                 ]
             },
             {
-                'category': {'name': 'CONTABILIDAD', 'slug': 'contabilidad', 'icon': 'M9 17v-2m3 2v-4m3 4v-6m2 10H5a2 2 0 01-2-2V5a2 2 0 012-2h14a2 2 0 012 2v14a2 2 0 01-2 2z', 'description': 'Certificados de Ingresos y Retenciones (DIAN)'},
+                'category': {'name': 'CONTABILIDAD', 'slug': 'contabilidad', 'icon': 'M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5', 'description': 'Certificados DIAN y procesos contables'},
                 'modules': []
             },
             {
-                'category': {'name': 'JURÍDICA', 'slug': 'juridica', 'icon': 'M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z', 'description': 'Asesoría y Defensa Legal'},
+                'category': {'name': 'JUR├ìDICA', 'slug': 'juridica', 'icon': 'M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z', 'description': 'Asesor├¡a y Defensa Legal'},
                 'modules': [
-                    {'name': 'Defenjur', 'slug': 'defenjur', 'description': 'Defensa Jurídica Institucional', 'url': '/defenjur/', 'icon': 'M3 6l3 12h12l3-12H3z'},
+                    {'name': 'Defenjur', 'slug': 'defenjur', 'description': 'Defensa Jur├¡dica Institucional', 'url': '/defenjur/', 'icon': 'M3 6l3 12h12l3-12H3z'},
                 ]
             }
         ]
 
-        # 2. Inyectar módulos dinámicos de DB en la estructura
+        # 2. Inyectar m├│dulos din├ímicos de DB en la estructura
         from core.models import DashboardModule
         db_modules = DashboardModule.objects.filter(is_active=True)
         for db_m in db_modules:
             if has_permission(db_m.slug):
-                # Buscar si ya existe la categoría en structure
+                # Buscar si ya existe la categor├¡a en structure
                 found = False
                 for item in structure:
                     if item['category']['slug'] == db_m.category:
@@ -382,7 +382,7 @@ class HomeView(AccessControlMixin, TemplateView):
                             })
                         found = True
                         break
-                # Si no existe la categoría, se ignora o se crea una genérica (para no romper el diseño)
+                # Si no existe la categor├¡a, se ignora o se crea una gen├®rica (para no romper el dise├▒o)
 
         # 3. Procesar visibilidad final
         active_structure = []
@@ -391,7 +391,7 @@ class HomeView(AccessControlMixin, TemplateView):
         for item in structure:
             permitted_modules = [m for m in item['modules'] if has_permission(m['slug'])]
             
-            # Solo añadir si hay módulos o si la categoría en sí es permitida
+            # Solo a├▒adir si hay m├│dulos o si la categor├¡a en s├¡ es permitida
             if permitted_modules or is_superuser:
                 active_structure.append({
                     'category': item['category'],
@@ -400,8 +400,8 @@ class HomeView(AccessControlMixin, TemplateView):
                 all_permitted_modules.extend(permitted_modules)
                 context[f"nav_{item['category']['slug']}"] = permitted_modules
 
-        # --- SEPARACIÓN ESTRICTA DE SUBGERENCIAS ---
-        # Salud: Solo lo médico (clínico)
+        # --- SEPARACI├ôN ESTRICTA DE SUBGERENCIAS ---
+        # Salud: Solo lo m├®dico (cl├¡nico)
         salud_slugs = [
             'hospitalizacion', 'quirofanos', 'gineco_obstetricia', 'urgencias', 
             'consulta_externa', 'asistencial', 'servicio_farmaceutico', 
@@ -409,7 +409,7 @@ class HomeView(AccessControlMixin, TemplateView):
         ]
         
         # Finanzas: Solo administrativo, legal y financiero
-        finanzas_slugs = ['financiera', 'talento_humano', 'contabilidad', 'administrativo', 'juridica', 'varios', 'presupuesto', 'consultas']
+        finanzas_slugs = ['financiera', 'talento_humano', 'administrativo', 'juridica', 'varios', 'presupuesto', 'consultas']
 
         nav_asistenciales = [cat for cat in active_structure if cat['category']['slug'] in salud_slugs]
         nav_financiera_cat = [cat for cat in active_structure if cat['category']['slug'] in finanzas_slugs]
@@ -417,7 +417,7 @@ class HomeView(AccessControlMixin, TemplateView):
         context['nav_asistenciales'] = nav_asistenciales
         context['nav_financiera_cat'] = nav_financiera_cat
         
-        # Compatibilidad con loops específicos (si los usa el template)
+        # Compatibilidad con loops espec├¡ficos (si los usa el template)
         context['quirofanos_modules'] = next((m['modules'] for m in active_structure if m['category']['slug'] == 'quirofanos'), [])
         context['gineco_modules'] = next((m['modules'] for m in active_structure if m['category']['slug'] == 'gineco_obstetricia'), [])
 
@@ -428,23 +428,23 @@ class HomeView(AccessControlMixin, TemplateView):
         if has_permission('consultas'):
              context.update({
                 'consultas': [
-                    {'name': 'Administrativas', 'slug': 'consultas_administrativas', 'description': 'Facturación y RIPS', 'icon': 'bi-cash-stack'},
-                    {'name': 'Asistenciales', 'slug': 'consultas_asistenciales', 'description': 'Indicadores Médicos', 'icon': 'bi-activity'},
+                    {'name': 'Administrativas', 'slug': 'consultas_administrativas', 'description': 'Facturaci├│n y RIPS', 'icon': 'bi-cash-stack'},
+                    {'name': 'Asistenciales', 'slug': 'consultas_asistenciales', 'description': 'Indicadores M├®dicos', 'icon': 'bi-activity'},
                 ],
                 'admin_reports': [
-                    {'name': 'Facturación Total', 'url': '/consultas/admin/?view=ventas&group_by=global'},
+                    {'name': 'Facturaci├│n Total', 'url': '/consultas/admin/?view=ventas&group_by=global'},
                     {'name': 'Reportes RIPS', 'url': '/consultas/admin/?view=rips&group_by=global'},
                 ],
                 'salud_reports': [
                     {'name': 'Indicadores de Salud', 'url': '/consultas/salud/'},
-                    {'name': 'Producción Médica', 'url': '/consultas/produccion-medico/'},
+                    {'name': 'Producci├│n M├®dica', 'url': '/consultas/produccion-medico/'},
                     {'name': 'Trazabilidad de Pacientes', 'url': '/consultas/pacientes-urgencias/'},
                 ]
              })
         else:
             context.update({'consultas': [], 'admin_reports': [], 'salud_reports': []})
 
-        # Datos a cachear (estructura y flag de visualización)
+        # Datos a cachear (estructura y flag de visualizaci├│n)
         to_cache = {
             'active_structure': active_structure,
             'dashboard_categories': [item['category'] for item in active_structure],
@@ -456,7 +456,7 @@ class HomeView(AccessControlMixin, TemplateView):
             'nav_asistenciales': nav_asistenciales,
             'nav_financiera_cat': nav_financiera_cat,
         }
-        # Inyectar las variables nav_ dinámicas al cache
+        # Inyectar las variables nav_ din├ímicas al cache
         for item in active_structure:
             to_cache[f"nav_{item['category']['slug']}"] = item['modules']
         
@@ -476,7 +476,7 @@ class ModuleDetailView(AccessControlMixin, TemplateView):
             apps.get_app_config(slug)
         except LookupError:
             from django.contrib import messages
-            messages.error(request, f'El módulo "{slug}" no está instalado.')
+            messages.error(request, f'El m├│dulo "{slug}" no est├í instalado.')
             return redirect('home')
         return super().dispatch(request, *args, **kwargs)
 
@@ -543,7 +543,7 @@ class TableDetailView(AccessControlMixin, TemplateView):
             
             queryset = model.objects.all()
             
-            # 1. Búsqueda
+            # 1. B├║squeda
             if q:
                 from django.db.models import Q
                 search_query = Q()
@@ -558,7 +558,7 @@ class TableDetailView(AccessControlMixin, TemplateView):
             else:
                 queryset = queryset.order_by('pk' if hasattr(model._meta, 'pk') else 'id')
                 
-            # 3. Límite (si hay limit, desactivamos paginación efectiva mostrando todo el bloque)
+            # 3. L├¡mite (si hay limit, desactivamos paginaci├│n efectiva mostrando todo el bloque)
             effective_paginate_by = self.paginate_by
             if limit and limit.isdigit():
                 queryset = queryset[:int(limit)]
@@ -601,7 +601,7 @@ class TableDetailView(AccessControlMixin, TemplateView):
             context['fields'] = fields
             context['is_paginated'] = page_obj.has_other_pages()
             
-            # Pasar parámetros actuales para mantener filtros en paginación/UI
+            # Pasar par├ímetros actuales para mantener filtros en paginaci├│n/UI
             context['query'] = q
             context['current_limit'] = limit
             context['current_order'] = order
@@ -659,14 +659,14 @@ class DynamicImportExcelView(AccessControlMixin, TemplateView):
             if preview:
                 messages.warning(request, f"VISTA PREVIA: {result['message']} Descargando reporte de errores.")
             else:
-                messages.error(request, f"Importación fallida: {result['message']}")
+                messages.error(request, f"Importaci├│n fallida: {result['message']}")
             return result['response']
         
         if result['success']:
             if preview:
-                messages.info(request, f"VISTA PREVIA: Se importarían {result['count']} registros correctamente.")
+                messages.info(request, f"VISTA PREVIA: Se importar├¡an {result['count']} registros correctamente.")
             else:
-                messages.success(request, f"Éxito: {result['message']}")
+                messages.success(request, f"├ëxito: {result['message']}")
         else:
             messages.error(request, result['message'])
             
