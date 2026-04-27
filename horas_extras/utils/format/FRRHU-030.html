@@ -12,7 +12,6 @@
     @media print {
       * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
       body  { margin: 0; }
-      table { page-break-inside: avoid; }
     }
 
     /* ── Reset ─────────────────────────────────────────────────────── */
@@ -25,12 +24,21 @@
       color: #000;
     }
 
+    /* ── Página individual ─────────────────────────────────────────── */
+    .pagina {
+      break-before: page;
+      page-break-before: always;
+    }
+    .pagina:first-child {
+      break-before: avoid;
+      page-break-before: avoid;
+    }
+
     /* ── Tabla ──────────────────────────────────────────────────────── */
     table {
       border-collapse: collapse;
       width: 100%;
       table-layout: fixed;
-      page-break-inside: avoid;
     }
     td {
       padding: 0 2px;
@@ -52,7 +60,6 @@
     .bold { font-weight: bold; }
 
     /* ── Campo inline: etiqueta + valor subrayado en la misma celda ─── */
-    /*    Evita el solapamiento de texto sobre la línea de borde-bottom  */
     .field-inline {
       display: flex;
       align-items: flex-end;
@@ -124,19 +131,8 @@
 </head>
 <body>
 
-<!--
-  Columnas (proporciones de las unidades Excel, cols 0-6 = 194.9 mm total):
-  C0  26.0 mm → 13.3 %   Cédula
-  C1  66.7 mm → 34.2 %   Nombre
-  C2  19.1 mm →  9.8 %   Nocturnos Ordinarios
-  C3  19.1 mm →  9.8 %   Diurnos Festivos
-  C4  19.1 mm →  9.8 %   Nocturnos Festivos
-  C5  27.4 mm → 14.1 %   Observaciones (parte 1)
-  C6  17.5 mm →  9.0 %   Observaciones (parte 2)
-
-  Altura total calculada ≈ 178 mm — cabe en Letter Landscape con márgenes 8/10 mm.
--->
-
+{% for pag in paginas %}
+<div class="pagina">
 <table>
   <colgroup>
     <col style="width:13.3%">
@@ -148,8 +144,7 @@
     <col style="width: 9.0%">
   </colgroup>
 
-  <!-- ═══ BLOQUE DE CABECERA (filas 0-4) — 5 × 4.5 mm = 22.5 mm ═══ -->
-
+  <!-- ═══ BLOQUE DE CABECERA (5 × 4.5 mm) ═══ -->
   <tr style="height:4.5mm">
     <td rowspan="5" class="logo-cell">
       {% if logo_hospital %}
@@ -180,15 +175,13 @@
   </tr>
   <tr style="height:4.5mm">
     <td class="info-value bold">05</td>
-    <td colspan="2" class="info-label">HOJA: 1&nbsp;&nbsp;DE:&nbsp;&nbsp;1</td>
+    <td colspan="2" class="info-label">HOJA:&nbsp;{{ loop.index }}&nbsp;&nbsp;DE:&nbsp;&nbsp;{{ total_paginas }}</td>
   </tr>
 
   <!-- ═══ SEPARADOR — 2.5 mm ═══ -->
   <tr style="height:2.5mm"><td colspan="7"></td></tr>
 
-  <!-- ═══ ÁREA / RESPONSABLE (fila 6) — 5 mm ═══
-       Usando .field-inline: etiqueta + línea subrayada en la misma celda,
-       sin posibilidad de solapamiento. -->
+  <!-- ═══ ÁREA / RESPONSABLE (5 mm) ═══ -->
   <tr style="height:5mm">
     <td colspan="2" style="padding-left:10px">
       <div class="field-inline">
@@ -204,7 +197,7 @@
     </td>
   </tr>
 
-  <!-- ═══ MES / FECHA DE EXPEDICIÓN (fila 7) — 5 mm ═══ -->
+  <!-- ═══ MES / FECHA DE EXPEDICIÓN (5 mm) ═══ -->
   <tr style="height:5mm">
     <td colspan="2">
       <div class="field-inline">
@@ -223,8 +216,7 @@
   <!-- ═══ SEPARADOR — 1.5 mm ═══ -->
   <tr style="height:1.5mm"><td colspan="7"></td></tr>
 
-  <!-- ═══ TIPO DE PLANTA CON CHECKBOX (fila 9) — 4 mm ═══
-       ☑ (&#9745;) = seleccionado   ☐ (&#9744;) = sin seleccionar -->
+  <!-- ═══ TIPO DE PLANTA CON CHECKBOX (4.5 mm) ═══ -->
   <tr style="height:4.5mm">
     <td></td>
     <td colspan="2" style="text-align:right; font-size:10pt; padding-right:10px">
@@ -239,7 +231,7 @@
   <!-- ═══ SEPARADOR — 1.5 mm ═══ -->
   <tr style="height:1.5mm"><td colspan="7"></td></tr>
 
-  <!-- ═══ ENCABEZADOS DE COLUMNA (filas 11-12) ═══ -->
+  <!-- ═══ ENCABEZADOS DE COLUMNA ═══ -->
   <tr style="height:4mm">
     <td rowspan="2" class="col-hdr">CÉDULA DEL<br>FUNCIONARIO</td>
     <td rowspan="2" class="col-hdr">NOMBRE DEL FUNCIONARIO</td>
@@ -252,20 +244,18 @@
     <td class="col-hdr" style="font-size:7.5pt">NOCTURNOS<br>FESTIVOS</td>
   </tr>
 
-  <!-- ═══ FILAS DE DATOS — 16 empleados × 6 mm = 96 mm ═══
-       Placeholders Jinja2:
-         emp.documento  emp.nombre  emp.hon  emp.hdf  emp.hnf  emp.observaciones -->
-  {% for emp in empleados %}
+  <!-- ═══ FILAS DE DATOS — hasta 16 empleados × 6 mm ═══ -->
+  {% for emp in pag.empleados %}
   <tr style="height:6mm">
     <td class="dc">{{ emp.documento }}</td>
     <td class="dc-left">{{ emp.nombre }}</td>
-    <td class="dc">{% if emp.hon %}{{ emp.hon }}{% endif %}</td>
-    <td class="dc">{% if emp.hdf %}{{ emp.hdf }}{% endif %}</td>
-    <td class="dc">{% if emp.hnf %}{{ emp.hnf }}{% endif %}</td>
+    <td class="dc">{{ emp.hon }}</td>
+    <td class="dc">{{ emp.hdf }}</td>
+    <td class="dc">{{ emp.hnf }}</td>
     <td colspan="2" class="dc-left">{{ emp.observaciones }}</td>
   </tr>
   {% endfor %}
-  {% for i in range(16 - empleados|length) %}
+  {% for i in range(16 - pag.empleados|length) %}
   <tr style="height:6mm">
     <td class="dc"></td><td class="dc"></td><td class="dc"></td>
     <td class="dc"></td><td class="dc"></td><td colspan="2" class="dc"></td>
@@ -275,16 +265,16 @@
   <!-- ═══ FILA DE TOTALES — 6 mm ═══ -->
   <tr style="height:6mm">
     <td colspan="2" class="b-all tc vm bold bg-gray" style="font-size:9pt">TOTAL</td>
-    <td class="b-all tc vm bold" style="font-size:9pt">{{ total_hon }}</td>
-    <td class="b-all tc vm bold" style="font-size:9pt">{{ total_hdf }}</td>
-    <td class="b-all tc vm bold" style="font-size:9pt">{{ total_hnf }}</td>
+    <td class="b-all tc vm bold" style="font-size:9pt">{{ pag.total_hon }}</td>
+    <td class="b-all tc vm bold" style="font-size:9pt">{{ pag.total_hdf }}</td>
+    <td class="b-all tc vm bold" style="font-size:9pt">{{ pag.total_hnf }}</td>
     <td colspan="2" class="b-all"></td>
   </tr>
 
   <!-- ═══ SEPARADOR — 1.5 mm ═══ -->
   <tr style="height:1.5mm"><td colspan="7"></td></tr>
 
-  <!-- ═══ NOTA DE PIE — 2 × 3.5 mm ═══ -->
+  <!-- ═══ NOTA DE PIE ═══ -->
   <tr style="height:3.5mm">
     <td colspan="7" style="font-size:8pt; font-weight:bold; white-space:nowrap; overflow:visible">
       FECHA LIMITE PARA EL REPORTE: LOS CINCO (5) PRIMEROS DIAS HÁBILES DE CADA MES
@@ -294,10 +284,10 @@
   </tr>
   <tr style="height:3.5mm"><td colspan="7"></td></tr>
 
-  <!-- ═══ ESPACIO EXTRA PARA FIRMAS — 6 mm ═══ -->
+  <!-- ═══ ESPACIO PARA FIRMAS — 10 mm ═══ -->
   <tr style="height:10mm"><td colspan="7"></td></tr>
 
-  <!-- ═══ ETIQUETAS DE FIRMA — 10 mm ═══ -->
+  <!-- ═══ ETIQUETAS DE FIRMA ═══ -->
   <tr style="height:10mm">
     <td colspan="2" class="b-top tc vt bold" style="font-size:10pt; padding-top:3px">
       COORDINADOR DEL SERVICIO
@@ -316,5 +306,8 @@
   </tr>
 
 </table>
+</div>
+{% endfor %}
+
 </body>
 </html>

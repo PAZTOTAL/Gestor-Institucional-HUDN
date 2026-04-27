@@ -32,19 +32,13 @@ load_dotenv(BASE_DIR / '.env')
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-vm8ux)05e9u$fc=qz5^$)ma+q!ehq)&#y2g9e74#e=+&w(lm1i'
+SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-vm8ux)05e9u$fc=qz5^$)ma+q!ehq)&#y2g9e74#e=+&w(lm1i')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv('DEBUG', 'True') == 'True'
 
-ALLOWED_HOSTS = [
-    'localhost',
-    '127.0.0.1',
-    '.ngrok.io',
-    '.ngrok-free.app',
-    '.trycloudflare.com',
-    '*',  # Para pruebas - permite cualquier host
-]
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1,GestorInstitucionalHUDN,.ngrok.io,.ngrok-free.app,.trycloudflare.com').split(',')
+
 
 # Para ngrok y túneles seguros
 CSRF_TRUSTED_ORIGINS = [
@@ -94,6 +88,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    'core.middleware.SecurityProtectionMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -139,12 +134,12 @@ WSGI_APPLICATION = 'HospitalManagement.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'mssql',
-        'NAME': 'GestorInstitucional',
-        'USER': 'apantoja',
-        'PASSWORD': 'ConsultasPantojaHUDN_2026$', 
-        'HOST': '172.20.100.209',
-        'PORT': '',
-        'CONN_MAX_AGE': 0,  # MSSQL cierra conexiones inactivas — 0 evita reconexiones dobles
+        'NAME': os.getenv('DB_DEFAULT_NAME', 'GestorInstitucional'),
+        'USER': os.getenv('DB_DEFAULT_USER', 'apantoja'),
+        'PASSWORD': os.getenv('DB_DEFAULT_PASSWORD', 'ConsultasPantojaHUDN_2026$'), 
+        'HOST': os.getenv('DB_DEFAULT_HOST', '172.20.100.209'),
+        'PORT': os.getenv('DB_DEFAULT_PORT', ''),
+        'CONN_MAX_AGE': 600,
         'OPTIONS': {
             'driver': 'ODBC Driver 17 for SQL Server',
             'timeout': 30,
@@ -152,20 +147,21 @@ DATABASES = {
     },
     'readonly': {
         'ENGINE': 'mssql',
-        'NAME': 'DGEMPRES_NEXUS',
-        'USER': 'apantoja',
-        'PASSWORD': 'ConsultasPantojaHUDN_2026$',
-        'HOST': '172.20.100.209',
-        'PORT': '',
-        'CONN_MAX_AGE': 0,  # MSSQL cierra conexiones inactivas — 0 evita reconexiones dobles
+        'NAME': os.getenv('DB_READONLY_NAME', 'DGEMPRES_NEXUS'),
+        'USER': os.getenv('DB_READONLY_USER', 'apantoja'),
+        'PASSWORD': os.getenv('DB_READONLY_PASSWORD', 'ConsultasPantojaHUDN_2026$'),
+        'HOST': os.getenv('DB_READONLY_HOST', '172.20.100.209'),
+        'PORT': os.getenv('DB_READONLY_PORT', ''),
+        'CONN_MAX_AGE': 0,
         'OPTIONS': {
             'driver': 'ODBC Driver 17 for SQL Server',
             'host_is_server': True,
-            'timeout': 10,  # Timeout para consultas de lectura
-            'connection_timeout': 1,  # Timeout de conexión mínimo
+            'timeout': 10,
+            'connection_timeout': 1,
         },
     }
 }
+
 
 
 
@@ -222,7 +218,7 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.0/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_STORAGE = 'whitenoise.storage.StaticFilesStorage'
 STATICFILES_DIRS = [
@@ -292,6 +288,31 @@ DEFENJUR_FTP_HOST = os.getenv('FTP_HOST', '172.20.100.25')
 DEFENJUR_FTP_USER = os.getenv('FTP_USER', '')
 DEFENJUR_FTP_PASSWORD = os.getenv('FTP_PASSWORD', '')
 DEFENJUR_FTP_BASE_PATH = '/web/defenjur_files/'
+
+# SECURITY HARDENING SETTINGS
+if not DEBUG:
+    # Security headers
+    SECURE_BROWSER_XSS_FILTER = True
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    X_FRAME_OPTIONS = 'DENY'
+    
+    # HTTPS Enforcement (Only if SSL is configured)
+    SECURE_SSL_REDIRECT = os.getenv('SECURE_SSL_REDIRECT', 'False') == 'True'
+    
+    # HSTS
+    SECURE_HSTS_SECONDS = 31536000 # 1 year
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+    
+    # Secure Cookies
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    
+    # Referrer Policy
+    SECURE_REFERRER_POLICY = 'same-origin'
+
+# Content Security Policy (Optional but recommended)
+# We can use django-csp if installed, otherwise we can set headers manually in middleware.
 
 LOGGING = {
     'version': 1,
