@@ -145,3 +145,26 @@
     box-shadow: 0 6px 15px rgba(16, 185, 129, 0.3);
     opacity: 0.9;
 }
+
+.btn-proceso {
+    background: linear-gradient(135deg, #475569, #1e293b);
+    color: white;
+    border: none;
+    padding: 6px 14px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+}
+
+.btn-proceso:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(30, 41, 59, 0.4);
+    color: white;
+    text-decoration: none;
+}

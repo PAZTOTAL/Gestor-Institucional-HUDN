@@ -27,6 +27,14 @@
                     Sincronizar Excel
                 </button>
             </form>
+            <a href="{% url 'trasplantes_donacion:reporte_mensual' %}" class="btn btn-warning d-flex align-items-center gap-2 shadow-sm" style="border-radius: 0.5rem; font-weight: 600; background: #6366f1; border: none; color: white;">
+                <span class="icon">📊</span>
+                Reporte Mensual
+            </a>
+            <a href="{% url 'trasplantes_donacion:reporte_diario_glasgow' %}" class="btn btn-info d-flex align-items-center gap-2 shadow-sm" style="border-radius: 0.5rem; font-weight: 600; background: #0ea5e9; border: none; color: white;">
+                <span class="icon">📅</span>
+                Reporte Diario
+            </a>
             <a href="{% url 'trasplantes_donacion:alertas' %}" class="btn btn-danger d-flex align-items-center gap-2" style="border-radius: 0.5rem; font-weight: 600;">
                 <span class="icon">🔔</span>
                 Ver Alertas ({{ alertados }})
@@ -109,9 +117,14 @@
                             {% endif %}
                         </td>
                         <td>
-                            <button type="button" class="btn-historia" onclick="verHistoria({{ paciente.pk }})" title="Ver Historia Clínica">
-                                📋 Ver HC
-                            </button>
+                            <div class="d-flex flex-column gap-1">
+                                <button type="button" class="btn-historia" onclick="verHistoria({{ paciente.pk }})" title="Ver Historia Clínica">
+                                    📋 Ver HC
+                                </button>
+                                <a href="{% url 'trasplantes_donacion:editar_proceso' paciente.pk %}" class="btn-proceso" title="Gestionar Proceso de Trasplante">
+                                    ⚙️ Proceso
+                                </a>
+                            </div>
                         </td>
                     </tr>
                     {% empty %}
