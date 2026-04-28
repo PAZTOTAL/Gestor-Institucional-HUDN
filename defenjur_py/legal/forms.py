@@ -91,13 +91,22 @@ class DerechoPeticionForm(PremiumModelForm):
             'fecha_reparto', 'num_rad_interno', 'fecha_remitente_peticion', 
             'cedula_persona_solicitante', 'peticionario_int_ext', 'peticionario', 
             'causa_peticion', 'cedula_abogado', 'abogado_responsable', 'modalidad_peticion', 
-            'tramite_impartido', 'area_remitir_informacion', 'observaciones'
+            'tramite_impartido', 'area_remitir_informacion',
+            'fecha_notificacion', 'termino_dias', 'termino_horas', 'fecha_vencimiento',
+            'fecha_respuesta_real', 'radicado_respuesta_salida', 'medio_envio_respuesta',
+            'estado_peticion', 'observaciones'
         ]
         widgets = {
             'fecha_correo': forms.DateInput(attrs={'type': 'date'}),
             'fecha_reparto': forms.DateInput(attrs={'type': 'date'}),
             'fecha_remitente_peticion': forms.DateInput(attrs={'type': 'date'}),
             'fecha_respuesta_peticion': forms.DateInput(attrs={'type': 'date'}),
+            'fecha_notificacion': forms.DateTimeInput(attrs={'type': 'datetime-local'}),
+            'fecha_vencimiento': forms.DateTimeInput(attrs={'type': 'datetime-local'}),
+            'fecha_respuesta_real': forms.DateTimeInput(attrs={'type': 'datetime-local'}),
+            'observaciones': forms.Textarea(attrs={'rows': 3}),
+            'tramite_impartido': forms.Textarea(attrs={'rows': 3}),
+            'causa_peticion': forms.Textarea(attrs={'rows': 4}),
         }
 
 

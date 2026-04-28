@@ -46,6 +46,7 @@
             <thead>
                 <tr style="text-align:left; color:var(--text-muted); font-size:0.85rem;">
                     {% include 'legal/includes/sort_th.html' with field='id' label='ID' %}
+                    <th style="padding:1rem; text-align:center;">ESTADO</th>
                     {% include 'legal/includes/sort_th.html' with field='num_reparto' label='N° Reparto' %}
                     {% include 'legal/includes/sort_th.html' with field='fecha' label='Fecha Correo' %}
                     <th style="padding:1rem;">Solicitante</th>
@@ -59,6 +60,18 @@
                 {% for p in peticiones %}
                 <tr style="background:rgba(255,255,255,0.03);">
                     <td style="padding:1rem; border-radius:12px 0 0 12px; font-weight:600;">#{{ p.id }}</td>
+                    <td style="padding:1rem; text-align:center;">
+                        <div style="display:flex; flex-direction:column; align-items:center; gap:4px;">
+                            <div style="width:16px; height:16px; border-radius:50%; box-shadow: 0 0 5px rgba(0,0,0,0.2); 
+                                {% if p.semaforo == 'rojo' %}background-color:#dc3545;
+                                {% elif p.semaforo == 'amarillo' %}background-color:#ffc107;
+                                {% elif p.semaforo == 'verde' %}background-color:#198754;
+                                {% else %}background-color:#adb5bd;{% endif %}" 
+                                title="Vencimiento: {{ p.fecha_vencimiento|default:'No definida' }}">
+                            </div>
+                            <span style="font-size:0.7rem; font-weight:bold; color:#495057;">{{ p.get_estado_peticion_display|default:"NUEVA" }}</span>
+                        </div>
+                    </td>
                     <td style="padding:1rem;">{{ p.num_reparto|default:"—" }}</td>
                     <td style="padding:1rem;">{{ p.fecha_correo|default:"—" }}</td>
                     <td style="padding:1rem; max-width:200px;">

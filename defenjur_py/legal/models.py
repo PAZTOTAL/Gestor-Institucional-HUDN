@@ -189,6 +189,48 @@ class DerechoPeticion(models.Model):
     )
     observaciones = models.TextField('Observaciones', null=True, blank=True)
 
+    # ==========================================
+    # NUEVOS CAMPOS (Seguimiento y Control)
+    # Todos son null=True, blank=True para no afectar las peticiones antiguas
+    # ==========================================
+    
+    fecha_notificacion = models.DateTimeField('FECHA Y HORA DE NOTIFICACIÓN', null=True, blank=True)
+    termino_dias = models.IntegerField('TÉRMINO (DÍAS)', null=True, blank=True)
+    termino_horas = models.IntegerField('TÉRMINO (HORAS)', null=True, blank=True)
+    fecha_vencimiento = models.DateTimeField('FECHA DE VENCIMIENTO', null=True, blank=True)
+    
+    fecha_respuesta_real = models.DateTimeField('FECHA DE RESPUESTA (RADICACIÓN)', null=True, blank=True)
+    radicado_respuesta_salida = models.CharField('RADICADO DE RESPUESTA', max_length=255, null=True, blank=True)
+    medio_envio_respuesta = models.CharField('MEDIO DE ENVÍO', max_length=255, null=True, blank=True)
+    
+    ESTADOS_PETICION = [
+        ('NUEVA', 'Nueva / Por Asignar'),
+        ('EN_TRAMITE', 'En Trámite'),
+        ('CONTESTADA', 'Contestada'),
+        ('VENCIDA', 'Vencida'),
+        ('CERRADA', 'Cerrada / Terminada'),
+    ]
+    estado_peticion = models.CharField('ESTADO DE LA PETICIÓN', max_length=50, choices=ESTADOS_PETICION, default='NUEVA', null=True, blank=True)
+
+    @property
+    def semaforo(self):
+        if self.estado_peticion in ['CONTESTADA', 'CERRADA']:
+            return 'gris'
+            
+        if not self.fecha_vencimiento:
+            return 'gris'
+
+        from django.utils import timezone
+        ahora = timezone.now()
+        delta = self.fecha_vencimiento - ahora
+        
+        if delta.total_seconds() < 0:
+            return 'rojo'
+        elif delta.total_seconds() <= 86400: # 24h
+            return 'amarillo'
+        else:
+            return 'verde'
+
     class Meta:
         db_table = 'defenjur_app_derechopeticion'
         verbose_name = 'Derecho de petición'
