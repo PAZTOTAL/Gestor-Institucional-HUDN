@@ -206,239 +206,111 @@ class HomeView(AccessControlMixin, TemplateView):
     permission_type = 'view'
     template_name = 'core/home.html'
 
+    # Metadatos de categoría para la vista jerárquica (superusuarios).
+    # Solo define nombre/icono/descripción del grupo — los módulos vienen de DB.
+    CATEGORY_META = {
+        'asistencial':    {'name': 'ASISTENCIAL',           'slug': 'asistencial',    'icon': 'M22 12h-4l-3 9L9 3l-3 9H2',                                    'description': 'Servicios Médicos y Asistenciales'},
+        'administrativo': {'name': 'ADMINISTRATIVO',        'slug': 'administrativo', 'icon': 'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5', 'description': 'Gestión Administrativa'},
+        'juridica':       {'name': 'JURÍDICA',              'slug': 'juridica',       'icon': 'M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z',                  'description': 'Asesoría y Defensa Legal'},
+        'talento_humano': {'name': 'TALENTO HUMANO',        'slug': 'talento_humano', 'icon': 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z', 'description': 'Gestión de personal y nómina'},
+        'contabilidad':   {'name': 'CONTABILIDAD',          'slug': 'contabilidad',   'icon': 'M9 17v-2m3 2v-4m3 4v-6m2 10H5a2 2 0 01-2-2V5a2 2 0 012-2h14a2 2 0 012 2v14a2 2 0 01-2 2z', 'description': 'Certificados de Ingresos y Retenciones'},
+        'financiera':     {'name': 'FINANCIERA',            'slug': 'financiera',     'icon': 'M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6',   'description': 'Gestión contable y presupuestal'},
+        'varios':         {'name': 'VARIOS',                'slug': 'varios',         'icon': 'M4 6h16M4 12h16M4 18h16',                                       'description': 'Formatos y herramientas generales'},
+        'consultas':      {'name': 'CONSULTAS',             'slug': 'consultas',      'icon': 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z', 'description': 'Indicadores y Reportes'},
+    }
+
+    # Categorías que pertenecen a cada subgerencia en la vista jerárquica
+    SALUD_CATS     = {'asistencial', 'consultas'}
+    FINANCIERA_CATS = {'talento_humano', 'financiera', 'contabilidad', 'juridica', 'administrativo', 'varios'}
+
     def dispatch(self, request, *args, **kwargs):
         if request.user.is_authenticated and not request.user.is_superuser:
+            from core.models import DashboardModule
             allowed_apps = getattr(request.user, '_permisos_apps_cache', set())
-            final_perms = allowed_apps.copy()
-            
-            # 2. Redirección Directa para Usuarios con 1 solo módulo (Skip Dashboard)
+
+            # Redirección directa cuando el usuario tiene un único módulo permitido
             if len(allowed_apps) == 1:
-                unica_app = next(iter(allowed_apps))
-                redirect_map = {
-                    'CertificadosDIAN': 'certificados_dian:dashboard',
-                    'unificador_v1': '/atencion/',
-                    'certificados_laborales': '/certificados-laborales/',
-                    'mvp': '/certificados-laborales/',
-                    'horas_extras': '/horas-extras/asignacion-turnos/',
-                    'registro_anestesia': '/registro-anestesia/create/',
-                    'defenjur': '/defenjur/',
-                    'presupuesto': '/presupuesto/',
-                    'A_00_Organigrama': '/organigrama/'
-                }
-                
-                target = redirect_map.get(unica_app)
-                if target:
-                    return redirect(target)
-            
-            request._allowed_apps = final_perms
+                slug = next(iter(allowed_apps))
+                mod = DashboardModule.objects.filter(slug=slug, is_active=True).values('url').first()
+                if mod and mod['url']:
+                    return redirect(mod['url'])
+
+            request._allowed_apps = allowed_apps
         return super().dispatch(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        from core.models import DashboardModule
+
         user = self.request.user
-        
-        # Superuser Bypass para velocidad máxima
-        if user.is_superuser:
-            context['is_superuser'] = True
-            # Intentamos cache pero si no, seguimos rápido
-            # cache_key = f"dashboard_structure_{user.id}"
-            # from django.core.cache import cache
-            # cached_data = cache.get(cache_key)
-            # if cached_data:
-            #     context.update(cached_data)
-            #     return context
-
-        # Resto del proceso (Desactivado cache temporalmente para asegurar refresco)
-        # cache_key = f"dashboard_structure_{user.id}"
-        # from django.core.cache import cache
-        # cached_data = cache.get(cache_key)
-        # if cached_data:
-        #    context.update(cached_data)
-        #    return context
-
         is_superuser = user.is_superuser
         allowed_apps = getattr(self.request, '_allowed_apps', set())
-        
-        # Función de validación estricta (Sin herencia)
-        def has_permission(slug):
-            if is_superuser: return True
-            if slug in allowed_apps: return True
-            return False
 
-        # Estructura jerárquica original (Subgerencias)
-        structure = [
-            {
-                'category': {'name': 'TRASPLANTES', 'slug': 'trasplantes_cat', 'icon': 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z M12 8v4 M12 16h.01', 'description': 'Gestión de Trasplantes y Donación'},
-                'modules': [
-                    {'name': 'Trasplantes y Donación', 'slug': 'trasplantes_donacion', 'description': 'Gestión de Alertas y Trasplantes', 'url': '/trasplantes-donacion/', 'icon': 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z M12 8v4 M12 16h.01'},
-                ]
-            },
-            {
-                'category': {'name': 'HOSPITALIZACION', 'slug': 'hospitalizacion', 'icon': 'M19 14l-7 7-7-7m14-8l-7 7-7-7', 'description': 'Gestión de pacientes en piso'},
-                'modules': []
-            },
-            {
-                'category': {'name': 'QUIRÚRGICAS', 'slug': 'quirofanos', 'icon': 'M22 12h-4l-3 9L9 3l-3 9H2', 'description': 'Cirugía, Anestesia y Procedimientos'},
-                'modules': [
-                    {'name': 'Consentimientos Informados', 'slug': 'ConsentimientosInformados', 'description': 'Autorizaciones y Firmas Electrónicas', 'url': '/consentimientos/', 'icon': 'M12 20h9 M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z'},
-                    {'name': 'Registro de Anestesia', 'slug': 'registro_anestesia', 'description': 'Registro Clínico de Anestesia (FRQUI-032)', 'url': '/registro-anestesia/create/', 'icon': 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z'},
-                    {'name': 'Frecuencia Fetal', 'slug': 'frecuenciafetal', 'description': 'Monitoreo de Frecuencia Cardíaca Fetal', 'url': '/modulo/frecuenciafetal/', 'icon': 'M13 2L3 14h9l-1 8 10-12h-9l1-8z'},
-                ]
-            },
-            {
-                'category': {'name': 'URGENCIAS', 'slug': 'urgencias', 'icon': 'M13 10V3L4 14h7v7l9-11h-7z', 'description': 'Atención Médica de Emergencia'},
-                'modules': []
-            },
-            {
-                'category': {'name': 'SERVICIO FARMACÉUTICO', 'slug': 'servicio_farmaceutico', 'icon': 'M4.83 17H19.17l-1.5-3H6.33l-1.5 3z M12 3v11 M12 14L8 18 M12 14l4 4', 'description': 'Medicamentos e Insumos'},
-                'modules': [
-                    {'name': 'Central de Mezclas', 'slug': 'CentralDeMezclas', 'description': 'Laboratorio de Preparaciones Estériles', 'url': '/central-mezclas/', 'icon': 'M11 10.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5z M5.5 15.5l1.5-2 M17 15.5l-1.5-2 M2 22h20 M7 22l1-4.5 M17 22l-1-4.5'},
-                ]
-            },
-            {
-                'category': {'name': 'SERVICIOS TERAPÉUTICOS', 'slug': 'servicios_terapeuticos', 'icon': 'M12 21s-8-4.5-8-11.8A5.2 5.2 0 0 1 12 4.02a5.2 5.2 0 0 1 8 5.18c0 7.3-8 11.8-8 11.8z', 'description': 'Rehabilitación y Terapias'},
-                'modules': []
-            },
-            {
-                'category': {'name': 'AUDITORIA DISCIPLINARIA', 'slug': 'auditoria_disciplinaria', 'icon': 'M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z', 'description': 'Control y Seguimiento Asistencial'},
-                'modules': []
-            },
-            {
-                'category': {'name': 'SALA DE PARTOS', 'slug': 'gineco_obstetricia', 'icon': 'M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6', 'description': 'Maternidad y Neonatal'},
-                'modules': [
-                    {'name': 'SALA DE PARTOS', 'slug': 'unificador_v1', 'description': 'Consolidado de Atención de Partos', 'url': '/atencion/', 'icon': 'M19 14l-7 7-7-7m14-8l-7 7-7-7'},
-                ]
-            },
-            {
-                'category': {'name': 'TALENTO HUMANO', 'slug': 'talento_humano', 'icon': 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z', 'description': 'Gestión de personal y nómina'},
-                'modules': [
-                    {'name': 'Organigrama Institucional', 'slug': 'A_00_Organigrama', 'description': 'Estructura Jerárquica - 6 Niveles', 'url': '/organigrama/', 'icon': 'M4 5h16v14H4z'},
-                    {'name': 'Certificación por OPS', 'slug': 'mvp', 'description': 'Generación de documentos de contratación', 'url': '/certificados-laborales/', 'icon': 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z'},
-                    {'name': 'Paz y Salvo', 'slug': 'paz-y-salvo', 'description': 'Trámite de desvinculación', 'url': '/modulo/paz-y-salvo/', 'icon': 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z'},
-                    {'name': 'Tercerizados', 'slug': 'tercerizadas', 'description': 'Gestión de personal externo y empresas', 'url': '/tercerizadas/', 'icon': 'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4'},
-                ]
-            },
-            {
-                'category': {'name': 'FINANCIERA', 'slug': 'financiera', 'icon': 'M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6', 'description': 'Gestión contable y presupuestal'},
-                'modules': [
-                    {'name': 'Presupuesto', 'slug': 'presupuesto', 'description': 'Gestión Presupuestal', 'url': '/presupuesto/', 'icon': 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2'},
-                    {'name': 'Caja y Tesorería', 'slug': 'tesoreria', 'description': 'Control de pagos y recaudos', 'url': '/modulo/tesoreria/', 'icon': 'M3 10h18M7 15h1m4 0h1m4 0h1'},
-                ]
-            },
-            {
-                'category': {'name': 'CONTABILIDAD', 'slug': 'contabilidad', 'icon': 'M9 17v-2m3 2v-4m3 4v-6m2 10H5a2 2 0 01-2-2V5a2 2 0 012-2h14a2 2 0 012 2v14a2 2 0 01-2 2z', 'description': 'Certificados de Ingresos y Retenciones (DIAN)'},
-                'modules': []
-            },
-            {
-                'category': {'name': 'JURÍDICA', 'slug': 'juridica', 'icon': 'M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z', 'description': 'Asesoría y Defensa Legal'},
-                'modules': [
-                    {'name': 'Defenjur', 'slug': 'defenjur', 'description': 'Defensa Jurídica Institucional', 'url': '/defenjur/', 'icon': 'M3 6l3 12h12l3-12H3z'},
-                ]
-            }
+        # ── 1. Consultar módulos según rol ────────────────────────────────────
+        if is_superuser:
+            modules_qs = DashboardModule.objects.filter(is_active=True)
+        else:
+            modules_qs = DashboardModule.objects.filter(is_active=True, slug__in=allowed_apps)
+
+        all_modules = list(modules_qs.values('name', 'slug', 'description', 'url', 'icon', 'category'))
+
+        # ── 2. Lista plana para la vista "Mis Aplicaciones" (no-superusuarios) ─
+        all_permitted_modules = [
+            {'name': m['name'], 'slug': m['slug'], 'description': m['description'],
+             'url': m['url'] or f"/modulo/{m['slug']}/", 'icon': m['icon']}
+            for m in all_modules
         ]
+        show_direct_modules = not is_superuser and bool(all_permitted_modules)
 
-        # 2. Inyectar módulos dinámicos de DB en la estructura
-        from core.models import DashboardModule
-        db_modules = DashboardModule.objects.filter(is_active=True)
-        for db_m in db_modules:
-            if has_permission(db_m.slug):
-                # Buscar si ya existe la categoría en structure
-                found = False
-                for item in structure:
-                    if item['category']['slug'] == db_m.category:
-                        # Evitar duplicados (slug)
-                        if not any(m['slug'] == db_m.slug for m in item['modules']):
-                            item['modules'].append({
-                                'name': db_m.name,
-                                'slug': db_m.slug,
-                                'description': db_m.description,
-                                'url': db_m.url or f"/modulo/{db_m.slug}/",
-                                'icon': db_m.icon
-                            })
-                        found = True
-                        break
-                # Si no existe la categoría, se ignora o se crea una genérica (para no romper el diseño)
+        # ── 3. Agrupar por categoría para la vista jerárquica (superusuarios) ─
+        cat_modules: dict = {}
+        for m in all_modules:
+            cat_modules.setdefault(m['category'], []).append({
+                'name': m['name'], 'slug': m['slug'], 'description': m['description'],
+                'url': m['url'] or f"/modulo/{m['slug']}/", 'icon': m['icon']
+            })
 
-        # 3. Procesar visibilidad final
         active_structure = []
-        all_permitted_modules = []
+        for cat_slug, meta in self.CATEGORY_META.items():
+            mods = cat_modules.get(cat_slug, [])
+            if mods:
+                active_structure.append({'category': meta, 'modules': mods})
 
-        for item in structure:
-            permitted_modules = [m for m in item['modules'] if has_permission(m['slug'])]
-            
-            # Solo añadir si hay módulos o si la categoría en sí es permitida
-            if permitted_modules or is_superuser:
-                active_structure.append({
-                    'category': item['category'],
-                    'modules': permitted_modules
-                })
-                all_permitted_modules.extend(permitted_modules)
-                context[f"nav_{item['category']['slug']}"] = permitted_modules
+        nav_asistenciales  = [i for i in active_structure if i['category']['slug'] in self.SALUD_CATS]
+        nav_financiera_cat = [i for i in active_structure if i['category']['slug'] in self.FINANCIERA_CATS]
 
-        # --- SEPARACIÓN ESTRICTA DE SUBGERENCIAS ---
-        # Salud: Solo lo médico (clínico)
-        salud_slugs = [
-            'hospitalizacion', 'quirofanos', 'gineco_obstetricia', 'urgencias', 
-            'consulta_externa', 'asistencial', 'servicio_farmaceutico', 
-            'servicios_terapeuticos', 'auditoria_disciplinaria', 'trasplantes_cat'
-        ]
-        
-        # Finanzas: Solo administrativo, legal y financiero
-        finanzas_slugs = ['financiera', 'talento_humano', 'administrativo', 'juridica', 'varios', 'presupuesto', 'consultas']
-
-        nav_asistenciales = [cat for cat in active_structure if cat['category']['slug'] in salud_slugs]
-        nav_financiera_cat = [cat for cat in active_structure if cat['category']['slug'] in finanzas_slugs]
-        
-        context['nav_asistenciales'] = nav_asistenciales
-        context['nav_financiera_cat'] = nav_financiera_cat
-        
-        # Compatibilidad con loops específicos (si los usa el template)
-        context['quirofanos_modules'] = next((m['modules'] for m in active_structure if m['category']['slug'] == 'quirofanos'), [])
-        context['gineco_modules'] = next((m['modules'] for m in active_structure if m['category']['slug'] == 'gineco_obstetricia'), [])
-
-        # Decide if we show the "Direct View"
-        show_direct_modules = (len(all_permitted_modules) > 0) and not is_superuser
-
-        # Consultas section
-        if has_permission('consultas'):
-             context.update({
+        # ── 4. Sección especial Consultas ─────────────────────────────────────
+        has_consultas = is_superuser or 'consultas' in allowed_apps
+        if has_consultas:
+            consultas_ctx = {
                 'consultas': [
-                    {'name': 'Administrativas', 'slug': 'consultas_administrativas', 'description': 'Facturación y RIPS', 'icon': 'bi-cash-stack'},
-                    {'name': 'Asistenciales', 'slug': 'consultas_asistenciales', 'description': 'Indicadores Médicos', 'icon': 'bi-activity'},
+                    {'name': 'Administrativas', 'slug': 'consultas_administrativas', 'description': 'Facturación y RIPS'},
+                    {'name': 'Asistenciales',   'slug': 'consultas_asistenciales',   'description': 'Indicadores Médicos'},
                 ],
                 'admin_reports': [
                     {'name': 'Facturación Total', 'url': '/consultas/admin/?view=ventas&group_by=global'},
-                    {'name': 'Reportes RIPS', 'url': '/consultas/admin/?view=rips&group_by=global'},
+                    {'name': 'Reportes RIPS',     'url': '/consultas/admin/?view=rips&group_by=global'},
                 ],
                 'salud_reports': [
-                    {'name': 'Indicadores de Salud', 'url': '/consultas/salud/'},
-                    {'name': 'Producción Médica', 'url': '/consultas/produccion-medico/'},
-                    {'name': 'Trazabilidad de Pacientes', 'url': '/consultas/pacientes-urgencias/'},
-                ]
-             })
+                    {'name': 'Indicadores de Salud',        'url': '/consultas/salud/'},
+                    {'name': 'Producción Médica',            'url': '/consultas/produccion-medico/'},
+                    {'name': 'Trazabilidad de Pacientes',    'url': '/consultas/pacientes-urgencias/'},
+                ],
+            }
         else:
-            context.update({'consultas': [], 'admin_reports': [], 'salud_reports': []})
+            consultas_ctx = {'consultas': [], 'admin_reports': [], 'salud_reports': []}
 
-        # Datos a cachear (estructura y flag de visualización)
-        to_cache = {
-            'active_structure': active_structure,
-            'dashboard_categories': [item['category'] for item in active_structure],
+        # ── 5. Construir contexto final ───────────────────────────────────────
+        context.update({
+            'is_superuser':          is_superuser,
             'all_permitted_modules': all_permitted_modules,
-            'show_direct_modules': show_direct_modules,
-            'consultas': context.get('consultas', []),
-            'admin_reports': context.get('admin_reports', []),
-            'salud_reports': context.get('salud_reports', []),
-            'nav_asistenciales': nav_asistenciales,
-            'nav_financiera_cat': nav_financiera_cat,
-        }
-        # Inyectar las variables nav_ dinámicas al cache
-        for item in active_structure:
-            to_cache[f"nav_{item['category']['slug']}"] = item['modules']
-        
-        # cache.set(cache_key, to_cache, 300) # Cache por 5 minutos
-
-        context.update(to_cache)
-        context['is_superuser'] = is_superuser
+            'show_direct_modules':   show_direct_modules,
+            'active_structure':      active_structure,
+            'dashboard_categories':  [i['category'] for i in active_structure],
+            'nav_asistenciales':     nav_asistenciales,
+            'nav_financiera_cat':    nav_financiera_cat,
+            **consultas_ctx,
+        })
         return context
 
 class ModuleDetailView(AccessControlMixin, TemplateView):
