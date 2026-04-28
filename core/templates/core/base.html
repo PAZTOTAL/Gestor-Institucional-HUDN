@@ -6,94 +6,41 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Hospital Management{% endblock %}</title>
-    <link rel="stylesheet" href="{% static 'core/css/index.css' %}?v=5">
+    <link rel="stylesheet" href="{% static 'core/css/index.css' %}?v=10">
     <!-- Tailwind CSS - loaded early but non-blocking -->
     <script src="https://cdn.tailwindcss.com" defer></script>
 
     <style>
-        {
-            % if perfil %
-        }
+        {% if perfil %}
 
         :root {
-            --theme-primary: {
-                    {
-                    perfil.color_primario
-                }
-            }
+            --theme-primary: {{ perfil.color_primario }};
 
-            ;
+            --theme-secondary: {{ perfil.color_secundario }};
 
-            --theme-secondary: {
-                    {
-                    perfil.color_secundario
-                }
-            }
+            --theme-bg: {{ perfil.color_fondo }};
 
-            ;
+            {% if perfil.estilo_fondo == 'gradient' %}
 
-            --theme-bg: {
-                    {
-                    perfil.color_fondo
-                }
-            }
-
-            ;
-
-                {
-                % if perfil.estilo_fondo=='gradient' %
-            }
-
-            --theme-bg-full: linear-gradient(135deg, {
-                    {
-                    perfil.color_fondo
-                }
-            }
-
-            0%, #ffffff 100%);
+            --theme-bg-full: linear-gradient(135deg, {{ perfil.color_fondo }} 0%, #ffffff 100%);
         --theme-pattern: none;
 
-            {
-            % elif perfil.estilo_fondo=='pattern' %
-        }
+            {% elif perfil.estilo_fondo == 'pattern' %}
 
-        --theme-bg-full: {
-                {
-                perfil.color_fondo
-            }
-        }
+        --theme-bg-full: {{ perfil.color_fondo }};
 
-        ;
+        --theme-pattern: radial-gradient({{ perfil.color_primario }} 0.5px, transparent 0.5px);
 
-        --theme-pattern: radial-gradient({
-                {
-                perfil.color_primario
-            }
-        }
-
-        0.5px, transparent 0.5px);
-
-            {
-            % else %
-        }
-
-        --theme-bg-full: {
-                {
-                perfil.color_fondo
-            }
-        }
+            {% else %}
+            --theme-bg-full: {{ perfil.color_fondo }};
 
         ;
         --theme-pattern: none;
 
-            {
-            % endif %
-        }
+        {% endif %}
         }
 
-            {
-            % else %
-        }
+        {% else %}
 
         :root {
             --theme-primary: #2563eb;
@@ -103,9 +50,7 @@
             --theme-pattern: none;
         }
 
-            {
-            % endif %
-        }
+        {% endif %}
     </style>
 
     <script>
@@ -162,8 +107,8 @@
 
 <body class="relative">
     <!-- Fondo Institucional Sutil (Watermark) -->
-    <div class="fixed inset-0 pointer-events-none z-[-1] opacity-[0.15] flex items-center justify-center p-10 overflow-hidden">
-        <img src="{% static 'core/img/logo_hudn_50_small.png' %}" class="w-full max-w-6xl object-contain opacity-80">
+    <div class="fixed inset-0 pointer-events-none z-[-1] opacity-[0.12] flex items-center justify-center p-10 overflow-hidden">
+        <img src="{% static 'core/img/logo_hudn_50_tiny.png' %}" class="w-full max-w-4xl object-contain opacity-70">
     </div>
     {% if db_caidas %}
     <div

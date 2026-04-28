@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect
-from django.views.generic import ListView, TemplateView
+from django.views.generic import ListView, TemplateView, UpdateView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from .models import PacienteNeurocritico
 from django.core.management import call_command
@@ -298,10 +298,8 @@ def sync_husn(request):
         import traceback
         tb = traceback.format_exc()
         messages.error(request, f'Error al sincronizar: {e}')
-        messages.info(request, f'Detalle: {tb[-500:]}')
 
     return redirect('trasplantes_donacion:dashboard')
-
 
 def historia_clinica_api(request, pk):
     """
@@ -445,3 +443,300 @@ def historia_clinica_api(request, pk):
         data['error_detalle'] = str(e)
 
     return JsonResponse(data)
+
+
+class PacienteUpdateView(LoginRequiredMixin, UpdateView):
+    model = PacienteNeurocritico
+    template_name = 'trasplantes_donacion/paciente_form.html'
+    fields = [
+        'paciente_intubado', 'paciente_alertado', 'fecha_hora_alerta_crt', 
+        'causa_no_alerta', 'voluntades_anticipadas', 'dx_muerte_encefalica', 
+        'fecha_diagnostico_me_hora', 'paciente_legalizado', 'causa_no_legalizacion', 
+        'fecha_legalizacion', 'donante_efectivo', 'causa_no_donante_efectivo', 
+        'estado_vital_egreso', 'fecha_egreso', 'organos_recatados', 
+        'medico_alerta', 'medico_no_alerta', 'observaciones'
+    ]
+    
+    def get_success_url(self):
+        from django.urls import reverse
+        return reverse('trasplantes_donacion:dashboard')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = f"Gestionar Proceso - {self.object.primer_nombre} {self.object.primer_apellido}"
+        return context
+
+def reporte_diario(request):
+    """
+    Reporte de pacientes con cualquier registro de Glasgow el día de hoy.
+    Busca en Interconsultas (HCNINTERR) y Triage (HCNTCENTURED).
+    """
+    from django.db import connections
+    from django.utils import timezone
+    hoy = timezone.now().date()
+    
+    evaluaciones = []
+    pacientes_unicos = set()
+
+    # 1. Buscar en HCNINTERR (Interconsultas/Evaluaciones)
+    # Usamos raw SQL para mayor control sobre los joins en la DB readonly
+    try:
+        with connections['readonly'].cursor() as cursor:
+            cursor.execute("""
+                SELECT 
+                    p.PACNUMDOC,
+                    p.PACPRINOM, p.PACSEGNOM, p.PACPRIAPE, p.PACSEGAPE,
+                    p.GPASEXPAC, p.GPAFECNAC,
+                    i.HCIGLASGOW,
+                    f.HCFECFOL,
+                    'EVALUACIÓN' as ORIGEN
+                FROM HCNINTERR i
+                INNER JOIN HCNFOLIO f ON i.HCNFOLIO = f.OID
+                INNER JOIN GENPACIEN p ON f.GENPACIEN = p.OID
+                WHERE CAST(f.HCFECFOL AS DATE) = CAST(GETDATE() AS DATE)
+                AND i.HCIGLASGOW IS NOT NULL
+            """)
+            rows = cursor.fetchall()
+            for row in rows:
+                doc, p1, p2, a1, a2, sex, fecnac, glasgow, fecha, origen = row
+                nombre = f"{p1 or ''} {p2 or ''} {a1 or ''} {a2 or ''}".strip()
+                
+                edad = '?'
+                if fecnac:
+                    try:
+                        edad = (timezone.now().date() - fecnac.date()).days // 365
+                    except: pass
+
+                pacientes_unicos.add(doc)
+                evaluaciones.append({
+                    'pac_doc': doc,
+                    'pac_nombre': nombre,
+                    'pac_sexo': 'M' if sex == 1 else 'F',
+                    'pac_edad': edad,
+                    'glasgow': int(glasgow),
+                    'fecha': fecha,
+                    'especialidad': origen
+                })
+    except Exception as e:
+        print(f"Error en query Interconsultas: {e}")
+
+    # 2. Buscar en HCNTCENTURED (Triage)
+    try:
+        with connections['readonly'].cursor() as cursor:
+            cursor.execute("""
+                SELECT 
+                    p.PACNUMDOC,
+                    p.PACPRINOM, p.PACSEGNOM, p.PACPRIAPE, p.PACSEGAPE,
+                    p.GPASEXPAC, p.GPAFECNAC,
+                    t.HCNGLASGOW,
+                    t.HCRHORREG,
+                    'TRIAGE' as ORIGEN
+                FROM HCNTCENTURED t
+                INNER JOIN GENPACIEN p ON t.GENPACIEN = p.OID
+                WHERE CAST(t.HCRHORREG AS DATE) = CAST(GETDATE() AS DATE)
+                AND t.HCNGLASGOW IS NOT NULL
+            """)
+            rows = cursor.fetchall()
+            for row in rows:
+                doc, p1, p2, a1, a2, sex, fecnac, glasgow, fecha, origen = row
+                nombre = f"{p1 or ''} {p2 or ''} {a1 or ''} {a2 or ''}".strip()
+                
+                edad = '?'
+                if fecnac:
+                    try:
+                        edad = (timezone.now().date() - fecnac.date()).days // 365
+                    except: pass
+
+                pacientes_unicos.add(doc)
+                evaluaciones.append({
+                    'pac_doc': doc,
+                    'pac_nombre': nombre,
+                    'pac_sexo': 'M' if sex == 1 else 'F',
+                    'pac_edad': edad,
+                    'glasgow': int(glasgow),
+                    'fecha': fecha,
+                    'especialidad': origen
+                })
+    except Exception as e:
+        print(f"Error en query Triage (HCNTCENTURED): {e}")
+
+    # 3. Buscar en HCNTRIAGE (Triage General)
+    try:
+        with connections['readonly'].cursor() as cursor:
+            cursor.execute("""
+                SELECT 
+                    p.PACNUMDOC,
+                    p.PACPRINOM, p.PACSEGNOM, p.PACPRIAPE, p.PACSEGAPE,
+                    p.GPASEXPAC, p.GPAFECNAC,
+                    COALESCE(t.HCTNOGLASA, t.HCTNOGLASP) as GLASGOW,
+                    t.HCTFECTRI,
+                    'TRIAGE GENERAL' as ORIGEN
+                FROM HCNTRIAGE t
+                INNER JOIN GENPACIEN p ON t.GENPACIEN = p.OID
+                WHERE CAST(t.HCTFECTRI AS DATE) = CAST(GETDATE() AS DATE)
+                AND (t.HCTNOGLASA IS NOT NULL OR t.HCTNOGLASP IS NOT NULL)
+            """)
+            rows = cursor.fetchall()
+            for row in rows:
+                doc, p1, p2, a1, a2, sex, fecnac, glasgow, fecha, origen = row
+                nombre = f"{p1 or ''} {p2 or ''} {a1 or ''} {a2 or ''}".strip()
+                
+                edad = '?'
+                if fecnac:
+                    try:
+                        edad = (timezone.now().date() - fecnac.date()).days // 365
+                    except: pass
+
+                pacientes_unicos.add(doc)
+                evaluaciones.append({
+                    'pac_doc': doc,
+                    'pac_nombre': nombre,
+                    'pac_sexo': 'M' if sex == 1 else 'F',
+                    'pac_edad': edad,
+                    'glasgow': int(glasgow) if glasgow else 0,
+                    'fecha': fecha,
+                    'especialidad': origen
+                })
+    except Exception as e:
+        print(f"Error en query Triage General (HCNTRIAGE): {e}")
+
+    # Ordenar por fecha descendente
+    evaluaciones.sort(key=lambda x: x['fecha'], reverse=True)
+
+    return render(request, 'trasplantes_donacion/reporte_diario.html', {
+        'hoy': hoy,
+        'evaluaciones': evaluaciones,
+        'pacientes_unicos': len(pacientes_unicos),
+        'alertados': PacienteNeurocritico.objects.filter(glasgow_ingreso__gte=1, glasgow_ingreso__lte=5).count()
+    })
+
+def reporte_mensual(request):
+    """
+    Reporte de pacientes con Glasgow 1 a 5 en un mes y año específicos.
+    """
+    from django.db import connections
+    from django.utils import timezone
+    import datetime
+
+    # Obtener el mes y año del request, por defecto el mes/año actual
+    hoy = timezone.now().date()
+    mes_actual = hoy.month
+    anio_actual = hoy.year
+
+    mes_str = request.GET.get('mes', str(mes_actual))
+    anio_str = request.GET.get('anio', str(anio_actual))
+    
+    try:
+        mes = int(mes_str)
+        anio = int(anio_str)
+    except ValueError:
+        mes = mes_actual
+        anio = anio_actual
+
+    evaluaciones = []
+    pacientes_unicos = set()
+
+    # Filtro SQL para el mes y año, y Glasgow entre 1 y 5
+    # HCNINTERR (Evaluaciones/Interconsultas)
+    try:
+        with connections['readonly'].cursor() as cursor:
+            cursor.execute(f"""
+                SELECT 
+                    p.PACNUMDOC, p.PACPRINOM, p.PACSEGNOM, p.PACPRIAPE, p.PACSEGAPE,
+                    p.GPASEXPAC, p.GPAFECNAC,
+                    i.HCIGLASGOW, f.HCFECFOL, 'EVALUACIÓN' as ORIGEN
+                FROM HCNINTERR i
+                INNER JOIN HCNFOLIO f ON i.HCNFOLIO = f.OID
+                INNER JOIN GENPACIEN p ON f.GENPACIEN = p.OID
+                WHERE YEAR(f.HCFECFOL) = {anio} AND MONTH(f.HCFECFOL) = {mes}
+                AND i.HCIGLASGOW >= 1 AND i.HCIGLASGOW <= 5
+            """)
+            for row in cursor.fetchall():
+                doc, p1, p2, a1, a2, sex, fecnac, glasgow, fecha, origen = row
+                nombre = f"{p1 or ''} {p2 or ''} {a1 or ''} {a2 or ''}".strip()
+                edad = '?'
+                if fecnac:
+                    try: edad = (hoy - fecnac.date()).days // 365
+                    except: pass
+                pacientes_unicos.add(doc)
+                evaluaciones.append({'pac_doc': doc, 'pac_nombre': nombre, 'pac_sexo': 'M' if sex == 1 else 'F', 'pac_edad': edad, 'glasgow': int(glasgow), 'fecha': fecha, 'especialidad': origen})
+    except Exception as e:
+        print(f"Error query Mensual HCNINTERR: {e}")
+
+    # HCNTCENTURED (Triage Urgencias)
+    try:
+        with connections['readonly'].cursor() as cursor:
+            cursor.execute(f"""
+                SELECT 
+                    p.PACNUMDOC, p.PACPRINOM, p.PACSEGNOM, p.PACPRIAPE, p.PACSEGAPE,
+                    p.GPASEXPAC, p.GPAFECNAC,
+                    t.HCNGLASGOW, t.HCETFECHAING, 'TRIAGE URGENCIAS' as ORIGEN
+                FROM HCNTCENTURED t
+                INNER JOIN GENPACIEN p ON t.GENPACIEN = p.OID
+                WHERE YEAR(t.HCETFECHAING) = {anio} AND MONTH(t.HCETFECHAING) = {mes}
+                AND t.HCNGLASGOW >= 1 AND t.HCNGLASGOW <= 5
+            """)
+            for row in cursor.fetchall():
+                doc, p1, p2, a1, a2, sex, fecnac, glasgow, fecha, origen = row
+                nombre = f"{p1 or ''} {p2 or ''} {a1 or ''} {a2 or ''}".strip()
+                edad = '?'
+                if fecnac:
+                    try: edad = (hoy - fecnac.date()).days // 365
+                    except: pass
+                pacientes_unicos.add(doc)
+                evaluaciones.append({'pac_doc': doc, 'pac_nombre': nombre, 'pac_sexo': 'M' if sex == 1 else 'F', 'pac_edad': edad, 'glasgow': int(glasgow), 'fecha': fecha, 'especialidad': origen})
+    except Exception as e:
+        print(f"Error query Mensual HCNTCENTURED: {e}")
+
+    # HCNTRIAGE (Triage General)
+    try:
+        with connections['readonly'].cursor() as cursor:
+            cursor.execute(f"""
+                SELECT 
+                    p.PACNUMDOC, p.PACPRINOM, p.PACSEGNOM, p.PACPRIAPE, p.PACSEGAPE,
+                    p.GPASEXPAC, p.GPAFECNAC,
+                    COALESCE(t.HCTNOGLASA, t.HCTNOGLASP) as GLASGOW,
+                    t.HCTFECTRI, 'TRIAGE GENERAL' as ORIGEN
+                FROM HCNTRIAGE t
+                INNER JOIN GENPACIEN p ON t.GENPACIEN = p.OID
+                WHERE YEAR(t.HCTFECTRI) = {anio} AND MONTH(t.HCTFECTRI) = {mes}
+                AND (
+                    (t.HCTNOGLASA >= 1 AND t.HCTNOGLASA <= 5)
+                    OR 
+                    (t.HCTNOGLASP >= 1 AND t.HCTNOGLASP <= 5)
+                )
+            """)
+            for row in cursor.fetchall():
+                doc, p1, p2, a1, a2, sex, fecnac, glasgow, fecha, origen = row
+                nombre = f"{p1 or ''} {p2 or ''} {a1 or ''} {a2 or ''}".strip()
+                edad = '?'
+                if fecnac:
+                    try: edad = (hoy - fecnac.date()).days // 365
+                    except: pass
+                if glasgow:
+                    pacientes_unicos.add(doc)
+                    evaluaciones.append({'pac_doc': doc, 'pac_nombre': nombre, 'pac_sexo': 'M' if sex == 1 else 'F', 'pac_edad': edad, 'glasgow': int(glasgow), 'fecha': fecha, 'especialidad': origen})
+    except Exception as e:
+        print(f"Error query Mensual HCNTRIAGE: {e}")
+
+    # Ordenar por fecha descendente
+    evaluaciones.sort(key=lambda x: x['fecha'], reverse=True)
+
+    meses = [
+        {'id': 1, 'nombre': 'Enero'}, {'id': 2, 'nombre': 'Febrero'}, {'id': 3, 'nombre': 'Marzo'},
+        {'id': 4, 'nombre': 'Abril'}, {'id': 5, 'nombre': 'Mayo'}, {'id': 6, 'nombre': 'Junio'},
+        {'id': 7, 'nombre': 'Julio'}, {'id': 8, 'nombre': 'Agosto'}, {'id': 9, 'nombre': 'Septiembre'},
+        {'id': 10, 'nombre': 'Octubre'}, {'id': 11, 'nombre': 'Noviembre'}, {'id': 12, 'nombre': 'Diciembre'}
+    ]
+    anios = [anio_actual, anio_actual - 1, anio_actual - 2]
+
+    return render(request, 'trasplantes_donacion/reporte_mensual.html', {
+        'evaluaciones': evaluaciones,
+        'pacientes_unicos': len(pacientes_unicos),
+        'alertados': PacienteNeurocritico.objects.filter(glasgow_ingreso__gte=1, glasgow_ingreso__lte=5).count(),
+        'mes_seleccionado': mes,
+        'anio_seleccionado': anio,
+        'meses': meses,
+        'anios': anios
+    })
+

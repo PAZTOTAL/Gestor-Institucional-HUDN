@@ -28,6 +28,10 @@ class PerfilUsuario(models.Model):
     sexo = models.CharField(max_length=1, null=True, blank=True)
     grupo_sanguineo = models.CharField(max_length=2, null=True, blank=True)
     rh = models.CharField(max_length=1, null=True, blank=True)
+    
+    # ─── Password Recovery ───
+    reset_code = models.CharField(max_length=6, null=True, blank=True)
+    reset_code_expires_at = models.DateTimeField(null=True, blank=True)
 
     # ─── Campos para DEFENJUR (Defensa Jurídica) ───
     legal_rol = models.CharField(max_length=120, default='INVITADO', help_text="Rol dentro del módulo DEFENJUR")

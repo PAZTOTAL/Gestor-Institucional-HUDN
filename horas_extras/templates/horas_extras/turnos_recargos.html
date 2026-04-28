@@ -110,12 +110,22 @@
       <input type="text" id="buscar-emp-t2" placeholder="Buscar funcionario por nombre o cédula..."
         oninput="busquedaEmpleadosPaso2()"
         class="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm mb-4 focus:outline-none focus:ring-2 focus:ring-blue-300">
-      <div id="empleados-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3"></div>
-      <div id="emp-pag-t2" class="flex items-center justify-between mt-4 hidden">
-        <span id="emp-info-t2" class="text-xs text-slate-400"></span>
-        <div class="flex gap-2">
-          <button onclick="cambiarPaginaT2(-1)" class="px-3 py-1 text-sm font-bold bg-slate-100 rounded-lg hover:bg-slate-200">← Ant</button>
-          <button onclick="cambiarPaginaT2(1)"  class="px-3 py-1 text-sm font-bold bg-slate-100 rounded-lg hover:bg-slate-200">Sig →</button>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <!-- Planta Permanente -->
+        <div>
+          <div class="flex items-center gap-2 mb-2">
+            <span class="px-2 py-0.5 rounded-full text-xs font-black text-blue-800 bg-blue-100">Planta Permanente</span>
+            <span id="emp-count-permanente" class="text-xs text-slate-400"></span>
+          </div>
+          <div id="emp-lista-permanente" class="flex flex-col gap-2 overflow-y-auto pr-1" style="max-height:420px"></div>
+        </div>
+        <!-- Planta Temporal -->
+        <div>
+          <div class="flex items-center gap-2 mb-2">
+            <span class="px-2 py-0.5 rounded-full text-xs font-black text-amber-800 bg-amber-100">Planta Temporal / OPS</span>
+            <span id="emp-count-temporal" class="text-xs text-slate-400"></span>
+          </div>
+          <div id="emp-lista-temporal" class="flex flex-col gap-2 overflow-y-auto pr-1" style="max-height:420px"></div>
         </div>
       </div>
     </div>
@@ -147,45 +157,66 @@
     <div id="cal-readonly-msg" class="hidden mb-3 p-3 bg-amber-50 border border-amber-200 rounded-xl text-amber-800 text-sm font-medium"></div>
     <div id="cal-msg" class="hidden mb-3 p-3 rounded-xl text-sm font-medium"></div>
 
-    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-4">
-      <!-- Leyenda -->
-      <div class="flex flex-wrap gap-3 mb-4 text-xs">
-        <span class="flex items-center gap-1"><span class="w-4 h-4 rounded border-2 border-red-300 bg-red-50 inline-block"></span> Festivo</span>
-        <span class="flex items-center gap-1"><span class="w-4 h-4 rounded border-2 border-red-200 bg-red-50 inline-block"></span> Domingo</span>
-        <span class="flex items-center gap-1"><span class="w-4 h-4 rounded border-2 border-emerald-300 bg-emerald-50 inline-block"></span> Con turno</span>
-        <span class="px-2 py-0.5 rounded-full text-white text-xs font-bold" style="background:#2563eb">M</span>
-        <span class="px-2 py-0.5 rounded-full text-white text-xs font-bold" style="background:#0891b2">T</span>
-        <span class="px-2 py-0.5 rounded-full text-white text-xs font-bold" style="background:#7c3aed">N</span>
-        <span class="px-2 py-0.5 rounded-full text-white text-xs font-bold" style="background:#0369a1">M-T</span>
-        <span class="px-2 py-0.5 rounded-full text-white text-xs font-bold" style="background:#374151">24h</span>
-        <span class="px-2 py-0.5 rounded-full text-white text-xs font-bold" style="background:#059669">Lib</span>
-        <span class="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 text-xs font-bold">P/h</span>
-      </div>
+    <div class="flex gap-4 items-start">
 
-      <!-- Calendario -->
-      <div id="cal-loading" class="text-center text-slate-400 py-10">Cargando...</div>
-      <div id="cal-grid" class="hidden">
-        <div class="grid grid-cols-7 gap-1 mb-1">
-          <div class="text-center text-xs font-bold text-slate-500 py-1">Lun</div>
-          <div class="text-center text-xs font-bold text-slate-500 py-1">Mar</div>
-          <div class="text-center text-xs font-bold text-slate-500 py-1">Mié</div>
-          <div class="text-center text-xs font-bold text-slate-500 py-1">Jue</div>
-          <div class="text-center text-xs font-bold text-slate-500 py-1">Vie</div>
-          <div class="text-center text-xs font-bold text-slate-500 py-1 text-slate-400">Sáb</div>
-          <div class="text-center text-xs font-bold text-red-400 py-1">Dom</div>
+      <!-- ── Sidebar empleados ────────────────────────────────────────────── -->
+      <div class="w-56 shrink-0 bg-white rounded-2xl shadow-sm border border-slate-100 p-3">
+        <div class="flex gap-1 mb-3">
+          <button id="sidebar-btn-perm" onclick="setSidebarTipo('permanente')"
+            class="flex-1 px-2 py-1 rounded-lg text-xs font-bold transition"
+            style="background:#1d4ed8;color:white">Permanente</button>
+          <button id="sidebar-btn-temp" onclick="setSidebarTipo('temporal')"
+            class="flex-1 px-2 py-1 rounded-lg text-xs font-bold transition"
+            style="background:#e2e8f0;color:#475569">Temporal</button>
         </div>
-        <div id="cal-days" class="grid grid-cols-7 gap-1"></div>
+        <input type="text" id="sidebar-buscar" placeholder="Buscar..."
+          oninput="renderSidebar()"
+          class="w-full border border-slate-200 rounded-lg px-2 py-1 text-xs mb-2 focus:outline-none focus:ring-1 focus:ring-blue-300">
+        <div id="sidebar-lista" class="flex flex-col gap-1 overflow-y-auto" style="max-height:520px"></div>
       </div>
 
-      <!-- Resumen + Observación -->
-      <div id="cal-resumen" class="mt-4 p-3 bg-slate-50 rounded-xl text-sm hidden">
-        <div id="cal-resumen-turnos" class="font-bold text-slate-700 mb-2"></div>
-        <div id="cal-resumen-horas" class="flex flex-wrap gap-4 text-xs mb-3"></div>
-        <label class="block text-xs font-bold text-slate-600 mb-1">Observación del mes</label>
-        <textarea id="obs-mensual" rows="2" placeholder="Observación general del mes..."
-                  class="w-full border border-slate-200 rounded-lg p-2 text-sm resize-none focus:outline-none focus:border-blue-400"></textarea>
-        <div id="obs-saving" class="text-xs text-slate-400 mt-1 hidden">guardando...</div>
+      <!-- ── Calendario ───────────────────────────────────────────────────── -->
+      <div class="flex-1 bg-white rounded-2xl shadow-sm border border-slate-100 p-4">
+        <!-- Leyenda -->
+        <div class="flex flex-wrap gap-3 mb-4 text-xs">
+          <span class="flex items-center gap-1"><span class="w-4 h-4 rounded border-2 border-red-300 bg-red-50 inline-block"></span> Festivo</span>
+          <span class="flex items-center gap-1"><span class="w-4 h-4 rounded border-2 border-red-200 bg-red-50 inline-block"></span> Domingo</span>
+          <span class="flex items-center gap-1"><span class="w-4 h-4 rounded border-2 border-emerald-300 bg-emerald-50 inline-block"></span> Con turno</span>
+          <span class="px-2 py-0.5 rounded-full text-white text-xs font-bold" style="background:#2563eb">M</span>
+          <span class="px-2 py-0.5 rounded-full text-white text-xs font-bold" style="background:#0891b2">T</span>
+          <span class="px-2 py-0.5 rounded-full text-white text-xs font-bold" style="background:#7c3aed">N</span>
+          <span class="px-2 py-0.5 rounded-full text-white text-xs font-bold" style="background:#0369a1">M-T</span>
+          <span class="px-2 py-0.5 rounded-full text-white text-xs font-bold" style="background:#374151">24h</span>
+          <span class="px-2 py-0.5 rounded-full text-white text-xs font-bold" style="background:#059669">Lib</span>
+          <span class="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 text-xs font-bold">P/h</span>
+        </div>
+
+        <!-- Calendario -->
+        <div id="cal-loading" class="text-center text-slate-400 py-10">Cargando...</div>
+        <div id="cal-grid" class="hidden">
+          <div class="grid grid-cols-7 gap-1 mb-1">
+            <div class="text-center text-xs font-bold text-slate-500 py-1">Lun</div>
+            <div class="text-center text-xs font-bold text-slate-500 py-1">Mar</div>
+            <div class="text-center text-xs font-bold text-slate-500 py-1">Mié</div>
+            <div class="text-center text-xs font-bold text-slate-500 py-1">Jue</div>
+            <div class="text-center text-xs font-bold text-slate-500 py-1">Vie</div>
+            <div class="text-center text-xs font-bold text-slate-500 py-1 text-slate-400">Sáb</div>
+            <div class="text-center text-xs font-bold text-red-400 py-1">Dom</div>
+          </div>
+          <div id="cal-days" class="grid grid-cols-7 gap-1"></div>
+        </div>
+
+        <!-- Resumen + Observación -->
+        <div id="cal-resumen" class="mt-4 p-3 bg-slate-50 rounded-xl text-sm hidden">
+          <div id="cal-resumen-turnos" class="font-bold text-slate-700 mb-2"></div>
+          <div id="cal-resumen-horas" class="flex flex-wrap gap-4 text-xs mb-3"></div>
+          <label class="block text-xs font-bold text-slate-600 mb-1">Observación del mes</label>
+          <textarea id="obs-mensual" rows="2" placeholder="Observación general del mes..."
+                    class="w-full border border-slate-200 rounded-lg p-2 text-sm resize-none focus:outline-none focus:border-blue-400"></textarea>
+          <div id="obs-saving" class="text-xs text-slate-400 mt-1 hidden">guardando...</div>
+        </div>
       </div>
+
     </div>
   </div>
 
@@ -227,19 +258,21 @@ const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio',
                'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 
 const TURNOS_OPS = [
-  {v:'',            l:'— Sin turno —'},
-  {v:'manana',      l:'Mañana (07:00–13:00)'},
-  {v:'tarde',       l:'Tarde (13:00–19:00)'},
-  {v:'noche',       l:'Noche (19:00–07:00)'},
-  {v:'manana_tarde',l:'Mañana-Tarde (07:00–19:00)'},
-  {v:'veinticuatro',l:'24 Horas (07:00–07:00)'},
-  {v:'por_horas',   l:'Por horas'},
-  {v:'libre',       l:'Libre'},
+  {v:'',             l:'— Sin turno —'},
+  {v:'manana',       l:'Mañana (07:00–13:00)'},
+  {v:'tarde',        l:'Tarde (13:00–19:00)'},
+  {v:'noche',        l:'Noche (19:00–07:00)'},
+  {v:'manana_noche', l:'Mañana-Noche (07:00–13:00 / 19:00–07:00)'},
+  {v:'manana_tarde', l:'Mañana-Tarde (07:00–19:00)'},
+  {v:'veinticuatro', l:'24 Horas (07:00–07:00)'},
+  {v:'por_horas',    l:'Por horas'},
+  {v:'libre',        l:'Libre'},
 ];
 
 const TURNO_BADGE = {
   manana:{l:'M',bg:'#2563eb'},tarde:{l:'T',bg:'#0891b2'},
-  noche:{l:'N',bg:'#7c3aed'},manana_tarde:{l:'M-T',bg:'#0369a1'},
+  noche:{l:'N',bg:'#7c3aed'},manana_noche:{l:'M-N',bg:'#6d28d9'},
+  manana_tarde:{l:'M-T',bg:'#0369a1'},
   veinticuatro:{l:'24h',bg:'#374151'},libre:{l:'Lib',bg:'#059669'},
   por_horas:{l:'P/h',bg:'#f59e0b',c:'#78350f'},
 };
@@ -407,80 +440,128 @@ let empT2Timer = null;
 let empT2Total = 0;
 let empT2Pages = 1;
 
-async function irPaso2(pagina=1) {
+let todosEmpleadosT2 = [];
+
+async function irPaso2() {
   if (!areaSeleccionada || !mesSeleccionado) return;
-  empT2Pagina = pagina;
   paso = 2;
   setStep(2);
   document.getElementById('paso2-titulo').textContent =
     `${areaSeleccionada.nombre} — ${MESES[mesSeleccionado.month-1]} ${mesSeleccionado.year}`;
   document.getElementById('paso2-subtitulo').textContent = 'Selecciona un empleado para ver sus turnos';
-  document.getElementById('empleados-container').innerHTML =
-    '<p class="text-slate-400 col-span-3">Cargando empleados...</p>';
+  document.getElementById('emp-lista-permanente').innerHTML =
+    '<p class="text-slate-400 text-sm p-2">Cargando...</p>';
+  document.getElementById('emp-lista-temporal').innerHTML = '';
 
-  let qs = `?page=${pagina}&page_size=12&area=${areaSeleccionada.id}`;
-  if (empT2Busqueda) qs += `&q=${encodeURIComponent(empT2Busqueda)}`;
-  const r    = await api(`empleados/${qs}`);
+  const r    = await api(`empleados/?page=1&page_size=500&area=${areaSeleccionada.id}`);
   const data = await r.json();
-  const empleados = data.results || data;
-  empT2Total = data.total || empleados.length;
-  empT2Pages = data.pages || 1;
+  todosEmpleadosT2 = data.results || data;
+  empT2Busqueda = '';
+  document.getElementById('buscar-emp-t2').value = '';
+  renderListasEmpleados();
+}
 
-  const c = document.getElementById('empleados-container');
-  if (!empleados.length) {
-    c.innerHTML = '<p class="text-slate-400 col-span-3">No hay empleados en esta área. Ve a <strong>Configuración</strong>.</p>';
-    document.getElementById('emp-pag-t2').classList.add('hidden');
-    return;
-  }
-  const TIPO_CARD = {
-    permanente: {border:'#93c5fd', bg:'#eff6ff', badge:'#1d4ed8', badgeBg:'#dbeafe', label:'Permanente'},
-    temporal:   {border:'#fcd34d', bg:'#fffbeb', badge:'#92400e', badgeBg:'#fef3c7', label:'Temporal'},
-    ops:        {border:'#c4b5fd', bg:'#f5f3ff', badge:'#5b21b6', badgeBg:'#ede9fe', label:'OPS'},
-  };
-  c.innerHTML = empleados.map(e => {
-    const tc = TIPO_CARD[e.tipo] || TIPO_CARD.temporal;
-    return `
-    <div class="p-4 rounded-xl border-2 hover:opacity-90 transition"
-         style="border-color:${tc.border};background:${tc.bg}">
-      <div onclick="selEmpleado(${JSON.stringify(e).replace(/"/g,'&quot;')})"
-           class="cursor-pointer transition mb-3">
-        <div class="flex items-start justify-between gap-1 mb-1">
-          <div class="font-bold text-slate-800 text-sm leading-tight">${e.nombre}</div>
-          <span class="text-[10px] font-black px-1.5 py-0.5 rounded-full shrink-0"
-                style="color:${tc.badge};background:${tc.badgeBg}">${tc.label}</span>
-        </div>
-        <div class="text-xs text-slate-500">${e.documento}</div>
-        <div class="text-xs text-slate-400">${e.cargo||'—'}</div>
-      </div>
-      <div class="flex gap-1">
-        <button onclick="selEmpleado(${JSON.stringify(e).replace(/"/g,'&quot;')})"
-          style="background:#1e3a5f;color:white;flex:1"
-          class="px-2 py-1 rounded-lg text-xs font-bold hover:opacity-90 transition">
-          → Ver turnos
-        </button>
-        ${areas.length > 1 ? `<button onclick="abrirModalMoverTurnos(${e.id},'${e.nombre.replace(/'/g,"\\'")}',${e.area})"
-          style="background:#4f46e5;color:white"
-          class="px-2 py-1 rounded-lg text-xs font-bold hover:opacity-90 transition" title="Mover a otra área">
-          ⇄ Área
-        </button>` : ''}
-      </div>
-    </div>`;
-  }).join('');
+function _cardEmpleado(e) {
+  return `
+  <div class="p-3 rounded-xl border hover:border-blue-400 hover:bg-blue-50 transition cursor-pointer"
+       style="border-color:#e2e8f0"
+       onclick="selEmpleado(${JSON.stringify(e).replace(/"/g,'&quot;')})">
+    <div class="font-bold text-slate-800 text-sm leading-tight mb-0.5">${e.nombre}</div>
+    <div class="text-xs text-slate-500">${e.documento}</div>
+    <div class="text-xs text-slate-400">${e.cargo||'—'}</div>
+    <div class="flex gap-1 mt-2">
+      <button onclick="event.stopPropagation();selEmpleado(${JSON.stringify(e).replace(/"/g,'&quot;')})"
+        style="background:#1e3a5f;color:white;flex:1"
+        class="px-2 py-1 rounded-lg text-xs font-bold hover:opacity-90 transition">
+        → Ver turnos
+      </button>
+      ${areas.length > 1 ? `<button onclick="event.stopPropagation();abrirModalMoverTurnos(${e.id},'${e.nombre.replace(/'/g,"\\'")}',${e.area})"
+        style="background:#4f46e5;color:white"
+        class="px-2 py-1 rounded-lg text-xs font-bold hover:opacity-90 transition" title="Mover a otra área">⇄</button>` : ''}
+    </div>
+  </div>`;
+}
 
-  // Paginación
-  const pag   = document.getElementById('emp-pag-t2');
-  const inicio = (pagina - 1) * 12 + 1;
-  const fin    = Math.min(pagina * 12, empT2Total);
-  document.getElementById('emp-info-t2').textContent = `Mostrando ${inicio}–${fin} de ${empT2Total}`;
-  pag.classList.toggle('hidden', empT2Total <= 12);
+function renderListasEmpleados() {
+  const q = empT2Busqueda.toLowerCase();
+  const filtrados = q
+    ? todosEmpleadosT2.filter(e =>
+        e.nombre.toLowerCase().includes(q) || e.documento.includes(q))
+    : todosEmpleadosT2;
+
+  const permanentes = filtrados.filter(e => e.tipo === 'permanente');
+  const temporales  = filtrados.filter(e => e.tipo !== 'permanente');
+
+  const lp = document.getElementById('emp-lista-permanente');
+  const lt = document.getElementById('emp-lista-temporal');
+
+  lp.innerHTML = permanentes.length
+    ? permanentes.map(_cardEmpleado).join('')
+    : '<p class="text-slate-400 text-sm p-2">Sin resultados.</p>';
+  lt.innerHTML = temporales.length
+    ? temporales.map(_cardEmpleado).join('')
+    : '<p class="text-slate-400 text-sm p-2">Sin resultados.</p>';
+
+  document.getElementById('emp-count-permanente').textContent = `${permanentes.length} funcionario(s)`;
+  document.getElementById('emp-count-temporal').textContent   = `${temporales.length} funcionario(s)`;
 }
 
 function busquedaEmpleadosPaso2() {
   clearTimeout(empT2Timer);
   empT2Timer = setTimeout(() => {
     empT2Busqueda = document.getElementById('buscar-emp-t2').value.trim();
-    irPaso2(1);
+    renderListasEmpleados();
   }, 350);
+}
+
+// ── Sidebar paso 3 ─────────────────────────────────────────────────────────
+let sidebarTipo = 'permanente';
+
+function setSidebarTipo(tipo) {
+  sidebarTipo = tipo;
+  const btnP = document.getElementById('sidebar-btn-perm');
+  const btnT = document.getElementById('sidebar-btn-temp');
+  if (tipo === 'permanente') {
+    btnP.style.cssText = 'background:#1d4ed8;color:white;flex:1';
+    btnT.style.cssText = 'background:#e2e8f0;color:#475569;flex:1';
+  } else {
+    btnP.style.cssText = 'background:#e2e8f0;color:#475569;flex:1';
+    btnT.style.cssText = 'background:#92400e;color:white;flex:1';
+  }
+  renderSidebar();
+}
+
+function renderSidebar() {
+  const q = (document.getElementById('sidebar-buscar')?.value || '').toLowerCase();
+  const lista = todosEmpleadosT2.filter(e => {
+    const tipoOk = sidebarTipo === 'permanente' ? e.tipo === 'permanente' : e.tipo !== 'permanente';
+    if (!tipoOk) return false;
+    if (!q) return true;
+    return e.nombre.toLowerCase().includes(q) || e.documento.includes(q);
+  });
+
+  const selId = empleadoSeleccionado?.id;
+  document.getElementById('sidebar-lista').innerHTML = lista.length
+    ? lista.map(e => {
+        const activo = e.id === selId;
+        return `<div onclick="selEmpleadoSidebar(${JSON.stringify(e).replace(/"/g,'&quot;')})"
+          class="px-2 py-2 rounded-lg cursor-pointer text-xs transition"
+          style="${activo
+            ? 'background:#1e3a5f;color:white;font-weight:700;border:1px solid #1e3a5f'
+            : 'background:#f8fafc;color:#334155;border:1px solid #e2e8f0'}"
+          onmouseover="if(!${activo}) this.style.background='#eff6ff'"
+          onmouseout="if(!${activo}) this.style.background='#f8fafc'">
+          <div class="font-bold leading-tight">${e.nombre}</div>
+          <div class="opacity-70">${e.documento}</div>
+        </div>`;
+      }).join('')
+    : '<p class="text-slate-400 text-xs p-2">Sin resultados.</p>';
+}
+
+async function selEmpleadoSidebar(emp) {
+  empleadoSeleccionado = emp;
+  renderSidebar();  // resalta el seleccionado
+  await irPaso3();
 }
 
 function cambiarPaginaT2(delta) {
@@ -498,6 +579,7 @@ function selEmpleado(emp) {
 async function irPaso3() {
   paso = 3;
   setStep(3);
+  renderSidebar();
   const {year, month} = mesSeleccionado;
   const emp = empleadoSeleccionado;
 
@@ -706,14 +788,20 @@ function calcularHorasDia(turno, especial, hd, hn, sigEsp) {
     if (!especial&&sigEsp) return [0,5,1,6];
     return [1,11,0,0];
   }
+  if (turno==='manana_noche') {
+    if (especial&&sigEsp)  return [0,0,7,11];
+    if (especial&&!sigEsp) return [1,6,6,5];
+    if (!especial&&sigEsp) return [7,5,1,6];
+    return [7,11,0,0];
+  }
   if (turno==='veinticuatro') {
     if (especial&&sigEsp)  return [0,0,12,12];
     if (especial&&!sigEsp) return [1,6,11,6];
     if (!especial&&sigEsp) return [11,6,1,6];
     return [12,12,0,0];
   }
-  const h = {manana:[6,0],tarde:[5,1],manana_tarde:[11,1]}[turno]||[0,0];
-  return especial?[0,0,h[0],h[1]]:[h[0],h[1],0,0];
+  const h = {manana:[6,0],tarde:[6,0],manana_tarde:[12,0]}[turno]||[0,0];
+  return especial ? [0,0,h[0],h[1]] : [h[0],h[1],0,0];
 }
 
 function actualizarResumen(year, month) {
@@ -735,7 +823,6 @@ function actualizarResumen(year, month) {
   });
 
   document.getElementById('cal-resumen-horas').innerHTML = keys.length ? `
-    <span><strong>${hod}h</strong> Ord. Diurnas</span>
     <span class="text-purple-600"><strong>${hon}h</strong> Ord. Nocturnas (+35%)</span>
     <span class="text-orange-600"><strong>${hdf}h</strong> Diurnas Festivas (+75%)</span>
     <span class="text-red-600"><strong>${hnf}h</strong> Noct. Festivas (+110%)</span>` : '';

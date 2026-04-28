@@ -1,4 +1,6 @@
 import json
+import logging
+import time
 from django.shortcuts import render, redirect, get_object_or_404
 from django.views.generic import TemplateView, CreateView, ListView
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -11,7 +13,7 @@ from django.db.models import Count, Q
 from django.utils import timezone
 from django.views.decorators.http import require_http_methods
 from .models import (HoraExtra, AreaRecargos, TrabajadorRecargos, TurnoRecargos,
-                     ObservacionMensualRecargos, PerfilRecargos)
+                     ObservacionMensualRecargos, PerfilRecargos, CoordinadorRecargos)
 from .utils.holidays import festivos_colombia, festivos_mes
 from .utils.report import (generar_planilla, generar_planilla_area,
                             EmpleadoInfo, MESES_ES, calcular_horas,
@@ -20,6 +22,8 @@ from django.apps import apps
 import pandas as pd
 import os
 from django.core.cache import cache
+
+logger = logging.getLogger('horas_extras')
 
 class TalentoHumanoDashboardView(LoginRequiredMixin, TemplateView):
     template_name = 'horas_extras/talento_humano_dashboard.html'
@@ -578,14 +582,24 @@ class InformeConsistenciaExcelView(LoginRequiredMixin, TemplateView):
 # MÓDULO RECARGOS / TURNOS
 # ═══════════════════════════════════════════════════════════════════════════════
 
+_PERFIL_RECARGOS_TTL = 300  # 5 minutos
+
 def _get_perfil_recargos(user):
-    """Obtiene o crea el perfil de recargos. Superuser → admin."""
-    try:
-        return user.perfil_recargos
-    except PerfilRecargos.DoesNotExist:
-        if user.is_superuser:
-            return PerfilRecargos.objects.create(user=user, rol='admin')
-        return None
+    """Obtiene o crea el perfil de recargos. Superuser → admin. Cacheado 5 min."""
+    cache_key = f'perfil_recargos_{user.pk}'
+    perfil = cache.get(cache_key)
+    if perfil is None:
+        try:
+            perfil = user.perfil_recargos
+        except PerfilRecargos.DoesNotExist:
+            if user.is_superuser:
+                perfil = PerfilRecargos.objects.create(user=user, rol='admin')
+            else:
+                # Guardar False para no re-intentar hasta que expire el TTL
+                cache.set(cache_key, False, _PERFIL_RECARGOS_TTL)
+                return None
+        cache.set(cache_key, perfil, _PERFIL_RECARGOS_TTL)
+    return perfil if perfil is not False else None
 
 
 def _es_admin_recargos(user):
@@ -594,11 +608,42 @@ def _es_admin_recargos(user):
 
 
 def _areas_ids_recargos(user):
-    """None = todas, lista = áreas del coordinador."""
+    """
+    Devuelve None (todas las áreas) si es admin.
+    Devuelve lista de IDs si es coordinador (por PerfilRecargos o por CoordinadorRecargos).
+    """
     p = _get_perfil_recargos(user)
-    if p is None or p.es_admin():
+    if p is not None and p.es_admin():
         return None
-    return list(p.areas.values_list('id', flat=True))
+
+    cache_key = f'areas_ids_recargos_{user.pk}'
+    ids = cache.get(cache_key)
+    if ids is not None:
+        return ids
+
+    if p is not None:
+        # Coordinador con PerfilRecargos — usa sus áreas asignadas
+        ids = list(p.areas.values_list('id', flat=True))
+    else:
+        # Sin PerfilRecargos — busca por cédula en CoordinadorRecargos
+        try:
+            cedula = user.perfil.cedula
+        except Exception:
+            cedula = None
+        if cedula:
+            coord = CoordinadorRecargos.objects.filter(documento=cedula).first()
+            ids = list(coord.areas.values_list('id', flat=True)) if coord else []
+        else:
+            ids = []
+
+    cache.set(cache_key, ids, _PERFIL_RECARGOS_TTL)
+    return ids
+
+
+def _invalidar_perfil_recargos_cache(user_pk):
+    """Invalida el caché del perfil y áreas de un usuario."""
+    cache.delete(f'perfil_recargos_{user_pk}')
+    cache.delete(f'areas_ids_recargos_{user_pk}')
 
 
 # ── Vistas de plantilla ───────────────────────────────────────────────────────
@@ -632,17 +677,19 @@ class ReporteRecargosView(LoginRequiredMixin, TemplateView):
 
 # ── API: Áreas ────────────────────────────────────────────────────────────────
 
+def _areas_cache_gen():
+    return cache.get('areas_gen', 0)
+
 def _invalidar_cache_areas():
-    """Llama esto después de crear/editar/eliminar áreas o mover empleados."""
-    from django.core.cache import cache
-    cache.delete_many([k for k in [] or []] + ['areas_all'])
-    # Borra por patrón usando prefijo
-    cache.delete('areas_all')
+    """Incrementa generación — todas las claves antiguas quedan huérfanas."""
+    cache.set('areas_gen', _areas_cache_gen() + 1, 86400)
 
 
 def _get_areas_cached(ids_filter=None):
     """Devuelve todas las áreas con conteo, usando caché de 10 minutos."""
-    cache_key = f'areas_all_{"_".join(map(str, sorted(ids_filter))) if ids_filter else "admin"}'
+    gen = _areas_cache_gen()
+    ids_key = '_'.join(map(str, sorted(ids_filter))) if ids_filter else 'admin'
+    cache_key = f'areas_v{gen}_{ids_key}'
     data = cache.get(cache_key)
     if data is None:
         qs = AreaRecargos.objects.annotate(total_trabajadores=Count('trabajadores'))
@@ -662,7 +709,7 @@ def api_areas(request):
     if request.method == 'GET':
         q         = request.GET.get('q', '').strip()
         page      = max(1, int(request.GET.get('page', 1)))
-        page_size = min(50, max(1, int(request.GET.get('page_size', 10))))
+        page_size = min(500, max(1, int(request.GET.get('page_size', 10))))
 
         # Filtrar desde caché (evita hit a BD en cada request)
         todas = _get_areas_cached(ids)
@@ -712,9 +759,13 @@ def api_area_detail(request, pk):
 
 TIPO_DISPLAY_MAP = {'permanente': 'Planta Permanente', 'temporal': 'Planta Temporal', 'ops': 'OPS'}
 
+def _emp_cache_gen():
+    return cache.get('emp_gen', 0)
+
 def _get_empleados_cached(area_id=None, ids_filter=None):
-    """Devuelve empleados desde caché. Clave por área."""
-    cache_key = f'emp_area_{area_id or "all"}'
+    """Devuelve empleados desde caché. Clave versionada por generación."""
+    gen = _emp_cache_gen()
+    cache_key = f'emp_v{gen}_{area_id or "all"}'
     data = cache.get(cache_key)
     if data is None:
         qs = TrabajadorRecargos.objects.select_related('area').all()
@@ -723,16 +774,16 @@ def _get_empleados_cached(area_id=None, ids_filter=None):
         if ids_filter is not None:
             qs = qs.filter(area_id__in=ids_filter)
         data = [{'id': t.id, 'nombre': t.nombre, 'documento': t.documento,
-                 'cargo': t.cargo, 'area': t.area_id, 'area_nombre': t.area.nombre,
+                 'cargo': t.cargo, 'area': t.area_id,
+                 'area_nombre': t.area.nombre if t.area else 'Sin área',
                  'tipo': t.tipo, 'tipo_display': TIPO_DISPLAY_MAP.get(t.tipo, t.tipo)} for t in qs]
         cache.set(cache_key, data, 300)  # 5 minutos
     return data
 
 def _invalidar_cache_empleados(area_id=None):
-    if area_id:
-        cache.delete(f'emp_area_{area_id}')
-    cache.delete('emp_area_all')
-    _invalidar_cache_areas()  # el conteo de trabajadores cambia
+    """Incrementa generación de empleados — invalida todas las claves antiguas."""
+    cache.set('emp_gen', _emp_cache_gen() + 1, 86400)
+    _invalidar_cache_areas()  # el conteo de trabajadores también cambia
 
 
 @login_required
@@ -770,6 +821,7 @@ def api_empleados(request):
     a_id = body.get('area')
     if ids is not None and int(a_id) not in ids:
         return JsonResponse({'error': 'Sin acceso a esa área'}, status=403)
+    _t0 = time.monotonic()
     try:
         area = AreaRecargos.objects.get(pk=a_id)
     except AreaRecargos.DoesNotExist:
@@ -781,6 +833,7 @@ def api_empleados(request):
         area=area,
         tipo=body.get('tipo', 'permanente'),
     )
+    logger.info('api_empleados POST DB: %.0fms', (time.monotonic() - _t0) * 1000)
     _invalidar_cache_empleados(area.id)
     return JsonResponse({'id': t.id, 'nombre': t.nombre, 'documento': t.documento,
                          'cargo': t.cargo, 'area': t.area_id, 'area_nombre': t.area.nombre,
@@ -808,18 +861,29 @@ def api_empleado_detail(request, pk):
     if 'documento' in body: t.documento = body['documento'].strip()
     if 'cargo'     in body: t.cargo     = body['cargo'].strip()
     if 'tipo'      in body: t.tipo      = body['tipo']
-    if 'area'      in body:
-        a_id = int(body['area'])
-        if ids is not None and a_id not in ids:
-            return JsonResponse({'error': 'Sin acceso a esa área'}, status=403)
-        t.area_id = a_id
+    if 'area' in body:
+        a_id = body['area']  # puede ser None (quitar del área) o int
+        if a_id is None:
+            t.area_id = None
+        else:
+            a_id = int(a_id)
+            if ids is not None and a_id not in ids:
+                return JsonResponse({'error': 'Sin acceso a esa área'}, status=403)
+            t.area_id = a_id
     t.save()
-    t.refresh_from_db()
     _invalidar_cache_empleados(area_id_viejo)
     if t.area_id != area_id_viejo:
         _invalidar_cache_empleados(t.area_id)
+    # Nombre del área desde caché — evita query extra
+    if t.area_id is None:
+        area_nombre = 'Sin área'
+    else:
+        todas_areas = _get_areas_cached(ids)
+        area_map = {a['id']: a['nombre'] for a in todas_areas}
+        area_nombre = area_map.get(t.area_id, 'Sin área')
     return JsonResponse({'id': t.id, 'nombre': t.nombre, 'documento': t.documento,
-                         'cargo': t.cargo, 'area': t.area_id, 'area_nombre': t.area.nombre,
+                         'cargo': t.cargo, 'area': t.area_id,
+                         'area_nombre': area_nombre,
                          'tipo': t.tipo, 'tipo_display': t.get_tipo_display()})
 
 
@@ -884,7 +948,9 @@ def api_festivos(request):
     if not year:
         return JsonResponse({'error': 'Se requiere year'}, status=400)
     year = int(year)
-    result = festivos_mes(year, int(month)) if month else festivos_colombia(year)
+    # Siempre retornar el año completo para que los turnos nocturnos
+    # del último día del mes detecten festivos del mes siguiente
+    result = festivos_colombia(year)
     return JsonResponse(result)
 
 
@@ -979,35 +1045,33 @@ def api_coordinadores(request):
         return JsonResponse({'error': 'Solo el administrador puede gestionar coordinadores'}, status=403)
 
     if request.method == 'GET':
-        items = PerfilRecargos.objects.filter(rol='coordinador').select_related('user').prefetch_related('areas')
-        data  = [{'id': p.id, 'username': p.user.username,
-                  'nombre': p.user.get_full_name() or p.user.username,
-                  'first_name': p.user.first_name, 'last_name': p.user.last_name,
-                  'documento': p.documento,
-                  'areas': [{'id': a.id, 'nombre': a.nombre} for a in p.areas.all()]}
-                 for p in items]
+        items = CoordinadorRecargos.objects.prefetch_related('areas').all()
+        data  = [{'id': c.id, 'nombre': c.nombre, 'documento': c.documento,
+                  'cargo': c.cargo,
+                  'areas': [{'id': a.id, 'nombre': a.nombre} for a in c.areas.all()]}
+                 for c in items]
         return JsonResponse(data, safe=False)
 
-    body     = json.loads(request.body)
-    username = body.get('username', '').strip()
-    password = body.get('password', '')
-    if not username or not password:
-        return JsonResponse({'error': 'Usuario y contraseña son obligatorios'}, status=400)
-    if len(password) < 6:
-        return JsonResponse({'error': 'La contraseña debe tener al menos 6 caracteres'}, status=400)
-    if User.objects.filter(username=username).exists():
-        return JsonResponse({'error': 'El nombre de usuario ya existe'}, status=400)
-    user = User.objects.create_user(username=username, password=password,
-                                    first_name=body.get('first_name', ''),
-                                    last_name=body.get('last_name', ''))
-    p = PerfilRecargos.objects.create(user=user, rol='coordinador',
-                                      documento=body.get('documento', ''))
+    body      = json.loads(request.body)
+    nombre    = body.get('nombre', '').strip()
+    documento = body.get('documento', '').strip()
+    if not nombre or not documento:
+        return JsonResponse({'error': 'Nombre y documento son obligatorios'}, status=400)
+    _t0 = time.monotonic()
+    if CoordinadorRecargos.objects.filter(documento=documento).exists():
+        return JsonResponse({'error': 'Ya existe un coordinador con ese documento'}, status=400)
+    c = CoordinadorRecargos.objects.create(
+        nombre=nombre, documento=documento,
+        cargo=body.get('cargo', '').strip(),
+    )
+    areas_data = []
     if body.get('areas'):
-        p.areas.set(AreaRecargos.objects.filter(id__in=body['areas']))
-    return JsonResponse({'id': p.id, 'username': user.username,
-                         'nombre': user.get_full_name() or user.username,
-                         'documento': p.documento,
-                         'areas': [{'id': a.id, 'nombre': a.nombre} for a in p.areas.all()]}, status=201)
+        areas_qs = AreaRecargos.objects.filter(id__in=body['areas'])
+        c.areas.set(areas_qs)
+        areas_data = [{'id': a.id, 'nombre': a.nombre} for a in areas_qs]
+    logger.info('api_coordinadores POST DB: %.0fms', (time.monotonic() - _t0) * 1000)
+    return JsonResponse({'id': c.id, 'nombre': c.nombre, 'documento': c.documento,
+                         'cargo': c.cargo, 'areas': areas_data}, status=201)
 
 
 @login_required
@@ -1175,28 +1239,20 @@ def api_preview_area(request):
 def api_coordinador_detail(request, pk):
     if not _es_admin_recargos(request.user):
         return JsonResponse({'error': 'Solo el administrador puede gestionar coordinadores'}, status=403)
-    p = get_object_or_404(PerfilRecargos, pk=pk, rol='coordinador')
+    c = get_object_or_404(CoordinadorRecargos, pk=pk)
     if request.method == 'DELETE':
-        p.user.delete()
+        c.delete()
         return JsonResponse({'ok': True})
     body = json.loads(request.body)
-    user = p.user
-    if 'first_name' in body: user.first_name = body['first_name']
-    if 'last_name'  in body: user.last_name  = body['last_name']
-    if body.get('password'):
-        if len(body['password']) < 6:
-            return JsonResponse({'error': 'La contraseña debe tener al menos 6 caracteres'}, status=400)
-        user.set_password(body['password'])
-    user.save()
-    if 'documento' in body:
-        p.documento = body['documento']
-        p.save()
+    if 'nombre'    in body: c.nombre    = body['nombre'].strip()
+    if 'documento' in body: c.documento = body['documento'].strip()
+    if 'cargo'     in body: c.cargo     = body['cargo'].strip()
+    c.save()
     if 'areas' in body:
-        p.areas.set(AreaRecargos.objects.filter(id__in=body['areas']))
-    return JsonResponse({'id': p.id, 'username': user.username,
-                         'nombre': user.get_full_name() or user.username,
-                         'documento': p.documento,
-                         'areas': [{'id': a.id, 'nombre': a.nombre} for a in p.areas.all()]})
+        c.areas.set(AreaRecargos.objects.filter(id__in=body['areas']))
+    return JsonResponse({'id': c.id, 'nombre': c.nombre, 'documento': c.documento,
+                         'cargo': c.cargo,
+                         'areas': [{'id': a.id, 'nombre': a.nombre} for a in c.areas.all()]})
 
 
 # ── API: Importar desde Nómina (DGEMPRES01) ───────────────────────────────────

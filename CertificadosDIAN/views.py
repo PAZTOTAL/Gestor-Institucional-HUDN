@@ -55,35 +55,43 @@ class LoginRapidoView(TemplateView):
         if not identificador:
             return self.render_to_response({'error_msg': 'Debe ingresar un usuario o cédula.'})
 
-        es_valido = False
+        # 1. ¿Ya está registrado en el Gestor Institucional?
+        from usuarios.models import PerfilUsuario
+        perfil_existente = PerfilUsuario.objects.filter(cedula=identificador).first()
+        if perfil_existente:
+            return self.render_to_response({
+                'info_msg': 'Usted ya cuenta con un registro en el Gestor Institucional.',
+                'action_url': '/login/',
+                'action_label': 'INICIAR SESIÓN'
+            })
+
+        es_funcionario = False
         
-        # 1. Validar si existe en Dinámica (GENUSUARIO)
+        # 2. ¿Existe en Dinámica (GENUSUARIO)?
         try:
             with connections['readonly'].cursor() as cursor:
-                cursor.execute("SELECT 1 FROM GENUSUARIO WHERE UPPER(USUNOMBRE) = UPPER(%s)", [identificador])
-                es_valido = cursor.fetchone() is not None
+                cursor.execute("SELECT 1 FROM GENUSUARIO WHERE UPPER(USUNOMBRE) = UPPER(%s) OR NumeroDocumento = %s", [identificador, identificador])
+                es_funcionario = cursor.fetchone() is not None
         except Exception as e:
             print("Error conectado a Dinámica en LoginRápido:", e)
 
-        # 2. Validar si existe en la base de datos local (Ya migrado de Excel)
-        if not es_valido:
-            es_valido = DatosCertificadoDIAN.objects.filter(cedula=identificador).exists()
+        # 3. ¿Existe en los listados del Formulario 220 (Cargados en local)?
+        if not es_funcionario:
+            es_funcionario = DatosCertificadoDIAN.objects.filter(cedula=identificador).exists()
 
-        if es_valido:
-            # Login exitoso - auto provisionar y logear
-            user, created = User.objects.get_or_create(username=identificador)
-            if created:
-                user.set_unusable_password()
-                user.save()
-            
-            # Asegurar perfil y permisos de CertificadosDIAN por defecto
-            PerfilUsuario.objects.get_or_create(user=user, defaults={'categoria': 'LECTOR'})
-            PermisoApp.objects.get_or_create(user=user, app_label="CertificadosDIAN", defaults={"permitido": True})
-
-            login(request, user)
-            return redirect('certificados_dian:dashboard')
+        if es_funcionario:
+            # Es funcionario pero no se ha registrado
+            return self.render_to_response({
+                'info_msg': 'Usted es funcionario activo del HUDN, pero aún no se ha registrado en esta aplicación.',
+                'action_url': '/registro/',
+                'action_label': 'REGISTRARME AHORA',
+                'alert_type': 'warning'
+            })
         else:
-            return self.render_to_response({'error_msg': 'Identificador no encontrado en Dinámica ni en los listados del Formulario 220.'})
+            # No aparece en ningún listado oficial
+            return self.render_to_response({
+                'error_msg': 'El identificador ingresado no se encuentra en los listados oficiales de Planta o Formulario 220 del HUDN. Si cree que es un error, contacte a Contabilidad.'
+            })
 
 def solicitar_certificado_whatsapp(request):
     """
