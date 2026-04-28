@@ -42,22 +42,24 @@ MESES_ES = [
 # Horas (diurnas, nocturnas) por turno
 # Nocturno: 18:00–06:00  |  Diurno: 06:00–18:00
 TURNOS_HORAS = {
-    'manana':       (6,  0),   # 07:00–13:00 → 6h diurnas
-    'tarde':        (6,  0),   # 13:00–19:00 → 6h diurnas (18:00–19:00 no es recargo nocturno)
-    'noche':        (1, 11),   # 19:00–07:00 → 11h nocturnas + 1h diurna (06–07)
-    'manana_tarde': (12, 0),   # 07:00–19:00 → 12h diurnas (sin nocturna, 18–19 no es recargo)
-    'veinticuatro': (12, 12),  # 07:00–07:00 → 12h diurnas + 12h nocturnas
-    'libre':        (0,  0),   # sin cálculo
+    'manana':        (6,  0),   # 07:00–13:00 → 6h diurnas
+    'tarde':         (6,  0),   # 13:00–19:00 → 6h diurnas
+    'noche':         (1, 11),   # 19:00–07:00 → 11h nocturnas + 1h diurna (06–07)
+    'manana_noche':  (7, 11),   # 07:00–13:00 + 19:00–07:00 → 7h diurnas + 11h nocturnas
+    'manana_tarde':  (12, 0),   # 07:00–19:00 → 12h diurnas
+    'veinticuatro':  (12, 12),  # 07:00–07:00 → 12h diurnas + 12h nocturnas
+    'libre':         (0,  0),   # sin cálculo
 }
 
 TURNOS_LABEL = {
-    'manana':       'Mañana (07:00–13:00)',
-    'tarde':        'Tarde (13:00–19:00)',
-    'noche':        'Noche (19:00–07:00)',
-    'manana_tarde': 'Mañana-Tarde (07:00–19:00)',
-    'veinticuatro': '24 Horas (07:00–07:00)',
-    'por_horas':    'Por horas',
-    'libre':        'Libre',
+    'manana':        'Mañana (07:00–13:00)',
+    'tarde':         'Tarde (13:00–19:00)',
+    'noche':         'Noche (19:00–07:00)',
+    'manana_noche':  'Mañana-Noche (07:00–13:00 / 19:00–07:00)',
+    'manana_tarde':  'Mañana-Tarde (07:00–19:00)',
+    'veinticuatro':  '24 Horas (07:00–07:00)',
+    'por_horas':     'Por horas',
+    'libre':         'Libre',
 }
 
 # Colores
@@ -121,6 +123,18 @@ def calcular_horas(turno, es_festivo, horas_diurnas=0, horas_nocturnas=0,
         if not es_festivo and siguiente_es_festivo:
             return 0, 5, 1, 6         # normal→fest   →  5 hon + 6 hnf + 1 hdf
         return 1, 11, 0, 0            # normal→normal →  1 hod + 11 hon
+
+    if turno == 'manana_noche':
+        # Mañana (07:00–13:00) + Noche (19:00–07:00)
+        # La parte de mañana (6h) se suma al resultado de la parte nocturna
+        # La parte nocturna es idéntica a 'noche' en cada escenario
+        if es_festivo and siguiente_es_festivo:
+            return 0, 0, 7, 11        # mañana fest (6 hdf) + noche fest→fest (1hdf+11hnf)
+        if es_festivo and not siguiente_es_festivo:
+            return 1, 6, 6, 5         # mañana fest (6hdf) + noche fest→norm (1hod+6hon+5hnf)
+        if not es_festivo and siguiente_es_festivo:
+            return 7, 5, 1, 6         # mañana norm (6hod) + noche norm→fest (1hod+5hon+1hdf+6hnf)
+        return 7, 11, 0, 0            # mañana norm (6hod) + noche norm→norm (1hod+11hon)
 
     if turno == 'veinticuatro':
         # 07:00–00:00 pertenece al día actual; 00:00–07:00 al día siguiente

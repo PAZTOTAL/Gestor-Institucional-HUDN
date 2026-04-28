@@ -258,19 +258,21 @@ const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio',
                'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 
 const TURNOS_OPS = [
-  {v:'',            l:'— Sin turno —'},
-  {v:'manana',      l:'Mañana (07:00–13:00)'},
-  {v:'tarde',       l:'Tarde (13:00–19:00)'},
-  {v:'noche',       l:'Noche (19:00–07:00)'},
-  {v:'manana_tarde',l:'Mañana-Tarde (07:00–19:00)'},
-  {v:'veinticuatro',l:'24 Horas (07:00–07:00)'},
-  {v:'por_horas',   l:'Por horas'},
-  {v:'libre',       l:'Libre'},
+  {v:'',             l:'— Sin turno —'},
+  {v:'manana',       l:'Mañana (07:00–13:00)'},
+  {v:'tarde',        l:'Tarde (13:00–19:00)'},
+  {v:'noche',        l:'Noche (19:00–07:00)'},
+  {v:'manana_noche', l:'Mañana-Noche (07:00–13:00 / 19:00–07:00)'},
+  {v:'manana_tarde', l:'Mañana-Tarde (07:00–19:00)'},
+  {v:'veinticuatro', l:'24 Horas (07:00–07:00)'},
+  {v:'por_horas',    l:'Por horas'},
+  {v:'libre',        l:'Libre'},
 ];
 
 const TURNO_BADGE = {
   manana:{l:'M',bg:'#2563eb'},tarde:{l:'T',bg:'#0891b2'},
-  noche:{l:'N',bg:'#7c3aed'},manana_tarde:{l:'M-T',bg:'#0369a1'},
+  noche:{l:'N',bg:'#7c3aed'},manana_noche:{l:'M-N',bg:'#6d28d9'},
+  manana_tarde:{l:'M-T',bg:'#0369a1'},
   veinticuatro:{l:'24h',bg:'#374151'},libre:{l:'Lib',bg:'#059669'},
   por_horas:{l:'P/h',bg:'#f59e0b',c:'#78350f'},
 };
@@ -786,6 +788,12 @@ function calcularHorasDia(turno, especial, hd, hn, sigEsp) {
     if (!especial&&sigEsp) return [0,5,1,6];
     return [1,11,0,0];
   }
+  if (turno==='manana_noche') {
+    if (especial&&sigEsp)  return [0,0,7,11];
+    if (especial&&!sigEsp) return [1,6,6,5];
+    if (!especial&&sigEsp) return [7,5,1,6];
+    return [7,11,0,0];
+  }
   if (turno==='veinticuatro') {
     if (especial&&sigEsp)  return [0,0,12,12];
     if (especial&&!sigEsp) return [1,6,11,6];
@@ -793,7 +801,7 @@ function calcularHorasDia(turno, especial, hd, hn, sigEsp) {
     return [12,12,0,0];
   }
   const h = {manana:[6,0],tarde:[6,0],manana_tarde:[12,0]}[turno]||[0,0];
-  return especial?[0,0,h[0],h[1]]:[h[0],h[1],0,0];
+  return especial ? [0,0,h[0],h[1]] : [h[0],h[1],0,0];
 }
 
 function actualizarResumen(year, month) {

@@ -948,7 +948,9 @@ def api_festivos(request):
     if not year:
         return JsonResponse({'error': 'Se requiere year'}, status=400)
     year = int(year)
-    result = festivos_mes(year, int(month)) if month else festivos_colombia(year)
+    # Siempre retornar el año completo para que los turnos nocturnos
+    # del último día del mes detecten festivos del mes siguiente
+    result = festivos_colombia(year)
     return JsonResponse(result)
 
 
