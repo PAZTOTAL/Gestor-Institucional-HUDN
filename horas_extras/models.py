@@ -46,6 +46,7 @@ class TurnoRecargos(models.Model):
         ('manana',       'Mañana (07:00–13:00)'),
         ('tarde',        'Tarde (13:00–19:00)'),
         ('noche',        'Noche (19:00–07:00)'),
+        ('manana_noche', 'Mañana-Noche (07:00–13:00 / 19:00–07:00)'),
         ('manana_tarde', 'Mañana-Tarde (07:00–19:00)'),
         ('veinticuatro', '24 Horas (07:00–07:00)'),
         ('por_horas',    'Por horas'),

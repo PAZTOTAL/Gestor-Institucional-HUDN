@@ -1,0 +1,251 @@
+{% extends "core/base.html" %}
+
+{% block content %}
+<style>
+    .report-header {
+        background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%);
+        color: white;
+        padding: 2rem;
+        border-radius: 1rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 10px 15px -3px rgba(99, 102, 241, 0.3);
+    }
+    
+    .toolbar-form {
+        background: white;
+        padding: 1.5rem;
+        border-radius: 1rem;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        margin-bottom: 2rem;
+        display: flex;
+        align-items: center;
+        gap: 1.5rem;
+    }
+
+    .form-group-custom {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .form-group-custom label {
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: #4b5563;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    .form-select-custom {
+        padding: 0.625rem 1rem;
+        border: 1px solid #e5e7eb;
+        border-radius: 0.5rem;
+        font-size: 1rem;
+        color: #1f2937;
+        background-color: #f9fafb;
+        transition: all 0.2s;
+        min-width: 180px;
+    }
+
+    .form-select-custom:focus {
+        outline: none;
+        border-color: #6366f1;
+        box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+    }
+
+    .btn-filter {
+        background-color: #6366f1;
+        color: white;
+        padding: 0.625rem 1.5rem;
+        border-radius: 0.5rem;
+        font-weight: 600;
+        border: none;
+        transition: all 0.2s;
+        height: fit-content;
+        margin-top: 1.6rem;
+    }
+
+    .btn-filter:hover {
+        background-color: #4f46e5;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 6px -1px rgba(99, 102, 241, 0.3);
+    }
+
+    .glass-card {
+        background: white;
+        border-radius: 1rem;
+        border: 1px solid rgba(255,255,255,0.2);
+        box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 10px 15px -3px rgba(0,0,0,0.1);
+        overflow: hidden;
+    }
+
+    .table th {
+        background: #f8fafc;
+        color: #475569;
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 0.75rem;
+        letter-spacing: 0.05em;
+        padding: 1rem;
+        border-bottom: 2px solid #e2e8f0;
+    }
+
+    .table td {
+        padding: 1rem;
+        vertical-align: middle;
+        color: #1e293b;
+        border-bottom: 1px solid #f1f5f9;
+    }
+
+    .table tbody tr:hover {
+        background-color: #f8fafc;
+    }
+
+    .badge-glasgow {
+        padding: 0.5rem 1rem;
+        border-radius: 2rem;
+        font-weight: 700;
+        font-size: 0.875rem;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .bg-critical {
+        background: #ef4444;
+        color: white;
+    }
+
+    .bg-warning-g {
+        background: #f59e0b;
+        color: white;
+    }
+
+    .avatar-circle {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        color: white;
+        font-size: 1.1rem;
+    }
+
+    .male { background: #3b82f6; }
+    .female { background: #ec4899; }
+</style>
+
+<div class="container-fluid py-4">
+    <div class="report-header d-flex justify-content-between align-items-center">
+        <div>
+            <h1 class="h3 mb-2 font-weight-bold" style="color: white; display: flex; align-items: center; gap: 0.75rem;">
+                <span style="font-size: 2rem;">📊</span> Reporte Mensual de Alertas
+            </h1>
+            <p class="mb-0 text-white-50">
+                Pacientes registrados con Glasgow Crítico (1 a 5) en el mes seleccionado.
+            </p>
+        </div>
+        <div class="text-end">
+            <div class="display-6 font-weight-bold" style="color: white;">{{ evaluaciones|length }}</div>
+            <div class="text-white-50 text-uppercase" style="font-size: 0.8rem; letter-spacing: 1px;">Registros Críticos</div>
+        </div>
+    </div>
+
+    <!-- Toolbar de Filtros -->
+    <form method="GET" class="toolbar-form">
+        <div class="form-group-custom">
+            <label for="mes">Mes</label>
+            <select name="mes" id="mes" class="form-select-custom">
+                {% for m in meses %}
+                    <option value="{{ m.id }}" {% if m.id == mes_seleccionado %}selected{% endif %}>
+                        {{ m.nombre }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <div class="form-group-custom">
+            <label for="anio">Año</label>
+            <select name="anio" id="anio" class="form-select-custom">
+                {% for a in anios %}
+                    <option value="{{ a }}" {% if a == anio_seleccionado %}selected{% endif %}>
+                        {{ a }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <button type="submit" class="btn-filter">
+            <i class="fas fa-filter mr-2"></i> Filtrar Reporte
+        </button>
+
+        <a href="{% url 'trasplantes_donacion:dashboard' %}" class="btn btn-light ml-auto mt-4" style="border-radius: 0.5rem; height: fit-content;">
+            Volver al Dashboard
+        </a>
+    </form>
+
+    <div class="glass-card">
+        {% if evaluaciones %}
+            <div class="table-responsive">
+                <table class="table mb-0">
+                    <thead>
+                        <tr>
+                            <th>Paciente</th>
+                            <th>Identificación</th>
+                            <th>Edad</th>
+                            <th>Registro / Fecha</th>
+                            <th class="text-center">Escala Glasgow</th>
+                            <th>Origen</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for eval in evaluaciones %}
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-center gap-3">
+                                    <div class="avatar-circle {% if eval.pac_sexo == 'M' %}male{% else %}female{% endif %}">
+                                        {{ eval.pac_nombre|make_list|first }}
+                                    </div>
+                                    <div>
+                                        <div class="font-weight-bold" style="color: #1e293b;">{{ eval.pac_nombre }}</div>
+                                        <div class="text-muted" style="font-size: 0.85rem;">Sexo: {{ eval.pac_sexo }}</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td><span style="font-family: monospace; font-size: 1rem; color: #475569;">{{ eval.pac_doc }}</span></td>
+                            <td>{{ eval.pac_edad }} años</td>
+                            <td>
+                                <div class="font-weight-bold text-primary">{{ eval.fecha|date:"d/m/Y" }}</div>
+                                <div class="text-muted" style="font-size: 0.8rem;">{{ eval.fecha|date:"h:i A" }}</div>
+                            </td>
+                            <td class="text-center">
+                                <span class="badge-glasgow {% if eval.glasgow <= 3 %}bg-critical{% else %}bg-warning-g{% endif %}">
+                                    Glasgow: {{ eval.glasgow }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="badge" style="background: #e2e8f0; color: #475569; padding: 0.5em 0.8em; border-radius: 0.5rem;">
+                                    <i class="fas fa-hospital-user mr-1"></i> {{ eval.especialidad }}
+                                </span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="text-center py-5">
+                <div style="font-size: 4rem; opacity: 0.5; margin-bottom: 1rem;">📭</div>
+                <h4 style="color: #475569; font-weight: 600;">No hay registros críticos</h4>
+                <p class="text-muted">No se encontraron pacientes con Glasgow entre 1 y 5 para el periodo seleccionado (Mes {{ mes_seleccionado }} del {{ anio_seleccionado }}).</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Ocultar sidebar para maximizar espacio -->
+<style>
+    .sidebar { display: none !important; }
+    .main-content { margin-left: 0 !important; width: 100% !important; }
+</style>
+{% endblock %}

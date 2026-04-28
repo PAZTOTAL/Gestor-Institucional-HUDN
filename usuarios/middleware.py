@@ -27,15 +27,11 @@ class UserPermissionsMiddleware:
                 cache.set(perfil_key, perfil, _PERMS_TTL)
             request.user._perfil_cache = perfil
 
-            # 2. Permisos de apps — caché por user id
-            perms_key = f'user_perms_{uid}'
-            perms = cache.get(perms_key)
-            if perms is None:
-                perms = set(
-                    PermisoApp.objects.filter(user=request.user, permitido=True)
-                    .values_list('app_label', flat=True)
-                )
-                cache.set(perms_key, perms, _PERMS_TTL)
+            # 2. Permisos de apps — Consulta directa para sincronización instantánea
+            perms = set(
+                PermisoApp.objects.filter(user=request.user, permitido=True)
+                .values_list('app_label', flat=True)
+            )
             request.user._permisos_apps_cache = perms
 
         return self.get_response(request)
