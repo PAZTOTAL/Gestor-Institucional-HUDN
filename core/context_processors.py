@@ -8,11 +8,7 @@ def modules_processor(request):
     if not request.user.is_authenticated:
         return {}
 
-    # 1. Intentar obtener el dashboard completo desde cache para este usuario
-    cache_key_user = f'user_dashboard_nav_{request.user.id}'
-    cached_nav = cache.get(cache_key_user)
-    if cached_nav:
-        return cached_nav
+    # 1. Se eliminó la caché por usuario para sincronización en tiempo real
 
     # 2. Si no hay cache, procesar todo
     # Fetch all active modules (cached globally)
@@ -30,18 +26,7 @@ def modules_processor(request):
     allowed_apps = getattr(request.user, '_permisos_apps_cache', set())
     is_superuser = request.user.is_superuser
     
-    # Mapa de Equivalencias
-    equiv_map = {
-        'certificados_laborales': 'mvp',
-        'mvp': 'certificados_laborales',
-        'consultas_externas': 'consultas',
-        'consultas': 'consultas_externas',
-    }
-    
     final_allowed = set(allowed_apps)
-    for p in allowed_apps:
-        if p in equiv_map:
-            final_allowed.add(equiv_map[p])
 
     # 3. Filter and Group Modules
     categories = {
@@ -55,14 +40,6 @@ def modules_processor(request):
         has_perm = is_superuser
         if not has_perm:
             if slug in final_allowed:
-                has_perm = True
-            elif slug.startswith('th_') and 'horas_extras' in final_allowed:
-                has_perm = True
-            elif slug.startswith('CertificadosDIAN') and ('CertificadosDIAN' in final_allowed or 'CertificadosDIAN_SOL' in final_allowed):
-                has_perm = True
-            elif (slug.startswith('consultas_') or slug == 'produccion-medico') and 'consultas' in final_allowed:
-                has_perm = True
-            elif (slug.startswith('defenjur_') or slug == 'legal') and 'defenjur' in final_allowed:
                 has_perm = True
             
         if not has_perm:
@@ -88,7 +65,5 @@ def modules_processor(request):
         'nav_consultas': categories['consultas'],
         'readonly_db_available': getattr(request, 'readonly_db_available', True)
     }
-    
-    # Guardar en cache por 5 minutos
-    cache.set(cache_key_user, result, 300)
+    # Guardar en cache eliminado para sincronización instantánea
     return result

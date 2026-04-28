@@ -1,0 +1,149 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}{{ title }} | Trasplantes{% endblock %}
+
+{% block content %}
+<link rel="stylesheet" href="{% static 'css/trasplantes.css' %}">
+
+<div class="trasplantes-container">
+    <header class="mb-5">
+        <a href="{% url 'trasplantes_donacion:dashboard' %}" class="btn btn-link p-0 mb-3 text-muted" style="text-decoration: none;">
+            ← Volver al Dashboard
+        </a>
+        <h1 class="display-4 font-weight-bold" style="background: var(--primary-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+            {{ title }}
+        </h1>
+        <p class="text-muted">Actualice el estado del proceso de trasplante y donación para este paciente.</p>
+    </header>
+
+    <div class="premium-card shadow-lg p-5" style="background: white; border-radius: 1.5rem; border: 1px solid #e2e8f0;">
+        <form method="post" class="process-form">
+            {% csrf_token %}
+            
+            <div class="row">
+                <!-- Sección 1: Alerta y Voluntad -->
+                <div class="col-md-6 mb-4">
+                    <h3 class="h5 font-weight-bold mb-4" style="color: #1e40af; border-bottom: 2px solid #dbeafe; padding-bottom: 10px;">
+                        🚩 Alerta y Voluntades
+                    </h3>
+                    <div class="form-group mb-3">
+                        <label class="font-weight-bold small text-uppercase">Paciente Intubado (SI/NO)</label>
+                        {{ form.paciente_intubado }}
+                    </div>
+                    <div class="form-group mb-3">
+                        <label class="font-weight-bold small text-uppercase">Paciente Alertado (SI/NO)</label>
+                        {{ form.paciente_alertado }}
+                    </div>
+                    <div class="form-group mb-3">
+                        <label class="font-weight-bold small text-uppercase">Fecha y Hora de Alerta a CRT</label>
+                        {{ form.fecha_hora_alerta_crt }}
+                    </div>
+                    <div class="form-group mb-3">
+                        <label class="font-weight-bold small text-uppercase">Causa de No Alerta</label>
+                        {{ form.causa_no_alerta }}
+                    </div>
+                    <div class="form-group mb-3">
+                        <label class="font-weight-bold small text-uppercase">Médico que Alerta</label>
+                        {{ form.medico_alerta }}
+                    </div>
+                    <div class="form-group mb-3">
+                        <label class="font-weight-bold small text-uppercase">Código Voluntades Anticipadas</label>
+                        {{ form.voluntades_anticipadas }}
+                    </div>
+                </div>
+
+                <!-- Sección 2: Muerte Encefálica y Legalización -->
+                <div class="col-md-6 mb-4">
+                    <h3 class="h5 font-weight-bold mb-4" style="color: #991b1b; border-bottom: 2px solid #fee2e2; padding-bottom: 10px;">
+                        ⚖️ Legal y Muerte Encefálica
+                    </h3>
+                    <div class="form-group mb-3">
+                        <label class="font-weight-bold small text-uppercase">DX Muerte Encefálica (SI/NO)</label>
+                        {{ form.dx_muerte_encefalica }}
+                    </div>
+                    <div class="form-group mb-3">
+                        <label class="font-weight-bold small text-uppercase">Fecha y Hora DX Muerte Encefálica</label>
+                        {{ form.fecha_diagnostico_me_hora }}
+                    </div>
+                    <div class="form-group mb-3">
+                        <label class="font-weight-bold small text-uppercase">Paciente Legalizado (SI/NO)</label>
+                        {{ form.paciente_legalizado }}
+                    </div>
+                    <div class="form-group mb-3">
+                        <label class="font-weight-bold small text-uppercase">Fecha de Legalización</label>
+                        {{ form.fecha_legalizacion }}
+                    </div>
+                    <div class="form-group mb-3">
+                        <label class="font-weight-bold small text-uppercase">Causa de No Legalización</label>
+                        {{ form.causa_no_legalizacion }}
+                    </div>
+                </div>
+
+                <!-- Sección 3: Resultado Final -->
+                <div class="col-12 mb-4">
+                    <h3 class="h5 font-weight-bold mb-4" style="color: #166534; border-bottom: 2px solid #dcfce7; padding-bottom: 10px;">
+                        ✅ Resultado y Donación
+                    </h3>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="font-weight-bold small text-uppercase">Donante Efectivo (SI/NO)</label>
+                            {{ form.donante_efectivo }}
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="font-weight-bold small text-uppercase">Estado Vital Egreso</label>
+                            {{ form.estado_vital_egreso }}
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="font-weight-bold small text-uppercase">Fecha de Egreso</label>
+                            {{ form.fecha_egreso }}
+                        </div>
+                    </div>
+                    <div class="form-group mb-3">
+                        <label class="font-weight-bold small text-uppercase">Causa de No Ser Donante Efectivo</label>
+                        {{ form.causa_no_donante_efectivo }}
+                    </div>
+                    <div class="form-group mb-3">
+                        <label class="font-weight-bold small text-uppercase">Órganos Rescatados</label>
+                        {{ form.organos_recatados }}
+                    </div>
+                    <div class="form-group mb-3">
+                        <label class="font-weight-bold small text-uppercase">Observaciones Adicionales</label>
+                        {{ form.observaciones }}
+                    </div>
+                </div>
+            </div>
+
+            <div class="d-flex justify-content-end gap-3 mt-4">
+                <a href="{% url 'trasplantes_donacion:dashboard' %}" class="btn btn-light px-5 py-3 font-weight-bold" style="border-radius: 1rem;">Cancelar</a>
+                <button type="submit" class="btn btn-primary px-5 py-3 font-weight-bold shadow-lg" style="border-radius: 1rem; background: var(--primary-gradient); border: none;">
+                    Guardar Cambios
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+    .form-group input, .form-group select, .form-group textarea {
+        width: 100%;
+        padding: 12px 16px;
+        border-radius: 0.75rem;
+        border: 1px solid #cbd5e1;
+        background: #f8fafc;
+        transition: all 0.2s;
+        font-weight: 500;
+    }
+    .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+        outline: none;
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 4px rgba(59,130,246,0.1);
+        background: white;
+    }
+    .form-group label {
+        display: block;
+        margin-bottom: 6px;
+        color: #64748b;
+    }
+</style>
+{% endblock %}
