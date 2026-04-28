@@ -210,6 +210,73 @@ class AccionTutela(models.Model):
     # Campo para indexación obligatoria solicitada anteriormente
     num_reparto = models.CharField('N° REPARTO', max_length=255, db_column='num_reparto', null=True, blank=True)
 
+    # ==========================================
+    # NUEVOS CAMPOS (Seguimiento y Control)
+    # Todos son null=True, blank=True para no afectar las tutelas antiguas
+    # ==========================================
+    
+    # 1. Fechas y Términos
+    fecha_notificacion = models.DateTimeField('FECHA Y HORA DE NOTIFICACIÓN', null=True, blank=True)
+    termino_dias = models.IntegerField('TÉRMINO (DÍAS)', null=True, blank=True)
+    termino_horas = models.IntegerField('TÉRMINO (HORAS)', null=True, blank=True)
+    fecha_vencimiento = models.DateTimeField('FECHA DE VENCIMIENTO', null=True, blank=True)
+    
+    # 2. Contestación
+    fecha_respuesta = models.DateTimeField('FECHA DE RESPUESTA (RADICACIÓN)', null=True, blank=True)
+    radicado_respuesta = models.CharField('RADICADO DE RESPUESTA', max_length=255, null=True, blank=True)
+    medio_envio_respuesta = models.CharField('MEDIO DE ENVÍO', max_length=255, null=True, blank=True)
+    
+    # 3. Detalles Jurídicos
+    derechos_vulnerados = models.TextField('DERECHOS VULNERADOS', null=True, blank=True)
+    pretensiones = models.TextField('PRETENSIONES', null=True, blank=True)
+    
+    # 4. Estados y Fallos
+    ESTADOS_TUTELA = [
+        ('NUEVA', 'Nueva / Por Asignar'),
+        ('EN_TERMINO', 'En Término'),
+        ('CONTESTADA', 'Contestada'),
+        ('FALLO_1RA', 'Fallo 1ra Instancia'),
+        ('IMPUGNADA', 'Impugnada'),
+        ('FALLO_2DA', 'Fallo 2da Instancia'),
+        ('EN_CUMPLIMIENTO', 'En Cumplimiento'),
+        ('CERRADA', 'Cerrada / Terminada'),
+    ]
+    estado_tutela = models.CharField('ESTADO DE LA TUTELA', max_length=50, choices=ESTADOS_TUTELA, default='NUEVA', null=True, blank=True)
+    
+    SENTIDO_FALLO = [
+        ('CONCEDE', 'Concede'),
+        ('NIEGA', 'Niega'),
+        ('IMPROCEDENTE', 'Declara Improcedente'),
+        ('HECHO_SUPERADO', 'Hecho Superado'),
+        ('OTRO', 'Otro'),
+    ]
+    sentido_fallo = models.CharField('SENTIDO DEL FALLO', max_length=50, choices=SENTIDO_FALLO, null=True, blank=True)
+    
+    # 5. Cumplimiento y Desacato
+    requiere_cumplimiento = models.BooleanField('REQUIERE CUMPLIMIENTO', default=False)
+    fecha_limite_cumplimiento = models.DateField('FECHA LÍMITE CUMPLIMIENTO', null=True, blank=True)
+    incidente_desacato = models.BooleanField('INCIDENTE DE DESACATO', default=False)
+    observaciones = models.TextField('OBSERVACIONES GENERALES', null=True, blank=True)
+
+    @property
+    def semaforo(self):
+        if self.estado_tutela in ['CONTESTADA', 'CERRADA']:
+            return 'gris'
+            
+        if not self.fecha_vencimiento:
+            return 'gris'
+
+        from django.utils import timezone
+        ahora = timezone.now()
+        delta = self.fecha_vencimiento - ahora
+        
+        if delta.total_seconds() < 0:
+            return 'rojo'
+        elif delta.total_seconds() <= 86400: # 24h
+            return 'amarillo'
+        else:
+            return 'verde'
+
     class Meta:
         db_table = 'defenjur_app_acciontutela'
         verbose_name_plural = "Acciones de Tutela"

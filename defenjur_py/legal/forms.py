@@ -54,9 +54,23 @@ class AccionTutelaForm(PremiumModelForm):
 
     class Meta:
         model = AccionTutela
-        fields = ['num_proceso', 'fecha_llegada', 'despacho_judicial', 'cedula_accionante', 'accionante', 'accionado', 'cedula_abogado', 'abogado_responsable']
+        fields = [
+            'num_proceso', 'fecha_llegada', 'despacho_judicial', 'cedula_accionante', 'accionante', 'accionado', 'cedula_abogado', 'abogado_responsable',
+            'fecha_notificacion', 'termino_dias', 'termino_horas', 'fecha_vencimiento',
+            'fecha_respuesta', 'radicado_respuesta', 'medio_envio_respuesta',
+            'derechos_vulnerados', 'pretensiones',
+            'estado_tutela', 'sentido_fallo',
+            'requiere_cumplimiento', 'fecha_limite_cumplimiento', 'incidente_desacato', 'observaciones'
+        ]
         widgets = {
             'fecha_llegada': forms.DateInput(attrs={'type': 'date'}),
+            'fecha_notificacion': forms.DateTimeInput(attrs={'type': 'datetime-local'}),
+            'fecha_vencimiento': forms.DateTimeInput(attrs={'type': 'datetime-local'}),
+            'fecha_respuesta': forms.DateTimeInput(attrs={'type': 'datetime-local'}),
+            'fecha_limite_cumplimiento': forms.DateInput(attrs={'type': 'date'}),
+            'derechos_vulnerados': forms.Textarea(attrs={'rows': 2}),
+            'pretensiones': forms.Textarea(attrs={'rows': 4}),
+            'observaciones': forms.Textarea(attrs={'rows': 3}),
         }
 
 class DerechoPeticionForm(PremiumModelForm):
