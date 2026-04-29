@@ -267,6 +267,8 @@ const TURNOS_OPS = [
   {v:'veinticuatro', l:'24 Horas (07:00–07:00)'},
   {v:'por_horas',    l:'Por horas'},
   {v:'libre',        l:'Libre'},
+  {v:'vacaciones',   l:'V - Vacaciones'},
+  {v:'licencia',     l:'LI - Licencia'},
 ];
 
 const TURNO_BADGE = {
@@ -275,6 +277,8 @@ const TURNO_BADGE = {
   manana_tarde:{l:'M-T',bg:'#0369a1'},
   veinticuatro:{l:'24h',bg:'#374151'},libre:{l:'Lib',bg:'#059669'},
   por_horas:{l:'P/h',bg:'#f59e0b',c:'#78350f'},
+  vacaciones:{l:'V',bg:'#16a34a'},
+  licencia:{l:'LI',bg:'#9333ea'},
 };
 
 // Estado global
@@ -780,7 +784,7 @@ function rerenderDay(fecha) {
 }
 
 function calcularHorasDia(turno, especial, hd, hn, sigEsp) {
-  if (turno==='libre') return [0,0,0,0];
+  if (turno==='libre' || turno==='vacaciones' || turno==='licencia') return [0,0,0,0];
   if (turno==='por_horas') { return especial?[0,0,hd,hn]:[hd,hn,0,0]; }
   if (turno==='noche') {
     if (especial&&sigEsp)  return [0,0,1,11];
@@ -812,7 +816,7 @@ function actualizarResumen(year, month) {
   let hod=0, hon=0, hdf=0, hnf=0;
   keys.forEach(fecha => {
     const info = turnos[fecha];
-    if (info.turno==='libre') return;
+    if (info.turno==='libre' || info.turno==='vacaciones' || info.turno==='licencia') return;
     const d = new Date(fecha+'T00:00:00');
     const esp = d.getDay()===0 || fecha in festivos;
     const next = new Date(d); next.setDate(next.getDate()+1);
