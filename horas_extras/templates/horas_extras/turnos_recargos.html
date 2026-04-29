@@ -685,6 +685,23 @@ function _buildDayHtml(fecha, dia, esDom, esFest, especial, info, editable) {
   html += `<select onchange="cambiarTurno('${fecha}',this.value)" ${!editable?'disabled':''}
              class="${selCls}">${selOpts}</select>`;
   html += `<div id="saving-${fecha}" class="hidden text-[10px] text-blue-500 mt-0.5 text-center">guardando...</div>`;
+
+  // Aviso cross-month: turno nocturno en último día del mes y el siguiente es festivo de otro mes
+  if (info && ['noche','manana_noche','veinticuatro'].includes(info.turno)) {
+    const d = new Date(fecha + 'T00:00:00');
+    const sigD = new Date(d); sigD.setDate(sigD.getDate() + 1);
+    const sigFecha = sigD.toISOString().slice(0,10);
+    const sigEsMesDistinto = sigD.getMonth() !== d.getMonth();
+    const sigEsp = sigD.getDay() === 0 || festivos[sigFecha];
+    if (sigEsMesDistinto && sigEsp) {
+      const nomMes = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto',
+                      'Septiembre','Octubre','Noviembre','Diciembre'][sigD.getMonth()];
+      html += `<div class="mt-1 px-1.5 py-1 bg-amber-50 border border-amber-300 rounded-lg text-[9px] text-amber-800 font-medium leading-tight">
+        ⚠ Las horas festivas de este turno (1 HDF + 6 HNF) se acreditan a <b>${nomMes}</b> por iniciar en día festivo/domingo.
+      </div>`;
+    }
+  }
+
   return html;
 }
 
