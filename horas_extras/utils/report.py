@@ -49,6 +49,8 @@ TURNOS_HORAS = {
     'manana_tarde':  (12, 0),   # 07:00–19:00 → 12h diurnas
     'veinticuatro':  (12, 12),  # 07:00–07:00 → 12h diurnas + 12h nocturnas
     'libre':         (0,  0),   # sin cálculo
+    'vacaciones':    (0,  0),   # sin horas laboradas
+    'licencia':      (0,  0),   # sin horas laboradas
 }
 
 TURNOS_LABEL = {
@@ -60,6 +62,8 @@ TURNOS_LABEL = {
     'veinticuatro':  '24 Horas (07:00–07:00)',
     'por_horas':     'Por horas',
     'libre':         'Libre',
+    'vacaciones':    'V - Vacaciones',
+    'licencia':      'LI - Licencia',
 }
 
 # Colores
