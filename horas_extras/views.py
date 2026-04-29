@@ -1,6 +1,7 @@
 import json
 import logging
 import time
+import calendar
 from django.shortcuts import render, redirect, get_object_or_404
 from django.views.generic import TemplateView, CreateView, ListView
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -994,7 +995,14 @@ def api_reporte_xlsx(request):
     except TrabajadorRecargos.DoesNotExist:
         return JsonResponse({'error': 'Empleado no encontrado'}, status=404)
 
-    turnos_qs   = TurnoRecargos.objects.filter(empleado_id=emp_id, fecha__year=year, fecha__month=month)
+    from datetime import date as _date, timedelta as _td
+    primer_dia  = _date(year, month, 1)
+    dia_anterior = primer_dia - _td(days=1)
+    turnos_qs   = TurnoRecargos.objects.filter(
+        empleado_id=emp_id,
+        fecha__gte=dia_anterior, fecha__year__in=[dia_anterior.year, year],
+        fecha__month__in=[dia_anterior.month, month]
+    ).filter(fecha__lte=_date(year, month, calendar.monthrange(year, month)[1]))
     turnos_dict = {str(tr.fecha): (tr.turno, tr.horas_diurnas or 0, tr.horas_nocturnas or 0) for tr in turnos_qs}
     xlsx = generar_planilla(emp, year, month, turnos_dict)
     filename = f"Planilla_{emp.nombre.replace(' ','_')}_{MESES_ES[month]}_{year}.xlsx"
@@ -1020,13 +1028,21 @@ def api_reporte_area_xlsx(request):
     if ids is not None and int(area_id) not in ids:
         return JsonResponse({'error': 'Sin acceso a esta área'}, status=403)
 
+    from datetime import date as _date, timedelta as _td
+    primer_dia   = _date(year, month, 1)
+    dia_anterior = primer_dia - _td(days=1)
+    ultimo_dia   = _date(year, month, calendar.monthrange(year, month)[1])
+
     trabajadores = TrabajadorRecargos.objects.filter(area=area).select_related('area')
     coord_nombre = request.user.get_full_name() or request.user.username
     empleados_turnos = []
     for t in sorted(trabajadores, key=lambda x: (x.tipo, x.nombre)):
         emp    = EmpleadoInfo(id=t.id, nombre=t.nombre, documento=t.documento,
                               cargo=t.cargo, area_nombre=area.nombre, tipo=t.tipo)
-        turnos = TurnoRecargos.objects.filter(empleado_id=t.id, fecha__year=year, fecha__month=month)
+        turnos = TurnoRecargos.objects.filter(
+            empleado_id=t.id,
+            fecha__gte=dia_anterior, fecha__lte=ultimo_dia,
+        )
         empleados_turnos.append((emp, {str(tr.fecha): (tr.turno, tr.horas_diurnas or 0, tr.horas_nocturnas or 0) for tr in turnos}))
 
     xlsx = generar_planilla_area(area, year, month, empleados_turnos, coordinador_nombre=coord_nombre)

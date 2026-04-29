@@ -267,6 +267,8 @@ const TURNOS_OPS = [
   {v:'veinticuatro', l:'24 Horas (07:00–07:00)'},
   {v:'por_horas',    l:'Por horas'},
   {v:'libre',        l:'Libre'},
+  {v:'vacaciones',   l:'V - Vacaciones'},
+  {v:'licencia',     l:'LI - Licencia'},
 ];
 
 const TURNO_BADGE = {
@@ -275,6 +277,8 @@ const TURNO_BADGE = {
   manana_tarde:{l:'M-T',bg:'#0369a1'},
   veinticuatro:{l:'24h',bg:'#374151'},libre:{l:'Lib',bg:'#059669'},
   por_horas:{l:'P/h',bg:'#f59e0b',c:'#78350f'},
+  vacaciones:{l:'V',bg:'#16a34a'},
+  licencia:{l:'LI',bg:'#9333ea'},
 };
 
 // Estado global
@@ -681,6 +685,23 @@ function _buildDayHtml(fecha, dia, esDom, esFest, especial, info, editable) {
   html += `<select onchange="cambiarTurno('${fecha}',this.value)" ${!editable?'disabled':''}
              class="${selCls}">${selOpts}</select>`;
   html += `<div id="saving-${fecha}" class="hidden text-[10px] text-blue-500 mt-0.5 text-center">guardando...</div>`;
+
+  // Aviso cross-month: turno nocturno en último día del mes y el siguiente es festivo de otro mes
+  if (info && ['noche','manana_noche','veinticuatro'].includes(info.turno)) {
+    const d = new Date(fecha + 'T00:00:00');
+    const sigD = new Date(d); sigD.setDate(sigD.getDate() + 1);
+    const sigFecha = sigD.toISOString().slice(0,10);
+    const sigEsMesDistinto = sigD.getMonth() !== d.getMonth();
+    const sigEsp = sigD.getDay() === 0 || festivos[sigFecha];
+    if (sigEsMesDistinto && sigEsp) {
+      const nomMes = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto',
+                      'Septiembre','Octubre','Noviembre','Diciembre'][sigD.getMonth()];
+      html += `<div class="mt-1 px-1.5 py-1 bg-amber-50 border border-amber-300 rounded-lg text-[9px] text-amber-800 font-medium leading-tight">
+        ⚠ Las horas festivas de este turno (1 HDF + 6 HNF) se acreditan a <b>${nomMes}</b> por iniciar en día festivo/domingo.
+      </div>`;
+    }
+  }
+
   return html;
 }
 
@@ -780,7 +801,7 @@ function rerenderDay(fecha) {
 }
 
 function calcularHorasDia(turno, especial, hd, hn, sigEsp) {
-  if (turno==='libre') return [0,0,0,0];
+  if (turno==='libre' || turno==='vacaciones' || turno==='licencia') return [0,0,0,0];
   if (turno==='por_horas') { return especial?[0,0,hd,hn]:[hd,hn,0,0]; }
   if (turno==='noche') {
     if (especial&&sigEsp)  return [0,0,1,11];
@@ -812,7 +833,7 @@ function actualizarResumen(year, month) {
   let hod=0, hon=0, hdf=0, hnf=0;
   keys.forEach(fecha => {
     const info = turnos[fecha];
-    if (info.turno==='libre') return;
+    if (info.turno==='libre' || info.turno==='vacaciones' || info.turno==='licencia') return;
     const d = new Date(fecha+'T00:00:00');
     const esp = d.getDay()===0 || fecha in festivos;
     const next = new Date(d); next.setDate(next.getDate()+1);

@@ -145,32 +145,34 @@
                         Inicio
                     </a>
 
+                    {% if user.is_superuser %}
                     {% if nav_asistenciales %}
-                    <a href="{% url 'home' %}?section=asistencial" 
+                    <a href="{% url 'home' %}?section=asistencial"
                         class="px-3 py-2 rounded-xl text-xs md:text-sm font-bold transition-all {% if request.GET.section == 'asistencial' %}bg-blue-50 text-blue-700 shadow-sm{% else %}text-slate-600 hover:bg-slate-50 hover:text-blue-600{% endif %}">
                         Subgerencia De Salud
                     </a>
                     {% endif %}
 
                     {% if nav_administrativos or nav_talento_humano or nav_financiera or nav_juridica or nav_contabilidad %}
-                    <a href="{% url 'home' %}?section=subgerencia_financiera" 
+                    <a href="{% url 'home' %}?section=subgerencia_financiera"
                         class="px-3 py-2 rounded-xl text-xs md:text-sm font-bold transition-all {% if request.GET.section == 'subgerencia_financiera' %}bg-green-50 text-green-700 shadow-sm{% else %}text-slate-600 hover:bg-slate-50 hover:text-green-600{% endif %}">
                         Subgerencia Financiera
                     </a>
                     {% endif %}
 
                     {% if nav_varios %}
-                    <a href="{% url 'home' %}?section=varios" 
+                    <a href="{% url 'home' %}?section=varios"
                         class="px-3 py-2 rounded-xl text-xs md:text-sm font-bold transition-all {% if request.GET.section == 'varios' %}bg-orange-50 text-orange-700 shadow-sm{% else %}text-slate-600 hover:bg-slate-50 hover:text-orange-600{% endif %}">
                         Formatos Hudn
                     </a>
                     {% endif %}
 
                     {% if nav_consultas %}
-                    <a href="{% url 'home' %}?section=consultas" 
+                    <a href="{% url 'home' %}?section=consultas"
                         class="px-3 py-2 rounded-xl text-xs md:text-sm font-bold transition-all {% if request.GET.section == 'consultas' %}bg-purple-50 text-purple-700 shadow-sm{% else %}text-slate-600 hover:bg-slate-50 hover:text-purple-600{% endif %}">
                         Consultas
                     </a>
+                    {% endif %}
                     {% endif %}
 
                     {% if is_admin %}
