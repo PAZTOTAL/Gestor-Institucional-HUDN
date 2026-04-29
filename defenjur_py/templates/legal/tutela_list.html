@@ -99,6 +99,7 @@
             <thead>
                 <tr>
                     {% include 'legal/includes/sort_th.html' with field='id' label='ID' %}
+                    <th>ESTADO</th>
                     {% include 'legal/includes/sort_th.html' with field='num_proceso' label='NÚMERO DE PROCESO' %}
                     {% include 'legal/includes/sort_th.html' with field='fecha' label='FECHA DE LLEGADA' %}
                     {% include 'legal/includes/sort_th.html' with field='despacho' label='DESPACHO JUDICIAL' %}
@@ -112,6 +113,18 @@
                 {% for tutela in tutelas %}
                 <tr>
                     <td>{{ tutela.id }}</td>
+                    <td style="text-align:center;">
+                        <div style="display:flex; flex-direction:column; align-items:center; gap:4px;">
+                            <div style="width:16px; height:16px; border-radius:50%; box-shadow: 0 0 5px rgba(0,0,0,0.2); 
+                                {% if tutela.semaforo == 'rojo' %}background-color:#dc3545;
+                                {% elif tutela.semaforo == 'amarillo' %}background-color:#ffc107;
+                                {% elif tutela.semaforo == 'verde' %}background-color:#198754;
+                                {% else %}background-color:#adb5bd;{% endif %}" 
+                                title="Vencimiento: {{ tutela.fecha_vencimiento|default:'No definida' }}">
+                            </div>
+                            <span style="font-size:0.7rem; font-weight:bold; color:#495057;">{{ tutela.get_estado_tutela_display|default:"NUEVA" }}</span>
+                        </div>
+                    </td>
                     <td style="max-width:140px;word-break:break-all;">{{ tutela.num_proceso|default:"—" }}</td>
                     <td>{{ tutela.fecha_llegada|default:"—" }}</td>
                     <td style="max-width:200px;">{{ tutela.despacho_judicial|default:"—"|truncatechars:48 }}</td>

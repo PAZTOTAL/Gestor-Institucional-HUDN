@@ -77,7 +77,7 @@
             </h3>
             <div class="form-grid">
                 {% for field in form %}
-                    {% if field.name not in 'num_reparto,fecha_correo,nombre_persona_solicitante,peticionario,causa_peticion,abogado_responsable,correo_remitente_peticion,fecha_reparto,num_rad_interno,fecha_remitente_peticion,cedula_persona_solicitante,peticionario_int_ext' %}
+                    {% if field.name not in 'cedula_accionante,cedula_abogado,num_reparto,fecha_correo,nombre_persona_solicitante,peticionario,causa_peticion,abogado_responsable,correo_remitente_peticion,fecha_reparto,num_rad_interno,fecha_remitente_peticion,cedula_persona_solicitante,peticionario_int_ext' %}
                     <div class="form-group {% if field.name in 'tramite_impartido,observaciones' %}full-width{% endif %}">
                         <label for="{{ field.id_for_label }}">{{ field.label }}</label>
                         {{ field }}
