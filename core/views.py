@@ -252,27 +252,80 @@ class HomeView(AccessControlMixin, TemplateView):
         is_superuser = user.is_superuser
         allowed_apps = getattr(self.request, '_allowed_apps', set())
 
-        # ── 1. Consultar módulos según rol ────────────────────────────────────
-        if is_superuser:
-            modules_qs = DashboardModule.objects.filter(is_active=True)
-        else:
-            modules_qs = DashboardModule.objects.filter(is_active=True, slug__in=allowed_apps)
+        # ── 1. Consultar módulos para TODOS (Prueba) ──────────────────────────
+        modules_qs = DashboardModule.objects.filter(is_active=True)
+        # if is_superuser:
+        #     modules_qs = DashboardModule.objects.filter(is_active=True)
+        # else:
+        #     modules_qs = DashboardModule.objects.filter(is_active=True, slug__in=allowed_apps)
 
         all_modules = list(modules_qs.values('name', 'slug', 'description', 'url', 'icon', 'category'))
 
-        # ── 2. Lista plana para la vista "Mis Aplicaciones" (no-superusuarios) ─
-        all_permitted_modules = [
-            {'name': m['name'], 'slug': m['slug'], 'description': m['description'],
-             'url': m['url'] or f"/modulo/{m['slug']}/", 'icon': m['icon']}
-            for m in all_modules
-        ]
-        show_direct_modules = not is_superuser and bool(all_permitted_modules)
+        # ── 2. Lista plana para la vista "Mis Aplicaciones" (TODOS) ───────────
+        all_permitted_modules = []
+        for m in all_modules:
+            name = m['name']
+            if name == 'UNIFICADOR-V1':
+                name = 'SALA DE PARTOS'
+            
+            all_permitted_modules.append({
+                'name': name, 
+                'slug': m['slug'], 
+                'description': m['description'],
+                'url': m['url'] or f"/modulo/{m['slug']}/", 
+                'icon': m['icon']
+            })
+        
+        # Agregar reportes individuales solicitados como botones directos (Acceso Inmediato)
+        all_permitted_modules.append({
+            'name': 'Trazabilidad Pacientes',
+            'slug': 'trazabilidad_pacientes',
+            'description': 'Seguimiento Urgencias y Triage',
+            'url': '/consultas/pacientes-urgencias/',
+            'icon': 'M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2'
+        })
+        all_permitted_modules.append({
+            'name': 'Facturación y Ventas',
+            'slug': 'facturacion_ventas',
+            'description': 'Auditoría de Ventas y RIPS',
+            'url': '/consultas/admin/?view=ventas&group_by=global',
+            'icon': 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2'
+        })
+        all_permitted_modules.append({
+            'name': 'Producción Médica',
+            'slug': 'productividad_medica',
+            'description': 'Indicadores de Productividad',
+            'url': '/consultas/produccion-medico/',
+            'icon': 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z'
+        })
+        
+        all_permitted_modules.append({
+            'name': 'Indicadores de Salud',
+            'slug': 'indicadores_salud',
+            'description': 'Dashboard de Gestión Hospitalaria',
+            'url': '/consultas/salud/',
+            'icon': 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z'
+        })
+        
+        all_permitted_modules.append({
+            'name': 'Consultas e Indicadores',
+            'slug': 'consultas_dashboard',
+            'description': 'Dashboard General de Reportes',
+            'url': '/?section=consultas',
+            'icon': 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z'
+        })
+        
+        show_direct_modules = True # Forzamos vista de botones directa
 
-        # ── 3. Agrupar por categoría para la vista jerárquica (superusuarios) ─
+        # ── 3. Agrupar por categoría para la vista jerárquica ──────────────────
         cat_modules: dict = {}
         for m in all_modules:
+            name = m['name']
+            if name == 'UNIFICADOR-V1':
+                name = 'SALA DE PARTOS'
+
             cat_modules.setdefault(m['category'], []).append({
-                'name': m['name'], 'slug': m['slug'], 'description': m['description'],
+                'name': name, 'slug': m['slug'], 'description': m['description'],
                 'url': m['url'] or f"/modulo/{m['slug']}/", 'icon': m['icon']
             })
 
@@ -281,30 +334,32 @@ class HomeView(AccessControlMixin, TemplateView):
             mods = cat_modules.get(cat_slug, [])
             if mods:
                 active_structure.append({'category': meta, 'modules': mods})
+                # Inyectar nav_slug para compatibilidad con base.html
+                context[f"nav_{cat_slug}"] = mods
 
+        # Mantener estas para compatibilidad específica del template home.html
         nav_asistenciales  = [i for i in active_structure if i['category']['slug'] in self.SALUD_CATS]
         nav_financiera_cat = [i for i in active_structure if i['category']['slug'] in self.FINANCIERA_CATS]
 
-        # ── 4. Sección especial Consultas ─────────────────────────────────────
-        has_consultas = is_superuser or 'consultas' in allowed_apps
-        if has_consultas:
-            consultas_ctx = {
-                'consultas': [
-                    {'name': 'Administrativas', 'slug': 'consultas_administrativas', 'description': 'Facturación y RIPS'},
-                    {'name': 'Asistenciales',   'slug': 'consultas_asistenciales',   'description': 'Indicadores Médicos'},
-                ],
-                'admin_reports': [
-                    {'name': 'Facturación Total', 'url': '/consultas/admin/?view=ventas&group_by=global'},
-                    {'name': 'Reportes RIPS',     'url': '/consultas/admin/?view=rips&group_by=global'},
-                ],
-                'salud_reports': [
-                    {'name': 'Indicadores de Salud',        'url': '/consultas/salud/'},
-                    {'name': 'Producción Médica',            'url': '/consultas/produccion-medico/'},
-                    {'name': 'Trazabilidad de Pacientes',    'url': '/consultas/pacientes-urgencias/'},
-                ],
-            }
-        else:
-            consultas_ctx = {'consultas': [], 'admin_reports': [], 'salud_reports': []}
+        # ── 4. Sección especial Consultas (Habilitado para todos en prueba) ───
+        has_consultas = True 
+        consultas_ctx = {
+            'consultas': [
+                {'name': 'Administrativas', 'slug': 'consultas_administrativas', 'description': 'Facturación y RIPS'},
+                {'name': 'Asistenciales',   'slug': 'consultas_asistenciales',   'description': 'Indicadores Médicos'},
+            ],
+            'admin_reports': [
+                {'name': 'Facturación Total', 'url': '/consultas/admin/?view=ventas&group_by=global'},
+                {'name': 'Reportes RIPS',     'url': '/consultas/admin/?view=rips&group_by=global'},
+            ],
+            'salud_reports': [
+                {'name': 'Indicadores de Salud',        'url': '/consultas/salud/'},
+                {'name': 'Producción Médica',            'url': '/consultas/produccion-medico/'},
+                {'name': 'Trazabilidad de Pacientes',    'url': '/consultas/pacientes-urgencias/'},
+            ],
+        }
+        # Asegurar que nav_consultas sea detectado por el header
+        context['nav_consultas'] = consultas_ctx['consultas']
 
         # ── 5. Construir contexto final ───────────────────────────────────────
         context.update({
