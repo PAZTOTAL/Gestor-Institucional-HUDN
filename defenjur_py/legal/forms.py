@@ -3,7 +3,8 @@ from django.contrib.auth import get_user_model
 from .models import (
     AccionTutela, DerechoPeticion, ProcesoExtrajudicial, ProcesoJudicialActiva, ProcesoJudicialPasiva,
     Peritaje, PagoSentenciaJudicial, ProcesoJudicialTerminado,
-    ProcesoAdministrativoSancionatorio, RequerimientoEnteControl, DespachoJudicial
+    ProcesoAdministrativoSancionatorio, RequerimientoEnteControl, DespachoJudicial,
+    CatalogoDerechoVulnerado, CatalogoAccionado
 )
 
 
@@ -29,6 +30,10 @@ class PremiumModelForm(forms.ModelForm):
             if isinstance(field.widget, forms.Textarea):
                 field.widget.attrs['rows'] = 4
 
+class AnyMultipleChoiceField(forms.MultipleChoiceField):
+    def valid_value(self, value):
+        return True
+
 class AccionTutelaForm(PremiumModelForm):
     cedula_accionante = forms.CharField(
         label='CÉDULA ACCIONANTE', 
@@ -45,12 +50,60 @@ class AccionTutelaForm(PremiumModelForm):
         required=False,
         widget=forms.Select(attrs={'class': 'premium-input'})
     )
+    accionado = AnyMultipleChoiceField(
+        label='ACCIONADO',
+        required=False,
+        widget=forms.SelectMultiple(attrs={'class': 'premium-input select2-tags', 'data-placeholder': 'Escriba entidades y presione Enter...', 'style': 'width: 100%'})
+    )
+    derechos_vulnerados = AnyMultipleChoiceField(
+        label='DERECHOS VULNERADOS',
+        choices=[],
+        required=False,
+        widget=forms.SelectMultiple(attrs={'class': 'premium-input select2-tags', 'data-placeholder': 'Seleccione o escriba derechos...', 'style': 'width: 100%'})
+    )
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['despacho_judicial'].choices = get_despacho_choices()
         if 'identificacion_accionante' in self.fields: # Si existe en el modelo (check migrations)
             self.fields['cedula_accionante'].initial = self.instance.identificacion_accionante
+            
+        derecho_choices = list(CatalogoDerechoVulnerado.objects.values_list('nombre', 'nombre'))
+        
+        accionado_objs = CatalogoAccionado.objects.all()
+        accionado_choices = []
+        for obj in accionado_objs:
+            label = f"[{obj.nit}] {obj.nombre}" if obj.nit else obj.nombre
+            accionado_choices.append((obj.nombre, label))
+            
+        self.fields['derechos_vulnerados'].choices = derecho_choices
+        self.fields['accionado'].choices = accionado_choices
+        
+        if self.instance and self.instance.pk:
+            if self.instance.accionado:
+                curr_acc = [x.strip() for x in self.instance.accionado.split(',') if x.strip()]
+                self.initial['accionado'] = curr_acc
+                exist_acc = [c[0] for c in accionado_choices]
+                extra_acc = [(x, x) for x in curr_acc if x not in exist_acc]
+                self.fields['accionado'].choices = accionado_choices + extra_acc
+            if self.instance.derechos_vulnerados:
+                curr_der = [x.strip() for x in self.instance.derechos_vulnerados.split(',') if x.strip()]
+                self.initial['derechos_vulnerados'] = curr_der
+                exist_der = [c[0] for c in derecho_choices]
+                extra_der = [(x, x) for x in curr_der if x not in exist_der]
+                self.fields['derechos_vulnerados'].choices = derecho_choices + extra_der
+
+    def clean_accionado(self):
+        data = self.cleaned_data.get('accionado')
+        if isinstance(data, list):
+            return ", ".join([x.strip() for x in data if x.strip()])
+        return data
+
+    def clean_derechos_vulnerados(self):
+        data = self.cleaned_data.get('derechos_vulnerados')
+        if isinstance(data, list):
+            return ", ".join([x.strip() for x in data if x.strip()])
+        return data
 
     class Meta:
         model = AccionTutela
@@ -60,7 +113,11 @@ class AccionTutelaForm(PremiumModelForm):
             'fecha_respuesta', 'radicado_respuesta', 'medio_envio_respuesta',
             'derechos_vulnerados', 'pretensiones',
             'estado_tutela', 'sentido_fallo',
-            'requiere_cumplimiento', 'fecha_limite_cumplimiento', 'incidente_desacato', 'observaciones'
+            'requiere_cumplimiento', 'fecha_limite_cumplimiento', 'incidente_desacato',
+            'desacato_fecha_notificacion', 'desacato_termino_dias', 'desacato_termino_horas',
+            'desacato_fecha_vencimiento', 'desacato_fecha_respuesta',
+            'desacato_radicado_respuesta', 'desacato_medio_envio',
+            'observaciones'
         ]
         widgets = {
             'fecha_llegada': forms.DateInput(attrs={'type': 'date'}),
@@ -68,7 +125,9 @@ class AccionTutelaForm(PremiumModelForm):
             'fecha_vencimiento': forms.DateTimeInput(attrs={'type': 'datetime-local'}),
             'fecha_respuesta': forms.DateTimeInput(attrs={'type': 'datetime-local'}),
             'fecha_limite_cumplimiento': forms.DateInput(attrs={'type': 'date'}),
-            'derechos_vulnerados': forms.Textarea(attrs={'rows': 2}),
+            'desacato_fecha_notificacion': forms.DateTimeInput(attrs={'type': 'datetime-local'}),
+            'desacato_fecha_vencimiento': forms.DateTimeInput(attrs={'type': 'datetime-local'}),
+            'desacato_fecha_respuesta': forms.DateTimeInput(attrs={'type': 'datetime-local'}),
             'pretensiones': forms.Textarea(attrs={'rows': 4}),
             'observaciones': forms.Textarea(attrs={'rows': 3}),
         }
@@ -251,6 +310,7 @@ class UsuarioHudnCreateForm(PremiumModelForm):
     perm_sancionatorio = forms.BooleanField(label='Sancionatorios', required=False)
     perm_requerimiento = forms.BooleanField(label='Requerimientos', required=False)
     perm_extrajudicial = forms.BooleanField(label='Extrajudiciales', required=False)
+    perm_catalogo = forms.BooleanField(label='Catálogos', required=False)
 
     MAP_PERMS = {
         'perm_tutela': 'acciontutela',
@@ -263,6 +323,7 @@ class UsuarioHudnCreateForm(PremiumModelForm):
         'perm_sancionatorio': 'procesoadministrativosancionatorio',
         'perm_requerimiento': 'requerimientoentecontrol',
         'perm_extrajudicial': 'procesoextrajudicial',
+        'perm_catalogo': 'catalogoderechovulnerado',
     }
 
     class Meta:
@@ -333,6 +394,7 @@ class UsuarioHudnUpdateForm(PremiumModelForm):
     perm_sancionatorio = forms.BooleanField(label='Sancionatorios', required=False)
     perm_requerimiento = forms.BooleanField(label='Requerimientos', required=False)
     perm_extrajudicial = forms.BooleanField(label='Extrajudiciales', required=False)
+    perm_catalogo = forms.BooleanField(label='Catálogos', required=False)
 
     MAP_PERMS = {
         'perm_tutela': 'acciontutela',
@@ -345,6 +407,7 @@ class UsuarioHudnUpdateForm(PremiumModelForm):
         'perm_sancionatorio': 'procesoadministrativosancionatorio',
         'perm_requerimiento': 'requerimientoentecontrol',
         'perm_extrajudicial': 'procesoextrajudicial',
+        'perm_catalogo': 'catalogoderechovulnerado',
     }
 
     class Meta:

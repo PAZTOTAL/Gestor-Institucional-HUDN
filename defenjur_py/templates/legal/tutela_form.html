@@ -39,4 +39,164 @@
 
 {% block extra_js %}
 {% include 'legal/includes/nexus_lookup_js.html' %}
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<style>
+/* Select2 Dark Theme Overrides para DEFENJUR */
+.select2-container--default .select2-selection--multiple {
+    background-color: rgba(15, 23, 42, 0.5) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border-radius: 8px !important;
+    min-height: 44px;
+}
+.select2-container--default.select2-container--focus .select2-selection--multiple {
+    border-color: #6366f1 !important;
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2) !important;
+}
+.select2-container--default .select2-selection--multiple .select2-selection__choice {
+    background-color: rgba(99, 102, 241, 0.3) !important;
+    border: 1px solid #6366f1 !important;
+    color: #f8fafc !important;
+    border-radius: 6px;
+    padding: 2px 6px;
+    margin-top: 6px;
+}
+.select2-container--default .select2-selection--multiple .select2-selection__choice__remove {
+    color: #f8fafc !important;
+    margin-right: 6px;
+    border-right: 1px solid rgba(255,255,255,0.2);
+    padding-right: 6px;
+}
+.select2-container--default .select2-selection--multiple .select2-selection__choice__remove:hover {
+    background-color: transparent !important;
+    color: #f43f5e !important;
+}
+.select2-dropdown {
+    background-color: #1e293b !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border-radius: 8px !important;
+    color: #f8fafc !important;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+}
+.select2-container--default .select2-results__option--highlighted[aria-selected] {
+    background-color: #6366f1 !important;
+    color: white !important;
+}
+.select2-container--default .select2-results__option[aria-selected=true] {
+    background-color: rgba(255, 255, 255, 0.05) !important;
+    color: #94a3b8 !important;
+}
+.select2-container--default .select2-search--inline .select2-search__field {
+    color: #f8fafc !important;
+    margin-top: 8px;
+}
+.select2-container--default .select2-results__option {
+    padding: 8px 12px;
+}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script>
+    $(document).ready(function() {
+        $('.select2-tags').select2({
+            tags: true,
+            tokenSeparators: [',', '\n'],
+            width: '100%',
+            createTag: function(params) {
+                var term = $.trim(params.term);
+                if (term === '') {
+                    return null;
+                }
+                return {
+                    id: term,
+                    text: term,
+                    newTag: true
+                }
+            }
+        });
+
+        /* --- Lógica de Desacato --- */
+        const $chkDesacato = $('#id_incidente_desacato');
+        if($chkDesacato.length) {
+            // Estilizar el checkbox como un switch
+            const $wrapper = $('<label class="switch-premium"></label>');
+            $chkDesacato.wrap($wrapper);
+            $chkDesacato.after('<span class="slider-premium"></span>');
+            
+            // Crear el contenedor para los campos de desacato
+            const $desacatoContainer = $('<div id="desacato-container" class="form-grid" style="display: none; background: rgba(99,102,241,0.05); padding: 1.5rem; border-radius: 12px; border: 1px solid rgba(99,102,241,0.2); margin-top: 1rem; width: 100%; grid-column: 1 / -1;"></div>');
+            
+            // Mover los campos desacato_* a este contenedor
+            const desacatoFields = $('[id^="id_desacato_"]').closest('.form-group');
+            if(desacatoFields.length) {
+                $desacatoContainer.append(desacatoFields);
+                // Insertarlo justo después del parent del checkbox
+                $chkDesacato.closest('.form-group').after($desacatoContainer);
+            }
+
+            // Función para mostrar/ocultar
+            function toggleDesacato() {
+                if($chkDesacato.is(':checked')) {
+                    $desacatoContainer.slideDown(300);
+                } else {
+                    $desacatoContainer.slideUp(300);
+                    // Opcional: limpiar campos si se desmarca
+                    $desacatoContainer.find('input').val('');
+                }
+            }
+
+            // Inicializar y escuchar cambios
+            toggleDesacato();
+            $chkDesacato.on('change', toggleDesacato);
+        }
+    });
+</script>
+
+<style>
+/* Estilos para el Switch Premium */
+.switch-premium {
+  position: relative;
+  display: inline-block;
+  width: 50px;
+  height: 26px;
+  margin-top: 8px;
+}
+.switch-premium input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+.slider-premium {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #cbd5e1;
+  transition: .4s;
+  border-radius: 34px;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+}
+.slider-premium:before {
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  left: 4px;
+  bottom: 4px;
+  background-color: white;
+  transition: .4s;
+  border-radius: 50%;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+}
+input:checked + .slider-premium {
+  background-color: #10b981;
+}
+input:checked + .slider-premium:before {
+  transform: translateX(24px);
+}
+#id_incidente_desacato {
+    display: none !important;
+}
+</style>
 {% endblock %}

@@ -298,6 +298,13 @@ class AccionTutela(models.Model):
     requiere_cumplimiento = models.BooleanField('REQUIERE CUMPLIMIENTO', default=False)
     fecha_limite_cumplimiento = models.DateField('FECHA LÍMITE CUMPLIMIENTO', null=True, blank=True)
     incidente_desacato = models.BooleanField('INCIDENTE DE DESACATO', default=False)
+    desacato_fecha_notificacion = models.DateTimeField('FECHA Y HORA DE NOTIFICACIÓN', null=True, blank=True)
+    desacato_termino_dias = models.IntegerField('TÉRMINO (DÍAS)', null=True, blank=True)
+    desacato_termino_horas = models.IntegerField('TÉRMINO (HORAS)', null=True, blank=True)
+    desacato_fecha_vencimiento = models.DateTimeField('FECHA DE VENCIMIENTO', null=True, blank=True)
+    desacato_fecha_respuesta = models.DateTimeField('FECHA DE RESPUESTA (RADICACIÓN)', null=True, blank=True)
+    desacato_radicado_respuesta = models.CharField('RADICADO DE RESPUESTA', max_length=100, null=True, blank=True)
+    desacato_medio_envio = models.CharField('MEDIO DE ENVÍO', max_length=100, null=True, blank=True)
     observaciones = models.TextField('OBSERVACIONES GENERALES', null=True, blank=True)
 
     @property
@@ -543,4 +550,31 @@ class DespachoJudicial(models.Model):
 
     def __str__(self):
         return f"{self.nombre} ({self.ciudad})"
+
+class CatalogoDerechoVulnerado(models.Model):
+    nombre = models.CharField('Nombre del Derecho', max_length=255, unique=True)
+    fecha_registro = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'defenjur_app_catalogoderechovulnerado'
+        verbose_name = 'Catálogo de Derecho Vulnerado'
+        verbose_name_plural = 'Catálogo de Derechos Vulnerados'
+        ordering = ['nombre']
+
+    def __str__(self):
+        return self.nombre
+
+class CatalogoAccionado(models.Model):
+    nombre = models.CharField('Nombre de Entidad/Persona', max_length=255, unique=True)
+    nit = models.CharField('NIT / Código', max_length=50, blank=True, null=True)
+    fecha_registro = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'defenjur_app_catalogoaccionado'
+        verbose_name = 'Catálogo de Accionado'
+        verbose_name_plural = 'Catálogo de Accionados'
+        ordering = ['nombre']
+
+    def __str__(self):
+        return self.nombre
 

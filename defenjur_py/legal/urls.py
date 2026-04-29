@@ -11,6 +11,16 @@ urlpatterns = [
     path('usuarios/nuevo/', views.UsuarioCreateView.as_view(), name='usuario_crear'),
     path('usuarios/<int:pk>/editar/', views.UsuarioUpdateView.as_view(), name='usuario_editar'),
     path('usuarios/<int:pk>/eliminar/', views.usuario_eliminar, name='usuario_eliminar'),
+    
+    path('catalogos/derechos/', views.CatalogoDerechoListView.as_view(), name='catalogo_derechos'),
+    path('catalogos/derechos/nuevo/', views.CatalogoDerechoCreateView.as_view(), name='catalogo_derecho_crear'),
+    path('catalogos/derechos/<int:pk>/editar/', views.CatalogoDerechoUpdateView.as_view(), name='catalogo_derecho_editar'),
+    path('catalogos/derechos/<int:pk>/eliminar/', views.catalogo_derecho_eliminar, name='catalogo_derecho_eliminar'),
+    
+    path('catalogos/accionados/', views.CatalogoAccionadoListView.as_view(), name='catalogo_accionados'),
+    path('catalogos/accionados/nuevo/', views.CatalogoAccionadoCreateView.as_view(), name='catalogo_accionado_crear'),
+    path('catalogos/accionados/<int:pk>/editar/', views.CatalogoAccionadoUpdateView.as_view(), name='catalogo_accionado_editar'),
+    path('catalogos/accionados/<int:pk>/eliminar/', views.catalogo_accionado_eliminar, name='catalogo_accionado_eliminar'),
 
     path('api/totales/', views.api_consultas_totales, name='api_consultas_totales'),
     path('api/rango-fechas/', views.api_estadisticas_rango, name='api_estadisticas_rango'),

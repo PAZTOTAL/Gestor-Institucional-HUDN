@@ -4,8 +4,18 @@ from .models import (
     ProcesoJudicialPasiva, DerechoPeticion, AccionTutela, 
     ArchivoAdjunto, Peritaje, PagoSentenciaJudicial, 
     ProcesoJudicialTerminado, ProcesoAdministrativoSancionatorio,
-    RequerimientoEnteControl
+    RequerimientoEnteControl, CatalogoDerechoVulnerado, CatalogoAccionado
 )
+
+@admin.register(CatalogoDerechoVulnerado)
+class CatalogoDerechoVulneradoAdmin(admin.ModelAdmin):
+    list_display = ['id', 'nombre', 'fecha_registro']
+    search_fields = ['nombre']
+
+@admin.register(CatalogoAccionado)
+class CatalogoAccionadoAdmin(admin.ModelAdmin):
+    list_display = ['id', 'nit', 'nombre', 'fecha_registro']
+    search_fields = ['nit', 'nombre']
 
 @admin.register(AccionTutela)
 class AccionTutelaAdmin(admin.ModelAdmin):

@@ -1350,3 +1350,97 @@ def despacho_eliminar(request, pk):
     return redirect('despachos_lista')
 
 
+
+# ─────────────────────────────────────────────────────────────────────────────
+# CATÁLOGOS (Derechos Vulnerados y Accionados)
+# ─────────────────────────────────────────────────────────────────────────────
+from .models import CatalogoDerechoVulnerado, CatalogoAccionado
+from .forms import PremiumModelForm
+from django import forms
+
+class CatalogoDerechoVulneradoForm(PremiumModelForm):
+    class Meta:
+        model = CatalogoDerechoVulnerado
+        fields = ['nombre']
+
+class CatalogoAccionadoForm(PremiumModelForm):
+    class Meta:
+        model = CatalogoAccionado
+        fields = ['nit', 'nombre']
+
+class CatalogoDerechoListView(LoginRequiredMixin, ListView):
+    model = CatalogoDerechoVulnerado
+    template_name = 'legal/catalogo_list.html'
+    context_object_name = 'objetos'
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx['titulo'] = 'Catálogo de Derechos Vulnerados'
+        ctx['url_nuevo'] = 'catalogo_derecho_crear'
+        ctx['url_editar_base'] = 'catalogo_derecho_editar'
+        ctx['url_eliminar_base'] = 'catalogo_derecho_eliminar'
+        return ctx
+
+class CatalogoDerechoCreateView(LoginRequiredMixin, CreateView):
+    model = CatalogoDerechoVulnerado
+    form_class = CatalogoDerechoVulneradoForm
+    template_name = 'legal/catalogo_form.html'
+    success_url = reverse_lazy('catalogo_derechos')
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx['titulo'] = 'Nuevo Derecho Vulnerado'
+        return ctx
+
+class CatalogoDerechoUpdateView(LoginRequiredMixin, UpdateView):
+    model = CatalogoDerechoVulnerado
+    form_class = CatalogoDerechoVulneradoForm
+    template_name = 'legal/catalogo_form.html'
+    success_url = reverse_lazy('catalogo_derechos')
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx['titulo'] = 'Editar Derecho Vulnerado'
+        return ctx
+
+@require_http_methods(['DELETE', 'POST'])
+def catalogo_derecho_eliminar(request, pk):
+    obj = get_object_or_404(CatalogoDerechoVulnerado, pk=pk)
+    obj.delete()
+    return JsonResponse({'success': True})
+
+class CatalogoAccionadoListView(LoginRequiredMixin, ListView):
+    model = CatalogoAccionado
+    template_name = 'legal/catalogo_list.html'
+    context_object_name = 'objetos'
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx['titulo'] = 'Catálogo de Accionados'
+        ctx['url_nuevo'] = 'catalogo_accionado_crear'
+        ctx['url_editar_base'] = 'catalogo_accionado_editar'
+        ctx['url_eliminar_base'] = 'catalogo_accionado_eliminar'
+        ctx['mostrar_nit'] = True
+        return ctx
+
+class CatalogoAccionadoCreateView(LoginRequiredMixin, CreateView):
+    model = CatalogoAccionado
+    form_class = CatalogoAccionadoForm
+    template_name = 'legal/catalogo_form.html'
+    success_url = reverse_lazy('catalogo_accionados')
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx['titulo'] = 'Nuevo Accionado'
+        return ctx
+
+class CatalogoAccionadoUpdateView(LoginRequiredMixin, UpdateView):
+    model = CatalogoAccionado
+    form_class = CatalogoAccionadoForm
+    template_name = 'legal/catalogo_form.html'
+    success_url = reverse_lazy('catalogo_accionados')
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx['titulo'] = 'Editar Accionado'
+        return ctx
+
+@require_http_methods(['DELETE', 'POST'])
+def catalogo_accionado_eliminar(request, pk):
+    obj = get_object_or_404(CatalogoAccionado, pk=pk)
+    obj.delete()
+    return JsonResponse({'success': True})

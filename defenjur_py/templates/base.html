@@ -99,6 +99,16 @@
                 </div>
             </details>
 
+            {% if user|has_module_perm:'catalogoderechovulnerado' %}
+            <details class="nav-group" {% if 'catalogo' in request.resolver_match.url_name %}open{% endif %}>
+                <summary><i data-lucide="layers"></i> Catálogos</summary>
+                <div class="nav-group-body">
+                    <a href="{% url 'catalogo_derechos' %}" class="nav-sub {% if 'catalogo_derecho' in request.resolver_match.url_name %}active{% endif %}">Derechos Vulnerados</a>
+                    <a href="{% url 'catalogo_accionados' %}" class="nav-sub {% if 'catalogo_accionado' in request.resolver_match.url_name %}active{% endif %}">Accionados</a>
+                </div>
+            </details>
+            {% endif %}
+
             {% if user.is_superuser or user.rol|lower == 'administrador' or user.perfil.legal_rol|lower == 'administrador' %}
             <a href="{% url 'reportes' %}" class="nav-item {% if request.resolver_match.url_name == 'reportes' %}active{% endif %}">
                 <i data-lucide="bar-chart-3"></i> Reportes

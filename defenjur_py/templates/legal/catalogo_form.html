@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ titulo }} | DEFENJUR{% endblock %}
+{% block header_title %}{{ titulo }}{% endblock %}
+
+{% block content %}
+<div class="card animate-fade" style="max-width:600px;">
+    <form method="post">
+        {% csrf_token %}
+        <div class="form-grid" style="grid-template-columns: 1fr;">
+            {% for field in form %}
+            <div class="form-group">
+                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                {{ field }}
+                {% if field.errors %}
+                <div style="color:var(--accent);font-size:0.8rem;margin-top:4px;">{{ field.errors }}</div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+        <div style="margin-top:1.5rem;display:flex;gap:1rem;">
+            <button type="submit" class="btn-premium">Guardar Registro</button>
+            <a href="javascript:history.back()" class="btn-premium" style="background:rgba(255,255,255,0.1);text-decoration:none;">Cancelar</a>
+        </div>
+    </form>
+</div>
+{% endblock %}
