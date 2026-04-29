@@ -239,6 +239,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # Sesiones en archivo — rápidas, persisten entre reinicios del servidor
 SESSION_ENGINE = 'django.contrib.sessions.backends.file'
 SESSION_FILE_PATH = os.path.join(BASE_DIR, 'sessions')
+os.makedirs(SESSION_FILE_PATH, exist_ok=True)
 SESSION_COOKIE_AGE = 28800  # 8 horas
 CACHES = {
     'default': {
