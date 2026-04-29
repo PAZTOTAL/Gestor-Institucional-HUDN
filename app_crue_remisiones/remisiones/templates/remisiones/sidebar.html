@@ -1,0 +1,106 @@
+  <!-- SIDEBAR — panel lateral colapsable (Tarea 13.1) -->
+  <aside id="sidebar" class="sidebar">
+
+    <!-- Toggle para colapsar/expandir -->
+    <button id="sidebar-toggle" class="sidebar-toggle" title="Colapsar menú" aria-label="Colapsar menú">
+      <i class="bi bi-layout-sidebar-reverse"></i>
+    </button>
+
+    <!-- --- Sección 1: Información del usuario --- -->
+    <section class="sidebar-section user-info-section">
+      <div class="sidebar-label">
+        <i class="bi bi-person-circle me-1"></i>
+        <span class="sidebar-text">{{ request.user.username }}</span>
+      </div>
+      <div class="sidebar-label sidebar-user-info small">
+        <i class="bi bi-person me-1"></i>
+        <span class="sidebar-text">{{ request.user.get_full_name }}</span>
+      </div>
+      <div class="sidebar-label sidebar-user-info small">
+        <i class="bi bi-calendar3 me-1"></i>
+        <span class="sidebar-text">{{ fecha_hoy }}</span>
+      </div>
+      <form method="post" action="{% url 'remisiones:logout' %}" class="mt-2">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-outline-danger btn-sm w-100 sidebar-btn-salir">
+          <i class="bi bi-box-arrow-right me-1"></i>
+          <span class="sidebar-text">Salir</span>
+        </button>
+      </form>
+    </section>
+
+    <hr class="sidebar-divider">
+
+    <!-- --- Sección 2: Menú Exportar --- -->
+    <section class="sidebar-section">
+      <div class="sidebar-menu-title">
+        <i class="bi bi-download me-1"></i>
+        <span class="sidebar-text">Exportar</span>
+      </div>
+      <ul class="sidebar-menu-list">
+        <li>
+          <a href="{% url 'remisiones:exportar_excel' %}?filtro={{ filtro }}&mes={{ mes_actual }}&anio={{ anio_actual }}&desde={{ desde }}&hasta={{ hasta }}&doc={{ doc }}"
+             class="sidebar-menu-item" id="btn-exportar-excel">
+            <i class="bi bi-file-earmark-excel me-1"></i>
+            <span class="sidebar-text">Excel</span>
+          </a>
+        </li>
+        <li>
+          <a href="#" class="sidebar-menu-item text-muted" title="Próximamente">
+            <i class="bi bi-file-earmark-pdf me-1"></i>
+            <span class="sidebar-text">PDF <small>(próximamente)</small></span>
+          </a>
+        </li>
+      </ul>
+    </section>
+
+    <hr class="sidebar-divider">
+
+    <!-- --- Sección 3: Menú Gestión --- -->
+    <section class="sidebar-section">
+      <div class="sidebar-menu-title">
+        <i class="bi bi-gear me-1"></i>
+        <span class="sidebar-text">Gestión</span>
+      </div>
+      <ul class="sidebar-menu-list">
+        <li>
+          <a href="{% url 'remisiones:cambiar_password' %}" class="sidebar-menu-item">
+            <i class="bi bi-key me-1"></i>
+            <span class="sidebar-text">Contraseña</span>
+          </a>
+        </li>
+        {% if request.user.rol == 'DIRECTOR' %}
+        <li>
+          <a href="{% url 'remisiones:usuarios' %}" class="sidebar-menu-item">
+            <i class="bi bi-people me-1"></i>
+            <span class="sidebar-text">Usuarios</span>
+          </a>
+        </li>
+        {% endif %}
+      </ul>
+    </section>
+
+    <hr class="sidebar-divider">
+
+    <!-- --- Sección 4: Importar desde Excel --- -->
+    <section class="sidebar-section">
+      <div class="sidebar-menu-title">
+        <i class="bi bi-upload me-1"></i>
+        <span class="sidebar-text">Importar</span>
+      </div>
+      <form id="form-importar" method="post" action="{% url 'remisiones:importar_excel' %}" enctype="multipart/form-data" class="mt-1">
+        {% csrf_token %}
+        <div class="sidebar-text">
+          <input type="file" name="archivo" id="id_archivo_importar"
+                 class="form-control form-control-sm mb-1"
+                 accept=".xlsx,.xls">
+          <button type="submit" class="btn btn-outline-primary btn-sm w-100">
+            <i class="bi bi-cloud-upload me-1"></i>Importar Excel
+          </button>
+        </div>
+      </form>
+      <div id="importar-resultado" class="mt-1 small sidebar-text"></div>
+    </section>
+
+  </aside>
+  <!-- /sidebar -->

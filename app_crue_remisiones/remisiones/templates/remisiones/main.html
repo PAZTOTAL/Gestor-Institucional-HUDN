@@ -1,0 +1,720 @@
+{% extends "remisiones/base.html" %}
+{% load static %}
+
+{% block title %}CRUE Remisiones{% endblock %}
+
+{% block content %}
+{% csrf_token %}
+<!-- LAYOUT PRINCIPAL: sidebar + contenido -->
+<div class="app-wrapper">
+
+  <!-- SIDEBAR — panel lateral colapsable (Tarea 13.1) -->
+  <aside id="sidebar" class="sidebar">
+
+    <!-- Toggle para colapsar/expandir -->
+    <button id="sidebar-toggle" class="sidebar-toggle" title="Colapsar menú" aria-label="Colapsar menú">
+      <i class="bi bi-layout-sidebar-reverse"></i>
+    </button>
+
+    <!-- --- Sección 1: Información del usuario --- -->
+    <section class="sidebar-section user-info-section">
+      <div class="sidebar-label">
+        <i class="bi bi-person-circle me-1"></i>
+        <span class="sidebar-text">{{ request.user.username }}</span>
+      </div>
+      <div class="sidebar-label sidebar-user-info small">
+        <i class="bi bi-person me-1"></i>
+        <span class="sidebar-text">{{ request.user.get_full_name }}</span>
+      </div>
+      <div class="sidebar-label sidebar-user-info small">
+        <i class="bi bi-calendar3 me-1"></i>
+        <span class="sidebar-text">{{ fecha_hoy }}</span>
+      </div>
+      <form method="post" action="{% url 'remisiones:logout' %}" class="mt-2">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-outline-danger btn-sm w-100 sidebar-btn-salir">
+          <i class="bi bi-box-arrow-right me-1"></i>
+          <span class="sidebar-text">Salir</span>
+        </button>
+      </form>
+    </section>
+
+    <hr class="sidebar-divider">
+
+    <!-- --- Sección 2: Menú Exportar --- -->
+    <section class="sidebar-section">
+      <div class="sidebar-menu-title">
+        <i class="bi bi-download me-1"></i>
+        <span class="sidebar-text">Exportar</span>
+      </div>
+      <ul class="sidebar-menu-list">
+        <li>
+          <a href="{% url 'remisiones:exportar_excel' %}?filtro={{ filtro }}&mes={{ mes_actual }}&anio={{ anio_actual }}&desde={{ desde }}&hasta={{ hasta }}&doc={{ doc }}"
+            class="sidebar-menu-item" id="btn-exportar-excel">
+            <i class="bi bi-file-earmark-excel me-1"></i>
+            <span class="sidebar-text">Excel</span>
+          </a>
+        </li>
+        <li>
+          <a href="#" class="sidebar-menu-item text-muted" title="Próximamente">
+            <i class="bi bi-file-earmark-pdf me-1"></i>
+            <span class="sidebar-text">PDF <small>(próximamente)</small></span>
+          </a>
+        </li>
+      </ul>
+    </section>
+
+    <hr class="sidebar-divider">
+
+    <!-- --- Sección 3: Menú Gestión --- -->
+    <section class="sidebar-section">
+      <div class="sidebar-menu-title">
+        <i class="bi bi-gear me-1"></i>
+        <span class="sidebar-text">Gestión</span>
+      </div>
+      <ul class="sidebar-menu-list">
+        <li>
+          <a href="{% url 'remisiones:cambiar_password' %}" class="sidebar-menu-item">
+            <i class="bi bi-key me-1"></i>
+            <span class="sidebar-text">Contraseña</span>
+          </a>
+        </li>
+        {% if request.user.rol == 'DIRECTOR' %}
+        <li>
+          <a href="{% url 'remisiones:usuarios' %}" class="sidebar-menu-item">
+            <i class="bi bi-people me-1"></i>
+            <span class="sidebar-text">Usuarios</span>
+          </a>
+        </li>
+        {% endif %}
+      </ul>
+    </section>
+
+    <hr class="sidebar-divider">
+
+    <!-- --- Sección 4: Importar desde Excel --- -->
+    <section class="sidebar-section">
+      <div class="sidebar-menu-title">
+        <i class="bi bi-upload me-1"></i>
+        <span class="sidebar-text">Importar</span>
+      </div>
+      <form id="form-importar" method="post" action="{% url 'remisiones:importar_excel' %}" enctype="multipart/form-data" class="mt-1">
+        {% csrf_token %}
+        <div class="sidebar-text">
+          <input type="file" name="archivo" id="id_archivo_importar"
+                 class="form-control form-control-sm mb-1"
+                 accept=".xlsx,.xls">
+          <button type="submit" class="btn btn-outline-primary btn-sm w-100">
+            <i class="bi bi-cloud-upload me-1"></i>Importar Excel
+          </button>
+        </div>
+      </form>
+      <div id="importar-resultado" class="mt-1 small sidebar-text"></div>
+    </section>
+
+  </aside>
+  <!-- /sidebar -->
+
+  <!-- CONTENIDO PRINCIPAL -->
+  <div id="main-content" class="main-content">
+
+    <!-- BARRA DE TÍTULO Y CONTROLES DE FILTRO (Tarea 13.2) -->
+    <header class="title-bar">
+
+      <form id="form-filtros" method="get" action="{% url 'remisiones:main' %}" class="filtros-form">
+
+        <div class="filtros-row">
+          <span class="filtros-label">Ver registros:</span>
+
+          <!-- Radio: Por mes -->
+          <label class="filtro-radio-label">
+            <input type="radio" name="filtro" value="mes"
+                   {% if filtro == 'mes' %}checked{% endif %}
+                   class="filtro-radio" id="radio-mes">
+            Por mes
+          </label>
+
+          <!-- Radio: Por rango -->
+          <label class="filtro-radio-label">
+            <input type="radio" name="filtro" value="rango"
+                   {% if filtro == 'rango' %}checked{% endif %}
+                   class="filtro-radio" id="radio-rango">
+            Por rango
+          </label>
+
+          <!-- Radio: Documento -->
+          <label class="filtro-radio-label">
+            <input type="radio" name="filtro" value="documento"
+                   {% if filtro == 'documento' %}checked{% endif %}
+                   class="filtro-radio" id="radio-documento">
+            Documento
+          </label>
+
+       </div>
+
+        <!-- --- Control Por mes --- -->
+        <div id="ctrl-mes" class="filtro-ctrl {% if filtro != 'mes' %}d-none{% endif %}">
+          <select name="mes" class="form-select form-select-sm filtro-select">
+            {% for num, nombre in meses %}
+            <option value="{{ num }}" {% if num == mes_actual %}selected{% endif %}>{{ nombre }}</option>
+            {% endfor %}
+          </select>
+          <input type="number" name="anio" value="{{ anio_actual }}"
+                 class="form-control form-control-sm filtro-anio"
+                 min="2000" max="2099" step="1">
+          <label class="filtro-check-label">
+            <input type="checkbox" name="paginado" value="True"
+                   {% if paginado %}checked{% endif %}
+                   class="form-check-input me-1">
+            Paginado
+          </label>
+          <button type="submit" class="btn btn-primary btn-sm">
+            <i class="bi bi-search me-1"></i>Buscar
+          </button>
+
+          <!-- Botón Nuevo Registro -->
+          <button type="button" id="btn-nuevo-registro"
+                  class="btn btn-success btn-sm ms-auto">
+            <i class="bi bi-plus-circle me-1"></i>Nuevo Registro
+          </button>
+ 
+        </div>
+
+        <!-- --- Control Por rango --- -->
+        <div id="ctrl-rango" class="filtro-ctrl {% if filtro != 'rango' %}d-none{% endif %}">
+          <label class="filtro-field-label">Desde:</label>
+          <input type="date" name="desde" value="{{ desde }}"
+                 class="form-control form-control-sm filtro-date"
+                 id="input-desde">
+          <label class="filtro-field-label">Hasta:</label>
+          <input type="date" name="hasta" value="{{ hasta }}"
+                 class="form-control form-control-sm filtro-date"
+                 id="input-hasta">
+          <button type="submit" class="btn btn-primary btn-sm">
+            <i class="bi bi-search me-1"></i>Buscar
+          </button>
+          <span id="error-rango" class="text-danger small ms-2"></span>
+        </div>
+
+        <!-- --- Control Documento --- -->
+        <div id="ctrl-documento" class="filtro-ctrl {% if filtro != 'documento' %}d-none{% endif %}">
+          <input type="text" name="doc" value="{{ doc }}"
+                 class="form-control form-control-sm filtro-doc"
+                 placeholder="Número de documento" id="input-doc">
+          <button type="submit" class="btn btn-primary btn-sm">
+            <i class="bi bi-search me-1"></i>Buscar
+          </button>
+        </div>
+
+        <!-- Mensajes de validación de filtros -->
+        <div id="filtro-error" class="text-danger small mt-1"></div>
+
+      </form>
+    </header>
+    <!-- /title-bar -->
+
+    <!-- TABLA DE REGISTROS — Vista_Rápida (Tarea 13.3) -->
+    <div class="tabla-container">
+      {% if remisiones %}
+      <table id="tabla-remisiones" class="tabla-remisiones">
+        <thead>
+          <tr>
+            <th class="col-acciones">Acciones</th>
+            <th class="col-no">No</th>
+            <th class="col-fecha">FECHA</th>
+            <th class="col-nombre">NOMBRE PACIENTE</th>
+            <th class="col-tipo">TIPO DOC</th>
+            <th class="col-doc">DOC</th>
+            <th class="col-sexo">SEXO</th>
+            <th class="col-edad">EDAD</th>
+            <th class="col-gest">GEST</th>
+            <th class="col-ta">TA</th>
+            <th class="col-fc">FC</th>
+            <th class="col-fr">FR</th>
+            <th class="col-t">T</th>
+            <th class="col-spo2">SPO2</th>
+            <th class="col-glasg">GLASG</th>
+            <th class="col-aceptado">ACEPTADO</th>
+          </tr>
+        </thead>
+        <tbody id="tabla-body">
+          {% for remision in remisiones %}
+          <!-- Fila principal Vista_Rápida -->
+          <tr class="fila-remision {% if remision.aceptado == 'SI' %}fila-verde{% elif remision.aceptado == 'URG VITAL' %}fila-roja{% endif %}"
+              data-id="{{ remision.id }}"
+              data-editable="{{ remision.es_editable|yesno:'true,false' }}">
+
+            <td class="col-acciones">
+              {% if remision.es_editable %}
+              <button class="btn-accion btn-eliminar"
+                      data-id="{{ remision.id }}"
+                      title="Eliminar el registro">
+                <i class="bi bi-trash-fill"></i>
+              </button>
+              {% else %}
+              <span class="btn-accion btn-eliminar-disabled">
+                <i class="bi bi-trash-fill" style="opacity:0.3;color:#aaa"></i>
+              </span>
+              {% endif %}
+              <button class="btn-accion btn-editar"
+                      data-id="{{ remision.id }}"
+                      title="Editar el registro">
+                <i class="bi bi-pencil-square"></i>
+              </button>
+              <button class="btn-accion btn-clonar"
+                      data-id="{{ remision.id }}"
+                      title="Clonar o copiar el registro">
+                <i class="bi bi-files"></i>
+              </button>
+              <button class="btn-accion btn-detalle"
+                      data-id="{{ remision.id }}"
+                      title="Mostrar detalles del registro">
+                <i class="bi bi-eye"></i>
+              </button>
+            </td>
+            <td class="col-no">{{ forloop.counter }}</td>
+            <td class="col-fecha truncate" title="{{ remision.fecha|date:'d/m/Y H:i' }}">
+              {{ remision.fecha|date:"d/m/Y H:i" }}
+            </td>
+            <td class="col-nombre truncate" title="{{ remision.nombre }}">
+              {{ remision.nombre }}
+            </td>
+            <td class="col-tipo truncate">{{ remision.tipo_doc }}</td>
+            <td class="col-doc truncate" title="{{ remision.doc }}">{{ remision.doc }}</td>
+            <td class="col-sexo">{{ remision.sexo }}</td>
+            <td class="col-edad truncate" title="{{ remision.edad }}">{{ remision.edad }}</td>
+            <td class="col-gest">{{ remision.gest }}</td>
+            <td class="col-ta truncate" title="{{ remision.ta }}">{{ remision.ta }}</td>
+            <td class="col-fc">{{ remision.fc }}</td>
+            <td class="col-fr">{{ remision.fr }}</td>
+            <td class="col-t">{{ remision.tm }}</td>
+            <td class="col-spo2">{{ remision.spo2 }}</td>
+            <td class="col-glasg">{{ remision.glasg }}</td>
+            <td class="col-aceptado truncate" title="{{ remision.aceptado }}">{{ remision.aceptado }}</td>
+          </tr>
+
+          <!-- Fila de detalle expandida (oculta por defecto) -->
+          <tr class="fila-detalle" id="detalle-{{ remision.id }}" style="display:none;">
+            <td colspan="16" class="detalle-celda">
+              <div class="detalle-grid">
+                <div class="detalle-item">
+                  <span class="detalle-label">DIAGNÓSTICO</span>
+                  <span class="detalle-valor">{{ remision.diagnostico|default:"—" }}</span>
+                </div>
+                <div class="detalle-item">
+                  <span class="detalle-label">ESPECIALIDAD</span>
+                  <span class="detalle-valor">{{ remision.especialidad|default:"—" }}</span>
+                </div>
+                <div class="detalle-item">
+                  <span class="detalle-label">EPS</span>
+                  <span class="detalle-valor">{{ remision.eps|default:"—" }}</span>
+                </div>
+                <div class="detalle-item">
+                  <span class="detalle-label">INSTITUCIÓN REPORTA</span>
+                  <span class="detalle-valor">{{ remision.institucion_reporta|default:"—" }}</span>
+                </div>
+                <div class="detalle-item">
+                  <span class="detalle-label">MUNICIPIO</span>
+                  <span class="detalle-valor">{{ remision.municipio|default:"—" }}</span>
+                </div>
+                <div class="detalle-item">
+                  <span class="detalle-label">MÉDICO REFIERE</span>
+                  <span class="detalle-valor">{{ remision.medico_refiere|default:"—" }}</span>
+                </div>
+                <div class="detalle-item">
+                  <span class="detalle-label">MÉDICO HUDN</span>
+                  <span class="detalle-valor">{{ remision.medico_hudn|default:"—" }}</span>
+                </div>
+                <div class="detalle-item">
+                  <span class="detalle-label">RADIO OPERADOR</span>
+                  <span class="detalle-valor">{{ remision.radio_operador|default:"—" }}</span>
+                </div>
+                <div class="detalle-item detalle-item-wide">
+                  <span class="detalle-label">OBSERVACIÓN</span>
+                  <span class="detalle-valor">{{ remision.observacion|default:"—" }}</span>
+                </div>
+                <div class="detalle-item">
+                  <span class="detalle-label">FECHA RESPUESTA</span>
+                  <span class="detalle-valor">
+                    {% if remision.fecha_res %}{{ remision.fecha_res|date:"d/m/Y H:i" }}{% else %}—{% endif %}
+                  </span>
+                </div>
+                <div class="detalle-item">
+                  <span class="detalle-label">OPORTUNIDAD</span>
+                  <span class="detalle-valor">{{ remision.oportunidad|default:"—" }}</span>
+                </div>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+
+      <!-- Paginación -->
+      {% if page_obj %}
+      <nav class="paginacion-nav" aria-label="Paginación">
+        <ul class="pagination pagination-sm justify-content-center mt-2">
+          {% if page_obj.has_previous %}
+          <li class="page-item">
+            <a class="page-link" href="?filtro={{ filtro }}&mes={{ mes_actual }}&anio={{ anio_actual }}&desde={{ desde }}&hasta={{ hasta }}&doc={{ doc }}&paginado={{ paginado }}&page={{ page_obj.previous_page_number }}">
+              &laquo; Anterior
+            </a>
+          </li>
+          {% endif %}
+          <li class="page-item disabled">
+            <span class="page-link">Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span>
+          </li>
+          {% if page_obj.has_next %}
+          <li class="page-item">
+            <a class="page-link" href="?filtro={{ filtro }}&mes={{ mes_actual }}&anio={{ anio_actual }}&desde={{ desde }}&hasta={{ hasta }}&doc={{ doc }}&paginado={{ paginado }}&page={{ page_obj.next_page_number }}">
+              Siguiente &raquo;
+            </a>
+          </li>
+          {% endif %}
+        </ul>
+      </nav>
+      {% endif %}
+
+      {% else %}
+      <!-- Mensaje cuando no hay registros -->
+      <div class="sin-registros">
+        <i class="bi bi-inbox fs-1 text-muted"></i>
+        <p class="mt-2 text-muted">No hay registros para el período seleccionado.</p>
+      </div>
+      {% endif %}
+    </div>
+    <!-- /tabla-container -->
+
+  </div>
+  <!-- /main-content -->
+
+</div>
+<!-- /app-wrapper -->
+
+<!-- MODAL DE CREACIÓN / EDICIÓN (Tarea 13.4) -->
+<div id="modal-remision" class="modal fade" tabindex="-1" aria-labelledby="modal-titulo" aria-hidden="true">
+  <div class="modal-dialog modal-xl modal-dialog-scrollable">
+    <div class="modal-content">
+
+      <div class="modal-header">
+        <h5 class="modal-title" id="modal-titulo">Nueva Remisión</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+
+      <div class="modal-body">
+        <form id="form-remision" novalidate>
+          {% csrf_token %}
+          <!-- Campo oculto para el ID en modo edición -->
+          <input type="hidden" id="modal-remision-id" name="remision_id" value="">
+
+          <!-- ---- Fila 1: Identificación del paciente ---- -->
+          <div class="row g-2 mb-2">
+            <div class="col-md-3">
+              <label class="form-label form-label-sm">FECHA <span class="text-danger">*</span></label>
+              <div class="d-flex gap-1">
+                <input type="date" id="id_fecha_date" class="form-control form-control-sm" lang="es">
+                <input type="text" id="id_fecha_time" class="form-control form-control-sm"
+                       placeholder="HH:MM" maxlength="5" style="width:80px">
+              </div>
+              <input type="hidden" id="id_fecha" name="fecha">
+              <div class="invalid-feedback" id="err-fecha"></div>
+            </div>
+			<!-- nombre -->
+            <div class="col-md-5">
+              <label for="id_nombre" class="form-label form-label-sm">NOMBRE PACIENTE <span class="text-danger">*</span></label>
+              <input type="text" id="id_nombre" name="nombre"
+                     class="form-control form-control-sm" required maxlength="100">
+              <div class="invalid-feedback" id="err-nombre"></div>
+            </div>
+			<!-- tipo_doc -->
+            <div class="col-md-2">
+              <label for="id_tipo_doc" class="form-label form-label-sm">TIPO DOC <span class="text-danger">*</span></label>
+              <select id="id_tipo_doc" name="tipo_doc" class="form-select form-select-sm" required>
+                <option value="CC">CC</option>
+                <option value="TI">TI</option>
+                <option value="CE">CE</option>
+                <option value="RC">RC</option>
+                <option value="CN">CN</option>
+                <option value="OTRO">OTRO</option>
+              </select>
+              <div class="invalid-feedback" id="err-tipo_doc"></div>
+            </div>
+			<!-- doc -->
+            <div class="col-md-2">
+              <label for="id_doc" class="form-label form-label-sm">DOCUMENTO <span class="text-danger">*</span></label>
+              <input type="text" id="id_doc" name="doc"
+                     class="form-control form-control-sm" required inputmode="numeric" maxlength="20">
+              <div class="invalid-feedback" id="err-doc"></div>
+            </div>
+          </div>
+
+          <!-- ---- Fila 2: Datos demográficos ---- -->
+          <div class="row g-2 mb-2">
+			<!-- gest -->
+            <div class="col-md-1">
+              <label for="id_gest" class="form-label form-label-sm">GEST <span class="text-danger">*</span></label>
+              <select id="id_gest" name="gest" class="form-select form-select-sm" required>
+                <option value="NO">NO</option>
+                <option value="SI">SI</option>
+              </select>
+              <div class="invalid-feedback" id="err-gest"></div>
+            </div>
+ 
+			<!-- sexo -->
+            <div class="col-md-1">
+              <label for="id_sexo" class="form-label form-label-sm">SEXO <span class="text-danger">*</span></label>
+              <select id="id_sexo" name="sexo" class="form-select form-select-sm" required>
+                <option value="M">M</option>
+                <option value="F">F</option>
+              </select>
+              <div class="invalid-feedback" id="err-sexo"></div>
+            </div>
+            <div class="col-md-3">
+              <label for="id_edad" class="form-label form-label-sm">EDAD <span class="text-danger">*</span></label>
+              <input type="text" id="id_edad" name="edad"
+                     class="form-control form-control-sm" required
+                     placeholder="25 AÑOS / 3 MESES / 10 DIAS">
+              <div class="invalid-feedback" id="err-edad"></div>
+            </div>
+            <!-- especialidad -->
+            <div class="col-md-3">
+              <label for="id_especialidad" class="form-label form-label-sm">ESPECIALIDAD</label>
+              <select id="id_especialidad" name="especialidad" class="form-select form-select-sm">
+                <option value="">— Seleccionar —</option>
+                <option value="CIRUGIA DE COLUMNA">Cirugía de Columna</option>
+                <option value="CIRUGIA GENERAL">Cirugía General</option>
+                <option value="CIRUGIA PLASTICA">Cirugía Plástica</option>
+                <option value="CIRUGIA DEL TORAX">Cirugía del Tórax</option>
+                <option value="CIRUGIA MAXILOFACIAL">Cirugía Maxilofacial</option>
+                <option value="CIRUGIA VASCULAR">Cirugía Vascular</option>
+                <option value="DERMATOLOGIA">Dermatología</option>
+                <option value="ENDOCRINOLOGIA">Endocrinología</option>
+                <option value="EPILEPTOLOGIA">Epileptología</option>
+                <option value="GENETICA HUMANA">Genética Humana</option>
+                <option value="GINECOLOGIA">Ginecología</option>
+                <option value="HEMATOLOGIA">Hematología</option>
+                <option value="INFECTOLOGIA">Infectología</option>
+                <option value="MEDICINA INTERNA">Medicina Interna</option>
+                <option value="NEFROLOGIA">Nefrología</option>
+                <option value="NEFROLOGIA PEDIATRICA">Nefrología Pediátrica</option>
+                <option value="NEUROCIRUGIA">Neurocirugía</option>
+                <option value="NEUROLOGIA">Neurología</option>
+                <option value="NEUROLOGIA PEDIATRICA">Neurología Pediátrica</option>
+                <option value="NUTRICION CLINICA">Nutrición Clínica</option>
+                <option value="OCULOPLASTIA">Oculoplastia</option>
+                <option value="OFTALMOLOGIA">Oftalmología</option>
+                <option value="ORTOPEDIA">Ortopedia</option>
+                <option value="OTORRINOLARINGOLOGIA">Otorrinolaringología</option>
+                <option value="PEDIATRIA">Pediatría</option>
+                <option value="PERINATOLOGIA">Perinatología</option>
+                <option value="REUMATOLOGIA">Reumatología</option>
+                <option value="TOXICOLOGIA CLINICA">Toxicología Clínica</option>
+                <option value="OTRA">Otra (escribir)</option>
+              </select>
+            </div>
+            <!-- especialidad_otra (visible solo cuando se selecciona OTRA) -->
+            <div class="col-md-3" id="especialidad_otra_container" style="display:none;">
+              <label for="id_especialidad_otra" class="form-label form-label-sm">OTRA ESPECIALIDAD</label>
+              <input type="text" id="id_especialidad_otra" class="form-control form-control-sm"
+                     placeholder="Escriba la especialidad" maxlength="100">
+            </div>
+         </div>
+
+          <!-- ---- Fila 6: DIAGNÓSTICO (fila completa) ---- -->
+          <div class="row g-2 mb-2">
+            <div class="col-12">
+              <label for="id_diagnostico" class="form-label form-label-sm">DIAGNÓSTICO</label>
+              <textarea id="id_diagnostico" name="diagnostico"
+                        class="form-control form-control-sm" rows="6" style="resize:vertical"></textarea>
+            </div>
+          </div>
+
+ 
+
+          <!-- ---- Fila 3: Signos vitales ---- -->
+          <div class="row g-2 mb-2">
+            <div class="col-md-2">
+              <label for="id_ta" class="form-label form-label-sm">TA</label>
+              <input type="text" id="id_ta" name="ta"
+                     class="form-control form-control-sm"
+                     placeholder="120/80 o NO REFIERE">
+              <div class="invalid-feedback" id="err-ta"></div>
+            </div>
+            <div class="col-md-2">
+              <label for="id_fc" class="form-label form-label-sm">FC</label>
+              <input type="text" id="id_fc" name="fc"
+                     class="form-control form-control-sm"
+                     placeholder="Valor o NO REFIERE">
+            </div>
+            <div class="col-md-2">
+              <label for="id_fr" class="form-label form-label-sm">FR</label>
+              <input type="text" id="id_fr" name="fr"
+                     class="form-control form-control-sm"
+                     placeholder="Valor o NO REFIERE">
+            </div>
+            <div class="col-md-2">
+              <label for="id_tm" class="form-label form-label-sm">T (°C)</label>
+              <input type="text" id="id_tm" name="tm"
+                     class="form-control form-control-sm"
+                     placeholder="36° o NO REFIERE">
+            </div>
+            <div class="col-md-2">
+              <label for="id_spo2" class="form-label form-label-sm">SPO2</label>
+              <input type="text" id="id_spo2" name="spo2"
+                     class="form-control form-control-sm"
+                     placeholder="98% o NO REFIERE">
+            </div>
+            <div class="col-md-2">
+              <label for="id_glasg" class="form-label form-label-sm">GLASG</label>
+              <input type="text" id="id_glasg" name="glasg"
+                     class="form-control form-control-sm"
+                     placeholder="15/15 o NO REFIERE">
+              <div class="invalid-feedback" id="err-glasg"></div>
+            </div>
+          </div>
+
+          <!-- ---- Fila 4: Información institucional ---- -->
+          <div class="row g-2 mb-2">
+            <div class="col-md-4">
+              <label for="id_eps" class="form-label form-label-sm">EPS</label>
+              <input type="text" id="id_eps" name="eps"
+                     class="form-control form-control-sm" maxlength="100">
+            </div>
+            <div class="col-md-4">
+              <label for="id_institucion_reporta" class="form-label form-label-sm">INSTITUCIÓN REPORTA</label>
+              <input type="text" id="id_institucion_reporta" name="institucion_reporta"
+                     class="form-control form-control-sm" maxlength="100">
+            </div>
+            <div class="col-md-4">
+              <label for="id_municipio" class="form-label form-label-sm">MUNICIPIO</label>
+              <input type="text" id="id_municipio" name="municipio"
+                     class="form-control form-control-sm" maxlength="100">
+            </div>
+          </div>
+
+          <!-- ---- Fila 5: Médicos y operador ---- -->
+          <div class="row g-2 mb-2">
+            <div class="col-md-8">
+              <label for="id_medico_refiere" class="form-label form-label-sm">MÉDICO REFIERE</label>
+              <input type="text" id="id_medico_refiere" name="medico_refiere"
+                     class="form-control form-control-sm" maxlength="100">
+            </div>
+            <div class="col-md-4">
+              <label for="id_radio_operador" class="form-label form-label-sm">RADIO OPERADOR</label>
+              <input type="text" id="id_radio_operador" name="radio_operador"
+                     class="form-control form-control-sm" maxlength="100">
+            </div>
+          </div>
+
+         <!-- ---- Fila 7: MÉDICO HUDN (fila completa) ---- -->
+          <div class="row g-2 mb-2">
+            <div class="col-12">
+              <label for="id_medico_hudn" class="form-label form-label-sm">MÉDICO HUDN CONFIRMA</label>
+              <textarea id="id_medico_hudn" name="medico_hudn"
+                        class="form-control form-control-sm" rows="3" style="resize:vertical"></textarea>
+            </div>
+          </div>
+
+          <!-- ---- Fila 8: OBSERVACIÓN (fila completa) ---- -->
+          <div class="row g-2 mb-2">
+            <div class="col-12">
+              <label for="id_observacion" class="form-label form-label-sm">OBSERVACIÓN</label>
+              <textarea id="id_observacion" name="observacion"
+                        class="form-control form-control-sm" rows="6" style="resize:vertical"></textarea>
+            </div>
+          </div>
+
+          <!-- ---- Fila 9: Resultado ---- -->
+          <div class="row g-2 mb-2">
+            <div class="col-md-3">
+              <label for="id_aceptado" class="form-label form-label-sm">ACEPTADO</label>
+              <select id="id_aceptado" name="aceptado" class="form-select form-select-sm">
+                <option value="NO">NO</option>
+                <option value="SI">SI</option>
+                <option value="URG VITAL">URG VITAL</option>
+              </select>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label form-label-sm">FECHA RESPUESTA</label>
+              <div class="d-flex gap-1">
+                <input type="date" id="id_fecha_res_date" class="form-control form-control-sm" lang="es">
+                <input type="text" id="id_fecha_res_time" class="form-control form-control-sm"
+                       placeholder="HH:MM" maxlength="5" style="width:80px">
+              </div>
+              <input type="hidden" id="id_fecha_res" name="fecha_res">
+              <div class="invalid-feedback" id="err-fecha_res"></div>
+            </div>
+            <div class="col-md-3">
+              <label class="form-label form-label-sm">OPORTUNIDAD</label>
+              <input type="text" id="modal-oportunidad" class="form-control form-control-sm"
+                     readonly placeholder="Calculado automáticamente">
+            </div>
+          </div>
+
+          <!-- Alerta de errores del servidor -->
+          <div id="modal-errores" class="alert alert-danger d-none mt-2" role="alert"></div>
+
+        </form>
+      </div>
+
+      <div class="modal-footer">
+        <span id="modal-readonly-badge" class="badge bg-secondary me-auto d-none">
+          <i class="bi bi-lock me-1"></i>Registro histórico — solo lectura
+        </span>
+        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" id="btn-guardar-remision" class="btn btn-primary btn-sm">
+          <i class="bi bi-save me-1"></i>Guardar
+        </button>
+      </div>
+
+    </div>
+  </div>
+</div>
+<!-- /modal-remision -->
+
+<!-- Modal de confirmación de eliminación -->
+<div id="modal-confirmar-eliminar" class="modal fade" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-sm">
+    <div class="modal-content">
+      <div class="modal-header bg-danger text-white">
+        <h6 class="modal-title"><i class="bi bi-exclamation-triangle me-1"></i>Confirmar eliminación</h6>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <p class="mb-0">¿Está seguro de que desea eliminar este registro? Esta acción es permanente.</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" id="btn-confirmar-eliminar" class="btn btn-danger btn-sm">Eliminar</button>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- /modal-confirmar-eliminar -->
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'remisiones/js/autoformat.js' %}"></script>
+<script src="{% static 'remisiones/js/filtros.js' %}"></script>
+<script>
+  const USUARIO_NOMBRE_COMPLETO = "{{ usuario_nombre_completo|escapejs }}";
+</script>
+<script src="{% static 'remisiones/js/datetime_widget.js' %}"></script>
+<script src="{% static 'remisiones/js/modal.js' %}"></script>
+<script src="{% static 'remisiones/js/tabla.js' %}"></script>
+<script>
+  // Pasar URLs de Django a JavaScript
+  const URLS = {
+    remisionNueva:   "{% url 'remisiones:remision_create' %}",
+    remisionDetalle: "/remisiones/__ID__/detalle/",
+    remisionEditar:  "/remisiones/__ID__/editar/",
+    remisionEliminar:"/remisiones/__ID__/eliminar/",
+  };
+  const CSRF_TOKEN = document.querySelector('[name=csrfmiddlewaretoken]').value;
+</script>
+<script>
+  datetimeWidget.init('id_fecha_date', 'id_fecha_time', 'id_fecha');
+  datetimeWidget.init('id_fecha_res_date', 'id_fecha_res_time', 'id_fecha_res');
+</script>
+{% endblock %}

@@ -1,0 +1,494 @@
+{% extends "remisiones/base.html" %}
+{% load static %}
+
+{% block title %}Gestión de Usuarios — CRUE Remisiones{% endblock %}
+
+{% block content %}
+{% if request.user.rol == 'DIRECTOR' %}
+
+<div class="app-wrapper">
+
+  <!-- SIDEBAR — panel lateral (igual que main.html) -->
+  <aside id="sidebar" class="sidebar">
+
+    <button id="sidebar-toggle" class="sidebar-toggle" title="Colapsar menú" aria-label="Colapsar menú">
+      <i class="bi bi-layout-sidebar-reverse"></i>
+    </button>
+
+    <!-- --- Información del usuario --- -->
+    <section class="sidebar-section user-info-section">
+      <div class="sidebar-label">
+        <i class="bi bi-person-circle me-1"></i>
+        <span class="sidebar-text">{{ request.user.username }}</span>
+      </div>
+      <div class="sidebar-label text-muted small">
+        <i class="bi bi-person me-1"></i>
+        <span class="sidebar-text">{{ request.user.get_full_name }}</span>
+      </div>
+      <div class="sidebar-label text-muted small">
+        <i class="bi bi-shield-check me-1"></i>
+        <span class="sidebar-text">Director</span>
+      </div>
+      <form method="post" action="{% url 'remisiones:logout' %}" class="mt-2">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-outline-danger btn-sm w-100 sidebar-btn-salir">
+          <i class="bi bi-box-arrow-right me-1"></i>
+          <span class="sidebar-text">Salir</span>
+        </button>
+      </form>
+    </section>
+
+    <hr class="sidebar-divider">
+
+    <!-- --- Menú Gestión --- -->
+    <section class="sidebar-section">
+      <div class="sidebar-menu-title">
+        <i class="bi bi-gear me-1"></i>
+        <span class="sidebar-text">Gestión</span>
+      </div>
+      <ul class="sidebar-menu-list">
+        <li>
+          <a href="{% url 'remisiones:main' %}" class="sidebar-menu-item">
+            <i class="bi bi-table me-1"></i>
+            <span class="sidebar-text">Remisiones</span>
+          </a>
+        </li>
+        <li>
+          <a href="{% url 'remisiones:cambiar_password' %}" class="sidebar-menu-item">
+            <i class="bi bi-key me-1"></i>
+            <span class="sidebar-text">Contraseña</span>
+          </a>
+        </li>
+        <li>
+          <a href="{% url 'remisiones:usuarios' %}" class="sidebar-menu-item" aria-current="page">
+            <i class="bi bi-people me-1"></i>
+            <span class="sidebar-text">Usuarios</span>
+          </a>
+        </li>
+      </ul>
+    </section>
+
+  </aside>
+  <!-- /sidebar -->
+
+  <!-- CONTENIDO PRINCIPAL -->
+  <div id="main-content" class="main-content" style="overflow-y: auto;">
+
+    <div class="usuarios-wrapper">
+
+      <!-- ---- Encabezado de página ---- -->
+      <div class="d-flex align-items-center justify-content-between mb-3">
+        <h2 class="h5 mb-0 fw-bold" style="color: #1a2a3a;">
+          <i class="bi bi-people me-2"></i>Gestión de Usuarios
+        </h2>
+        <button type="button"
+                class="btn btn-success btn-sm"
+                data-bs-toggle="collapse"
+                data-bs-target="#panel-nuevo-usuario"
+                aria-expanded="false"
+                aria-controls="panel-nuevo-usuario">
+          <i class="bi bi-person-plus me-1"></i>Nuevo Usuario
+        </button>
+      </div>
+
+      <!-- ---- Mensajes del sistema (Django messages framework) ---- -->
+      {% if messages %}
+      <div class="mb-3" role="alert" aria-live="polite">
+        {% for message in messages %}
+        <div class="alert alert-{% if message.tags == 'error' %}danger{% elif message.tags == 'success' %}success{% elif message.tags == 'warning' %}warning{% else %}info{% endif %} alert-dismissible fade show py-2" role="alert">
+          {% if message.tags == 'success' %}
+            <i class="bi bi-check-circle me-1"></i>
+          {% elif message.tags == 'error' %}
+            <i class="bi bi-exclamation-triangle me-1"></i>
+          {% else %}
+            <i class="bi bi-info-circle me-1"></i>
+          {% endif %}
+          {{ message }}
+          <button type="button" class="btn-close btn-sm" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      <!-- ---- Panel colapsable: Formulario de creación de usuario ---- -->
+      <div class="collapse {% if error %}show{% endif %}" id="panel-nuevo-usuario">
+        <div class="card mb-4 border-0 shadow-sm">
+          <div class="card-header py-2" style="background: #2d3f55; color: #fff;">
+            <h6 class="mb-0 fw-semibold">
+              <i class="bi bi-person-plus me-1"></i>Crear Nuevo Usuario
+            </h6>
+          </div>
+          <div class="card-body">
+
+            <!-- Error general del formulario -->
+            {% if error %}
+            <div class="alert alert-danger py-2 mb-3" role="alert">
+              <i class="bi bi-exclamation-triangle me-1"></i>{{ error }}
+            </div>
+            {% endif %}
+
+            <form method="post" action="{% url 'remisiones:usuarios' %}" novalidate>
+              {% csrf_token %}
+
+              <div class="row g-3">
+
+                <!-- Username -->
+                <div class="col-md-4">
+                  <label for="{{ form.username.id_for_label }}" class="form-label form-label-sm">
+                    Usuario (login) <span class="text-danger">*</span>
+                  </label>
+                  {{ form.username }}
+                  {% if form.username.errors %}
+                  <div class="text-danger small mt-1">
+                    {% for err in form.username.errors %}
+                    <div><i class="bi bi-exclamation-circle me-1"></i>{{ err }}</div>
+                    {% endfor %}
+                  </div>
+                  {% endif %}
+                </div>
+
+                <!-- Nombre -->
+                <div class="col-md-4">
+                  <label for="{{ form.first_name.id_for_label }}" class="form-label form-label-sm">
+                    Nombre <span class="text-danger">*</span>
+                  </label>
+                  {{ form.first_name }}
+                  {% if form.first_name.errors %}
+                  <div class="text-danger small mt-1">
+                    {% for err in form.first_name.errors %}
+                    <div><i class="bi bi-exclamation-circle me-1"></i>{{ err }}</div>
+                    {% endfor %}
+                  </div>
+                  {% endif %}
+                </div>
+
+                <!-- Apellido -->
+                <div class="col-md-4">
+                  <label for="{{ form.last_name.id_for_label }}" class="form-label form-label-sm">
+                    Apellido <span class="text-danger">*</span>
+                  </label>
+                  {{ form.last_name }}
+                  {% if form.last_name.errors %}
+                  <div class="text-danger small mt-1">
+                    {% for err in form.last_name.errors %}
+                    <div><i class="bi bi-exclamation-circle me-1"></i>{{ err }}</div>
+                    {% endfor %}
+                  </div>
+                  {% endif %}
+                </div>
+
+                <!-- Email -->
+                <div class="col-md-4">
+                  <label for="{{ form.email.id_for_label }}" class="form-label form-label-sm">
+                    Correo electrónico <span class="text-danger">*</span>
+                  </label>
+                  {{ form.email }}
+                  {% if form.email.errors %}
+                  <div class="text-danger small mt-1">
+                    {% for err in form.email.errors %}
+                    <div><i class="bi bi-exclamation-circle me-1"></i>{{ err }}</div>
+                    {% endfor %}
+                  </div>
+                  {% endif %}
+                </div>
+
+                <!-- Contraseña inicial -->
+                <div class="col-md-4">
+                  <label for="{{ form.password.id_for_label }}" class="form-label form-label-sm">
+                    Contraseña inicial <span class="text-danger">*</span>
+                  </label>
+                  {{ form.password }}
+                  <div class="text-muted" style="font-size: 0.7rem; margin-top: 2px;">
+                    Mínimo 8 caracteres.
+                  </div>
+                  {% if form.password.errors %}
+                  <div class="text-danger small mt-1">
+                    {% for err in form.password.errors %}
+                    <div><i class="bi bi-exclamation-circle me-1"></i>{{ err }}</div>
+                    {% endfor %}
+                  </div>
+                  {% endif %}
+                </div>
+
+                <!-- Rol -->
+                <div class="col-md-4">
+                  <label for="{{ form.rol.id_for_label }}" class="form-label form-label-sm">
+                    Rol <span class="text-danger">*</span>
+                  </label>
+                  {{ form.rol }}
+                  {% if form.rol.errors %}
+                  <div class="text-danger small mt-1">
+                    {% for err in form.rol.errors %}
+                    <div><i class="bi bi-exclamation-circle me-1"></i>{{ err }}</div>
+                    {% endfor %}
+                  </div>
+                  {% endif %}
+                </div>
+
+              </div><!-- /row -->
+
+              <!-- Errores no asociados a campos específicos -->
+              {% if form.non_field_errors %}
+              <div class="alert alert-danger py-2 mt-3" role="alert">
+                {% for err in form.non_field_errors %}
+                <div><i class="bi bi-exclamation-triangle me-1"></i>{{ err }}</div>
+                {% endfor %}
+              </div>
+              {% endif %}
+
+              <div class="mt-3 d-flex gap-2">
+                <button type="submit" class="btn btn-primary btn-sm">
+                  <i class="bi bi-person-check me-1"></i>Crear Usuario
+                </button>
+                <button type="button"
+                        class="btn btn-secondary btn-sm"
+                        data-bs-toggle="collapse"
+                        data-bs-target="#panel-nuevo-usuario">
+                  Cancelar
+                </button>
+              </div>
+
+            </form>
+          </div><!-- /card-body -->
+        </div><!-- /card -->
+      </div><!-- /collapse -->
+
+      <!-- ---- Tabla de usuarios ---- -->
+      {% if usuarios %}
+      <div class="card border-0 shadow-sm">
+        <div class="card-header py-2" style="background: #f0f4f8; border-bottom: 2px solid #d0dce8;">
+          <h6 class="mb-0 fw-semibold" style="color: #1a2a3a;">
+            <i class="bi bi-list-ul me-1"></i>Usuarios registrados
+            <span class="badge bg-secondary ms-1" style="font-size: 0.7rem;">{{ usuarios|length }}</span>
+          </h6>
+        </div>
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="usuarios-tabla" aria-label="Lista de usuarios del sistema">
+              <thead>
+                <tr>
+                  <th scope="col">Usuario</th>
+                  <th scope="col">Nombre completo</th>
+                  <th scope="col">Correo electrónico</th>
+                  <th scope="col">Rol</th>
+                  <th scope="col" class="text-center">Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for usuario in usuarios %}
+                <tr>
+                  <td>
+                    <span class="fw-semibold">{{ usuario.username }}</span>
+                    {% if usuario == request.user %}
+                    <span class="badge bg-primary ms-1" style="font-size: 0.65rem;" title="Su cuenta">Yo</span>
+                    {% endif %}
+                  </td>
+                  <td>{{ usuario.get_full_name|default:"—" }}</td>
+                  <td>{{ usuario.email|default:"—" }}</td>
+                  <td>
+                    {% if usuario.rol == 'DIRECTOR' %}
+                    <span class="badge" style="background: #2d3f55; font-size: 0.72rem;">
+                      <i class="bi bi-shield-check me-1"></i>Director
+                    </span>
+                    {% else %}
+                    <span class="badge bg-secondary" style="font-size: 0.72rem;">
+                      <i class="bi bi-headset me-1"></i>Radioperador
+                    </span>
+                    {% endif %}
+                  </td>
+                  <td class="text-center">
+                    <a href="{% url 'remisiones:usuario_edit' usuario.pk %}"
+                       class="btn btn-outline-primary btn-sm py-0 px-2 me-1"
+                       title="Modificar usuario {{ usuario.username }}">
+                      <i class="bi bi-pencil-square me-1"></i>Modificar
+                    </a>
+                    <a href="{% url 'remisiones:usuario_cambiar_password' usuario.pk %}"
+                       class="btn btn-outline-warning btn-sm py-0 px-2 me-1"
+                       title="Cambiar contraseña de {{ usuario.username }}">
+                      <i class="bi bi-key me-1"></i>Contraseña
+                    </a>
+                    {% if usuario != request.user %}
+                    <form method="post"
+                          action="{% url 'remisiones:usuario_delete' usuario.pk %}"
+                          class="d-inline form-eliminar-usuario"
+                          data-username="{{ usuario.username }}">
+                      {% csrf_token %}
+                      <button type="submit"
+                              class="btn btn-outline-danger btn-sm py-0 px-2"
+                              title="Eliminar usuario {{ usuario.username }}">
+                        <i class="bi bi-trash me-1"></i>Eliminar
+                      </button>
+                    </form>
+                    {% else %}
+                    <button type="button"
+                            class="btn btn-outline-secondary btn-sm py-0 px-2"
+                            disabled
+                            title="No puede eliminar su propio usuario">
+                      <i class="bi bi-trash me-1"></i>Eliminar
+                    </button>
+                    {% endif %}
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div><!-- /table-responsive -->
+        </div><!-- /card-body -->
+      </div><!-- /card -->
+
+      {% else %}
+      <div class="text-center py-5 text-muted">
+        <i class="bi bi-people fs-1"></i>
+        <p class="mt-2">No hay usuarios registrados.</p>
+      </div>
+      {% endif %}
+
+    </div><!-- /usuarios-wrapper -->
+  </div><!-- /main-content -->
+
+</div><!-- /app-wrapper -->
+
+<!-- MODAL DE CONFIRMACIÓN DE ELIMINACIÓN -->
+<div id="modal-confirmar-eliminar-usuario"
+     class="modal fade"
+     tabindex="-1"
+     aria-labelledby="modal-eliminar-titulo"
+     aria-hidden="true">
+  <div class="modal-dialog modal-sm modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header bg-danger text-white py-2">
+        <h6 class="modal-title" id="modal-eliminar-titulo">
+          <i class="bi bi-exclamation-triangle me-1"></i>Confirmar eliminación
+        </h6>
+        <button type="button"
+                class="btn-close btn-close-white"
+                data-bs-dismiss="modal"
+                aria-label="Cerrar"></button>
+      </div>
+      <div class="modal-body">
+        <p class="mb-1">¿Está seguro de que desea eliminar al usuario:</p>
+        <p class="fw-bold mb-0" id="modal-eliminar-username"></p>
+        <p class="text-danger small mt-2 mb-0">
+          <i class="bi bi-exclamation-circle me-1"></i>Esta acción es permanente y no se puede deshacer.
+        </p>
+      </div>
+      <div class="modal-footer py-2">
+        <button type="button"
+                class="btn btn-secondary btn-sm"
+                data-bs-dismiss="modal">
+          Cancelar
+        </button>
+        <button type="button"
+                id="btn-confirmar-eliminar-usuario"
+                class="btn btn-danger btn-sm">
+          <i class="bi bi-trash me-1"></i>Eliminar
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- /modal-confirmar-eliminar-usuario -->
+
+{% else %}
+<!-- Acceso denegado — usuario sin rol DIRECTOR -->
+<div class="d-flex align-items-center justify-content-center min-vh-100 bg-light">
+  <div class="text-center p-4">
+    <i class="bi bi-shield-lock fs-1 text-danger mb-3 d-block"></i>
+    <h4 class="text-danger">Acceso denegado</h4>
+    <p class="text-muted">No tiene permisos para acceder a esta sección.</p>
+    <a href="{% url 'remisiones:main' %}" class="btn btn-primary btn-sm">
+      <i class="bi bi-arrow-left me-1"></i>Volver al inicio
+    </a>
+  </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+{% if request.user.rol == 'DIRECTOR' %}
+<script>
+(function () {
+  'use strict';
+
+  // ── Sidebar toggle ──────────────────────────────────────────
+  const sidebar = document.getElementById('sidebar');
+  const toggleBtn = document.getElementById('sidebar-toggle');
+
+  if (sidebar && toggleBtn) {
+    const STORAGE_KEY = 'sidebar_collapsed';
+    const collapsed = localStorage.getItem(STORAGE_KEY) === 'true';
+    if (collapsed) {
+      sidebar.classList.add('sidebar-collapsed');
+      toggleBtn.title = 'Expandir menú';
+      toggleBtn.setAttribute('aria-label', 'Expandir menú');
+    }
+
+    toggleBtn.addEventListener('click', function () {
+      const isCollapsed = sidebar.classList.toggle('sidebar-collapsed');
+      localStorage.setItem(STORAGE_KEY, isCollapsed);
+      toggleBtn.title = isCollapsed ? 'Expandir menú' : 'Colapsar menú';
+      toggleBtn.setAttribute('aria-label', isCollapsed ? 'Expandir menú' : 'Colapsar menú');
+    });
+  }
+
+  // ── Confirmación de eliminación de usuario ──────────────────
+  const modalEl = document.getElementById('modal-confirmar-eliminar-usuario');
+  const modalUsernameEl = document.getElementById('modal-eliminar-username');
+  const btnConfirmar = document.getElementById('btn-confirmar-eliminar-usuario');
+
+  let formPendiente = null;
+
+  // Interceptar todos los formularios de eliminación
+  document.querySelectorAll('.form-eliminar-usuario').forEach(function (form) {
+    form.addEventListener('submit', function (e) {
+      e.preventDefault(); // Detener envío inmediato
+
+      const username = form.dataset.username || 'este usuario';
+
+      // Mostrar nombre en el modal
+      if (modalUsernameEl) {
+        modalUsernameEl.textContent = username;
+      }
+
+      // Guardar referencia al formulario pendiente
+      formPendiente = form;
+
+      // Abrir modal de confirmación
+      const modal = new bootstrap.Modal(modalEl);
+      modal.show();
+    });
+  });
+
+  // Al confirmar en el modal, enviar el formulario real
+  if (btnConfirmar) {
+    btnConfirmar.addEventListener('click', function () {
+      if (formPendiente) {
+        // Ocultar modal antes de enviar
+        const modal = bootstrap.Modal.getInstance(modalEl);
+        if (modal) modal.hide();
+
+        formPendiente.submit();
+        formPendiente = null;
+      }
+    });
+  }
+
+  // Limpiar referencia si se cancela el modal
+  if (modalEl) {
+    modalEl.addEventListener('hidden.bs.modal', function () {
+      formPendiente = null;
+    });
+  }
+
+  // ── Auto-cerrar alertas de éxito tras 4 segundos ────────────
+  document.querySelectorAll('.alert-success').forEach(function (alert) {
+    setTimeout(function () {
+      const bsAlert = bootstrap.Alert.getOrCreateInstance(alert);
+      if (bsAlert) bsAlert.close();
+    }, 4000);
+  });
+
+})();
+</script>
+{% endif %}
+{% endblock %}
