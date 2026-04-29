@@ -1,0 +1,22 @@
+{% extends 'traslados/base.html' %}
+
+{% block titulo %}Error al generar reporte{% endblock %}
+
+{% block contenido %}
+<div class="min-h-screen flex items-center justify-center bg-gray-100">
+	<div class="bg-white rounded-lg shadow-md p-8 max-w-md w-full text-center">
+		<div class="text-red-500 mb-4">
+			<svg class="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+				<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+					d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+			</svg>
+		</div>
+		<h1 class="text-xl font-semibold text-gray-800 mb-2">Error al generar el reporte</h1>
+		<p class="text-gray-600 mb-6">{{ mensaje }}</p>
+		<a href="{% url 'principal' %}"
+			class="inline-block bg-blue-600 text-white px-5 py-2 rounded-md text-sm font-medium hover:bg-blue-700 transition">
+			Volver al inicio
+		</a>
+	</div>
+</div>
+{% endblock %}

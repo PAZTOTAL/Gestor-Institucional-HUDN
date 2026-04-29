@@ -1,0 +1,153 @@
+{% extends "traslados/base.html" %}
+{# Plantilla para que el usuario autenticado cambie su propia contraseña #}
+
+{% block titulo %}Cambiar Contraseña{% endblock %}
+
+{% block contenido %}
+<div class="flex h-screen overflow-hidden bg-gray-100">
+
+	{# ═══════════════════════════════════════════════════════════════════════ #}
+	{# SIDEBAR IZQUIERDO                                                       #}
+	{# ═══════════════════════════════════════════════════════════════════════ #}
+	<aside class="w-64 bg-blue-900 text-white flex flex-col flex-shrink-0 shadow-lg">
+
+		{# ── Encabezado: usuario ─────────────────────────────────────────── #}
+		<div class="px-5 py-6 border-b border-blue-700">
+			<p class="text-sm font-semibold text-blue-200 uppercase tracking-wide">Usuario</p>
+			<p class="text-lg font-bold truncate">{{ request.user.username }}</p>
+		</div>
+
+		{# ── Navegación ──────────────────────────────────────────────────── #}
+		<nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+			<a
+				href="{% url 'principal' %}"
+				class="flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium text-blue-100 hover:bg-blue-700 hover:text-white transition-colors"
+			>
+				<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+						d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+				</svg>
+				Inicio
+			</a>
+		</nav>
+
+		{# ── Botón Salir ─────────────────────────────────────────────────── #}
+		<div class="px-3 py-4 border-t border-blue-700">
+			<form method="post" action="{% url 'logout' %}">
+				{% csrf_token %}
+				<button
+					type="submit"
+					class="w-full flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium text-blue-200 hover:bg-blue-700 hover:text-white transition-colors"
+				>
+					<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+							d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+					</svg>
+					Salir
+				</button>
+			</form>
+		</div>
+
+	</aside>
+
+	{# ═══════════════════════════════════════════════════════════════════════ #}
+	{# ÁREA PRINCIPAL                                                          #}
+	{# ═══════════════════════════════════════════════════════════════════════ #}
+	<div class="flex-1 flex flex-col overflow-hidden">
+
+		{# ── Barra de título ─────────────────────────────────────────────── #}
+		<header class="bg-white shadow-sm px-6 py-4 flex items-center justify-between">
+			<h1 class="text-xl font-bold text-blue-900">Cambiar contraseña</h1>
+			<a
+				href="{% url 'principal' %}"
+				class="text-sm text-blue-600 hover:underline"
+			>
+				← Volver al inicio
+			</a>
+		</header>
+
+		<main class="flex-1 overflow-auto p-6">
+
+			<section class="bg-white rounded-lg shadow p-6 max-w-md">
+				<h2 class="text-lg font-semibold text-gray-800 mb-1">Gestión &rsaquo; Contraseña</h2>
+				<p class="text-sm text-gray-500 mb-5">
+					Ingrese su contraseña actual y luego la nueva contraseña para actualizarla.
+				</p>
+
+				{# ── Mensaje de éxito ────────────────────────────────────── #}
+				{% if exito %}
+				<div class="mb-5 p-3 bg-green-50 border border-green-200 rounded-md flex items-center gap-2">
+					<svg class="w-5 h-5 text-green-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+					</svg>
+					<p class="text-sm text-green-700 font-medium">Contraseña actualizada correctamente.</p>
+				</div>
+				{% endif %}
+
+				<form method="post" action="{% url 'cambiar-contrasena' %}" novalidate>
+					{% csrf_token %}
+
+					{# ── Errores no asociados a campo ────────────────────── #}
+					{% if formulario.non_field_errors %}
+					<div class="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
+						{% for error in formulario.non_field_errors %}
+						<p class="text-sm text-red-600">{{ error }}</p>
+						{% endfor %}
+					</div>
+					{% endif %}
+
+					{# ── Campo: contrasena_actual ─────────────────────────── #}
+					<div class="mb-4">
+						<label for="{{ formulario.contrasena_actual.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+							{{ formulario.contrasena_actual.label }}
+						</label>
+						{{ formulario.contrasena_actual }}
+						{% if formulario.contrasena_actual.errors %}
+						<p class="mt-1 text-xs text-red-600">{{ formulario.contrasena_actual.errors|join:", " }}</p>
+						{% endif %}
+					</div>
+
+					{# ── Campo: nueva_contrasena ──────────────────────────── #}
+					<div class="mb-4">
+						<label for="{{ formulario.nueva_contrasena.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+							{{ formulario.nueva_contrasena.label }}
+						</label>
+						{{ formulario.nueva_contrasena }}
+						{% if formulario.nueva_contrasena.errors %}
+						<p class="mt-1 text-xs text-red-600">{{ formulario.nueva_contrasena.errors|join:", " }}</p>
+						{% endif %}
+					</div>
+
+					{# ── Campo: confirmar_contrasena ──────────────────────── #}
+					<div class="mb-6">
+						<label for="{{ formulario.confirmar_contrasena.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+							{{ formulario.confirmar_contrasena.label }}
+						</label>
+						{{ formulario.confirmar_contrasena }}
+						{% if formulario.confirmar_contrasena.errors %}
+						<p class="mt-1 text-xs text-red-600">{{ formulario.confirmar_contrasena.errors|join:", " }}</p>
+						{% endif %}
+					</div>
+
+					<div class="flex gap-3">
+						<button
+							type="submit"
+							class="flex-1 bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-800 transition-colors"
+						>
+							Guardar contraseña
+						</button>
+						<a
+							href="{% url 'principal' %}"
+							class="flex-1 text-center bg-gray-100 text-gray-700 px-4 py-2 rounded-md text-sm font-medium hover:bg-gray-200 transition-colors"
+						>
+							Cancelar
+						</a>
+					</div>
+				</form>
+			</section>
+
+		</main>
+	</div>
+
+</div>
+{% endblock %}
