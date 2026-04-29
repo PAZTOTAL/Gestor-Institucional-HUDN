@@ -360,8 +360,12 @@ class UsuarioHudnUpdateForm(PremiumModelForm):
             
             # Cargar permisos existentes
             from usuarios.models import PermisoModelo
-            permisos = PermisoModelo.objects.filter(user=self.instance, app_label='defenjur')
-            perm_dict = {p.model_name: p.permitido for p in permisos}
+            permisos = PermisoModelo.objects.filter(user=self.instance, app_label__in=['defenjur', 'legal'])
+            # Prioritize True if there are duplicates
+            perm_dict = {}
+            for p in permisos:
+                if p.permitido or p.model_name not in perm_dict:
+                    perm_dict[p.model_name] = p.permitido
             for field_name, model_name in self.MAP_PERMS.items():
                 self.fields[field_name].initial = perm_dict.get(model_name, False)
 
@@ -383,25 +387,17 @@ class UsuarioHudnUpdateForm(PremiumModelForm):
                 perfil.legal_nick = user.username
                 perfil.save()
 
-                # 2. Guardar Permisos de Módulo (Optimizado con Bulk)
-                permisos_actuales = {p.model_name: p for p in PermisoModelo.objects.filter(user=user, app_label='defenjur')}
-                objs_to_update = []
-                objs_to_create = []
-                
+                # 2. Guardar Permisos de Módulo (Usando update_or_create para asegurar ambos app_labels)
                 for field_name, model_name in self.MAP_PERMS.items():
                     val = self.cleaned_data.get(field_name, False)
-                    if model_name in permisos_actuales:
-                        p = permisos_actuales[model_name]
-                        if p.permitido != val:
-                            p.permitido = val
-                            objs_to_update.append(p)
-                    else:
-                        objs_to_create.append(PermisoModelo(user=user, app_label='defenjur', model_name=model_name, permitido=val))
-                
-                if objs_to_update:
-                    PermisoModelo.objects.bulk_update(objs_to_update, ['permitido'])
-                if objs_to_create:
-                    PermisoModelo.objects.bulk_create(objs_to_create)
+                    PermisoModelo.objects.update_or_create(
+                        user=user, app_label='defenjur', model_name=model_name,
+                        defaults={'permitido': val}
+                    )
+                    PermisoModelo.objects.update_or_create(
+                        user=user, app_label='legal', model_name=model_name,
+                        defaults={'permitido': val}
+                    )
 
                 # 3. Invalidar Cache de Navegación
                 cache.delete(f'user_dashboard_nav_{user.id}')
