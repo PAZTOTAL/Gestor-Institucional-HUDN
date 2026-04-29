@@ -1,4 +1,5 @@
 from django.views.generic import TemplateView, ListView, CreateView, UpdateView, DeleteView
+from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.apps import apps
 from django.core.paginator import Paginator
@@ -198,6 +199,11 @@ def render_to_pdf(template_src, context_dict={}):
     if not pdf.err:
         return HttpResponse(result.getvalue(), content_type='application/pdf')
     return None
+
+def csrf_failure(request, reason=''):
+    messages.warning(request, 'Tu sesión expiró. Por favor inicia sesión nuevamente.')
+    return redirect('login')
+
 
 class VariosPanelView(LoginRequiredMixin, TemplateView):
     template_name = 'core/varios_panel.html'

@@ -234,9 +234,10 @@ MEDIA_ROOT = BASE_DIR / 'media'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# Sesiones en RAM pura — sin escritura a SQL Server (django_session es lento ~13s)
-# Las sesiones se pierden al reiniciar el servidor, pero el login es instantáneo
-SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
+# Sesiones en archivo — rápidas, persisten entre reinicios del servidor
+SESSION_ENGINE = 'django.contrib.sessions.backends.file'
+SESSION_FILE_PATH = os.path.join(BASE_DIR, 'sessions')
+SESSION_COOKIE_AGE = 28800  # 8 horas
 CACHES = {
     'default': {
         'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
@@ -248,6 +249,7 @@ CACHES = {
 LOGIN_URL = 'login'
 LOGIN_REDIRECT_URL = 'home'
 LOGOUT_REDIRECT_URL = 'login'
+CSRF_FAILURE_VIEW = 'core.views.csrf_failure'
 
 # Increase max fields for permission matrix
 DATA_UPLOAD_MAX_NUMBER_FIELDS = 10000
