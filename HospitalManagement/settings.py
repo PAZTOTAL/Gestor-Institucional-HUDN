@@ -32,19 +32,13 @@ load_dotenv(BASE_DIR / '.env')
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-vm8ux)05e9u$fc=qz5^$)ma+q!ehq)&#y2g9e74#e=+&w(lm1i'
+SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-vm8ux)05e9u$fc=qz5^$)ma+q!ehq)&#y2g9e74#e=+&w(lm1i')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv('DEBUG', 'True') == 'True'
 
-ALLOWED_HOSTS = [
-    'localhost',
-    '127.0.0.1',
-    '.ngrok.io',
-    '.ngrok-free.app',
-    '.trycloudflare.com',
-    '*',  # Para pruebas - permite cualquier host
-]
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1,GestorInstitucionalHUDN,.ngrok.io,.ngrok-free.app,.trycloudflare.com').split(',')
+
 
 # Para ngrok y túneles seguros
 CSRF_TRUSTED_ORIGINS = [
@@ -95,6 +89,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    'core.middleware.SecurityProtectionMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -140,33 +135,34 @@ WSGI_APPLICATION = 'HospitalManagement.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'mssql',
-        'NAME': 'GestorInstitucional',
-        'USER': 'apantoja',
-        'PASSWORD': 'ConsultasPantojaHUDN_2026$', 
-        'HOST': '172.20.100.209',
-        'PORT': '',
-        'CONN_MAX_AGE': 60,  # Habilitar Connection Pooling (60s) para reducir overhead de red
+        'NAME': os.getenv('DB_DEFAULT_NAME', 'GestorInstitucional'),
+        'USER': os.getenv('DB_DEFAULT_USER', 'apantoja'),
+        'PASSWORD': os.getenv('DB_DEFAULT_PASSWORD', 'ConsultasPantojaHUDN_2026$'), 
+        'HOST': os.getenv('DB_DEFAULT_HOST', '172.20.100.209'),
+        'PORT': os.getenv('DB_DEFAULT_PORT', ''),
+        'CONN_MAX_AGE': 600,
         'OPTIONS': {
             'driver': 'ODBC Driver 17 for SQL Server',
-            'timeout': 60,
+            'timeout': 30,
         },
     },
     'readonly': {
         'ENGINE': 'mssql',
-        'NAME': 'DGEMPRES03',
-        'USER': 'DSOLARTE',
-        'PASSWORD': 'ConsultaHUDN2026*/$',
-        'HOST': '172.20.100.209',
-        'PORT': '',
-        'CONN_MAX_AGE': 60,  # Habilitar Connection Pooling (60s)
+        'NAME': os.getenv('DB_READONLY_NAME', 'DGEMPRES_NEXUS'),
+        'USER': os.getenv('DB_READONLY_USER', 'apantoja'),
+        'PASSWORD': os.getenv('DB_READONLY_PASSWORD', 'ConsultasPantojaHUDN_2026$'),
+        'HOST': os.getenv('DB_READONLY_HOST', '172.20.100.209'),
+        'PORT': os.getenv('DB_READONLY_PORT', ''),
+        'CONN_MAX_AGE': 0,
         'OPTIONS': {
             'driver': 'ODBC Driver 17 for SQL Server',
             'host_is_server': True,
-            'timeout': 10,  # Timeout para consultas de lectura
-            'connection_timeout': 1,  # Timeout de conexión mínimo
+            'timeout': 10,
+            'connection_timeout': 1,
         },
     }
 }
+
 
 
 
@@ -223,9 +219,9 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.0/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+STATICFILES_STORAGE = 'whitenoise.storage.StaticFilesStorage'
 STATICFILES_DIRS = [
     BASE_DIR / 'static',
     BASE_DIR / 'defenjur_py' / 'static',
@@ -240,10 +236,22 @@ MEDIA_ROOT = BASE_DIR / 'media'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+# Sesiones en archivo — rápidas, persisten entre reinicios del servidor
+SESSION_ENGINE = 'django.contrib.sessions.backends.file'
+SESSION_FILE_PATH = os.path.join(BASE_DIR, 'sessions')
+SESSION_COOKIE_AGE = 28800  # 8 horas
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'gestor-cache',
+    }
+}
+
 # Authentication configurations
 LOGIN_URL = 'login'
 LOGIN_REDIRECT_URL = 'home'
 LOGOUT_REDIRECT_URL = 'login'
+CSRF_FAILURE_VIEW = 'core.views.csrf_failure'
 
 # Increase max fields for permission matrix
 DATA_UPLOAD_MAX_NUMBER_FIELDS = 10000
@@ -303,3 +311,55 @@ PYS_DB_NEXUS_PASS = os.getenv('PYS_DB_NEXUS_PASS', 'ConsultasPantojaHUDN_2026$')
 PYS_DB_SGC_NAME   = os.getenv('PYS_DB_SGC_NAME',   'SGC_HUDN')
 PYS_DB_SGC_USER   = os.getenv('PYS_DB_SGC_USER',   'apantoja')
 PYS_DB_SGC_PASS   = os.getenv('PYS_DB_SGC_PASS',   'ConsultasPantojaHUDN_2026$')
+# SECURITY HARDENING SETTINGS
+if not DEBUG:
+    # Security headers
+    SECURE_BROWSER_XSS_FILTER = True
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    X_FRAME_OPTIONS = 'DENY'
+    
+    # HTTPS Enforcement (Only if SSL is configured)
+    SECURE_SSL_REDIRECT = os.getenv('SECURE_SSL_REDIRECT', 'False') == 'True'
+    
+    # HSTS
+    SECURE_HSTS_SECONDS = 31536000 # 1 year
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+    
+    # Secure Cookies — solo si hay HTTPS real (proxy/ngrok/cloudflare)
+    _https = os.getenv('SECURE_SSL_REDIRECT', 'False') == 'True'
+    SESSION_COOKIE_SECURE = _https
+    CSRF_COOKIE_SECURE = _https
+    
+    # Referrer Policy
+    SECURE_REFERRER_POLICY = 'same-origin'
+
+# Content Security Policy (Optional but recommended)
+# We can use django-csp if installed, otherwise we can set headers manually in middleware.
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'simple': {'format': '[%(asctime)s] %(levelname)s %(name)s: %(message)s'},
+    },
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'simple',
+        },
+    },
+    'loggers': {
+        'horas_extras': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'django.db.backends': {
+            'handlers': ['console'],
+            'level': 'WARNING',  # Cambiar a DEBUG para ver cada query SQL
+            'propagate': False,
+        },
+    },
+}
+

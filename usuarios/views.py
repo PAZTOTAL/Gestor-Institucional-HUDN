@@ -10,8 +10,41 @@ from core.mixins import AccessControlMixin
 from django.apps import apps
 from django.db import connections
 from django.http import JsonResponse
-from .forms import RegistroForm
+from django.core.mail import send_mail
+from django.conf import settings
+from django.contrib import messages
+from django.utils import timezone
+from datetime import timedelta
+import random
+import string
+from .forms import RegistroForm, PasswordResetRequestForm, PasswordResetCodeForm, PasswordResetConfirmForm
 from .models import PerfilUsuario, PermisoApp, PermisoModelo
+
+
+def _activar_permiso_coordinador(user):
+    """
+    Si la cédula del usuario coincide con un CoordinadorRecargos,
+    activa el permiso de acceso a la app horas_extras y limpia el caché.
+    """
+    try:
+        cedula = user.perfil.cedula
+    except Exception:
+        return
+    if not cedula:
+        return
+    try:
+        from horas_extras.models import CoordinadorRecargos
+        if CoordinadorRecargos.objects.filter(documento=cedula).exists():
+            PermisoApp.objects.update_or_create(
+                user=user,
+                app_label='horas_extras',
+                defaults={'permitido': True},
+            )
+            from django.core.cache import cache
+            cache.delete(f'user_perms_{user.pk}')
+            cache.delete(f'areas_ids_recargos_{user.pk}')
+    except Exception:
+        pass
 
 class CustomLoginView(LoginView):
     template_name = 'usuarios/login.html'
@@ -29,10 +62,13 @@ class RegistroView(CreateView):
         response = super().form_valid(form)
         # Create profile for new user
         PerfilUsuario.objects.get_or_create(user=self.object)
-        
-        # Otorga permiso automáticamente SOLO para la app CertificadosDIAN por defecto
+
+        # Permiso por defecto para CertificadosDIAN
         PermisoApp.objects.get_or_create(user=self.object, app_label="CertificadosDIAN", defaults={"permitido": True})
-        
+
+        # Si es coordinador, activar acceso a horas_extras automáticamente
+        _activar_permiso_coordinador(self.object)
+
         return response
 
 class PanelUsuariosView(AccessControlMixin, TemplateView):
@@ -145,39 +181,63 @@ class GestionPermisosView(AccessControlMixin, TemplateView):
             perfil.save()
             
         # PROCESAMIENTO DE PERMISOS
-        # 1. Resetear todos los permisos actuales para este usuario
+        from django.core.cache import cache as _cache
+        from django.db.models import Q
+
+        selected_apps   = set(request.POST.getlist('apps'))
+        selected_models = []  # lista de (app_label, model_name)
+        for full_name in request.POST.getlist('models'):
+            if '.' in full_name:
+                app_label, model_name = full_name.split('.', 1)
+                selected_apps.add(app_label)
+                selected_models.append((app_label, model_name))
+
+        # Leer registros existentes ANTES de resetear (1 query cada uno)
+        existing_modelos = set(
+            PermisoModelo.objects.filter(user=target_user)
+            .values_list('app_label', 'model_name')
+        )
+        existing_apps = set(
+            PermisoApp.objects.filter(user=target_user)
+            .values_list('app_label', flat=True)
+        )
+
+        # 1. Resetear en bulk (1 query cada uno)
         PermisoApp.objects.filter(user=target_user).update(permitido=False)
         PermisoModelo.objects.filter(user=target_user).update(permitido=False)
-        
-        selected_apps = set(request.POST.getlist('apps'))
-        selected_models = request.POST.getlist('models') # Formato: app_label.model_name
-        
-        # 2. Guardar permisos de modelos y recolectar apps implícitas
-        apps_to_enable = selected_apps.copy()
-        
-        for full_name in selected_models:
-            if '.' in full_name:
-                app_label, model_name = full_name.split('.')
-                apps_to_enable.add(app_label) # Asegurar que la app esté activa si un modelo lo está
-                
-                perm_m, created = PermisoModelo.objects.get_or_create(
-                    user=target_user, 
-                    app_label=app_label, 
-                    model_name=model_name
-                )
-                perm_m.permitido = True
-                perm_m.save()
 
-        # 3. Guardar permisos de aplicaciones
-        for app_slug in apps_to_enable:
-            perm, created = PermisoApp.objects.get_or_create(user=target_user, app_label=app_slug)
-            perm.permitido = True
-            perm.save()
-            
-        # Invalidar cache del dashboard para el usuario modificado
-        from django.core.cache import cache
-        cache.delete(f'user_dashboard_nav_{target_user.id}')
-        cache.delete(f'dashboard_structure_{target_user.id}')
+        # 2. Habilitar modelos seleccionados en bulk
+        if selected_models:
+            q = Q()
+            for app_label, model_name in selected_models:
+                q |= Q(app_label=app_label, model_name=model_name)
+            PermisoModelo.objects.filter(user=target_user).filter(q).update(permitido=True)
+
+            nuevos_modelos = [
+                PermisoModelo(user=target_user, app_label=a, model_name=m, permitido=True)
+                for a, m in selected_models if (a, m) not in existing_modelos
+            ]
+            if nuevos_modelos:
+                PermisoModelo.objects.bulk_create(nuevos_modelos)
+
+        # 3. Habilitar apps seleccionadas en bulk
+        if selected_apps:
+            PermisoApp.objects.filter(
+                user=target_user, app_label__in=selected_apps
+            ).update(permitido=True)
+
+            nuevas_apps = [
+                PermisoApp(user=target_user, app_label=a, permitido=True)
+                for a in selected_apps if a not in existing_apps
+            ]
+            if nuevas_apps:
+                PermisoApp.objects.bulk_create(nuevas_apps)
+
+        # Invalidar caché del usuario modificado
+        _cache.delete(f'user_dashboard_nav_{target_user.id}')
+        _cache.delete(f'dashboard_structure_{target_user.id}')
+        _cache.delete(f'user_perfil_{target_user.id}')
+        _cache.delete(f'user_perms_{target_user.id}')
 
         return redirect('gestion_usuarios')
 
@@ -333,3 +393,101 @@ def lookup_tercero_por_cedula(request):
             
     except Exception as e:
         return JsonResponse({'found': False, 'message': f'Error en la búsqueda: {str(e)}'})
+
+class PasswordResetRequestView(TemplateView):
+    template_name = 'usuarios/password_reset_request.html'
+
+    def get(self, request, *args, **kwargs):
+        form = PasswordResetRequestForm()
+        return render(request, self.template_name, {'form': form})
+
+    def post(self, request, *args, **kwargs):
+        form = PasswordResetRequestForm(request.POST)
+        if form.is_valid():
+            email = form.cleaned_data['email']
+            user = User.objects.get(email=email)
+            perfil, _ = PerfilUsuario.objects.get_or_create(user=user)
+            
+            # Generar código de 6 dígitos
+            code = ''.join(random.choices(string.digits, k=6))
+            perfil.reset_code = code
+            perfil.reset_code_expires_at = timezone.now() + timedelta(minutes=15)
+            perfil.save()
+            
+            # Enviar correo
+            subject = 'Código de Recuperación de Contraseña - Gestor Institucional HUDN'
+            message = f'Hola {user.first_name},\n\nSu código para recuperar la contraseña es: {code}\n\nEste código expira en 15 minutos.'
+            email_from = settings.DEFAULT_FROM_EMAIL
+            recipient_list = [email]
+            
+            try:
+                send_mail(subject, message, email_from, recipient_list)
+                request.session['reset_email'] = email
+                messages.success(request, 'Se ha enviado un código a su correo electrónico.')
+                return redirect('password_reset_verify')
+            except Exception as e:
+                messages.error(request, f'Error al enviar el correo: {str(e)}')
+        
+        return render(request, self.template_name, {'form': form})
+
+class PasswordResetVerifyView(TemplateView):
+    template_name = 'usuarios/password_reset_verify.html'
+
+    def get(self, request, *args, **kwargs):
+        if 'reset_email' not in request.session:
+            return redirect('password_reset_request')
+        form = PasswordResetCodeForm()
+        return render(request, self.template_name, {'form': form})
+
+    def post(self, request, *args, **kwargs):
+        if 'reset_email' not in request.session:
+            return redirect('password_reset_request')
+            
+        form = PasswordResetCodeForm(request.POST)
+        if form.is_valid():
+            code = form.cleaned_data['code']
+            email = request.session['reset_email']
+            user = User.objects.get(email=email)
+            perfil = user.perfil
+            
+            if perfil.reset_code == code and perfil.reset_code_expires_at > timezone.now():
+                request.session['code_verified'] = True
+                return redirect('password_reset_confirm')
+            else:
+                messages.error(request, 'Código inválido o expirado.')
+        
+        return render(request, self.template_name, {'form': form})
+
+class PasswordResetConfirmView(TemplateView):
+    template_name = 'usuarios/password_reset_confirm.html'
+
+    def get(self, request, *args, **kwargs):
+        if not request.session.get('code_verified'):
+            return redirect('password_reset_request')
+        form = PasswordResetConfirmForm()
+        return render(request, self.template_name, {'form': form})
+
+    def post(self, request, *args, **kwargs):
+        if not request.session.get('code_verified'):
+            return redirect('password_reset_request')
+            
+        form = PasswordResetConfirmForm(request.POST)
+        if form.is_valid():
+            email = request.session['reset_email']
+            user = User.objects.get(email=email)
+            user.set_password(form.cleaned_data['password'])
+            user.save()
+            
+            # Limpiar datos de sesión y código
+            perfil = user.perfil
+            perfil.reset_code = None
+            perfil.reset_code_expires_at = None
+            perfil.save()
+            
+            del request.session['reset_email']
+            del request.session['code_verified']
+            
+            messages.success(request, 'Contraseña actualizada con éxito. Ya puede iniciar sesión.')
+            return redirect('login')
+            
+        return render(request, self.template_name, {'form': form})

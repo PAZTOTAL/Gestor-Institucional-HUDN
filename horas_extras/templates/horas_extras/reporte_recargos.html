@@ -21,11 +21,14 @@
 
     <!-- Panel Áreas -->
     <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
-      <div class="flex justify-between items-center mb-4">
+      <div class="flex justify-between items-center mb-3">
         <h2 class="font-black text-slate-800 text-lg">Área</h2>
         <button onclick="cargarAreas()" class="text-slate-400 hover:text-blue-600 text-xl" title="Recargar">↻</button>
       </div>
-      <div id="areas-container">
+      <input id="buscar-area-rep" type="text" placeholder="Buscar área..." autocomplete="off"
+        oninput="buscarAreaRep()"
+        class="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm mb-3 focus:outline-none focus:ring-2 focus:ring-blue-400">
+      <div id="areas-container" style="max-height:360px;overflow-y:auto">
         <p class="text-slate-400 text-sm">Cargando áreas...</p>
       </div>
     </div>
@@ -71,8 +74,8 @@
           <span id="preview-subtitulo" class="text-white/70 text-sm ml-2"></span>
         </div>
         <div class="flex flex-wrap gap-2 items-center">
-          <span id="warn-temporal" class="hidden text-xs font-bold text-red-700 bg-red-100 px-3 py-1 rounded-lg"></span>
-          <span id="warn-permanente" class="hidden text-xs font-bold text-red-700 bg-red-100 px-3 py-1 rounded-lg"></span>
+          <span id="warn-temporal" class="hidden text-xs font-bold text-blue-100 bg-blue-800/60 px-3 py-1 rounded-lg"></span>
+          <span id="warn-permanente" class="hidden text-xs font-bold text-blue-100 bg-blue-800/60 px-3 py-1 rounded-lg"></span>
           <!-- Excel área -->
           <button id="btn-xl-area" onclick="descargarAreaXlsx()"
             style="background:rgba(255,255,255,0.15);color:white"
@@ -102,29 +105,48 @@
         <div class="px-5 py-3 border-b border-slate-100">
           <p class="font-black text-slate-800">Vista general</p>
           <p class="text-xs text-slate-400 mt-0.5">Haz clic en un empleado para ver su desglose</p>
+          <!-- Leyenda -->
+          <div class="flex gap-4 mt-2 text-xs text-slate-500 flex-wrap">
+            <span><strong class="text-purple-700">HON</strong> Horas Ordinarias Nocturnas · 35%</span>
+            <span><strong class="text-amber-700">HDF</strong> Horas Diurnas Festivas · 75%</span>
+            <span><strong class="text-red-700">HNF</strong> Horas Nocturnas Festivas · 110%</span>
+          </div>
         </div>
-        <div class="overflow-x-auto">
+        <div class="overflow-auto" style="max-height:480px">
           <table class="w-full text-sm" id="tabla-general">
-            <thead>
-              <tr class="bg-slate-50 text-xs">
+            <thead class="sticky top-0 bg-slate-50 z-10">
+              <tr class="text-xs">
                 <th class="px-4 py-2 text-left font-bold text-slate-600">Empleado</th>
                 <th class="px-4 py-2 text-left font-bold text-slate-600">Tipo</th>
                 <th class="px-3 py-2 text-center font-bold text-slate-600" title="Días con turno">Días</th>
-                <th class="px-3 py-2 text-center font-bold text-slate-600 text-purple-700" title="Horas Ordinarias Nocturnas (Recargo 35%)">HON</th>
-                <th class="px-3 py-2 text-center font-bold text-slate-600 text-amber-700"  title="Horas Diurnas Festivas (Recargo 75%)">HDF</th>
-                <th class="px-3 py-2 text-center font-bold text-slate-600 text-red-700"    title="Horas Nocturnas Festivas (Recargo 110%)">HNF</th>
+                <th class="px-3 py-2 text-center font-bold text-purple-700" title="Horas Ordinarias Nocturnas (Recargo 35%)">HON</th>
+                <th class="px-3 py-2 text-center font-bold text-amber-700"  title="Horas Diurnas Festivas (Recargo 75%)">HDF</th>
+                <th class="px-3 py-2 text-center font-bold text-red-700"    title="Horas Nocturnas Festivas (Recargo 110%)">HNF</th>
                 <th class="px-3 py-2 text-center font-bold text-slate-600">Excel</th>
               </tr>
             </thead>
             <tbody id="tabla-general-body"></tbody>
-            <tfoot id="tabla-general-tfoot"></tfoot>
           </table>
         </div>
-        <!-- Leyenda -->
-        <div class="px-4 py-2 border-t border-slate-100 text-xs text-slate-400 space-y-0.5">
-          <div><strong class="text-purple-700">HON</strong> Horas Ordinarias Nocturnas · 35%</div>
-          <div><strong class="text-amber-700">HDF</strong> Horas Diurnas Festivas · 75%</div>
-          <div><strong class="text-red-700">HNF</strong> Horas Nocturnas Festivas · 110%</div>
+        <!-- Barra de totales fija -->
+        <div id="totales-bar" class="hidden border-t border-slate-200 px-4 py-2.5" style="background:#1e3a5f">
+          <div class="flex items-center justify-between flex-wrap gap-2">
+            <span class="text-white text-xs font-black tracking-wide">TOTALES</span>
+            <div class="flex gap-3">
+              <span class="flex items-center gap-1.5 bg-white/10 px-3 py-1 rounded-lg">
+                <span class="text-purple-300 text-xs font-bold">HON</span>
+                <span id="tot-hon" class="text-white font-black text-sm">0</span>
+              </span>
+              <span class="flex items-center gap-1.5 bg-white/10 px-3 py-1 rounded-lg">
+                <span class="text-amber-300 text-xs font-bold">HDF</span>
+                <span id="tot-hdf" class="text-white font-black text-sm">0</span>
+              </span>
+              <span class="flex items-center gap-1.5 bg-white/10 px-3 py-1 rounded-lg">
+                <span class="text-red-300 text-xs font-bold">HNF</span>
+                <span id="tot-hnf" class="text-white font-black text-sm">0</span>
+              </span>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -187,7 +209,8 @@ const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio',
 
 // ── Estado ─────────────────────────────────────────────────────────────────
 let areas = [];
-let areaSeleccionada  = null;
+let areasFiltradas   = [];
+let areaSeleccionada = null;
 let mesSeleccionado   = null;   // {year, month}
 let yearVista         = new Date().getFullYear();
 let previewData       = null;
@@ -255,7 +278,9 @@ function actualizarBtnVer() {
 // ── Áreas ──────────────────────────────────────────────────────────────────
 async function cargarAreas() {
   try {
-    areas = await api('areas/');
+    const resp = await api('areas/?page_size=500&page=1');
+    areas = resp.results || [];
+    areasFiltradas = areas;
     renderAreas();
   } catch {
     document.getElementById('areas-container').innerHTML =
@@ -263,13 +288,21 @@ async function cargarAreas() {
   }
 }
 
+function buscarAreaRep() {
+  const q = document.getElementById('buscar-area-rep').value.trim().toLowerCase();
+  areasFiltradas = q
+    ? areas.filter(a => q.split(' ').every(p => a.nombre.toLowerCase().includes(p)))
+    : areas;
+  renderAreas();
+}
+
 function renderAreas() {
   const el = document.getElementById('areas-container');
-  if (!areas.length) {
+  if (!areasFiltradas.length) {
     el.innerHTML = '<p class="text-slate-400 text-sm">No hay áreas configuradas.</p>';
     return;
   }
-  el.innerHTML = '<div class="space-y-2">' + areas.map(a => {
+  el.innerHTML = '<div class="space-y-2 pr-1">' + areasFiltradas.map(a => {
     const sel = areaSeleccionada && areaSeleccionada.id === a.id;
     const cls = sel
       ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-400'
@@ -287,7 +320,7 @@ function selArea(id) {
   if (areaSeleccionada && areaSeleccionada.id === id) {
     areaSeleccionada = null;
   } else {
-    areaSeleccionada = areas.find(a => a.id===id) || null;
+    areaSeleccionada = areasFiltradas.find(a => a.id===id) || null;
   }
   renderAreas();
   actualizarBtnVer();
@@ -299,6 +332,7 @@ function resetPreview() {
   empleadoActivo = null;
   document.getElementById('preview-section').classList.add('hidden');
   document.getElementById('flash').classList.add('hidden');
+  document.getElementById('totales-bar').classList.add('hidden');
 }
 
 // ── Preview ────────────────────────────────────────────────────────────────
@@ -331,8 +365,8 @@ function renderPreview() {
   const nPerm = empleados.filter(e=>e.tipo==='permanente').length;
   const wt = document.getElementById('warn-temporal');
   const wp = document.getElementById('warn-permanente');
-  if (nTemp > 16) { wt.textContent=`Temporal: máx. 16 — se exportarán los primeros 16`; wt.classList.remove('hidden'); } else wt.classList.add('hidden');
-  if (nPerm > 16) { wp.textContent=`Permanente: máx. 16 — se exportarán los primeros 16`; wp.classList.remove('hidden'); } else wp.classList.add('hidden');
+  if (nTemp > 16) { wt.textContent=`Temporal: ${nTemp} funcionarios — se generarán ${Math.ceil(nTemp/16)} hojas`; wt.classList.remove('hidden'); } else wt.classList.add('hidden');
+  if (nPerm > 16) { wp.textContent=`Permanente: ${nPerm} funcionarios — se generarán ${Math.ceil(nPerm/16)} hojas`; wp.classList.remove('hidden'); } else wp.classList.add('hidden');
 
   document.getElementById('btn-xl-area-txt').textContent = `Excel · ${area}`;
   // PDF buttons — deshabilitar si no hay empleados del tipo
@@ -361,9 +395,9 @@ function renderPreview() {
       <td class="px-4 py-2 font-medium text-slate-800 text-xs">${emp.nombre}</td>
       <td class="px-3 py-2">${tipoBadge}</td>
       <td class="px-3 py-2 text-center text-slate-500 text-xs">${emp.total_dias||'—'}</td>
-      <td class="px-3 py-2 text-center font-bold text-purple-700 text-xs">${emp.hon||'—'}</td>
-      <td class="px-3 py-2 text-center font-bold text-amber-700 text-xs">${emp.hdf||'—'}</td>
-      <td class="px-3 py-2 text-center font-bold text-red-700 text-xs">${emp.hnf||'—'}</td>
+      <td class="px-3 py-2 text-center font-bold text-purple-700 text-xs">${emp.hon ?? 0}</td>
+      <td class="px-3 py-2 text-center font-bold text-amber-700 text-xs">${emp.hdf ?? 0}</td>
+      <td class="px-3 py-2 text-center font-bold text-red-700 text-xs">${emp.hnf ?? 0}</td>
       <td class="px-3 py-2 text-center">
         <button onclick="event.stopPropagation();descargarEmpXlsx(${emp.id},'${emp.nombre.replace(/'/g,"\\'")}' )"
           class="text-emerald-700 hover:text-emerald-900 font-bold text-base" title="Descargar Excel individual">⬇</button>
@@ -372,15 +406,11 @@ function renderPreview() {
   });
   document.getElementById('tabla-general-body').innerHTML = tbody;
 
-  // Pie de tabla totales
-  document.getElementById('tabla-general-tfoot').innerHTML = `
-    <tr class="bg-slate-800 text-white text-xs font-bold">
-      <td class="px-4 py-2" colspan="3">TOTALES</td>
-      <td class="px-3 py-2 text-center text-purple-300">${totales.hon||'—'}</td>
-      <td class="px-3 py-2 text-center text-amber-300">${totales.hdf||'—'}</td>
-      <td class="px-3 py-2 text-center text-red-300">${totales.hnf||'—'}</td>
-      <td></td>
-    </tr>`;
+  // Barra de totales
+  document.getElementById('tot-hon').textContent = totales.hon ?? 0;
+  document.getElementById('tot-hdf').textContent = totales.hdf ?? 0;
+  document.getElementById('tot-hnf').textContent = totales.hnf ?? 0;
+  document.getElementById('totales-bar').classList.remove('hidden');
 
   document.getElementById('preview-section').classList.remove('hidden');
   document.getElementById('detalle-panel').classList.add('hidden');
@@ -425,9 +455,9 @@ function verDetalle(empId) {
         <td class="px-3 py-1.5 text-slate-500">${d.tipo_dia}</td>
         <td class="px-3 py-1.5">${d.turno}</td>
         <td class="px-2 py-1.5 text-center">${d.hod||'—'}</td>
-        <td class="px-2 py-1.5 text-center font-bold text-purple-700">${d.hon||'—'}</td>
-        <td class="px-2 py-1.5 text-center font-bold text-amber-700">${d.hdf||'—'}</td>
-        <td class="px-2 py-1.5 text-center font-bold text-red-700">${d.hnf||'—'}</td>
+        <td class="px-2 py-1.5 text-center font-bold text-purple-700">${d.hon ?? 0}</td>
+        <td class="px-2 py-1.5 text-center font-bold text-amber-700">${d.hdf ?? 0}</td>
+        <td class="px-2 py-1.5 text-center font-bold text-red-700">${d.hnf ?? 0}</td>
       </tr>`;
     });
   }
@@ -462,8 +492,8 @@ function descargarPdf(tipo) {
   descargarUrl(url, `FRRHU-030_${tipo}.pdf`, () => {
     showFlash('success', `PDF ${tipoLabel} descargado.`);
     btn.disabled = false;
-  }, () => {
-    showFlash('error', 'Error al generar el PDF. Verifica que Playwright esté instalado.');
+  }, (msg) => {
+    showFlash('error', msg || 'Error al generar el PDF.');
     btn.disabled = false;
   });
 }
@@ -477,8 +507,12 @@ function descargarEmpXlsx(empId, nombre) {
 
 function descargarUrl(url, filename, onDone, onError) {
   fetch(url, {headers:{'X-CSRFToken':CSRF}})
-    .then(r => {
-      if (!r.ok) throw new Error('Error');
+    .then(async r => {
+      if (!r.ok) {
+        let msg = `Error ${r.status}`;
+        try { const d = await r.json(); msg = d.error || msg; } catch {}
+        throw new Error(msg);
+      }
       return r.blob();
     })
     .then(blob => {
@@ -489,7 +523,10 @@ function descargarUrl(url, filename, onDone, onError) {
       URL.revokeObjectURL(a.href);
       if (onDone) onDone();
     })
-    .catch(() => { if (onError) onError(); else showFlash('error', 'Error al generar el archivo.'); });
+    .catch(e => {
+      if (onError) onError(e.message);
+      else showFlash('error', e.message || 'Error al generar el archivo.');
+    });
 }
 
 // ── Flash ──────────────────────────────────────────────────────────────────

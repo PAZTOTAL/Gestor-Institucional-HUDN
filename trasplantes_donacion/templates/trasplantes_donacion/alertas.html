@@ -60,8 +60,8 @@
                             {% endif %}
                         </td>
                         <td class="d-flex gap-2">
-                            <button class="btn btn-sm btn-outline-primary" style="border-radius: 0.25rem;">📝 Reportar</button>
-                            <button class="btn btn-sm btn-danger shadow-sm" style="border-radius: 0.25rem;">🔔 Alerta CRT</button>
+                            <a href="{% url 'trasplantes_donacion:editar_proceso' paciente.pk %}" class="btn btn-sm btn-outline-primary" style="border-radius: 0.25rem;">📝 Reportar</a>
+                            <a href="{% url 'trasplantes_donacion:editar_proceso' paciente.pk %}" class="btn btn-sm btn-danger shadow-sm" style="border-radius: 0.25rem;">🔔 Alerta CRT</a>
                         </td>
                     </tr>
                     {% empty %}

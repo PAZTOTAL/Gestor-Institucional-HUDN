@@ -11,7 +11,7 @@
         
         <div class="form-grid">
             {% for field in form %}
-                <div class="form-group {% if field.name in 'vinculados,objeto_tutela,asunto_tutela,causa,observaciones,tramite_impartido,fallo_primera_instancia,fallo_segunda_instancia,respuesta_incidente_desacato,fallo_desacato' %}full-width{% endif %}">
+                <div class="form-group {% if field.name in 'vinculados,objeto_tutela,asunto_tutela,causa,observaciones,tramite_impartido,fallo_primera_instancia,fallo_segunda_instancia,respuesta_incidente_desacato,fallo_desacato,derechos_vulnerados,pretensiones' %}full-width{% endif %}">
                     <label for="{{ field.id_for_label }}">{{ field.label }}</label>
                     {{ field }}
                     {% if field.errors %}

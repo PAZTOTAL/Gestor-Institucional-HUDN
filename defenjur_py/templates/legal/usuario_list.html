@@ -44,9 +44,9 @@
                     <td>
                         <a href="{% url 'usuario_editar' u.pk %}" class="btn-premium" style="padding:0.25rem 0.6rem;font-size:0.8rem;text-decoration:none;">Editar</a>
                         {% if u.pk != request.user.pk %}
-                        <form action="{% url 'usuario_eliminar' u.pk %}" method="post" style="display:inline;" onsubmit="return confirm('¿Eliminar este usuario?');">
+                        <form action="{% url 'usuario_eliminar' u.pk %}" method="post" style="display:inline;" onsubmit="return confirm('¿Revocar el acceso de este usuario a DEFENJUR? El usuario conservará su cuenta pero no podrá entrar a este módulo.');">
                             {% csrf_token %}
-                            <button type="submit" class="btn-premium" style="padding:0.25rem 0.6rem;font-size:0.8rem;background:#dc3545;border:none;cursor:pointer;">Eliminar</button>
+                            <button type="submit" class="btn-premium" style="padding:0.25rem 0.6rem;font-size:0.8rem;background:#dc3545;border:none;cursor:pointer;">Revocar Acceso</button>
                         </form>
                         {% endif %}
                     </td>

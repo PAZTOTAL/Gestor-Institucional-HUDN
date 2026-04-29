@@ -14,31 +14,85 @@
         <div style="display:grid; grid-template-columns: 1fr 1fr; gap:1rem; margin-bottom:1.5rem;">
         {% for field in form %}
             {% if "perm_" not in field.name %}
-            <div class="form-group">
+            <div class="form-group" style="{% if field.name == 'user_select' %}grid-column: span 2;{% endif %}">
                 <label for="{{ field.id_for_label }}" style="display:block;font-size:0.85rem;color:#495057;margin-bottom:0.35rem;">{{ field.label }}</label>
                 {{ field }}
-                {% if field.help_text %}<small style="color:#6c757d;">{{ field.help_text }}</small>{% endif %}
+                {% if field.help_text %}<small style="color:#6c757d; display:block; margin-top:2px;">{{ field.help_text }}</small>{% endif %}
                 {% if field.errors %}<div style="color:#dc3545;font-size:0.8rem;">{{ field.errors }}</div>{% endif %}
             </div>
             {% endif %}
         {% endfor %}
         </div>
 
-        <div style="background:rgba(0,0,0,0.03); padding:1.25rem; border-radius:12px; border:1px solid rgba(0,0,0,0.05); margin-bottom:1.5rem;">
-            <h3 style="font-size:0.9rem; margin-top:0; color:var(--text-muted); text-transform:uppercase; letter-spacing:1px; display:flex; align-items:center; gap:8px;">
-                <i data-lucide="shield-check" style="width:18px;"></i> Matriz de Permisos DEFENJUR
-            </h3>
-            <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap:0.75rem;">
+        <!-- MATRIZ DE PERMISOS REDISEÑADA -->
+        <div style="background: white; padding: 1.5rem; border-radius: 16px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); margin-bottom: 2rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; border-bottom: 1px solid #f1f5f9; padding-bottom: 0.75rem;">
+                <h3 style="font-size: 0.85rem; margin: 0; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; display: flex; align-items: center; gap: 8px;">
+                    <i data-lucide="shield-check" style="width: 18px; color: #3b82f6;"></i> Matriz de Permisos DEFENJUR
+                </h3>
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.8rem; color: #3b82f6; font-weight: 600; background: #eff6ff; padding: 4px 10px; border-radius: 20px; transition: all 0.2s;" onmouseover="this.style.background='#dbeafe'" onmouseout="this.style.background='#eff6ff'">
+                    <input type="checkbox" id="toggle-all-perms" style="cursor: pointer;">
+                    <span>Marcar Todos</span>
+                </label>
+            </div>
+            
+            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.75rem;" id="perms-grid">
                 {% for field in form %}
                     {% if "perm_" in field.name %}
-                    <label class="premium-checkbox-container" style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:0.85rem; padding:0.5rem; background:rgba(255,255,255,0.05); border-radius:8px; transition:all 0.2s;">
-                        {{ field }}
-                        <span>{{ field.label }}</span>
+                    <label class="perm-item" style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 0.85rem; padding: 0.75rem; border: 1px solid #f1f5f9; border-radius: 10px; transition: all 0.2s; background: #fafafa;">
+                        <div style="display: flex; align-items: center; justify-content: center;">
+                            {{ field }}
+                        </div>
+                        <span style="color: #334155; font-weight: 500;">{{ field.label }}</span>
                     </label>
                     {% endif %}
                 {% endfor %}
             </div>
         </div>
+
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                const toggleAll = document.getElementById('toggle-all-perms');
+                const permsGrid = document.getElementById('perms-grid');
+                const checkboxes = permsGrid.querySelectorAll('input[type="checkbox"]');
+
+                // Función para actualizar el estado del "Marcar Todos" según los hijos
+                function updateToggleState() {
+                    const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+                    const someChecked = Array.from(checkboxes).some(cb => cb.checked);
+                    toggleAll.checked = allChecked;
+                    toggleAll.indeterminate = someChecked && !allChecked;
+                }
+
+                toggleAll.addEventListener('change', function() {
+                    checkboxes.forEach(cb => {
+                        cb.checked = toggleAll.checked;
+                    });
+                });
+
+                checkboxes.forEach(cb => {
+                    cb.addEventListener('change', updateToggleState);
+                });
+
+                // Inicializar estado
+                updateToggleState();
+
+                // Estilos hover dinámicos (opcional si no quieres usar CSS externo)
+                const items = permsGrid.querySelectorAll('.perm-item');
+                items.forEach(item => {
+                    item.addEventListener('mouseenter', () => {
+                        item.style.borderColor = '#3b82f6';
+                        item.style.background = '#ffffff';
+                        item.style.boxShadow = '0 2px 4px rgba(59, 130, 246, 0.1)';
+                    });
+                    item.addEventListener('mouseleave', () => {
+                        item.style.borderColor = '#f1f5f9';
+                        item.style.background = '#fafafa';
+                        item.style.boxShadow = 'none';
+                    });
+                });
+            });
+        </script>
 
         <div style="display:flex;gap:0.75rem;margin-top:1.5rem;">
             <button type="submit" class="btn-premium">Guardar Cambios</button>
