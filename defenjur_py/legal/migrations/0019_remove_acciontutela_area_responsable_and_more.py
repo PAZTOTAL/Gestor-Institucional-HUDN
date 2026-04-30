@@ -6,6 +6,46 @@ import django.utils.timezone
 from django.db import migrations, models
 
 
+def _drop_col_if_exists(table, column):
+    return f"IF COL_LENGTH('{table}', '{column}') IS NOT NULL ALTER TABLE {table} DROP COLUMN {column};"
+
+
+ACCION_TABLE = 'defenjur_app_acciontutela'
+
+ACCION_COLS = [
+    'area_responsable',
+    'asunto_tutela',
+    'causa',
+    'desacato',
+    'fallo_desacato',
+    'fallo_primera_instancia',
+    'fallo_segunda_instancia',
+    'fecha_correo',
+    'fecha_fallo_primera_instancia',
+    'fecha_fallo_segunda_instancia',
+    'fecha_impugnacion',
+    'fecha_registro',
+    'fecha_reparto',
+    'fecha_respuesta_tramite',
+    'fecha_tramite_desacato',
+    'identificacion_accionante',
+    'impugnacion',
+    'objeto_tutela',
+    'observaciones',
+    'peticionario',
+    'rad_interno',
+    'rad_interno_arch_central',
+    'respuesta_incidente_desacato',
+    'solicitante',
+    'termino_dar_tramite',
+    'tipo_identificacion_accionante',
+    'tipo_tramite',
+    'tramite_impartido',
+    'usuario_carga',
+    'vinculados',
+]
+
+
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -14,169 +54,107 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RemoveField(
-            model_name='acciontutela',
-            name='area_responsable',
+        migrations.SeparateDatabaseAndState(
+            database_operations=[
+                migrations.RunSQL(
+                    sql="IF OBJECT_ID(N'defenjur_app_acciontutela', N'U') IS NULL AND OBJECT_ID(N'legal_acciontutela', N'U') IS NOT NULL EXEC sp_rename N'legal_acciontutela', N'defenjur_app_acciontutela';",
+                    reverse_sql=migrations.RunSQL.noop,
+                ),
+                migrations.RunSQL(
+                    sql="IF OBJECT_ID(N'defenjur_app_archivoadjunto', N'U') IS NULL AND OBJECT_ID(N'legal_archivoadjunto', N'U') IS NOT NULL EXEC sp_rename N'legal_archivoadjunto', N'defenjur_app_archivoadjunto';",
+                    reverse_sql=migrations.RunSQL.noop,
+                ),
+                migrations.RunSQL(
+                    sql="IF OBJECT_ID(N'defenjur_app_derechopeticion', N'U') IS NULL AND OBJECT_ID(N'legal_derechopeticion', N'U') IS NOT NULL EXEC sp_rename N'legal_derechopeticion', N'defenjur_app_derechopeticion';",
+                    reverse_sql=migrations.RunSQL.noop,
+                ),
+                migrations.RunSQL(
+                    sql="IF OBJECT_ID(N'defenjur_app_pagosentenciajudicial', N'U') IS NULL AND OBJECT_ID(N'legal_pagosentenciajudicial', N'U') IS NOT NULL EXEC sp_rename N'legal_pagosentenciajudicial', N'defenjur_app_pagosentenciajudicial';",
+                    reverse_sql=migrations.RunSQL.noop,
+                ),
+                migrations.RunSQL(
+                    sql="IF OBJECT_ID(N'defenjur_app_peritaje', N'U') IS NULL AND OBJECT_ID(N'legal_peritaje', N'U') IS NOT NULL EXEC sp_rename N'legal_peritaje', N'defenjur_app_peritaje';",
+                    reverse_sql=migrations.RunSQL.noop,
+                ),
+                migrations.RunSQL(
+                    sql="IF OBJECT_ID(N'defenjur_app_procesoadministrativosancionatorio', N'U') IS NULL AND OBJECT_ID(N'legal_procesoadministrativosancionatorio', N'U') IS NOT NULL EXEC sp_rename N'legal_procesoadministrativosancionatorio', N'defenjur_app_procesoadministrativosancionatorio';",
+                    reverse_sql=migrations.RunSQL.noop,
+                ),
+                migrations.RunSQL(
+                    sql="IF OBJECT_ID(N'defenjur_app_procesoextrajudicial', N'U') IS NULL AND OBJECT_ID(N'legal_procesoextrajudicial', N'U') IS NOT NULL EXEC sp_rename N'legal_procesoextrajudicial', N'defenjur_app_procesoextrajudicial';",
+                    reverse_sql=migrations.RunSQL.noop,
+                ),
+                migrations.RunSQL(
+                    sql="IF OBJECT_ID(N'defenjur_app_procesojudicialactiva', N'U') IS NULL AND OBJECT_ID(N'legal_procesojudicialactiva', N'U') IS NOT NULL EXEC sp_rename N'legal_procesojudicialactiva', N'defenjur_app_procesojudicialactiva';",
+                    reverse_sql=migrations.RunSQL.noop,
+                ),
+                migrations.RunSQL(
+                    sql="IF OBJECT_ID(N'defenjur_app_procesojudicialpasiva', N'U') IS NULL AND OBJECT_ID(N'legal_procesojudicialpasiva', N'U') IS NOT NULL EXEC sp_rename N'legal_procesojudicialpasiva', N'defenjur_app_procesojudicialpasiva';",
+                    reverse_sql=migrations.RunSQL.noop,
+                ),
+                migrations.RunSQL(
+                    sql="IF OBJECT_ID(N'defenjur_app_procesojudicialterminado', N'U') IS NULL AND OBJECT_ID(N'legal_procesojudicialterminado', N'U') IS NOT NULL EXEC sp_rename N'legal_procesojudicialterminado', N'defenjur_app_procesojudicialterminado';",
+                    reverse_sql=migrations.RunSQL.noop,
+                ),
+                migrations.RunSQL(
+                    sql="IF OBJECT_ID(N'defenjur_app_requerimientoentecontrol', N'U') IS NULL AND OBJECT_ID(N'legal_requerimientoentecontrol', N'U') IS NOT NULL EXEC sp_rename N'legal_requerimientoentecontrol', N'defenjur_app_requerimientoentecontrol';",
+                    reverse_sql=migrations.RunSQL.noop,
+                ),
+            ],
+            state_operations=[
+                migrations.AlterModelTable(name='acciontutela', table='defenjur_app_acciontutela'),
+                migrations.AlterModelTable(name='archivoadjunto', table='defenjur_app_archivoadjunto'),
+                migrations.AlterModelTable(name='derechopeticion', table='defenjur_app_derechopeticion'),
+                migrations.AlterModelTable(name='pagosentenciajudicial', table='defenjur_app_pagosentenciajudicial'),
+                migrations.AlterModelTable(name='peritaje', table='defenjur_app_peritaje'),
+                migrations.AlterModelTable(name='procesoadministrativosancionatorio', table='defenjur_app_procesoadministrativosancionatorio'),
+                migrations.AlterModelTable(name='procesoextrajudicial', table='defenjur_app_procesoextrajudicial'),
+                migrations.AlterModelTable(name='procesojudicialactiva', table='defenjur_app_procesojudicialactiva'),
+                migrations.AlterModelTable(name='procesojudicialpasiva', table='defenjur_app_procesojudicialpasiva'),
+                migrations.AlterModelTable(name='procesojudicialterminado', table='defenjur_app_procesojudicialterminado'),
+                migrations.AlterModelTable(name='requerimientoentecontrol', table='defenjur_app_requerimientoentecontrol'),
+            ],
         ),
-        migrations.RemoveField(
-            model_name='acciontutela',
-            name='asunto_tutela',
-        ),
-        migrations.RemoveField(
-            model_name='acciontutela',
-            name='causa',
-        ),
-        migrations.RemoveField(
-            model_name='acciontutela',
-            name='desacato',
-        ),
-        migrations.RemoveField(
-            model_name='acciontutela',
-            name='fallo_desacato',
-        ),
-        migrations.RemoveField(
-            model_name='acciontutela',
-            name='fallo_primera_instancia',
-        ),
-        migrations.RemoveField(
-            model_name='acciontutela',
-            name='fallo_segunda_instancia',
-        ),
-        migrations.RemoveField(
-            model_name='acciontutela',
-            name='fecha_correo',
-        ),
-        migrations.RemoveField(
-            model_name='acciontutela',
-            name='fecha_fallo_primera_instancia',
-        ),
-        migrations.RemoveField(
-            model_name='acciontutela',
-            name='fecha_fallo_segunda_instancia',
-        ),
-        migrations.RemoveField(
-            model_name='acciontutela',
-            name='fecha_impugnacion',
-        ),
-        migrations.RemoveField(
-            model_name='acciontutela',
-            name='fecha_registro',
-        ),
-        migrations.RemoveField(
-            model_name='acciontutela',
-            name='fecha_reparto',
-        ),
-        migrations.RemoveField(
-            model_name='acciontutela',
-            name='fecha_respuesta_tramite',
-        ),
-        migrations.RemoveField(
-            model_name='acciontutela',
-            name='fecha_tramite_desacato',
-        ),
-        migrations.RemoveField(
-            model_name='acciontutela',
-            name='identificacion_accionante',
-        ),
-        migrations.RemoveField(
-            model_name='acciontutela',
-            name='impugnacion',
-        ),
-        migrations.RemoveField(
-            model_name='acciontutela',
-            name='objeto_tutela',
-        ),
-        migrations.RemoveField(
-            model_name='acciontutela',
-            name='observaciones',
-        ),
-        migrations.RemoveField(
-            model_name='acciontutela',
-            name='peticionario',
-        ),
-        migrations.RemoveField(
-            model_name='acciontutela',
-            name='rad_interno',
-        ),
-        migrations.RemoveField(
-            model_name='acciontutela',
-            name='rad_interno_arch_central',
-        ),
-        migrations.RemoveField(
-            model_name='acciontutela',
-            name='respuesta_incidente_desacato',
-        ),
-        migrations.RemoveField(
-            model_name='acciontutela',
-            name='solicitante',
-        ),
-        migrations.RemoveField(
-            model_name='acciontutela',
-            name='termino_dar_tramite',
-        ),
-        migrations.RemoveField(
-            model_name='acciontutela',
-            name='tipo_identificacion_accionante',
-        ),
-        migrations.RemoveField(
-            model_name='acciontutela',
-            name='tipo_tramite',
-        ),
-        migrations.RemoveField(
-            model_name='acciontutela',
-            name='tramite_impartido',
-        ),
-        migrations.RemoveField(
-            model_name='acciontutela',
-            name='usuario_carga',
-        ),
-        migrations.RemoveField(
-            model_name='acciontutela',
-            name='vinculados',
-        ),
-        migrations.AlterModelTable(
-            name='acciontutela',
-            table='defenjur_app_acciontutela',
-        ),
-        migrations.AlterModelTable(
-            name='archivoadjunto',
-            table='defenjur_app_archivoadjunto',
-        ),
-        migrations.AlterModelTable(
-            name='derechopeticion',
-            table='defenjur_app_derechopeticion',
-        ),
-        migrations.AlterModelTable(
-            name='pagosentenciajudicial',
-            table='defenjur_app_pagosentenciajudicial',
-        ),
-        migrations.AlterModelTable(
-            name='peritaje',
-            table='defenjur_app_peritaje',
-        ),
-        migrations.AlterModelTable(
-            name='procesoadministrativosancionatorio',
-            table='defenjur_app_procesoadministrativosancionatorio',
-        ),
-        migrations.AlterModelTable(
-            name='procesoextrajudicial',
-            table='defenjur_app_procesoextrajudicial',
-        ),
-        migrations.AlterModelTable(
-            name='procesojudicialactiva',
-            table='defenjur_app_procesojudicialactiva',
-        ),
-        migrations.AlterModelTable(
-            name='procesojudicialpasiva',
-            table='defenjur_app_procesojudicialpasiva',
-        ),
-        migrations.AlterModelTable(
-            name='procesojudicialterminado',
-            table='defenjur_app_procesojudicialterminado',
-        ),
-        migrations.AlterModelTable(
-            name='requerimientoentecontrol',
-            table='defenjur_app_requerimientoentecontrol',
+        # Elimina columnas de forma condicional para no fallar si ya fueron removidas de la BD
+        migrations.SeparateDatabaseAndState(
+            database_operations=[
+                migrations.RunSQL(
+                    sql='\n'.join(_drop_col_if_exists(ACCION_TABLE, col) for col in ACCION_COLS),
+                    reverse_sql=migrations.RunSQL.noop,
+                ),
+            ],
+            state_operations=[
+                migrations.RemoveField(model_name='acciontutela', name='area_responsable'),
+                migrations.RemoveField(model_name='acciontutela', name='asunto_tutela'),
+                migrations.RemoveField(model_name='acciontutela', name='causa'),
+                migrations.RemoveField(model_name='acciontutela', name='desacato'),
+                migrations.RemoveField(model_name='acciontutela', name='fallo_desacato'),
+                migrations.RemoveField(model_name='acciontutela', name='fallo_primera_instancia'),
+                migrations.RemoveField(model_name='acciontutela', name='fallo_segunda_instancia'),
+                migrations.RemoveField(model_name='acciontutela', name='fecha_correo'),
+                migrations.RemoveField(model_name='acciontutela', name='fecha_fallo_primera_instancia'),
+                migrations.RemoveField(model_name='acciontutela', name='fecha_fallo_segunda_instancia'),
+                migrations.RemoveField(model_name='acciontutela', name='fecha_impugnacion'),
+                migrations.RemoveField(model_name='acciontutela', name='fecha_registro'),
+                migrations.RemoveField(model_name='acciontutela', name='fecha_reparto'),
+                migrations.RemoveField(model_name='acciontutela', name='fecha_respuesta_tramite'),
+                migrations.RemoveField(model_name='acciontutela', name='fecha_tramite_desacato'),
+                migrations.RemoveField(model_name='acciontutela', name='identificacion_accionante'),
+                migrations.RemoveField(model_name='acciontutela', name='impugnacion'),
+                migrations.RemoveField(model_name='acciontutela', name='objeto_tutela'),
+                migrations.RemoveField(model_name='acciontutela', name='observaciones'),
+                migrations.RemoveField(model_name='acciontutela', name='peticionario'),
+                migrations.RemoveField(model_name='acciontutela', name='rad_interno'),
+                migrations.RemoveField(model_name='acciontutela', name='rad_interno_arch_central'),
+                migrations.RemoveField(model_name='acciontutela', name='respuesta_incidente_desacato'),
+                migrations.RemoveField(model_name='acciontutela', name='solicitante'),
+                migrations.RemoveField(model_name='acciontutela', name='termino_dar_tramite'),
+                migrations.RemoveField(model_name='acciontutela', name='tipo_identificacion_accionante'),
+                migrations.RemoveField(model_name='acciontutela', name='tipo_tramite'),
+                migrations.RemoveField(model_name='acciontutela', name='tramite_impartido'),
+                migrations.RemoveField(model_name='acciontutela', name='usuario_carga'),
+                migrations.RemoveField(model_name='acciontutela', name='vinculados'),
+            ],
         ),
         migrations.CreateModel(
             name='Usuario',
