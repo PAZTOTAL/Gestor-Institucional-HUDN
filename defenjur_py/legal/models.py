@@ -253,6 +253,10 @@ class AccionTutela(models.Model):
     
     accionado = models.CharField('ACCIONADO', max_length=255, db_column='accionado', null=True, blank=True)
     abogado_responsable = models.CharField('ABOGADO RESPONSABLE', max_length=255, db_column='abogado_responsable', null=True, blank=True)
+    
+    # Auditoría (Carga)
+    usuario_carga = models.CharField('Usuario Carga', max_length=150, null=True, blank=True)
+    fecha_registro = models.DateTimeField('Fecha Registro', auto_now_add=True, null=True)
 
     # ==========================================
     # NUEVOS CAMPOS (Seguimiento y Control)
