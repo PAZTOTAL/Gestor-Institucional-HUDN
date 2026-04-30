@@ -148,9 +148,9 @@ DATABASES = {
     },
     'readonly': {
         'ENGINE': 'mssql',
-        'NAME': os.getenv('DB_READONLY_NAME', 'DGEMPRES_NEXUS'),
-        'USER': os.getenv('DB_READONLY_USER', 'apantoja'),
-        'PASSWORD': os.getenv('DB_READONLY_PASSWORD', 'ConsultasPantojaHUDN_2026$'),
+        'NAME': os.getenv('DB_READONLY_NAME', 'DGEMPRES03'),
+        'USER': os.getenv('DB_READONLY_USER', 'dsolarte'),
+        'PASSWORD': os.getenv('DB_READONLY_PASSWORD', 'ConsultaHUDN2026*/$'),
         'HOST': os.getenv('DB_READONLY_HOST', '172.20.100.209'),
         'PORT': os.getenv('DB_READONLY_PORT', ''),
         'CONN_MAX_AGE': 0,
