@@ -18,6 +18,7 @@ from django.contrib import admin
 from django.urls import path, include
 
 from .api_views import query_tercero, get_tercero_details, query_paciente_enhanced, get_diagnostico_paciente
+from paz_y_salvo.urls import urlpatterns as pys_api_patterns, template_urlpatterns as pys_template_patterns
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -46,6 +47,8 @@ urlpatterns = [
     path('visor-soportes/', include('visor_soportes.urls')),
     path('atencion/', include('unificador_v1.urls')),
     path('tercerizadas/', include('tercerizadas.urls', namespace='tercerizadas')),
+    path('paz-y-salvo/', include((pys_template_patterns, 'paz_y_salvo'), namespace='paz_y_salvo')),
+    path('api/', include(pys_api_patterns)),
 ]
 
 

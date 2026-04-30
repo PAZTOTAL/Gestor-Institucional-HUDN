@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash('./venv/Scripts/python.exe' manage.py check paz_y_salvo)",
+      "Bash(venv/Scripts/python.exe -c ' *)",
+      "Bash(venv/Scripts/python manage.py check)",
+      "PowerShell($python = \"C:\\\\Users\\\\Paulo Tibanta Delgad\\\\Desktop\\\\paztotal2\\\\venv\\\\Scripts\\\\python.exe\"; $manage = \"C:\\\\Users\\\\Paulo Tibanta Delgad\\\\Desktop\\\\paztotal2\\\\Gestor-Institucional-HUDN\\\\manage.py\"; & $python $manage migrate paz_y_salvo 2>&1)"
+    ]
+  }
+}

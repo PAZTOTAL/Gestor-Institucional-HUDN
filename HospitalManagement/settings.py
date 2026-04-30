@@ -82,6 +82,7 @@ INSTALLED_APPS = [
     'certificados_laborales',
     'visor_soportes',
     'tercerizadas',
+    'paz_y_salvo',
     # Cuando integre el código completo de UNIFICADOR-V1 en la raíz del repo, descomente:
     # 'meows',
     # 'trabajoparto',
@@ -147,9 +148,9 @@ DATABASES = {
     },
     'readonly': {
         'ENGINE': 'mssql',
-        'NAME': os.getenv('DB_READONLY_NAME', 'DGEMPRES_NEXUS'),
-        'USER': os.getenv('DB_READONLY_USER', 'apantoja'),
-        'PASSWORD': os.getenv('DB_READONLY_PASSWORD', 'ConsultasPantojaHUDN_2026$'),
+        'NAME': os.getenv('DB_READONLY_NAME', 'DGEMPRES03'),
+        'USER': os.getenv('DB_READONLY_USER', 'dsolarte'),
+        'PASSWORD': os.getenv('DB_READONLY_PASSWORD', 'ConsultaHUDN2026*/$'),
         'HOST': os.getenv('DB_READONLY_HOST', '172.20.100.209'),
         'PORT': os.getenv('DB_READONLY_PORT', ''),
         'CONN_MAX_AGE': 0,
@@ -225,6 +226,7 @@ STATICFILES_DIRS = [
     BASE_DIR / 'static',
     BASE_DIR / 'defenjur_py' / 'static',
     BASE_DIR / 'UNIFICADOR-V1' / 'sistema_obstetrico' / 'static',
+    ('logos-hudn', BASE_DIR / 'LOGOS-HUDN'),
 ]
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
@@ -284,6 +286,13 @@ EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', '')
 EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')
 DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', EMAIL_HOST_USER)
 
+# Paz y Salvo — SMTP dedicado (MAIL_HOST / MAIL_USER / MAIL_PASS / MAIL_FROM)
+PYS_MAIL_HOST = os.getenv('MAIL_HOST', 'smtp.gmail.com')
+PYS_MAIL_PORT = int(os.getenv('MAIL_PORT', 587))
+PYS_MAIL_USER = os.getenv('MAIL_USER', '')
+PYS_MAIL_PASS = os.getenv('MAIL_PASS', '')
+PYS_MAIL_FROM = os.getenv('MAIL_FROM', os.getenv('MAIL_USER', ''))
+
 
 # Defenjur FTP / NAS Configuration
 DEFENJUR_FTP_ENABLED = True
@@ -292,6 +301,17 @@ DEFENJUR_FTP_USER = os.getenv('FTP_USER', '')
 DEFENJUR_FTP_PASSWORD = os.getenv('FTP_PASSWORD', '')
 DEFENJUR_FTP_BASE_PATH = '/web/defenjur_files/'
 
+# Paz y Salvo — JWT
+PYS_JWT_SECRET = os.getenv('PYS_JWT_SECRET', 'hudn-paz-y-salvo-secret-change-in-prod')
+PYS_JWT_EXPIRE_HOURS = 8
+
+# Paz y Salvo — Bases de datos SQL Server para catálogos
+PYS_DB_NEXUS_NAME = os.getenv('PYS_DB_NEXUS_NAME', 'DGEMPRES_NEXUS')
+PYS_DB_NEXUS_USER = os.getenv('PYS_DB_NEXUS_USER', 'apantoja')
+PYS_DB_NEXUS_PASS = os.getenv('PYS_DB_NEXUS_PASS', 'ConsultasPantojaHUDN_2026$')
+PYS_DB_SGC_NAME   = os.getenv('PYS_DB_SGC_NAME',   'SGC_HUDN')
+PYS_DB_SGC_USER   = os.getenv('PYS_DB_SGC_USER',   'apantoja')
+PYS_DB_SGC_PASS   = os.getenv('PYS_DB_SGC_PASS',   'ConsultasPantojaHUDN_2026$')
 # SECURITY HARDENING SETTINGS
 if not DEBUG:
     # Security headers
