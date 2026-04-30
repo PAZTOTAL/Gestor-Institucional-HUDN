@@ -6,19 +6,24 @@
 {% block content %}
 <div class="space-y-6">
     <!-- Header Section -->
-    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white/40 backdrop-blur-md p-6 rounded-3xl border-2 border-blue-100 shadow-xl">
+    <div
+        class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white/40 backdrop-blur-md p-6 rounded-3xl border-2 border-blue-100 shadow-xl">
         <div class="flex items-center gap-4">
-            <div class="w-14 h-14 bg-gradient-to-br from-blue-600 to-blue-800 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-blue-200">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+            <div
+                class="w-14 h-14 bg-gradient-to-br from-blue-600 to-blue-800 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-blue-200">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24"
+                    stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
                 </svg>
             </div>
             <div>
                 <h1 class="text-2xl font-black text-slate-800 tracking-tight uppercase">{{ titulo }}</h1>
-                <p class="text-sm font-bold text-blue-600 uppercase tracking-widest opacity-80">Módulo de Gestión de Inventarios</p>
+                <p class="text-sm font-bold text-blue-600 uppercase tracking-widest opacity-80">Módulo de Gestión de
+                    Inventarios</p>
             </div>
         </div>
-        
+
         <div class="flex items-center gap-3">
             <div class="px-4 py-2 bg-white rounded-2xl border-2 border-blue-50 shadow-sm flex items-center gap-2">
                 <span class="w-3 h-3 bg-green-500 rounded-full animate-pulse"></span>
@@ -29,17 +34,24 @@
 
     <!-- Environment Switcher -->
     <div class="flex items-center justify-between mb-6">
-        <div class="flex items-center gap-2 bg-white/40 backdrop-blur-md p-1.5 rounded-2xl border-2 border-blue-50 shadow-sm">
-            <a href="?db=readonly" class="px-5 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-2 {% if selected_db == 'readonly' %}bg-blue-600 text-white shadow-lg shadow-blue-200{% else %}text-slate-500 hover:bg-white{% endif %}">
-                <div class="w-2 h-2 rounded-full {% if selected_db == 'readonly' %}bg-white animate-pulse{% else %}bg-slate-300{% endif %}"></div>
-                DGEMPRES03 (PRINCIPAL)
+        <div
+            class="flex items-center gap-2 bg-white/40 backdrop-blur-md p-1.5 rounded-2xl border-2 border-blue-50 shadow-sm">
+            <a href="?db=readonly"
+                class="px-5 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-2 {% if selected_db == 'readonly' %}bg-blue-600 text-white shadow-lg shadow-blue-200{% else %}text-slate-500 hover:bg-white{% endif %}">
+                <div
+                    class="w-2 h-2 rounded-full {% if selected_db == 'readonly' %}bg-white animate-pulse{% else %}bg-slate-300{% endif %}">
+                </div>
+                DGEMPRES03 (PRUEVA)
             </a>
-            <a href="?db=nexus" class="px-5 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-2 {% if selected_db == 'nexus' %}bg-indigo-600 text-white shadow-lg shadow-indigo-200{% else %}text-slate-500 hover:bg-white{% endif %}">
-                <div class="w-2 h-2 rounded-full {% if selected_db == 'nexus' %}bg-white animate-pulse{% else %}bg-slate-300{% endif %}"></div>
+            <a href="?db=nexus"
+                class="px-5 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-2 {% if selected_db == 'nexus' %}bg-indigo-600 text-white shadow-lg shadow-indigo-200{% else %}text-slate-500 hover:bg-white{% endif %}">
+                <div
+                    class="w-2 h-2 rounded-full {% if selected_db == 'nexus' %}bg-white animate-pulse{% else %}bg-slate-300{% endif %}">
+                </div>
                 DGEMPRES_NEXUS (AUDITORÍA)
             </a>
         </div>
-        
+
         <div class="flex items-center gap-3">
             <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Base Conectada:</span>
             <span class="px-3 py-1 bg-slate-800 text-white text-[10px] font-black rounded-lg shadow-sm">
@@ -54,22 +66,26 @@
             <input type="hidden" name="db" value="{{ selected_db }}">
             <!-- Tipo de Documento -->
             <div class="space-y-2">
-                <label class="text-[10px] font-black text-blue-900 uppercase tracking-widest ml-1">Tipo de Documento</label>
+                <label class="text-[10px] font-black text-blue-900 uppercase tracking-widest ml-1">Tipo de
+                    Documento</label>
                 <select name="tipo" class="select2-filter w-full" data-placeholder="TODOS LOS TIPOS">
                     <option value=""></option>
                     {% for val, name in tipos_doc %}
-                        <option value="{{ val }}" {% if request.GET.tipo == val|stringformat:"i" %}selected{% endif %}>{{ name }}</option>
+                    <option value="{{ val }}" {% if request.GET.tipo==val|stringformat:"i" %}selected{% endif %}>{{ name
+                        }}</option>
                     {% endfor %}
                 </select>
             </div>
 
             <!-- Usuario Responsable -->
             <div class="space-y-2">
-                <label class="text-[10px] font-black text-blue-900 uppercase tracking-widest ml-1">Usuario Responsable</label>
+                <label class="text-[10px] font-black text-blue-900 uppercase tracking-widest ml-1">Usuario
+                    Responsable</label>
                 <select name="usuario" class="select2-filter w-full" data-placeholder="TODOS LOS USUARIOS">
                     <option value=""></option>
                     {% for user_opt in usuarios_responsables %}
-                        <option value="{{ user_opt.OID }}" {% if request.GET.usuario == user_opt.OID|stringformat:"i" %}selected{% endif %}>{{ user_opt.USUDESCRI }}</option>
+                    <option value="{{ user_opt.OID }}" {% if request.GET.usuario==user_opt.OID|stringformat:"i"
+                        %}selected{% endif %}>{{ user_opt.USUDESCRI }}</option>
                     {% endfor %}
                 </select>
             </div>
@@ -79,29 +95,37 @@
                 <label class="text-[10px] font-black text-blue-900 uppercase tracking-widest ml-1">Estado</label>
                 <select name="estado" class="select2-filter w-full" data-placeholder="TODOS LOS ESTADOS">
                     <option value=""></option>
-                    <option value="0" {% if request.GET.estado == "0" %}selected{% endif %}>ACTIVO / ABIERTO</option>
-                    <option value="1" {% if request.GET.estado == "1" %}selected{% endif %}>PROCESADO / CERRADO</option>
-                    <option value="2" {% if request.GET.estado == "2" %}selected{% endif %}>ANULADO</option>
+                    <option value="0" {% if request.GET.estado=="0" %}selected{% endif %}>ACTIVO / ABIERTO</option>
+                    <option value="1" {% if request.GET.estado=="1" %}selected{% endif %}>PROCESADO / CERRADO</option>
+                    <option value="2" {% if request.GET.estado=="2" %}selected{% endif %}>ANULADO</option>
                 </select>
             </div>
 
             <!-- Rango de Fechas -->
             <div class="space-y-2 lg:col-span-1">
-                 <label class="text-[10px] font-black text-blue-900 uppercase tracking-widest ml-1">Periodo (Desde - Hasta)</label>
-                 <div class="flex gap-2">
-                    <input type="date" name="desde" value="{{ fecha_desde_default }}" class="w-full px-3 py-2 bg-white border-2 border-blue-50 rounded-xl text-xs font-bold focus:border-blue-500 focus:outline-none">
-                    <input type="date" name="hasta" value="{{ fecha_hasta_default }}" class="w-full px-3 py-2 bg-white border-2 border-blue-50 rounded-xl text-xs font-bold focus:border-blue-500 focus:outline-none">
-                 </div>
+                <label class="text-[10px] font-black text-blue-900 uppercase tracking-widest ml-1">Periodo (Desde -
+                    Hasta)</label>
+                <div class="flex gap-2">
+                    <input type="date" name="desde" value="{{ fecha_desde_default }}"
+                        class="w-full px-3 py-2 bg-white border-2 border-blue-50 rounded-xl text-xs font-bold focus:border-blue-500 focus:outline-none">
+                    <input type="date" name="hasta" value="{{ fecha_hasta_default }}"
+                        class="w-full px-3 py-2 bg-white border-2 border-blue-50 rounded-xl text-xs font-bold focus:border-blue-500 focus:outline-none">
+                </div>
             </div>
 
             <!-- Búsqueda por Consecutivo -->
             <div class="space-y-2 lg:col-span-4">
-                <label class="text-[10px] font-black text-blue-900 uppercase tracking-widest ml-1">Búsqueda Rápida por Consecutivo (IDCONSEC)</label>
+                <label class="text-[10px] font-black text-blue-900 uppercase tracking-widest ml-1">Búsqueda Rápida por
+                    Consecutivo (IDCONSEC)</label>
                 <div class="relative">
-                    <input type="text" name="consecutivo" value="{{ request.GET.consecutivo|default:'' }}" placeholder="Ej: 00000000028903" class="w-full px-5 py-3 bg-white border-2 border-blue-50 rounded-2xl text-sm font-bold focus:border-blue-500 focus:outline-none shadow-sm transition-all pl-12">
+                    <input type="text" name="consecutivo" value="{{ request.GET.consecutivo|default:'' }}"
+                        placeholder="Ej: 00000000028903"
+                        class="w-full px-5 py-3 bg-white border-2 border-blue-50 rounded-2xl text-sm font-bold focus:border-blue-500 focus:outline-none shadow-sm transition-all pl-12">
                     <div class="absolute left-4 top-1/2 -translate-y-1/2 text-blue-400">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
+                            stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                         </svg>
                     </div>
                 </div>
@@ -109,10 +133,14 @@
 
             <!-- Actions -->
             <div class="lg:col-span-4 flex items-center justify-end gap-3 pt-2 border-t border-blue-50">
-                <a href="{% url 'inventarios_documentos' %}" class="px-6 py-2.5 rounded-xl text-xs font-black text-slate-500 hover:bg-slate-100 transition-all uppercase">Limpiar</a>
-                <button type="submit" class="px-8 py-2.5 bg-gradient-to-r from-blue-700 to-blue-900 text-white rounded-xl text-xs font-black shadow-lg shadow-blue-200 hover:scale-105 transition-all uppercase flex items-center gap-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                <a href="{% url 'inventarios_documentos' %}"
+                    class="px-6 py-2.5 rounded-xl text-xs font-black text-slate-500 hover:bg-slate-100 transition-all uppercase">Limpiar</a>
+                <button type="submit"
+                    class="px-8 py-2.5 bg-gradient-to-r from-blue-700 to-blue-900 text-white rounded-xl text-xs font-black shadow-lg shadow-blue-200 hover:scale-105 transition-all uppercase flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3"
+                            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                     </svg>
                     Aplicar Filtros
                 </button>
@@ -122,38 +150,52 @@
 
     <!-- Responsibles Summary Panel -->
     {% if resumen_responsables %}
-    <div class="mt-8 bg-white/40 backdrop-blur-md p-6 rounded-3xl border-2 border-slate-100 shadow-xl overflow-hidden relative group">
+    <div
+        class="mt-8 bg-white/40 backdrop-blur-md p-6 rounded-3xl border-2 border-slate-100 shadow-xl overflow-hidden relative group">
         <div class="flex items-center justify-between mb-6">
             <div class="flex items-center gap-3">
                 <div class="p-2 bg-indigo-600 rounded-xl text-white shadow-lg shadow-indigo-100">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                     </svg>
                 </div>
                 <div>
-                    <h3 class="text-sm font-black text-slate-800 uppercase tracking-tight">Resumen de Responsables Identificados</h3>
-                    <p class="text-[10px] font-bold text-slate-500 uppercase">Se encontraron {{ resumen_responsables|length }} usuarios con documentos según el filtro.</p>
+                    <h3 class="text-sm font-black text-slate-800 uppercase tracking-tight">Resumen de Responsables
+                        Identificados</h3>
+                    <p class="text-[10px] font-bold text-slate-500 uppercase">Se encontraron {{
+                        resumen_responsables|length }} usuarios con documentos según el filtro.</p>
                 </div>
             </div>
-            
-            <button onclick="copyResponsibles()" class="px-5 py-2 bg-slate-800 text-white rounded-xl text-[10px] font-black uppercase hover:bg-slate-700 transition-all flex items-center gap-2 shadow-lg shadow-slate-200">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+
+            <button onclick="copyResponsibles()"
+                class="px-5 py-2 bg-slate-800 text-white rounded-xl text-[10px] font-black uppercase hover:bg-slate-700 transition-all flex items-center gap-2 shadow-lg shadow-slate-200">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
+                    stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
                 </svg>
                 Copiar Lista para Notificar
             </button>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
+        <div
+            class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
             {% for resp in resumen_responsables %}
-            <div class="p-4 bg-white rounded-2xl border border-slate-100 flex items-center justify-between hover:border-indigo-300 transition-all group/item">
-                <span class="text-xs font-bold text-slate-700 group-hover/item:text-indigo-700 truncate mr-2">{{ resp.nombre }}</span>
-                <span class="px-2.5 py-1 bg-slate-100 rounded-lg text-[10px] font-black text-slate-600 group-hover/item:bg-indigo-50 group-hover/item:text-indigo-600">{{ resp.total }}</span>
+            <div
+                class="p-4 bg-white rounded-2xl border border-slate-100 flex items-center justify-between hover:border-indigo-300 transition-all group/item">
+                <span class="text-xs font-bold text-slate-700 group-hover/item:text-indigo-700 truncate mr-2">{{
+                    resp.nombre }}</span>
+                <span
+                    class="px-2.5 py-1 bg-slate-100 rounded-lg text-[10px] font-black text-slate-600 group-hover/item:bg-indigo-50 group-hover/item:text-indigo-600">{{
+                    resp.total }}</span>
             </div>
             {% endfor %}
         </div>
-        
-        <textarea id="responsiblesList" class="hidden">{% for resp in resumen_responsables %}{{ resp.nombre }} ({{ resp.total }} registros){% if not forloop.last %}&#10;{% endif %}{% endfor %}</textarea>
+
+        <textarea id="responsiblesList"
+            class="hidden">{% for resp in resumen_responsables %}{{ resp.nombre }} ({{ resp.total }} registros){% if not forloop.last %}&#10;{% endif %}{% endfor %}</textarea>
     </div>
     {% endif %}
 
@@ -163,18 +205,29 @@
             <table class="w-full text-left border-collapse">
                 <thead>
                     <tr class="bg-gradient-to-r from-blue-50 to-transparent">
-                        <th class="px-6 py-5 text-xs font-black text-blue-800 uppercase tracking-wider border-b-2 border-blue-50">Tipo de Documento</th>
-                        <th class="px-6 py-5 text-xs font-black text-blue-800 uppercase tracking-wider border-b-2 border-blue-50">Consecutivo</th>
-                        <th class="px-6 py-5 text-xs font-black text-blue-800 uppercase tracking-wider border-b-2 border-blue-50">Fecha</th>
-                        <th class="px-6 py-5 text-xs font-black text-blue-800 uppercase tracking-wider border-b-2 border-blue-50">Usuario Responsable</th>
-                        <th class="px-6 py-5 text-xs font-black text-blue-800 uppercase tracking-wider border-b-2 border-blue-50 text-right">Estado</th>
+                        <th
+                            class="px-6 py-5 text-xs font-black text-blue-800 uppercase tracking-wider border-b-2 border-blue-50">
+                            Tipo de Documento</th>
+                        <th
+                            class="px-6 py-5 text-xs font-black text-blue-800 uppercase tracking-wider border-b-2 border-blue-50">
+                            Consecutivo</th>
+                        <th
+                            class="px-6 py-5 text-xs font-black text-blue-800 uppercase tracking-wider border-b-2 border-blue-50">
+                            Fecha</th>
+                        <th
+                            class="px-6 py-5 text-xs font-black text-blue-800 uppercase tracking-wider border-b-2 border-blue-50">
+                            Usuario Responsable</th>
+                        <th
+                            class="px-6 py-5 text-xs font-black text-blue-800 uppercase tracking-wider border-b-2 border-blue-50 text-right">
+                            Estado</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-blue-50">
                     {% for doc in documentos %}
                     <tr class="hover:bg-blue-50/50 transition-colors group">
                         <td class="px-6 py-4">
-                            <span class="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-tighter 
+                            <span
+                                class="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-tighter 
                                 {% if doc.IDTIPDOC == 12 %}bg-green-100 text-green-700{% elif doc.IDTIPDOC == 0 %}bg-blue-100 text-blue-700{% else %}bg-slate-100 text-slate-600{% endif %}">
                                 {{ doc.TIPO_DOCUMENTO_TEXT }}
                             </span>
@@ -183,11 +236,13 @@
                             <span class="text-sm font-black text-slate-800">{{ doc.IDCONSEC }}</span>
                         </td>
                         <td class="px-6 py-4">
-                            <span class="text-xs font-bold text-slate-500 italic">{{ doc.IDFECDOC|date:"d/m/Y H:i" }}</span>
+                            <span class="text-xs font-bold text-slate-500 italic">{{ doc.IDFECDOC|date:"d/m/Y H:i"
+                                }}</span>
                         </td>
                         <td class="px-6 py-4">
                             <div class="flex items-center gap-2">
-                                <div class="w-7 h-7 rounded-lg bg-blue-100 flex items-center justify-center text-blue-700 text-[10px] font-black">
+                                <div
+                                    class="w-7 h-7 rounded-lg bg-blue-100 flex items-center justify-center text-blue-700 text-[10px] font-black">
                                     {{ doc.USUARIO_NOMBRE|slice:":1"|upper }}
                                 </div>
                                 <span class="text-xs font-bold text-slate-700 uppercase">{{ doc.USUARIO_NOMBRE }}</span>
@@ -195,12 +250,14 @@
                         </td>
                         <td class="px-6 py-4 text-right">
                             {% if doc.IDESTADO == 0 %}
-                            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-green-50 text-green-700 text-[10px] font-black uppercase border border-green-100">
+                            <span
+                                class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-green-50 text-green-700 text-[10px] font-black uppercase border border-green-100">
                                 <span class="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
                                 Activo
                             </span>
                             {% else %}
-                            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-slate-50 text-slate-500 text-[10px] font-black uppercase border border-slate-100">
+                            <span
+                                class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-slate-50 text-slate-500 text-[10px] font-black uppercase border border-slate-100">
                                 <span class="w-1.5 h-1.5 bg-slate-400 rounded-full"></span>
                                 Procesado
                             </span>
@@ -211,12 +268,16 @@
                     <tr>
                         <td colspan="5" class="px-6 py-20 text-center">
                             <div class="flex flex-col items-center gap-4">
-                                <div class="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center text-slate-300">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 9.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                <div
+                                    class="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center text-slate-300">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10" fill="none"
+                                        viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M9.172 9.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                                     </svg>
                                 </div>
-                                <p class="text-slate-400 font-bold uppercase tracking-widest text-sm">No se encontraron documentos en la base de datos Nexus</p>
+                                <p class="text-slate-400 font-bold uppercase tracking-widest text-sm">No se encontraron
+                                    documentos en la base de datos Nexus</p>
                             </div>
                         </td>
                     </tr>
@@ -224,17 +285,20 @@
                 </tbody>
             </table>
         </div>
-        
+
         <!-- Pagination -->
         {% if is_paginated %}
         <div class="px-6 py-5 bg-slate-50/50 border-t-2 border-blue-50 flex items-center justify-between">
-            <p class="text-xs font-bold text-slate-500 uppercase">Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</p>
+            <p class="text-xs font-bold text-slate-500 uppercase">Página {{ page_obj.number }} de {{
+                page_obj.paginator.num_pages }}</p>
             <div class="flex gap-2">
                 {% if page_obj.has_previous %}
-                <a href="?page={{ page_obj.previous_page_number }}&db={{ selected_db }}&tipo={{ request.GET.tipo }}&usuario={{ request.GET.usuario }}&estado={{ request.GET.estado }}&consecutivo={{ request.GET.consecutivo }}&desde={{ request.GET.desde }}&hasta={{ request.GET.hasta }}" class="px-4 py-2 bg-white rounded-xl border-2 border-blue-100 text-xs font-black text-blue-700 hover:bg-blue-50 transition-all">Anterior</a>
+                <a href="?page={{ page_obj.previous_page_number }}&db={{ selected_db }}&tipo={{ request.GET.tipo }}&usuario={{ request.GET.usuario }}&estado={{ request.GET.estado }}&consecutivo={{ request.GET.consecutivo }}&desde={{ request.GET.desde }}&hasta={{ request.GET.hasta }}"
+                    class="px-4 py-2 bg-white rounded-xl border-2 border-blue-100 text-xs font-black text-blue-700 hover:bg-blue-50 transition-all">Anterior</a>
                 {% endif %}
                 {% if page_obj.has_next %}
-                <a href="?page={{ page_obj.next_page_number }}&db={{ selected_db }}&tipo={{ request.GET.tipo }}&usuario={{ request.GET.usuario }}&estado={{ request.GET.estado }}&consecutivo={{ request.GET.consecutivo }}&desde={{ request.GET.desde }}&hasta={{ request.GET.hasta }}" class="px-4 py-2 bg-white rounded-xl border-2 border-blue-100 text-xs font-black text-blue-700 hover:bg-blue-50 transition-all">Siguiente</a>
+                <a href="?page={{ page_obj.next_page_number }}&db={{ selected_db }}&tipo={{ request.GET.tipo }}&usuario={{ request.GET.usuario }}&estado={{ request.GET.estado }}&consecutivo={{ request.GET.consecutivo }}&desde={{ request.GET.desde }}&hasta={{ request.GET.hasta }}"
+                    class="px-4 py-2 bg-white rounded-xl border-2 border-blue-100 text-xs font-black text-blue-700 hover:bg-blue-50 transition-all">Siguiente</a>
                 {% endif %}
             </div>
         </div>
@@ -245,14 +309,14 @@
 
 {% block extra_js %}
 <script>
-    $(document).ready(function() {
-        $('.select2-filter').each(function() {
+    $(document).ready(function () {
+        $('.select2-filter').each(function () {
             $(this).select2({
                 width: '100%',
                 allowClear: true,
                 placeholder: $(this).data('placeholder'),
                 language: {
-                    noResults: function() { return "No se encontraron resultados"; }
+                    noResults: function () { return "No se encontraron resultados"; }
                 }
             });
         });
@@ -261,7 +325,7 @@
     async function copyResponsibles() {
         const textArea = document.getElementById("responsiblesList");
         const textToCopy = textArea.value;
-        
+
         try {
             await navigator.clipboard.writeText(textToCopy);
             alert("¡Lista de responsables copiada al portapapeles!");

@@ -31,7 +31,7 @@ def _normalizar_gestas(val):
         return 1
 
 
-def listar_pacientes_sala_partos(query=None):
+def listar_pacientes_sala_partos(query=None, db_name='readonly'):
     """
     Ejecuta la consulta de Control de Trabajo de Parto / MEOWS contra
     la BD readonly (DGEMPRES03) y devuelve lista de dicts listos para
@@ -39,7 +39,7 @@ def listar_pacientes_sala_partos(query=None):
 
     query: opcional; filtra por nombre o identificación (documento).
     """
-    if 'readonly' not in settings.DATABASES:
+    if db_name not in settings.DATABASES:
         return []
 
     sql = """
@@ -48,6 +48,7 @@ def listar_pacientes_sala_partos(query=None):
         PLA.GDENOMBRE AS aseguradora,
         PAC.GPANUMCAR AS historia_clinica,
         PAC.PACNUMDOC AS identificacion,
+        PAC.GPAFECNAC AS fecha_nacimiento,
         RTRIM(ISNULL(PAC.PACPRINOM,'') + ' ' + ISNULL(PAC.PACSEGNOM,'') + ' ' + ISNULL(PAC.PACPRIAPE,'') + ' ' + ISNULL(PAC.PACSEGAPE,'')) AS nombre_paciente,
         FOL_DATA.diagnostico,
         DATEDIFF(YEAR, PAC.GPAFECNAC, GETDATE()) AS edad_anos,
@@ -88,29 +89,30 @@ def listar_pacientes_sala_partos(query=None):
     ) AS FOL_DATA
     WHERE EST.HESFECSAL IS NULL
       AND GRP.HGRCODIGO = '03'
-      AND SUB.HSUCODIGO = '0305'
+      AND SUB.HSUCODIGO IN ('0304', '0305', '0307')
     """
     params = []
     if query and query.strip():
         sql += """
       AND (
-          PAC.PACNUMDOC LIKE %s
+          PAC.PACNUMDOC = %s
+          OR PAC.PACNUMDOC LIKE %s
           OR PAC.PACPRINOM + ' ' + ISNULL(PAC.PACSEGNOM,'') + ' ' + PAC.PACPRIAPE + ' ' + ISNULL(PAC.PACSEGAPE,'') LIKE %s
-          OR PAC.PACPRIAPE + ' ' + ISNULL(PAC.PACSEGAPE,'') LIKE %s
       )
         """
-        q = '%' + query.strip() + '%'
-        params = [q, q, q]
+        q_like = '%' + query.strip() + '%'
+        q_exact = query.strip()
+        params = [q_exact, q_like, q_like]
 
     sql += " ORDER BY CAM.HCACODIGO"
 
     try:
-        with connections['readonly'].cursor() as cursor:
+        with connections[db_name].cursor() as cursor:
             cursor.execute(sql, params)
             columns = [col[0] for col in cursor.description]
             rows = [dict(zip(columns, row)) for row in cursor.fetchall()]
     except Exception as e:
-        raise RuntimeError(f'Error al consultar DGEMPRES03: {e}') from e
+        raise RuntimeError(f'Error al consultar {db_name}: {e}') from e
 
     # Mapear a formato esperado por el formulario
     out = []
@@ -133,6 +135,7 @@ def listar_pacientes_sala_partos(query=None):
             'diagnostico': r.get('diagnostico'),
             'edad_anos': r.get('edad_anos'),
             'fecha_ingreso': r.get('fecha_ingreso'),
+            'fecha_nacimiento': r.get('fecha_nacimiento'),
             'grupo_sanguineo': r.get('grupo_sanguineo'),
             'controles_prenatales': r.get('controles_prenatales'),
             'origen': 'sala_partos',

@@ -276,7 +276,7 @@ DATA_UPLOAD_MAX_NUMBER_FIELDS = 10000
 # DIAN Certificates Configuration
 # 1. Origen de datos (Plantilla y Excel)
 DIAN_EXCEL_PATH = os.path.join(BASE_DIR, 'CertificadoIngresos2025.xlsm')
-DIAN_TEMPLATE_PATH = os.path.join(BASE_DIR, 'media', 'certificados_dian', 'Formulario_220_2026.pdf')
+DIAN_TEMPLATE_PATH = os.path.join(BASE_DIR, 'CertificadosDIAN', 'templates', 'CertificadosDIAN', 'Formulario_220_2026_Calibracion.pdf')
 
 # 2. Destino de los PDF generados
 DIAN_OUTPUT_DIR = os.path.join(BASE_DIR.parent, 'Dian2025')
