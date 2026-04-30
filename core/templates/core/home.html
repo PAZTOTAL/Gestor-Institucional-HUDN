@@ -224,8 +224,18 @@
             </button>
             <h2 class="text-2xl font-black text-emerald-900 uppercase">BIENES Y SERVICIOS</h2>
         </div>
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 text-center">
-             <p class="text-xl text-gray-500 col-span-full py-10">Módulos de Almacén próximamente.</p>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <a href="{% url 'inventarios_documentos' %}" class="glass-card p-6 flex flex-col items-center text-center border-b-4 border-emerald-500 hover:border-emerald-700 transition-all hover:-translate-y-1 group relative overflow-hidden">
+                <div class="absolute top-0 right-0 w-16 h-16 bg-emerald-500/5 -mr-8 -mt-8 rounded-full group-hover:scale-150 transition-transform duration-500"></div>
+                <div class="w-16 h-16 bg-emerald-100 rounded-2xl flex items-center justify-center mb-4 text-emerald-600 group-hover:bg-emerald-600 group-hover:text-white transition-all shadow-sm">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
+                    </svg>
+                </div>
+                <h3 class="text-lg font-black mb-1 text-emerald-950 uppercase">Documentos</h3>
+                <p class="text-xs text-slate-500 font-bold leading-tight">Consulta de facturas, órdenes y movimientos Nexus</p>
+                <div class="mt-4 text-[10px] text-emerald-600 font-black opacity-0 group-hover:opacity-100 transition-opacity uppercase tracking-widest">Ver Listado</div>
+            </a>
         </div>
     </div>
 

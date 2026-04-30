@@ -223,11 +223,12 @@ class HomeView(AccessControlMixin, TemplateView):
         'financiera':     {'name': 'FINANCIERA',            'slug': 'financiera',     'icon': 'M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6',   'description': 'Gestión contable y presupuestal'},
         'varios':         {'name': 'VARIOS',                'slug': 'varios',         'icon': 'M4 6h16M4 12h16M4 18h16',                                       'description': 'Formatos y herramientas generales'},
         'consultas':      {'name': 'CONSULTAS',             'slug': 'consultas',      'icon': 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z', 'description': 'Indicadores y Reportes'},
+        'bienes_servicios': {'name': 'BIENES Y SERVICIOS',   'slug': 'bienes_servicios', 'icon': 'M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4', 'description': 'Almacén e Inventarios'},
     }
 
     # Categorías que pertenecen a cada subgerencia en la vista jerárquica
     SALUD_CATS     = {'asistencial', 'consultas'}
-    FINANCIERA_CATS = {'talento_humano', 'financiera', 'contabilidad', 'juridica', 'administrativo', 'varios'}
+    FINANCIERA_CATS = {'talento_humano', 'financiera', 'contabilidad', 'juridica', 'administrativo', 'varios', 'bienes_servicios'}
 
     def dispatch(self, request, *args, **kwargs):
         if request.user.is_authenticated and not request.user.is_superuser:
@@ -313,6 +314,14 @@ class HomeView(AccessControlMixin, TemplateView):
             'description': 'Dashboard General de Reportes',
             'url': '/?section=consultas',
             'icon': 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z'
+        })
+        
+        all_permitted_modules.append({
+            'name': 'Inventarios Nexus',
+            'slug': 'inventarios_nexus',
+            'description': 'Consulta de Documentos e Inventario',
+            'url': '/inventarios/documentos/',
+            'icon': 'M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4'
         })
         
         show_direct_modules = True # Forzamos vista de botones directa

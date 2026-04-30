@@ -83,6 +83,7 @@ INSTALLED_APPS = [
     'visor_soportes',
     'tercerizadas',
     'paz_y_salvo',
+    'inventarios',
     # Cuando integre el código completo de UNIFICADOR-V1 en la raíz del repo, descomente:
     # 'meows',
     # 'trabajoparto',
@@ -149,6 +150,21 @@ DATABASES = {
     'readonly': {
         'ENGINE': 'mssql',
         'NAME': os.getenv('DB_READONLY_NAME', 'DGEMPRES03'),
+        'USER': os.getenv('DB_READONLY_USER', 'dsolarte'),
+        'PASSWORD': os.getenv('DB_READONLY_PASSWORD', 'ConsultaHUDN2026*/$'),
+        'HOST': os.getenv('DB_READONLY_HOST', '172.20.100.209'),
+        'PORT': os.getenv('DB_READONLY_PORT', ''),
+        'CONN_MAX_AGE': 0,
+        'OPTIONS': {
+            'driver': 'ODBC Driver 17 for SQL Server',
+            'host_is_server': True,
+            'timeout': 10,
+            'connection_timeout': 1,
+        },
+    },
+    'nexus': {
+        'ENGINE': 'mssql',
+        'NAME': 'DGEMPRES_NEXUS',
         'USER': os.getenv('DB_READONLY_USER', 'dsolarte'),
         'PASSWORD': os.getenv('DB_READONLY_PASSWORD', 'ConsultaHUDN2026*/$'),
         'HOST': os.getenv('DB_READONLY_HOST', '172.20.100.209'),

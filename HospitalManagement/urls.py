@@ -49,6 +49,7 @@ urlpatterns = [
     path('tercerizadas/', include('tercerizadas.urls', namespace='tercerizadas')),
     path('paz-y-salvo/', include((pys_template_patterns, 'paz_y_salvo'), namespace='paz_y_salvo')),
     path('api/', include(pys_api_patterns)),
+    path('inventarios/', include('inventarios.urls')),
 ]
 
 
