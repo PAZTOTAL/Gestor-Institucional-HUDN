@@ -4,7 +4,7 @@ from .models import (
     AccionTutela, DerechoPeticion, ProcesoExtrajudicial, ProcesoJudicialActiva, ProcesoJudicialPasiva,
     Peritaje, PagoSentenciaJudicial, ProcesoJudicialTerminado,
     ProcesoAdministrativoSancionatorio, RequerimientoEnteControl, DespachoJudicial,
-    CatalogoDerechoVulnerado, CatalogoAccionado
+    CatalogoDerechoVulnerado, CatalogoAccionado, IncidenteDesacato, PronunciamientoHecho
 )
 
 
@@ -35,10 +35,10 @@ class AnyMultipleChoiceField(forms.MultipleChoiceField):
         return True
 
 class AccionTutelaForm(PremiumModelForm):
-    cedula_accionante = forms.CharField(
-        label='CÉDULA ACCIONANTE', 
-        required=False, 
-        widget=forms.TextInput(attrs={'placeholder': 'Digite cédula para buscar...'})
+    email_accionante = forms.EmailField(
+        label='EMAIL ACCIONANTE',
+        required=False,
+        widget=forms.EmailInput(attrs={'placeholder': 'correo@ejemplo.com'})
     )
     cedula_abogado = forms.CharField(
         label='CÉDULA ABOGADO', 
@@ -108,15 +108,12 @@ class AccionTutelaForm(PremiumModelForm):
     class Meta:
         model = AccionTutela
         fields = [
-            'num_proceso', 'fecha_llegada', 'despacho_judicial', 'cedula_accionante', 'accionante', 'accionado', 'cedula_abogado', 'abogado_responsable',
+            'num_proceso', 'fecha_llegada', 'despacho_judicial', 'cedula_accionante', 'accionante', 'email_accionante', 'accionado', 'cedula_abogado', 'abogado_responsable',
             'fecha_notificacion', 'termino_dias', 'termino_horas', 'fecha_vencimiento',
             'fecha_respuesta', 'radicado_respuesta', 'medio_envio_respuesta',
             'derechos_vulnerados', 'pretensiones',
             'estado_tutela', 'sentido_fallo',
             'requiere_cumplimiento', 'fecha_limite_cumplimiento', 'incidente_desacato',
-            'desacato_fecha_notificacion', 'desacato_termino_dias', 'desacato_termino_horas',
-            'desacato_fecha_vencimiento', 'desacato_fecha_respuesta',
-            'desacato_radicado_respuesta', 'desacato_medio_envio',
             'observaciones'
         ]
         widgets = {
@@ -125,12 +122,45 @@ class AccionTutelaForm(PremiumModelForm):
             'fecha_vencimiento': forms.DateTimeInput(attrs={'type': 'datetime-local'}),
             'fecha_respuesta': forms.DateTimeInput(attrs={'type': 'datetime-local'}),
             'fecha_limite_cumplimiento': forms.DateInput(attrs={'type': 'date'}),
-            'desacato_fecha_notificacion': forms.DateTimeInput(attrs={'type': 'datetime-local'}),
-            'desacato_fecha_vencimiento': forms.DateTimeInput(attrs={'type': 'datetime-local'}),
-            'desacato_fecha_respuesta': forms.DateTimeInput(attrs={'type': 'datetime-local'}),
+            'cedula_accionante': forms.TextInput(attrs={'placeholder': 'Digite cédula para buscar...'}),
             'pretensiones': forms.Textarea(attrs={'rows': 4}),
             'observaciones': forms.Textarea(attrs={'rows': 3}),
         }
+
+class IncidenteDesacatoForm(PremiumModelForm):
+    class Meta:
+        model = IncidenteDesacato
+        fields = [
+            'fecha_notificacion', 'termino_dias', 'termino_horas', 
+            'fecha_vencimiento', 'fecha_respuesta', 'radicado_respuesta', 
+            'medio_envio', 'observaciones'
+        ]
+        widgets = {
+            'fecha_notificacion': forms.DateTimeInput(attrs={'type': 'datetime-local'}),
+            'fecha_vencimiento': forms.DateTimeInput(attrs={'type': 'datetime-local'}),
+            'fecha_respuesta': forms.DateTimeInput(attrs={'type': 'datetime-local'}),
+            'observaciones': forms.Textarea(attrs={'rows': 2}),
+        }
+
+from django.forms import inlineformset_factory
+IncidenteDesacatoFormSet = inlineformset_factory(
+    AccionTutela, IncidenteDesacato, form=IncidenteDesacatoForm,
+    extra=1, can_delete=True
+)
+
+class PronunciamientoHechoForm(PremiumModelForm):
+    class Meta:
+        model = PronunciamientoHecho
+        fields = ['hecho_referencia', 'tipo_respuesta', 'pronunciamiento']
+        widgets = {
+            'hecho_referencia': forms.TextInput(attrs={'placeholder': 'Ej: FRENTE AL PRIMER HECHO...'}),
+            'pronunciamiento': forms.Textarea(attrs={'rows': 2}),
+        }
+
+PronunciamientoHechoFormSet = inlineformset_factory(
+    AccionTutela, PronunciamientoHecho, form=PronunciamientoHechoForm,
+    extra=1, can_delete=True
+)
 
 class DerechoPeticionForm(PremiumModelForm):
     cedula_accionante = forms.CharField(

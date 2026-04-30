@@ -58,6 +58,7 @@ urlpatterns = [
     path('tutelas/', views.TutelaListView.as_view(), name='tutelas'),
     path('tutelas/nuevo/', views.TutelaCreateView.as_view(), name='tutela_crear'),
     path('tutelas/<int:pk>/editar/', views.TutelaUpdateView.as_view(), name='tutela_editar'),
+    path('tutelas/<int:pk>/generar-docx/', views.generar_tutela_docx, name='generar_tutela_docx'),
 
     # ─── Derechos de Petición ─────────────────────────────────────────────────
     path('peticiones/', views.PeticionListView.as_view(), name='peticiones'),

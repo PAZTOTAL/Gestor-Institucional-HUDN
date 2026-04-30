@@ -760,8 +760,11 @@ def pacientes_urgencias_list(request):
         searched = True
         search_query = search_query.strip()
         
-        # Query base: pacientes activos en TODO el hospital
-        query = Q(ainestado=1)
+        # Query base: si hay búsqueda por nombre/doc, permitimos ver historial reciente (no solo ainestado=1)
+        if search_query:
+            query = Q()
+        else:
+            query = Q(ainestado=1)
         
         # Solo filtrar si hay un término de búsqueda, si no, mostrar todos los activos
         if search_query:
@@ -774,11 +777,11 @@ def pacientes_urgencias_list(request):
                 Q(genpacien__pacsegape__icontains=search_query)
             )
         
-        # Obtener ingresos activos con datos relacionados
+        # Obtener ingresos con datos relacionados
         ingresos = Adningreso.objects.using('readonly').filter(query).select_related(
             'genpacien',
             'gendetcon'
-        ).order_by('-ainfecing')[:100]  # Limitar a 100 resultados cuando se busca
+        ).order_by('-ainfecing')[:50]  # Limitar a 50 resultados para rapidez
         
         # Enriquecer con información adicional y agrupar por área
         pacientes_por_area = {}

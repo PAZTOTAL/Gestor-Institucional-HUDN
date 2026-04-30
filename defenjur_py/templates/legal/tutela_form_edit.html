@@ -1,0 +1,214 @@
+<form method="post" enctype="multipart/form-data" 
+      hx-post="{% url 'tutela_editar' object.pk %}" 
+      hx-target="#modalBody"
+      hx-encoding="multipart/form-data">
+    {% csrf_token %}
+    
+    <div class="form-grid">
+        {% for field in form %}
+            {% if field.name == 'pretensiones' %}
+                <div class="form-group" style="grid-column: 1 / -1; margin-bottom: 1rem; display: flex; gap: 1rem; align-items: center;">
+                    <button type="button" id="btn-toggle-resp-edit" class="btn-premium" style="background: rgba(16, 185, 129, 0.1); border: 1px solid #10b981; color: #10b981; width: auto;">
+                        <i data-lucide="message-square"></i> Ver/Cargar Respuesta de Tutela (Hechos)
+                    </button>
+                    <a href="{% url 'generar_tutela_docx' object.pk %}" target="_blank" class="btn-premium" style="background: rgba(99, 102, 241, 0.1); border: 1px solid #6366f1; color: #6366f1; width: auto; text-decoration: none; display: inline-flex; align-items: center; gap: 8px;">
+                        <i data-lucide="file-text"></i> Generar Documento (.docx)
+                    </a>
+                </div>
+                <div id="resp-tutela-edit-container" style="display: none; width: 100%; grid-column: 1 / -1; margin-bottom: 1rem;">
+                    <div class="pronunciamientos-formset" style="background: rgba(16, 185, 129, 0.05); padding: 1.5rem; border-radius: 12px; border: 1px solid rgba(16, 185, 129, 0.2);">
+                        <h4 style="margin-top: 0; color: #10b981; display: flex; align-items: center; gap: 8px;">
+                            <i data-lucide="message-square"></i> Respuesta de Tutela (Pronunciamiento sobre Hechos)
+                        </h4>
+                        {{ pronunciamientos.management_form }}
+                        <div id="pronunciamientos-list-edit">
+                            {% for p_form in pronunciamientos %}
+                                <div class="pronunciamiento-item card" style="margin-bottom: 1rem; border: 1px solid rgba(16, 185, 129, 0.1); background: rgba(16, 185, 129, 0.02);">
+                                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                                        <strong style="color: #94a3b8;">Hecho #{{ forloop.counter }}</strong>
+                                        {% if pronunciamientos.can_delete %}
+                                            <div style="display: flex; align-items: center; gap: 4px; font-size: 0.8rem; color: #f43f5e;">
+                                                {{ p_form.DELETE }} <label for="{{ p_form.DELETE.id_for_label }}">Eliminar</label>
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="form-grid">
+                                        <div class="form-group full-width">
+                                            <label>{{ p_form.hecho_referencia.label }}</label>
+                                            {{ p_form.hecho_referencia }}
+                                        </div>
+                                        <div class="form-group">
+                                            <label>{{ p_form.tipo_respuesta.label }}</label>
+                                            {{ p_form.tipo_respuesta }}
+                                        </div>
+                                        <div class="form-group full-width">
+                                            <label>{{ p_form.pronunciamiento.label }}</label>
+                                            {{ p_form.pronunciamiento }}
+                                        </div>
+                                        {% for h in p_form.hidden_fields %}{{ h }}{% endfor %}
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                        <button type="button" id="add-pronunciamiento-edit" class="btn-premium" style="background: #10b981; width: auto; font-size: 0.85rem; padding: 0.5rem 1rem;">
+                            <i data-lucide="plus-circle" style="width: 16px;"></i> Agregar otro Pronunciamiento
+                        </button>
+                    </div>
+                </div>
+            {% endif %}
+            <div class="form-group {% if field.name in 'vinculados,objeto_tutela,asunto_tutela,causa,observaciones,tramite_impartido,fallo_primera_instancia,fallo_segunda_instancia,respuesta_incidente_desacato,fallo_desacato,derechos_vulnerados,pretensiones' %}full-width{% endif %}">
+                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                {{ field }}
+                {% if field.errors %}
+                    <div style="color: var(--accent); font-size: 0.8rem; margin-top: 5px;">
+                        {{ field.errors }}
+                    </div>
+                {% endif %}
+            </div>
+        {% endfor %}
+    </div>
+
+    <div id="desacato-edit-container" style="display: none; width: 100%; margin-top: 1rem;">
+        <div class="incidentes-formset" style="background: rgba(99,102,241,0.05); padding: 1.5rem; border-radius: 12px; border: 1px solid rgba(99,102,241,0.2);">
+            <h4 style="margin-top: 0; color: #6366f1; display: flex; align-items: center; gap: 8px;">
+                <i data-lucide="alert-circle"></i> Seguimiento de Incidentes de Desacato
+            </h4>
+            {{ incidentes.management_form }}
+            <div id="incidentes-list-edit">
+                {% for inc_form in incidentes %}
+                    <div class="incidente-item card" style="margin-bottom: 1rem; border: 1px solid rgba(255,255,255,0.05); background: rgba(15, 23, 42, 0.3);">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                            <strong style="color: #94a3b8;">Incidente #{{ forloop.counter }}</strong>
+                            {% if incidentes.can_delete %}
+                                <div style="display: flex; align-items: center; gap: 4px; font-size: 0.8rem; color: #f43f5e;">
+                                    {{ inc_form.DELETE }} <label for="{{ inc_form.DELETE.id_for_label }}">Eliminar</label>
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="form-grid">
+                            {% for f in inc_form.visible_fields %}
+                                {% if f.name != 'DELETE' %}
+                                <div class="form-group {% if f.name == 'observaciones' %}full-width{% endif %}">
+                                    <label>{{ f.label }}</label>
+                                    {{ f }}
+                                </div>
+                                {% endif %}
+                            {% endfor %}
+                            {% for h in inc_form.hidden_fields %}{{ h }}{% endfor %}
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+            <button type="button" id="add-incidente-edit" class="btn-premium" style="background: #6366f1; width: auto; font-size: 0.85rem; padding: 0.5rem 1rem;">
+                <i data-lucide="plus-circle" style="width: 16px;"></i> Agregar otro Incidente
+            </button>
+        </div>
+    </div>
+
+    <div class="card" style="margin-top: 2rem; border-style: dashed; border-color: #6366f1;">
+        <h3 style="margin-top: 0;"><i data-lucide="paperclip"></i> Archivos Adjuntos</h3>
+        <input type="file" name="adjuntos" multiple class="premium-input" style="padding: 1rem; border-style: dashed;">
+    </div>
+
+    <div style="margin-top: 2rem; display: flex; gap: 1rem; justify-content: flex-end;">
+        <button type="button" onclick="document.getElementById('premiumModal').close()" class="btn-premium" style="background: rgba(255,255,255,0.1);">Cancelar</button>
+        <button type="submit" class="btn-premium">Guardar Cambios</button>
+    </div>
+</form>
+
+<script>
+    (function() {
+        if(window.lucide) window.lucide.createIcons();
+        
+        $('.select2-tags').select2({
+            tags: true,
+            dropdownParent: $('#premiumModal'),
+            width: '100%'
+        });
+
+        const $chkDesacato = $('#id_incidente_desacato');
+        const $desacatoContainer = $('#desacato-edit-container');
+        
+        // Estilizar el checkbox como un switch
+        if(!$chkDesacato.parent().hasClass('switch-premium')) {
+            const $wrapper = $('<label class="switch-premium"></label>');
+            $chkDesacato.wrap($wrapper);
+            $chkDesacato.after('<span class="slider-premium"></span>');
+        }
+
+        function toggleDesacato() {
+            if($chkDesacato.is(':checked')) {
+                $desacatoContainer.slideDown(300);
+            } else {
+                $desacatoContainer.slideUp(300);
+            }
+        }
+
+        toggleDesacato();
+        $chkDesacato.off('change').on('change', toggleDesacato);
+
+        $('#btn-toggle-resp-edit').off('click').on('click', function() {
+            $('#resp-tutela-edit-container').slideToggle(300);
+        });
+
+        $('#add-incidente-edit').off('click').on('click', function() {
+            const prefix = '{{ incidentes.prefix }}';
+            const formIdx = $(`#id_${prefix}-TOTAL_FORMS`).val();
+            const emptyForm = $('#empty-form-template-edit').html().replace(/__prefix__/g, formIdx);
+            $('#incidentes-list-edit').append(emptyForm);
+            $(`#id_${prefix}-TOTAL_FORMS`).val(parseInt(formIdx) + 1);
+            if(window.lucide) window.lucide.createIcons();
+        });
+
+        $('#add-pronunciamiento-edit').off('click').on('click', function() {
+            const prefix = '{{ pronunciamientos.prefix }}';
+            const formIdx = $(`#id_${prefix}-TOTAL_FORMS`).val();
+            const emptyForm = $('#empty-pronunciamiento-template-edit').html().replace(/__prefix__/g, formIdx);
+            $('#pronunciamientos-list-edit').append(emptyForm);
+            $(`#id_${prefix}-TOTAL_FORMS`).val(parseInt(formIdx) + 1);
+            if(window.lucide) window.lucide.createIcons();
+        });
+    })();
+</script>
+
+<script type="text/html" id="empty-pronunciamiento-template-edit">
+    <div class="pronunciamiento-item card" style="margin-bottom: 1rem; border: 1px solid rgba(16, 185, 129, 0.1); background: rgba(16, 185, 129, 0.02);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+            <strong style="color: #10b981;">Nuevo Pronunciamiento</strong>
+        </div>
+        <div class="form-grid">
+            <div class="form-group full-width">
+                <label>{{ pronunciamientos.empty_form.hecho_referencia.label }}</label>
+                {{ pronunciamientos.empty_form.hecho_referencia }}
+            </div>
+            <div class="form-group">
+                <label>{{ pronunciamientos.empty_form.tipo_respuesta.label }}</label>
+                {{ pronunciamientos.empty_form.tipo_respuesta }}
+            </div>
+            <div class="form-group full-width">
+                <label>{{ pronunciamientos.empty_form.pronunciamiento.label }}</label>
+                {{ pronunciamientos.empty_form.pronunciamiento }}
+            </div>
+            {% for h in pronunciamientos.empty_form.hidden_fields %}{{ h }}{% endfor %}
+        </div>
+    </div>
+</script>
+
+<script type="text/html" id="empty-form-template-edit">
+    <div class="incidente-item card" style="margin-bottom: 1rem; border: 1px solid rgba(255,255,255,0.05); background: rgba(15, 23, 42, 0.3);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+            <strong style="color: #6366f1;">Nuevo Incidente</strong>
+        </div>
+        <div class="form-grid">
+            {% for f in incidentes.empty_form.visible_fields %}
+                {% if f.name != 'DELETE' %}
+                <div class="form-group {% if f.name == 'observaciones' %}full-width{% endif %}">
+                    <label>{{ f.label }}</label>
+                    {{ f }}
+                </div>
+                {% endif %}
+            {% endfor %}
+            {% for h in incidentes.empty_form.hidden_fields %}{{ h }}{% endfor %}
+        </div>
+    </div>
+</script>

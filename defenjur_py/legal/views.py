@@ -12,6 +12,10 @@ Mapeo resumido:
 - API JSON por entidad: legal/api_entities.py (getAll/getDetail).
 """
 from datetime import date
+import os
+import io
+import traceback
+from docx import Document
 import logging
 
 logger = logging.getLogger(__name__)
@@ -38,8 +42,9 @@ from .forms import (
     AccionTutelaForm, DerechoPeticionForm, ProcesoExtrajudicialForm, ProcesoJudicialActivaForm,
     ProcesoJudicialPasivaForm, PeritajeForm, PagoSentenciaJudicialForm, ProcesoJudicialTerminadoForm,
     ProcesoAdministrativoSancionatorioForm, RequerimientoEnteControlForm,
-    UsuarioHudnCreateForm, UsuarioHudnUpdateForm,
+    UsuarioHudnCreateForm, UsuarioHudnUpdateForm, IncidenteDesacatoFormSet, PronunciamientoHechoFormSet
 )
+from django.db import transaction
 from .query_helpers import filter_charfield_dmy_range, filter_tutela_by_month_year, is_dmy_string
 from .node_parity import estadisticas_rango_por_modulo
 
@@ -591,26 +596,76 @@ class TutelaCreateView(LoginRequiredMixin, CreateView):
     form_class = AccionTutelaForm
     template_name = 'legal/tutela_form.html'
     success_url = reverse_lazy('tutelas')
+    def get_context_data(self, **kwargs):
+        data = super().get_context_data(**kwargs)
+        if self.request.POST:
+            data['incidentes'] = IncidenteDesacatoFormSet(self.request.POST)
+            data['pronunciamientos'] = PronunciamientoHechoFormSet(self.request.POST)
+        else:
+            data['incidentes'] = IncidenteDesacatoFormSet()
+            data['pronunciamientos'] = PronunciamientoHechoFormSet()
+        return data
 
     def form_valid(self, form):
-        obj = form.save(commit=False)
+        context = self.get_context_data()
+        incidentes = context['incidentes']
+        pronunciamientos = context['pronunciamientos']
         user = self.request.user
-        obj.usuario_carga = user.get_username()
         
-        # Auto-asignar abogado si el campo está vacío
-        if not obj.abogado_responsable:
-            perfil = getattr(user, 'perfil', None)
-            nick = getattr(user, 'nick', None) or getattr(perfil, 'legal_nick', '') or ''
-            obj.abogado_responsable = nick or user.get_full_name() or user.username
+        with transaction.atomic():
+            self.object = form.save(commit=False)
+            self.object.usuario_carga = user.get_username()
             
-        obj.save()
-        _guardar_adjuntos(self.request.FILES.getlist('adjuntos'), 'tutela', obj.id)
+            # Auto-asignar abogado si el campo está vacío
+            if not self.object.abogado_responsable:
+                perfil = getattr(user, 'perfil', None)
+                nick = getattr(user, 'nick', None) or getattr(perfil, 'legal_nick', '') or ''
+                self.object.abogado_responsable = nick or user.get_full_name() or user.username
+            
+            self.object.save()
+            
+            if incidentes.is_valid():
+                incidentes.instance = self.object
+                incidentes.save()
+            
+            if pronunciamientos.is_valid():
+                pronunciamientos.instance = self.object
+                pronunciamientos.save()
+                
+            _guardar_adjuntos(self.request.FILES.getlist('adjuntos'), 'tutela', self.object.id)
+            
         messages.success(self.request, 'Acción de Tutela registrada correctamente.')
         return redirect(self.success_url)
 
 class TutelaUpdateView(ModalUpdateView):
     model = AccionTutela
     form_class = AccionTutelaForm
+    template_name = 'legal/tutela_form_edit.html' # Cambiado para soportar formset
+
+    def get_context_data(self, **kwargs):
+        data = super().get_context_data(**kwargs)
+        if self.request.POST:
+            data['incidentes'] = IncidenteDesacatoFormSet(self.request.POST, instance=self.object)
+            data['pronunciamientos'] = PronunciamientoHechoFormSet(self.request.POST, instance=self.object)
+        else:
+            data['incidentes'] = IncidenteDesacatoFormSet(instance=self.object)
+            data['pronunciamientos'] = PronunciamientoHechoFormSet(instance=self.object)
+        return data
+
+    def form_valid(self, form):
+        context = self.get_context_data()
+        incidentes = context['incidentes']
+        pronunciamientos = context['pronunciamientos']
+        with transaction.atomic():
+            self.object = form.save()
+            if incidentes.is_valid():
+                incidentes.instance = self.object
+                incidentes.save()
+            if pronunciamientos.is_valid():
+                pronunciamientos.instance = self.object
+                pronunciamientos.save()
+            _guardar_adjuntos(self.request.FILES.getlist('adjuntos'), 'tutela', self.object.id)
+        return JsonResponse({'success': True})
 
 
 # ─── Derechos de Petición ─────────────────────────────────────────────────────
@@ -1444,3 +1499,80 @@ def catalogo_accionado_eliminar(request, pk):
     obj = get_object_or_404(CatalogoAccionado, pk=pk)
     obj.delete()
     return JsonResponse({'success': True})
+
+def generar_tutela_docx(request, pk):
+    """Genera un documento Word basado en la plantilla institucional."""
+    try:
+        tutela = get_object_or_404(AccionTutela, pk=pk)
+        
+        # Estamos en legal/views.py, la plantilla está en legal/templates_docx/
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        template_path = os.path.join(current_dir, 'templates_docx', 'ACCION_DE_TUTELA_modelo.docx')
+        
+        if not os.path.exists(template_path):
+            return HttpResponse(f"Error: Plantilla no encontrada en {template_path}", status=404)
+
+        doc = Document(template_path)
+        
+        # Contexto de reemplazo extendido
+        context = {
+            '{{NUM_PROCESO}}': str(tutela.num_proceso or 'N/A'),
+            '{{FECHA_LLEGADA}}': str(tutela.fecha_llegada or ''),
+            '{{JUZGADO}}': str(tutela.despacho_judicial or ''),
+            '{{ACCIONANTE}}': str(tutela.accionante or ''),
+            '{{CEDULA_ACCIONANTE}}': str(tutela.cedula_accionante or ''),
+            '{{EMAIL_ACCIONANTE}}': str(tutela.email_accionante or ''),
+            '{{ACCIONADO}}': str(tutela.accionado or ''),
+            '{{DERECHOS}}': str(tutela.derechos_vulnerados or ''),
+            '{{PRETENSIONES}}': str(tutela.pretensiones or ''),
+            '{{ABOGADO}}': str(tutela.abogado_responsable or ''),
+            '{{RADICADO_RESPUESTA}}': str(tutela.radicado_respuesta or ''),
+            '{{FECHA_HOY}}': date.today().strftime('%d/%m/%Y'),
+        }
+        
+        # Bloque de hechos
+        hechos_text = ""
+        for p in tutela.pronunciamientos_hechos.all():
+            hechos_text += f"{p.hecho_referencia}: {p.tipo_respuesta}. {p.pronunciamiento}\n"
+        
+        context['{{HECHOS}}'] = hechos_text
+
+        # Función de reemplazo robusta
+        def apply_replacements(container):
+            # Procesar párrafos
+            for paragraph in container.paragraphs:
+                for key, value in context.items():
+                    if key in paragraph.text:
+                        paragraph.text = paragraph.text.replace(key, value)
+            
+            # Procesar tablas
+            for table in container.tables:
+                for row in table.rows:
+                    for cell in row.cells:
+                        for paragraph in cell.paragraphs:
+                            for key, value in context.items():
+                                if key in paragraph.text:
+                                    paragraph.text = paragraph.text.replace(key, value)
+
+        apply_replacements(doc)
+
+        buffer = io.BytesIO()
+        doc.save(buffer)
+        buffer.seek(0)
+
+        # Nombre del archivo solicitado: "ACCION DE TUTELA - [numero].docx"
+        safe_num = str(tutela.num_proceso or tutela.pk).replace("/", "-").replace(" ", "_")
+        filename = f"ACCION_DE_TUTELA_{safe_num}.docx"
+        
+        from django.http import FileResponse
+        buffer.seek(0)
+        return FileResponse(
+            buffer, 
+            as_attachment=True, 
+            filename=filename
+        )
+
+    except Exception as e:
+        error_msg = f"Error en generación DOCX:\n{traceback.format_exc()}"
+        logger.error(error_msg)
+        return HttpResponse(f"<pre>{error_msg}</pre>", status=500)

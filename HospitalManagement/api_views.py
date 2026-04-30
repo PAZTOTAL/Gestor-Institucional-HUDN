@@ -3,10 +3,11 @@ from django.apps import apps
 from django.db.models import Q
 from datetime import datetime
 
-# Use standard models
-from consultas_externas.models import Genpacien, Adningreso, Hpnestanc, Hpndefcam, Hpnsubgru, Gendetcon
-# New required models for diagnosis and vitals
-from consultas_externas.models import Hcnfolio, Hcndiapac, Gendiagno, Hcnregenf
+# Core and Infrastructure models
+from consultas_externas.models import (
+    Genpacien, Adningreso, Hpnestanc, Hpndefcam, Hpnsubgru, Gendetcon,
+    Hcnfolio, Hcndiapac, Gendiagno, Hcnregenf, Genareser, Adncenate
+)
 
 def calculate_age(born):
     if not born:
@@ -124,6 +125,15 @@ def query_paciente_enhanced(request):
             subgrus = Hpnsubgru.objects.using('readonly').filter(oid__in=subgru_ids)
             subgru_map = {s.oid: s for s in subgrus}
 
+            # Infrastructure Maps for results
+            area_ids = [a.genareser for a in active_adms if a.genareser]
+            areas = Genareser.objects.using('readonly').filter(oid__in=area_ids)
+            area_map = {a.oid: a.gasnombre for a in areas}
+
+            center_ids = [a.adncenate for a in active_adms if a.adncenate]
+            centers = Adncenate.objects.using('readonly').filter(oid__in=center_ids)
+            center_map = {c.oid: c.acanombre for c in centers}
+
             # Build Result List
             # We iterate over sorted admissions to keep newest first
             sorted_adms = sorted(active_adms, key=lambda x: x.ainfecing, reverse=True)
@@ -172,8 +182,14 @@ def query_paciente_enhanced(request):
                     'fecha_nacimiento': pac.gpafecnac.strftime('%d/%m/%Y') if pac.gpafecnac else "",
                     'edad': str(edad),
                     'aseguradora': aseguradora,
-                    'fecha_ingreso': adm.ainfecing.strftime('%d/%m/%Y') if adm.ainfecing else "",
-                    'ingreso_id': adm.oid
+                    'fecha_ingreso': adm.ainfecing.strftime('%d/%m/%Y %H:%M') if adm.ainfecing else "",
+                    'ingreso_id': adm.oid,
+                    'estado': "Activo",
+                    'consecutivo': adm.ainconsec,
+                    'ingreso_por': "Urgencias" if adm.aintiping == 1 else "Hospitalización",
+                    'tipo_ingreso': "Hospitalización" if adm.aintiping == 2 else "Consulta Externa",
+                    'centro_atencion': center_map.get(adm.adncenate, "S.D"),
+                    'area_servicio': area_map.get(adm.genareser, "S.D")
                 }
                 data.append(item)
 
@@ -194,16 +210,24 @@ def query_paciente_enhanced(request):
             if not pac_ids:
                 return JsonResponse({'results': []})
             
-            # Find Active Admissions for these patients
+            # Find Admissions for these patients (Active and Recent)
             qs = Adningreso.objects.using('readonly').filter(
                 genpacien__in=pac_ids,
-                ainfecegre__isnull=True
-            ).order_by('-ainfecing')
+            ).order_by('-ainfecing')[:limit]
             
             # Get Insurers
             detcon_ids = [a.gendetcon_id for a in qs if a.gendetcon_id]
             detcons = Gendetcon.objects.using('readonly').filter(oid__in=detcon_ids)
             detcon_map = {d.oid: d for d in detcons}
+
+            # Infrastructure Maps for search results
+            area_ids = [a.genareser for a in qs if a.genareser]
+            areas = Genareser.objects.using('readonly').filter(oid__in=area_ids)
+            area_map = {a.oid: a.gasnombre for a in areas}
+
+            center_ids = [a.adncenate for a in qs if a.adncenate]
+            centers = Adncenate.objects.using('readonly').filter(oid__in=center_ids)
+            center_map = {c.oid: c.acanombre for c in centers}
 
             for adm in qs:
                 pac = pac_map.get(adm.genpacien_id)
@@ -239,9 +263,32 @@ def query_paciente_enhanced(request):
                 full_name = f"{pac.pacprinom} {pac.pacsegnom or ''} {pac.pacpriape} {pac.pacsegape}".strip()
                 aseguradora = detcon.gdenombre if detcon else "Particular"
                 
+                # Determinar estado detallado
+                estado_label = "Activo"
+                if adm.ainfecegre:
+                    estado_label = "Egresado"
+                elif adm.slnfactur:
+                    estado_label = "Facturado"
+                elif adm.ainestado == 2:
+                    estado_label = "Cerrado"
+                elif adm.ainestado == 3:
+                    estado_label = "Anulado"
+
+                # Mapeo de Vía de Ingreso (Ingreso Por)
+                via_ingreso = "Urgencias"
+                if adm.aintiping == 2: via_ingreso = "Hospitalización"
+                elif adm.aintiping == 3: via_ingreso = "Ambulatorio"
+                elif adm.ainviaing == 3: via_ingreso = "Ambulatorio"
+                
+                # Mapeo de Tipo de Ingreso (Para columna Ingreso)
+                tipo_adm = "Consulta Externa"
+                if adm.aincxambula: tipo_adm = "Cirugía Ambulatoria"
+                elif adm.aintiping == 1: tipo_adm = "Urgencias"
+                elif adm.aintiping == 2: tipo_adm = "Hospitalización"
+
                 item = {
                     'id': pac.oid, 
-                    'text': f"{pac.pacnumdoc} - {full_name}",
+                    'text': f"{pac.pacnumdoc} - {full_name} ({estado_label})",
                     'paciente_id': pac.oid,
                     'documento': pac.pacnumdoc,
                     'nombre': full_name,
@@ -250,9 +297,14 @@ def query_paciente_enhanced(request):
                     'fecha_nacimiento': pac.gpafecnac.strftime('%d/%m/%Y') if pac.gpafecnac else "",
                     'edad': str(edad),
                     'aseguradora': aseguradora,
-                    'aseguradora': aseguradora,
-                    'fecha_ingreso': adm.ainfecing.strftime('%d/%m/%Y') if adm.ainfecing else "",
-                    'ingreso_id': adm.oid
+                    'fecha_ingreso': adm.ainfecing.strftime('%d/%m/%Y %H:%M') if adm.ainfecing else "",
+                    'ingreso_id': adm.oid,
+                    'estado': estado_label,
+                    'consecutivo': adm.ainconsec,
+                    'ingreso_por': via_ingreso,
+                    'tipo_ingreso': tipo_adm,
+                    'centro_atencion': center_map.get(adm.adncenate, "S.D"),
+                    'area_servicio': area_map.get(adm.genareser, "S.D")
                 }
                 data.append(item)
                 

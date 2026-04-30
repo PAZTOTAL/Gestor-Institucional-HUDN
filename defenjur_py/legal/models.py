@@ -245,12 +245,14 @@ class AccionTutela(models.Model):
     num_proceso = models.CharField('NÚMERO DE PROCESO', max_length=255, db_column='num_proceso', null=True, blank=True)
     fecha_llegada = models.CharField('FECHA DE LLEGADA', max_length=255, db_column='fecha_llegada', null=True, blank=True)
     despacho_judicial = models.CharField('DESPACHO JUDICIAL', max_length=255, db_column='despacho_judicial', null=True, blank=True)
+    num_reparto = models.CharField('N° REPARTO', max_length=255, db_column='num_reparto', null=True, blank=True)
+    
+    cedula_accionante = models.CharField('CÉDULA ACCIONANTE', max_length=50, null=True, blank=True)
     accionante = models.CharField('ACCIONANTE', max_length=255, db_column='accionante', null=True, blank=True)
+    email_accionante = models.EmailField('EMAIL ACCIONANTE', max_length=255, null=True, blank=True)
+    
     accionado = models.CharField('ACCIONADO', max_length=255, db_column='accionado', null=True, blank=True)
     abogado_responsable = models.CharField('ABOGADO RESPONSABLE', max_length=255, db_column='abogado_responsable', null=True, blank=True)
-    
-    # Campo para indexación obligatoria solicitada anteriormente
-    num_reparto = models.CharField('N° REPARTO', max_length=255, db_column='num_reparto', null=True, blank=True)
 
     # ==========================================
     # NUEVOS CAMPOS (Seguimiento y Control)
@@ -298,33 +300,8 @@ class AccionTutela(models.Model):
     requiere_cumplimiento = models.BooleanField('REQUIERE CUMPLIMIENTO', default=False)
     fecha_limite_cumplimiento = models.DateField('FECHA LÍMITE CUMPLIMIENTO', null=True, blank=True)
     incidente_desacato = models.BooleanField('INCIDENTE DE DESACATO', default=False)
-    desacato_fecha_notificacion = models.DateTimeField('FECHA Y HORA DE NOTIFICACIÓN', null=True, blank=True)
-    desacato_termino_dias = models.IntegerField('TÉRMINO (DÍAS)', null=True, blank=True)
-    desacato_termino_horas = models.IntegerField('TÉRMINO (HORAS)', null=True, blank=True)
-    desacato_fecha_vencimiento = models.DateTimeField('FECHA DE VENCIMIENTO', null=True, blank=True)
-    desacato_fecha_respuesta = models.DateTimeField('FECHA DE RESPUESTA (RADICACIÓN)', null=True, blank=True)
-    desacato_radicado_respuesta = models.CharField('RADICADO DE RESPUESTA', max_length=100, null=True, blank=True)
-    desacato_medio_envio = models.CharField('MEDIO DE ENVÍO', max_length=100, null=True, blank=True)
+    
     observaciones = models.TextField('OBSERVACIONES GENERALES', null=True, blank=True)
-
-    @property
-    def semaforo(self):
-        if self.estado_tutela in ['CONTESTADA', 'CERRADA']:
-            return 'gris'
-            
-        if not self.fecha_vencimiento:
-            return 'gris'
-
-        from django.utils import timezone
-        ahora = timezone.now()
-        delta = self.fecha_vencimiento - ahora
-        
-        if delta.total_seconds() < 0:
-            return 'rojo'
-        elif delta.total_seconds() <= 86400: # 24h
-            return 'amarillo'
-        else:
-            return 'verde'
 
     class Meta:
         db_table = 'defenjur_app_acciontutela'
@@ -334,6 +311,79 @@ class AccionTutela(models.Model):
             models.Index(fields=['num_reparto']),
             models.Index(fields=['abogado_responsable']),
         ]
+
+    @property
+    def semaforo(self):
+        if self.estado_tutela in ['CONTESTADA', 'CERRADA']:
+            return 'gris'
+            
+        from django.utils import timezone
+        ahora = timezone.now()
+        
+        # Si hay incidentes de desacato, el semáforo depende del más reciente activo
+        if self.incidente_desacato:
+            ultimo_incidente = self.incidentes.order_by('-fecha_notificacion').first()
+            if ultimo_incidente and ultimo_incidente.fecha_vencimiento:
+                if ultimo_incidente.fecha_respuesta:
+                    return 'gris' # Ya respondido
+                
+                delta = ultimo_incidente.fecha_vencimiento - ahora
+                if delta.total_seconds() < 0:
+                    return 'rojo'
+                elif delta.total_seconds() <= 86400:
+                    return 'amarillo'
+                else:
+                    return 'verde'
+
+        if not self.fecha_vencimiento:
+            return 'gris'
+
+        delta = self.fecha_vencimiento - ahora
+        
+        if delta.total_seconds() < 0:
+            return 'rojo'
+        elif delta.total_seconds() <= 86400: # 24h
+            return 'amarillo'
+        else:
+            return 'verde'
+
+class IncidenteDesacato(models.Model):
+    tutela = models.ForeignKey(AccionTutela, on_delete=models.CASCADE, related_name='incidentes')
+    fecha_notificacion = models.DateTimeField('FECHA Y HORA DE NOTIFICACIÓN', null=True, blank=True)
+    termino_dias = models.IntegerField('TÉRMINO (DÍAS)', null=True, blank=True)
+    termino_horas = models.IntegerField('TÉRMINO (HORAS)', null=True, blank=True)
+    fecha_vencimiento = models.DateTimeField('FECHA DE VENCIMIENTO', null=True, blank=True)
+    fecha_respuesta = models.DateTimeField('FECHA DE RESPUESTA (RADICACIÓN)', null=True, blank=True)
+    radicado_respuesta = models.CharField('RADICADO DE RESPUESTA', max_length=100, null=True, blank=True)
+    medio_envio = models.CharField('MEDIO DE ENVÍO', max_length=100, null=True, blank=True)
+    observaciones = models.TextField('OBSERVACIONES DEL INCIDENTE', null=True, blank=True)
+    fecha_registro = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'defenjur_app_incidentedesacato'
+        verbose_name = 'Incidente de Desacato'
+        verbose_name_plural = 'Incidentes de Desacato'
+
+    def __str__(self):
+        return f"Incidente de {self.tutela.num_proceso} - {self.fecha_notificacion}"
+
+class PronunciamientoHecho(models.Model):
+    TIPO_RESPUESTA = [
+        ('ADMITA', 'Admita'),
+        ('NIEGA', 'Niega'),
+        ('NO_CONSTA', 'No le Consta'),
+        ('PARCIAL', 'Parcialmente Cierto'),
+    ]
+    tutela = models.ForeignKey(AccionTutela, on_delete=models.CASCADE, related_name='pronunciamientos_hechos')
+    hecho_referencia = models.CharField('REFERENCIA AL HECHO', max_length=255, help_text='Ej: FRENTE AL PRIMER HECHO, DEL SEGUNDO AL NOVENO...')
+    tipo_respuesta = models.CharField('RESPUESTA', max_length=20, choices=TIPO_RESPUESTA, default='ADMITA')
+    pronunciamiento = models.TextField('PRONUNCIAMIENTO / EXPLICACIÓN')
+    fecha_registro = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'defenjur_app_pronunciamientohecho'
+        verbose_name = "Pronunciamiento sobre Hecho"
+        verbose_name_plural = "Pronunciamientos sobre Hechos"
 
 class ArchivoAdjunto(models.Model):
     tipo_asociado = models.CharField(max_length=100)
