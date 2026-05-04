@@ -19,8 +19,18 @@ class DashboardView(LoginRequiredMixin, ListView):
     ordering = ['-fecha_identificacion', '-id']
     paginate_by = 20
 
+    def get(self, request, *args, **kwargs):
+        # Capturar selección de base de datos
+        db_selection = request.GET.get('db')
+        if db_selection in ['readonly', 'nexus']:
+            request.session['hospital_db'] = db_selection
+        return super().get(request, *args, **kwargs)
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        # Determinar base de datos actual para la UI
+        context['selected_db'] = self.request.session.get('hospital_db', 'readonly')
+        
         # Estadísticas rápidas
         context['total_pacientes'] = PacienteNeurocritico.objects.count()
         context['alertados'] = PacienteNeurocritico.objects.filter(
@@ -46,8 +56,10 @@ def sync_excel(request):
     filtrando por Glasgow 3, 4, 5.
     """
     try:
+        selected_db = request.session.get('hospital_db', 'readonly')
+        
         # 1. Consultar registros de historia clínica con Glasgow requerido
-        evaluaciones = Hcninterr.objects.using('readonly').only('oid', 'hcnfolio', 'hciglasgow').filter(
+        evaluaciones = Hcninterr.objects.using(selected_db).only('oid', 'hcnfolio', 'hciglasgow').filter(
             hciglasgow__gte=1, hciglasgow__lte=5
         ).order_by('-oid')[:500] 
         
@@ -56,15 +68,15 @@ def sync_excel(request):
             folio_oid = ev.hcnfolio
             if not folio_oid: continue
             
-            folio = Hcnfolio.objects.only('oid', 'genpacien', 'adningreso').filter(oid=folio_oid).first()
+            folio = Hcnfolio.objects.using(selected_db).only('oid', 'genpacien', 'adningreso').filter(oid=folio_oid).first()
             if not folio: continue
             
-            pac = Genpacien.objects.only(
+            pac = Genpacien.objects.using(selected_db).only(
                 'oid', 'pacnumdoc', 'pactipdoc', 'pacprinom', 'pacsegnom', 
                 'pacpriape', 'pacsegape', 'gpafecnac', 'gpasexpac'
             ).filter(oid=folio.genpacien).first()
             
-            ing = Adningreso.objects.only(
+            ing = Adningreso.objects.using(selected_db).only(
                 'oid', 'ainfecing', 'ainmotcon', 'genpacien'
             ).filter(oid=folio.adningreso).first()
             
@@ -188,7 +200,8 @@ def sync_husn(request):
     from django.db import connections
 
     try:
-        cursor = connections['readonly'].cursor()
+        selected_db = request.session.get('hospital_db', 'readonly')
+        cursor = connections[selected_db].cursor()
 
         # Buscar pacientes activos con diagnósticos neurocerebrales
         # CIE10: G9x (cerebro), I6x (cerebrovascular), S06 (trauma craneal),
@@ -333,7 +346,8 @@ def historia_clinica_api(request, pk):
     }
 
     try:
-        cursor = connections['readonly'].cursor()
+        selected_db = request.session.get('hospital_db', 'readonly')
+        cursor = connections[selected_db].cursor()
 
         # Buscar el ingreso activo de este paciente
         cursor.execute("""
@@ -479,9 +493,10 @@ def reporte_diario(request):
     pacientes_unicos = set()
 
     # 1. Buscar en HCNINTERR (Interconsultas/Evaluaciones)
-    # Usamos raw SQL para mayor control sobre los joins en la DB readonly
+    # Usamos raw SQL para mayor control sobre los joins en la DB seleccionada
     try:
-        with connections['readonly'].cursor() as cursor:
+        selected_db = request.session.get('hospital_db', 'readonly')
+        with connections[selected_db].cursor() as cursor:
             cursor.execute("""
                 SELECT 
                     p.PACNUMDOC,
@@ -522,7 +537,7 @@ def reporte_diario(request):
 
     # 2. Buscar en HCNTCENTURED (Triage)
     try:
-        with connections['readonly'].cursor() as cursor:
+        with connections[selected_db].cursor() as cursor:
             cursor.execute("""
                 SELECT 
                     p.PACNUMDOC,
@@ -562,7 +577,7 @@ def reporte_diario(request):
 
     # 3. Buscar en HCNTRIAGE (Triage General)
     try:
-        with connections['readonly'].cursor() as cursor:
+        with connections[selected_db].cursor() as cursor:
             cursor.execute("""
                 SELECT 
                     p.PACNUMDOC,
@@ -639,7 +654,8 @@ def reporte_mensual(request):
     # Filtro SQL para el mes y año, y Glasgow entre 1 y 5
     # HCNINTERR (Evaluaciones/Interconsultas)
     try:
-        with connections['readonly'].cursor() as cursor:
+        selected_db = request.session.get('hospital_db', 'readonly')
+        with connections[selected_db].cursor() as cursor:
             cursor.execute(f"""
                 SELECT 
                     p.PACNUMDOC, p.PACPRINOM, p.PACSEGNOM, p.PACPRIAPE, p.PACSEGAPE,
@@ -665,7 +681,7 @@ def reporte_mensual(request):
 
     # HCNTCENTURED (Triage Urgencias)
     try:
-        with connections['readonly'].cursor() as cursor:
+        with connections[selected_db].cursor() as cursor:
             cursor.execute(f"""
                 SELECT 
                     p.PACNUMDOC, p.PACPRINOM, p.PACSEGNOM, p.PACPRIAPE, p.PACSEGAPE,
@@ -690,7 +706,7 @@ def reporte_mensual(request):
 
     # HCNTRIAGE (Triage General)
     try:
-        with connections['readonly'].cursor() as cursor:
+        with connections[selected_db].cursor() as cursor:
             cursor.execute(f"""
                 SELECT 
                     p.PACNUMDOC, p.PACPRINOM, p.PACSEGNOM, p.PACPRIAPE, p.PACSEGAPE,
