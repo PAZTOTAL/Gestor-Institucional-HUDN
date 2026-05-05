@@ -1705,7 +1705,23 @@
 
             <!-- Grid de Módulos (Visible si paciente existe) -->
             <div class="modules-grid" id="modulesGrid">
-                <!-- Solo se mantiene la estructura por si se desea agregar algo a futuro, pero vacía por ahora -->
+                <a href="#" id="link-meows" class="module-card card-meows">
+                    <div class="card-icon"><i data-lucide="activity" size="32"></i></div>
+                    <h3>MODULO MEOWS</h3>
+                    <p>Monitoreo de signos vitales y alerta temprana obstétrica.</p>
+                </a>
+                
+                <a href="#" id="link-fetal" class="module-card card-fetal">
+                    <div class="card-icon"><i data-lucide="baby" size="32"></i></div>
+                    <h3>FRECUENCIA FETAL</h3>
+                    <p>Registro y seguimiento de latidos y bienestar fetal.</p>
+                </a>
+                
+                <a href="#" id="link-parto" class="module-card card-parto">
+                    <div class="card-icon"><i data-lucide="clipboard-list" size="32"></i></div>
+                    <h3>TRABAJO DE PARTO</h3>
+                    <p>Formulario clínico y partograma de evolución.</p>
+                </a>
             </div>
 
             <!-- Card informativa (solo lectura) -->
@@ -2160,6 +2176,7 @@
             }
 
             // Enlaces con documento canónico (BD hospital / MEOWS) para coincidir con PACNUMDOC
+            if (document.getElementById('link-meows')) document.getElementById('link-meows').href = `/meows/ingreso/?doc=${encodeURIComponent(docLink)}`;
             if (document.getElementById('link-fetal')) document.getElementById('link-fetal').href = `/fetal/?doc=${encodeURIComponent(docLink)}&atencion=${atencion_id}`;
             if (document.getElementById('link-parto')) document.getElementById('link-parto').href = `/parto/?doc=${encodeURIComponent(docLink)}&atencion=${atencion_id}`;
 
