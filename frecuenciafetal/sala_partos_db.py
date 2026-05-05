@@ -60,7 +60,9 @@ def listar_pacientes_sala_partos(query=None, db_name='readonly'):
         FOL_DATA.A,
         FOL_DATA.controles_prenatales,
         ING.AINCONSEC AS numero_ingreso,
-        CAM.HCACODIGO AS numero_cama
+        CAM.HCACODIGO AS numero_cama,
+        SUB.HSUCODIGO AS area_id,
+        SUB.HSUDESCRIP AS area_nombre
     FROM HPNESTANC AS EST
     INNER JOIN HPNDEFCAM AS CAM ON EST.HPNDEFCAM = CAM.OID
     INNER JOIN HPNGRUPOS AS GRP ON CAM.HPNGRUPOS = GRP.OID
@@ -138,6 +140,8 @@ def listar_pacientes_sala_partos(query=None, db_name='readonly'):
             'fecha_nacimiento': r.get('fecha_nacimiento'),
             'grupo_sanguineo': r.get('grupo_sanguineo'),
             'controles_prenatales': r.get('controles_prenatales'),
+            'area_id': r.get('area_id'),
+            'area_nombre': r.get('area_nombre'),
             'origen': 'sala_partos',
         })
     return out[:50]
