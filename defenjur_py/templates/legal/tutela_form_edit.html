@@ -4,7 +4,51 @@
       hx-encoding="multipart/form-data">
     {% csrf_token %}
     
+    <style>
+        .section-header-compact {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 1.5rem 0 1rem 0;
+            padding-bottom: 8px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            width: 100%;
+            grid-column: 1 / -1;
+        }
+        .section-header-compact i { width: 20px; height: 20px; color: #6366f1; }
+        .section-header-compact h4 { margin: 0; font-size: 0.95rem; color: #f8fafc; }
+        .section-header-compact.secondary i { color: #10b981; }
+        
+        .readonly-field {
+            background-color: rgba(15, 23, 42, 0.5) !important;
+            border-color: rgba(255, 255, 255, 0.05) !important;
+            color: #64748b !important;
+            cursor: not-allowed !important;
+        }
+    </style>
+
     <div class="form-grid">
+        <!-- SECCIÓN 1: RADICACIÓN -->
+        <div class="section-header-compact">
+            <i data-lucide="folder-plus"></i>
+            <h4>Radicación y Reparto (Fase 1)</h4>
+        </div>
+        {% for field in form %}
+            {% if field.name in form.campos_fase1 %}
+            <div class="form-group {% if field.name in 'vinculados,objeto_tutela,asunto_tutela,causa,observaciones,tramite_impartido,fallo_primera_instancia,fallo_segunda_instancia,respuesta_incidente_desacato,fallo_desacato,derechos_vulnerados,pretensiones' %}full-width{% endif %}">
+                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                {{ field }}
+                {% if field.errors %}<div style="color: #f43f5e; font-size: 0.8rem;">{{ field.errors }}</div>{% endif %}
+            </div>
+            {% endif %}
+        {% endfor %}
+
+        <!-- SECCIÓN 2: GESTIÓN JURÍDICA -->
+        <div class="section-header-compact secondary">
+            <i data-lucide="scale"></i>
+            <h4>Gestión Jurídica y Respuesta (Fase 2)</h4>
+        </div>
+
         {% for field in form %}
             {% if field.name == 'pretensiones' %}
                 <div class="form-group" style="grid-column: 1 / -1; margin-bottom: 1rem; display: flex; gap: 1rem; align-items: center;">
@@ -16,6 +60,7 @@
                     </a>
                 </div>
                 <div id="resp-tutela-edit-container" style="display: none; width: 100%; grid-column: 1 / -1; margin-bottom: 1rem;">
+                    <!-- ... (Pronunciamientos Formset) ... -->
                     <div class="pronunciamientos-formset" style="background: rgba(16, 185, 129, 0.05); padding: 1.5rem; border-radius: 12px; border: 1px solid rgba(16, 185, 129, 0.2);">
                         <h4 style="margin-top: 0; color: #10b981; display: flex; align-items: center; gap: 8px;">
                             <i data-lucide="message-square"></i> Respuesta de Tutela (Pronunciamiento sobre Hechos)
@@ -56,15 +101,14 @@
                     </div>
                 </div>
             {% endif %}
+            
+            {% if field.name in form.campos_fase2 %}
             <div class="form-group {% if field.name in 'vinculados,objeto_tutela,asunto_tutela,causa,observaciones,tramite_impartido,fallo_primera_instancia,fallo_segunda_instancia,respuesta_incidente_desacato,fallo_desacato,derechos_vulnerados,pretensiones' %}full-width{% endif %}">
                 <label for="{{ field.id_for_label }}">{{ field.label }}</label>
                 {{ field }}
-                {% if field.errors %}
-                    <div style="color: var(--accent); font-size: 0.8rem; margin-top: 5px;">
-                        {{ field.errors }}
-                    </div>
-                {% endif %}
+                {% if field.errors %}<div style="color: #f43f5e; font-size: 0.8rem;">{{ field.errors }}</div>{% endif %}
             </div>
+            {% endif %}
         {% endfor %}
     </div>
 

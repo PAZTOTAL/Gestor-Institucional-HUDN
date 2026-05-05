@@ -55,6 +55,11 @@ class AccionTutelaForm(PremiumModelForm):
         required=False,
         widget=forms.SelectMultiple(attrs={'class': 'premium-input select2-tags', 'data-placeholder': 'Escriba entidades y presione Enter...', 'style': 'width: 100%'})
     )
+    vinculados = AnyMultipleChoiceField(
+        label='VINCULADOS',
+        required=False,
+        widget=forms.SelectMultiple(attrs={'class': 'premium-input select2-tags', 'data-placeholder': 'Escriba vinculados y presione Enter...', 'style': 'width: 100%'})
+    )
     derechos_vulnerados = AnyMultipleChoiceField(
         label='DERECHOS VULNERADOS',
         choices=[],
@@ -62,11 +67,50 @@ class AccionTutelaForm(PremiumModelForm):
         widget=forms.SelectMultiple(attrs={'class': 'premium-input select2-tags', 'data-placeholder': 'Seleccione o escriba derechos...', 'style': 'width: 100%'})
     )
 
+    campos_fase1 = [
+        'num_proceso', 'fecha_llegada', 'despacho_judicial', 'num_reparto', 'cedula_accionante', 
+        'accionante', 'email_accionante', 'accionado', 'cedula_abogado', 
+        'abogado_responsable', 'fecha_notificacion', 'termino_dias', 
+        'termino_horas', 'fecha_vencimiento'
+    ]
+    
+    campos_fase2 = [
+        'vinculados', 'derechos_vulnerados', 'pretensiones', 'fecha_respuesta', 'radicado_respuesta', 'medio_envio_respuesta',
+        'estado_tutela', 'sentido_fallo', 'requiere_cumplimiento', 'fecha_limite_cumplimiento', 'incidente_desacato', 'observaciones'
+    ]
+
     def __init__(self, *args, **kwargs):
+        self.user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
+        
+        # Lógica de detección de roles (Paridad con views.py)
+        perfil = getattr(self.user, 'perfil', None) if self.user else None
+        rol = (getattr(self.user, 'rol', None) or getattr(perfil, 'legal_rol', '') or '').lower()
+        
+        is_abogado = rol in ['abogado', 'especialista', 'coordinador']
+        is_radicador = rol == 'radicador'
+        
+        # 1. Si es ABOGADO y ya existe el registro, BLOQUEAR fase 1 (Radicación)
+        if is_abogado and self.instance and self.instance.pk:
+            for field_name in self.campos_fase1:
+                if field_name in self.fields:
+                    # Usar readonly en lugar de disabled para asegurar visualización de datos
+                    self.fields[field_name].widget.attrs['readonly'] = True
+                    self.fields[field_name].widget.attrs['class'] = self.fields[field_name].widget.attrs.get('class', '') + ' readonly-field'
+                    # Para selects, disabled es necesario pero readonly-field ayudará
+                    if isinstance(self.fields[field_name].widget, (forms.Select, forms.SelectMultiple)):
+                        self.fields[field_name].disabled = True
+
+        # 2. Si es RADICADOR, BLOQUEAR fase 2 (Gestión)
+        if is_radicador:
+            for field_name in self.campos_fase2:
+                if field_name in self.fields:
+                    self.fields[field_name].widget.attrs['readonly'] = True
+                    self.fields[field_name].widget.attrs['class'] = self.fields[field_name].widget.attrs.get('class', '') + ' readonly-field'
+                    if isinstance(self.fields[field_name].widget, (forms.Select, forms.SelectMultiple)):
+                        self.fields[field_name].disabled = True
+
         self.fields['despacho_judicial'].choices = get_despacho_choices()
-        if 'identificacion_accionante' in self.fields: # Si existe en el modelo (check migrations)
-            self.fields['cedula_accionante'].initial = self.instance.identificacion_accionante
             
         derecho_choices = list(CatalogoDerechoVulnerado.objects.values_list('nombre', 'nombre'))
         
@@ -80,6 +124,16 @@ class AccionTutelaForm(PremiumModelForm):
         self.fields['accionado'].choices = accionado_choices
         
         if self.instance and self.instance.pk:
+            if self.instance.despacho_judicial:
+                current_desp_choices = [c[0] for c in self.fields['despacho_judicial'].choices]
+                if self.instance.despacho_judicial not in current_desp_choices:
+                    self.fields['despacho_judicial'].choices.append((self.instance.despacho_judicial, self.instance.despacho_judicial))
+
+            if self.instance.vinculados:
+                curr_vinc = [x.strip() for x in self.instance.vinculados.split(',') if x.strip()]
+                self.initial['vinculados'] = curr_vinc
+                self.fields['vinculados'].choices = [(x, x) for x in curr_vinc]
+                
             if self.instance.accionado:
                 curr_acc = [x.strip() for x in self.instance.accionado.split(',') if x.strip()]
                 self.initial['accionado'] = curr_acc
@@ -99,6 +153,12 @@ class AccionTutelaForm(PremiumModelForm):
             return ", ".join([x.strip() for x in data if x.strip()])
         return data
 
+    def clean_vinculados(self):
+        data = self.cleaned_data.get('vinculados')
+        if isinstance(data, list):
+            return ", ".join([x.strip() for x in data if x.strip()])
+        return data
+
     def clean_derechos_vulnerados(self):
         data = self.cleaned_data.get('derechos_vulnerados')
         if isinstance(data, list):
@@ -108,10 +168,10 @@ class AccionTutelaForm(PremiumModelForm):
     class Meta:
         model = AccionTutela
         fields = [
-            'num_proceso', 'fecha_llegada', 'despacho_judicial', 'cedula_accionante', 'accionante', 'email_accionante', 'accionado', 'cedula_abogado', 'abogado_responsable',
+            'num_proceso', 'fecha_llegada', 'despacho_judicial', 'num_reparto', 'cedula_accionante', 'accionante', 'email_accionante', 'accionado', 'cedula_abogado', 'abogado_responsable',
             'fecha_notificacion', 'termino_dias', 'termino_horas', 'fecha_vencimiento',
+            'vinculados', 'derechos_vulnerados', 'pretensiones',
             'fecha_respuesta', 'radicado_respuesta', 'medio_envio_respuesta',
-            'derechos_vulnerados', 'pretensiones',
             'estado_tutela', 'sentido_fallo',
             'requiere_cumplimiento', 'fecha_limite_cumplimiento', 'incidente_desacato',
             'observaciones'
@@ -327,7 +387,7 @@ class UsuarioHudnCreateForm(PremiumModelForm):
         help_text='Busque el funcionario por su nombre de usuario o cédula.',
         widget=forms.Select(attrs={'class': 'premium-input select2-enabled'})
     )
-    rol = forms.ChoiceField(choices=[('administrador', 'Administrador'), ('abogado', 'Abogado'), ('invitado', 'Invitado')], required=True)
+    rol = forms.ChoiceField(choices=[('administrador', 'Administrador'), ('abogado', 'Abogado'), ('radicador', 'Radicador'), ('invitado', 'Invitado')], required=True)
 
     # Matriz de Permisos
     perm_tutela = forms.BooleanField(label='Tutelas', required=False)
@@ -382,8 +442,13 @@ class UsuarioHudnCreateForm(PremiumModelForm):
             from django.core.cache import cache
             
             with transaction.atomic():
+                selected_rol = self.cleaned_data.get('rol')
+                # Sincronizar campo 'rol' en el modelo de Usuario (para listas)
+                user.rol = selected_rol
+                user.save()
+
                 perfil, created = PerfilUsuario.objects.get_or_create(user=user)
-                perfil.legal_rol = self.cleaned_data.get('rol')
+                perfil.legal_rol = selected_rol
                 perfil.legal_nick = user.username
                 perfil.save()
                 
@@ -411,7 +476,7 @@ class UsuarioHudnCreateForm(PremiumModelForm):
 
 
 class UsuarioHudnUpdateForm(PremiumModelForm):
-    rol = forms.ChoiceField(choices=[('administrador', 'Administrador'), ('abogado', 'Abogado'), ('invitado', 'Invitado')], required=False)
+    rol = forms.ChoiceField(choices=[('administrador', 'Administrador'), ('abogado', 'Abogado'), ('radicador', 'Radicador'), ('invitado', 'Invitado')], required=False)
 
     # Matriz de Permisos DEFENJUR
     perm_tutela = forms.BooleanField(label='Tutelas', required=False)
@@ -471,12 +536,15 @@ class UsuarioHudnUpdateForm(PremiumModelForm):
         
         if commit:
             with transaction.atomic():
+                selected_rol = self.cleaned_data.get('rol')
+                if selected_rol:
+                    user.rol = selected_rol
                 user.save()
                 
                 # 1. Actualizar Perfil
                 perfil, created = PerfilUsuario.objects.get_or_create(user=user)
-                if self.cleaned_data.get('rol'):
-                    perfil.legal_rol = self.cleaned_data.get('rol')
+                if selected_rol:
+                    perfil.legal_rol = selected_rol
                 perfil.legal_nick = user.username
                 perfil.save()
 

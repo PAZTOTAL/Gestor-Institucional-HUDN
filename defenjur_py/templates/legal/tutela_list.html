@@ -134,11 +134,12 @@
                     <td>
                         <div style="display:flex;gap:2px;align-items:center;">
                             {% if tutela|can_manage:request.user %}
-                            <button type="button" class="hudn-btn-icon" style="color:#ffc107;" title="Editar"
-                                    hx-get="{% url 'tutela_editar' tutela.id %}" hx-target="#modalBody"
-                                    onclick="document.getElementById('modalTitle').innerText='Editar Tutela'; document.getElementById('premiumModal').showModal()">
+                            <a href="{% url 'tutela_editar' tutela.id %}" class="hudn-btn-icon" style="color:#10b981; text-decoration:none;" title="Respuesta Tutela">
+                                <i data-lucide="message-square" style="width:18px;"></i>
+                            </a>
+                            <a href="{% url 'tutela_editar' tutela.id %}" class="hudn-btn-icon" style="color:#ffc107; text-decoration:none;" title="Editar">
                                 <i data-lucide="pencil" style="width:18px;"></i>
-                            </button>
+                            </a>
                             <button type="button" class="hudn-btn-icon" style="color:#dc3545;" title="Eliminar"
                                     hx-delete="{% url 'eliminar_registro' 'tutela' tutela.id %}" hx-target="closest tr" hx-swap="outerHTML"
                                     hx-confirm="¿Eliminar permanentemente este registro?">

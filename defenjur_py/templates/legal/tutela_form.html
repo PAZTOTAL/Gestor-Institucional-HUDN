@@ -1,25 +1,57 @@
 {% extends 'base.html' %}
 
-{% block title %}Nueva Tutela | DEFENJUR{% endblock %}
+{% block title %}{% if object.pk %}Editar Tutela #{{ object.id }}{% else %}Nueva Tutela{% endif %} | DEFENJUR{% endblock %}
 
-{% block header_title %}Registrar Nueva Acción de Tutela{% endblock %}
+{% block header_title %}{% if object.pk %}Editar / Responder Tutela{% else %}Registrar Nueva Acción de Tutela{% endif %}{% endblock %}
 
 {% block content %}
 <div class="card animate-fade">
     <form method="post" enctype="multipart/form-data">
         {% csrf_token %}
         
-        <div class="form-grid">
+        <!-- SECCIÓN 1: RADICACIÓN -->
+        <div class="section-header-premium">
+            <i data-lucide="folder-plus"></i>
+            <div>
+                <h3>Sección 1: Radicación y Reparto</h3>
+                <p>Datos iniciales de la tutela, despacho y asignación de abogado.</p>
+            </div>
+        </div>
+        
+        <div class="form-grid" style="margin-bottom: 2rem;">
             {% for field in form %}
-                <div class="form-group {% if field.name in 'vinculados,objeto_tutela,asunto_tutela,causa,observaciones,tramite_impartido,fallo_primera_instancia,fallo_segunda_instancia,respuesta_incidente_desacato,fallo_desacato,derechos_vulnerados,pretensiones' %}full-width{% endif %}">
+                {% if field.name in form.campos_fase1 %}
+                <div class="form-group {% if field.name in 'objeto_tutela,asunto_tutela,causa,observaciones,tramite_impartido,fallo_primera_instancia,fallo_segunda_instancia,respuesta_incidente_desacato,fallo_desacato,pretensiones' %}full-width{% endif %}">
                     <label for="{{ field.id_for_label }}">{{ field.label }}</label>
                     {{ field }}
                     {% if field.errors %}
-                        <div style="color: var(--accent); font-size: 0.8rem; margin-top: 5px;">
-                            {{ field.errors }}
-                        </div>
+                        <div class="field-error">{{ field.errors }}</div>
                     {% endif %}
                 </div>
+                {% endif %}
+            {% endfor %}
+        </div>
+
+        <!-- SECCIÓN 2: GESTIÓN JURÍDICA -->
+        <div class="section-header-premium secondary">
+            <i data-lucide="scale"></i>
+            <div>
+                <h3>Sección 2: Gestión Jurídica y Respuesta</h3>
+                <p>Seguimiento del proceso, sentido del fallo y contestación oficial.</p>
+            </div>
+        </div>
+
+        <div class="form-grid">
+            {% for field in form %}
+                {% if field.name in form.campos_fase2 %}
+                <div class="form-group {% if field.name in 'objeto_tutela,asunto_tutela,causa,observaciones,tramite_impartido,fallo_primera_instancia,fallo_segunda_instancia,respuesta_incidente_desacato,fallo_desacato,pretensiones' %}full-width{% endif %}">
+                    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                    {{ field }}
+                    {% if field.errors %}
+                        <div class="field-error">{{ field.errors }}</div>
+                    {% endif %}
+                </div>
+                {% endif %}
             {% endfor %}
         </div>
 
@@ -31,7 +63,7 @@
 
         <div style="margin-top: 2rem; display: flex; gap: 1rem; justify-content: flex-end;">
             <a href="{% url 'tutelas' %}" class="btn-premium" style="background: rgba(255,255,255,0.1); text-decoration: none;">Cancelar</a>
-            <button type="submit" class="btn-premium">Guardar Registro</button>
+            <button type="submit" class="btn-premium">{% if object.pk %}Guardar Cambios{% else %}Guardar Registro{% endif %}</button>
         </div>
     </form>
 </div>
@@ -41,6 +73,47 @@
 {% include 'legal/includes/nexus_lookup_js.html' %}
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 <style>
+/* Estilos para secciones y campos bloqueados */
+.section-header-premium {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+.section-header-premium i {
+    width: 32px;
+    height: 32px;
+    color: #6366f1;
+}
+.section-header-premium h3 {
+    margin: 0;
+    font-size: 1.1rem;
+    color: #f8fafc;
+}
+.section-header-premium p {
+    margin: 0;
+    font-size: 0.85rem;
+    color: #94a3b8;
+}
+.section-header-premium.secondary i {
+    color: #10b981;
+}
+
+.readonly-field {
+    background-color: rgba(15, 23, 42, 0.5) !important;
+    border-color: rgba(255, 255, 255, 0.05) !important;
+    color: #64748b !important;
+    cursor: not-allowed !important;
+    pointer-events: none;
+}
+
+.field-error {
+    color: #f43f5e;
+    font-size: 0.8rem;
+    margin-top: 5px;
+}
 /* Select2 Dark Theme Overrides para DEFENJUR */
 .select2-container--default .select2-selection--multiple {
     background-color: rgba(15, 23, 42, 0.5) !important;

@@ -467,7 +467,7 @@ class ReportesView(AdminRequiredMixin, TemplateView):
         return ctx
 
 
-class UsuarioListView(AdminRequiredMixin, ListView):
+class UsuarioListView(LoginRequiredMixin, ListView):
     model = Usuario
     template_name = 'legal/usuario_list.html'
     context_object_name = 'usuarios'
@@ -475,21 +475,21 @@ class UsuarioListView(AdminRequiredMixin, ListView):
     ordering = ['username']
 
     def get_queryset(self):
-        # Optimizamos: Usamos Exists en lugar de distinct() para mayor velocidad en SQL Server
         from django.db.models import Q, Exists, OuterRef
         from usuarios.models import PermisoApp
-
+        
+        # Filtro de quienes tienen acceso explícito a la app legal/defenjur
         perm_exists = PermisoApp.objects.filter(
             user=OuterRef('pk'),
             app_label__in=['defenjur', 'legal'],
             permitido=True
         )
         
-        return super().get_queryset().filter(
+        # Restauramos el filtrado original: Solo usuarios de Jurídica (no invitados) o con permiso explícito
+        return Usuario.objects.filter(
             Q(Exists(perm_exists)) |
-            ~Q(perfil__legal_rol='INVITADO') |
-            Q(is_superuser=True)
-        ).select_related('perfil').prefetch_related('permisos_modelo')
+            (Q(perfil__isnull=False) & ~Q(perfil__legal_rol='INVITADO'))
+        ).distinct()
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
@@ -596,6 +596,11 @@ class TutelaCreateView(LoginRequiredMixin, CreateView):
     form_class = AccionTutelaForm
     template_name = 'legal/tutela_form.html'
     success_url = reverse_lazy('tutelas')
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['user'] = self.request.user
+        return kwargs
+
     def get_context_data(self, **kwargs):
         data = super().get_context_data(**kwargs)
         if self.request.POST:
@@ -637,10 +642,16 @@ class TutelaCreateView(LoginRequiredMixin, CreateView):
         messages.success(self.request, 'Acción de Tutela registrada correctamente.')
         return redirect(self.success_url)
 
-class TutelaUpdateView(ModalUpdateView):
+class TutelaUpdateView(LoginRequiredMixin, RoleFilteringMixin, UpdateView):
     model = AccionTutela
     form_class = AccionTutelaForm
-    template_name = 'legal/tutela_form_edit.html' # Cambiado para soportar formset
+    template_name = 'legal/tutela_form.html'
+    success_url = reverse_lazy('tutelas')
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['user'] = self.request.user
+        return kwargs
 
     def get_context_data(self, **kwargs):
         data = super().get_context_data(**kwargs)
@@ -665,7 +676,9 @@ class TutelaUpdateView(ModalUpdateView):
                 pronunciamientos.instance = self.object
                 pronunciamientos.save()
             _guardar_adjuntos(self.request.FILES.getlist('adjuntos'), 'tutela', self.object.id)
-        return JsonResponse({'success': True})
+        
+        messages.success(self.request, 'Cambios guardados correctamente.')
+        return redirect(self.success_url)
 
 
 # ─── Derechos de Petición ─────────────────────────────────────────────────────
@@ -1158,7 +1171,10 @@ def usuario_eliminar(request, pk):
     # 1. Quitar permiso principal de la App (defenjur y legal)
     PermisoApp.objects.filter(user=usuario, app_label__in=['defenjur', 'legal']).update(permitido=False)
     
-    # 2. Resetear Rol en Perfil
+    # 2. Resetear Rol en Perfil y Usuario
+    usuario.rol = 'INVITADO'
+    usuario.save()
+    
     perfil, _ = PerfilUsuario.objects.get_or_create(user=usuario)
     perfil.legal_rol = 'INVITADO'
     perfil.save()

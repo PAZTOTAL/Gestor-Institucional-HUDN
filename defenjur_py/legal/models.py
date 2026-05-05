@@ -270,6 +270,7 @@ class AccionTutela(models.Model):
     fecha_vencimiento = models.DateTimeField('FECHA DE VENCIMIENTO', null=True, blank=True)
     
     # 2. Contestación
+    vinculados = models.TextField('VINCULADOS', null=True, blank=True)
     fecha_respuesta = models.DateTimeField('FECHA DE RESPUESTA (RADICACIÓN)', null=True, blank=True)
     radicado_respuesta = models.CharField('RADICADO DE RESPUESTA', max_length=255, null=True, blank=True)
     medio_envio_respuesta = models.CharField('MEDIO DE ENVÍO', max_length=255, null=True, blank=True)
