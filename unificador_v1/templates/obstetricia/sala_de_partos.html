@@ -1,6 +1,7 @@
 {% load static %}
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -17,18 +18,97 @@
             --fetal-pink: #be185d;
             --parto-purple: #6d28d9;
         }
+
+        /* ⚠️ Status Banner CSS */
+        .status-banner {
+            width: 100%;
+            margin-bottom: 24px;
+            padding: 12px 24px;
+            border-radius: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 13px;
+            font-weight: 600;
+            animation: slideDown 0.5s ease-out;
+        }
+
+        .banner-content {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .banner-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 11px;
+            font-weight: 900;
+            letter-spacing: 0.05em;
+        }
+
+        .banner-info {
+            background: #f0fdf4;
+            color: #166534;
+            border: 1px solid #bbf7d0;
+        }
+
+        .banner-warning {
+            background: #fffbeb;
+            color: #92400e;
+            border: 1px solid #fef3c7;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #22c55e;
+            box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.2);
+            animation: pulse-green 2s infinite;
+        }
+
+        @keyframes pulse-green {
+            0% {
+                box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4);
+            }
+
+            70% {
+                box-shadow: 0 0 0 8px rgba(34, 197, 94, 0);
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 rgba(34, 197, 94, 0);
+            }
+        }
+
+        @keyframes slideDown {
+            from {
+                transform: translateY(-10px);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
         body {
             margin: 0;
             font-family: 'Inter', system-ui, -apple-system, sans-serif;
             background: linear-gradient(180deg, #f6f8fc 0%, #edf2f7 100%);
             color: #1e293b;
         }
+
         .app-layout {
             display: flex;
             min-height: 100vh;
             width: 100%;
             box-sizing: border-box;
         }
+
         .main-content {
             flex: 1;
             min-width: 0;
@@ -56,10 +136,12 @@
             position: relative;
             overflow: hidden;
         }
+
         .search-container:hover {
             transform: translateY(-2px);
             box-shadow: 0 24px 44px rgba(15, 23, 42, 0.14);
         }
+
         .search-container::before {
             content: "";
             position: absolute;
@@ -71,26 +153,30 @@
             background: radial-gradient(circle, rgba(37, 99, 235, 0.2) 0%, rgba(37, 99, 235, 0) 70%);
             pointer-events: none;
         }
+
         .search-container::after {
             content: "";
             position: absolute;
             inset: 0;
             border-radius: 20px;
             padding: 1px;
-            background: linear-gradient(125deg, rgba(37,99,235,0.35), rgba(30,58,95,0.14), rgba(37,99,235,0.35));
+            background: linear-gradient(125deg, rgba(37, 99, 235, 0.35), rgba(30, 58, 95, 0.14), rgba(37, 99, 235, 0.35));
             -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
             -webkit-mask-composite: xor;
             mask-composite: exclude;
             pointer-events: none;
         }
+
         .search-container.search-enter {
             animation: searchCardEnter 420ms cubic-bezier(0.2, 0.8, 0.2, 1);
         }
+
         @keyframes searchCardEnter {
             0% {
                 opacity: 0;
                 transform: translateX(-18px) translateY(6px) scale(0.99);
             }
+
             100% {
                 opacity: 1;
                 transform: translateX(0) translateY(0) scale(1);
@@ -104,6 +190,7 @@
             margin-bottom: 25px;
             cursor: pointer;
         }
+
         .search-header .icon-container {
             width: 56px;
             height: 56px;
@@ -116,16 +203,38 @@
             box-shadow: inset 0 0 0 1px #bfdbfe, 0 8px 18px rgba(37, 99, 235, 0.22);
             animation: iconPulse 2.4s ease-in-out infinite;
         }
+
         @keyframes iconPulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.04); }
+
+            0%,
+            100% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.04);
+            }
         }
+
         .search-header .title-group {
             flex: 1;
             text-align: left;
         }
-        .search-header .subtitle { font-size: 11px; color: #64748b; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; }
-        .search-header .main-title { font-size: 20px; font-weight: 800; color: var(--primary-blue); }
+
+        .search-header .subtitle {
+            font-size: 11px;
+            color: #64748b;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+
+        .search-header .main-title {
+            font-size: 20px;
+            font-weight: 800;
+            color: var(--primary-blue);
+        }
+
         .search-helper {
             margin: 0 0 14px 0;
             font-size: 0.84rem;
@@ -139,10 +248,12 @@
             gap: 10px;
             align-items: center;
         }
+
         .search-input-wrap {
             flex: 1;
             position: relative;
         }
+
         .search-input-wrap i {
             position: absolute;
             left: 12px;
@@ -152,6 +263,7 @@
             width: 16px;
             height: 16px;
         }
+
         .search-form input {
             flex: 1;
             padding: 15px 16px 15px 40px;
@@ -162,11 +274,13 @@
             transition: border-color 0.2s, box-shadow 0.2s, background-color 0.2s;
             background: #f8fbff;
         }
+
         .search-form input:focus {
             border-color: var(--primary-blue);
             box-shadow: 0 0 0 4px rgba(30, 58, 95, 0.12);
             background: #ffffff;
         }
+
         .search-form button {
             padding: 0 22px;
             height: 50px;
@@ -186,6 +300,7 @@
             position: relative;
             overflow: hidden;
         }
+
         .search-form button::before {
             content: "";
             position: absolute;
@@ -193,245 +308,35 @@
             left: -130%;
             width: 120%;
             height: 100%;
-            background: linear-gradient(100deg, transparent 0%, rgba(255,255,255,0.32) 50%, transparent 100%);
+            background: linear-gradient(100deg, transparent 0%, rgba(255, 255, 255, 0.32) 50%, transparent 100%);
             transition: left 0.5s ease;
         }
+
         .search-form button:hover {
             transform: translateY(-1px);
             filter: brightness(1.03);
             box-shadow: 0 12px 22px rgba(30, 58, 95, 0.28);
         }
-        .search-form button:hover::before { left: 120%; }
-        .search-form button:active { transform: translateY(0); }
- 
-        /* DB Switcher Styles */
-        .db-switcher-container {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            background: rgba(255, 255, 255, 0.5);
-            backdrop-filter: blur(10px);
-            padding: 6px;
-            border-radius: 18px;
-            border: 2px solid #f1f5f9;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
-            width: fit-content;
-        }
-        .db-btn {
-            padding: 10px 18px;
-            border-radius: 14px;
-            font-size: 11px;
-            font-weight: 900;
-            text-transform: uppercase;
-            text-decoration: none;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            border: 2px solid transparent;
-            letter-spacing: 0.02em;
-        }
-        .db-btn .dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-        }
-        .db-btn-readonly.active {
-            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
-            color: white !important;
-            box-shadow: 0 8px 20px rgba(37, 99, 235, 0.3);
-            border-color: #3b82f6;
-        }
-        .db-btn-readonly.active .dot {
-            background: white;
-            box-shadow: 0 0 8px white;
-            animation: pulse-white 2s infinite;
-        }
-        .db-btn-nexus.active {
-            background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%);
-            color: white !important;
-            box-shadow: 0 8px 20px rgba(79, 70, 229, 0.3);
-            border-color: #6366f1;
-        }
-        .db-btn-nexus.active .dot {
-            background: white;
-            box-shadow: 0 0 8px white;
-            animation: pulse-white 2s infinite;
-        }
-        .db-btn:not(.active) {
-            color: #64748b;
-            background: transparent;
-        }
-        .db-btn:not(.active) .dot {
-            background: #cbd5e1;
-        }
-        .db-btn:hover:not(.active) {
-            background: white;
-            color: #1e293b;
-            transform: translateY(-2px);
-            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.05);
-        }
-        @keyframes pulse-white {
-            0% { opacity: 1; transform: scale(1); }
-            50% { opacity: 0.6; transform: scale(1.2); }
-            100% { opacity: 1; transform: scale(1); }
+
+        .search-form button:hover::before {
+            left: 120%;
         }
 
-        .btn-censo {
-            padding: 0 22px;
-            height: 50px;
-            background: linear-gradient(135deg, #0f172a 0%, #334155 100%);
-            color: white;
-            border: none;
-            border-radius: 10px;
-            font-weight: 700;
-            letter-spacing: 0.01em;
-            cursor: pointer;
-            transition: all 0.3s;
-            box-shadow: 0 8px 18px rgba(15, 23, 42, 0.2);
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-        }
-        .btn-censo:hover {
-            transform: translateY(-1px);
-            filter: brightness(1.1);
-            box-shadow: 0 12px 22px rgba(15, 23, 42, 0.25);
-        }
-
-        /* Area Filter Styles */
-        .area-selector {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-            padding-bottom: 15px;
-            border-bottom: 1px dashed #e2e8f0;
-            flex-wrap: wrap;
-        }
-        .area-btn {
-            padding: 8px 16px;
-            border-radius: 12px;
-            background: #f8fafc;
-            border: 1px solid #e2e8f0;
-            font-size: 11px;
-            font-weight: 800;
-            color: #64748b;
-            cursor: pointer;
-            transition: all 0.2s;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-        .area-btn:hover {
-            background: #f1f5f9;
-            color: #1e293b;
-        }
-        .area-btn.active {
-            background: #2563eb;
-            color: white;
-            border-color: #2563eb;
-            box-shadow: 0 4px 10px rgba(37, 99, 235, 0.2);
-        }
-        .area-btn .count {
-            background: rgba(0,0,0,0.1);
-            padding: 2px 6px;
-            border-radius: 6px;
-            font-size: 9px;
-        }
-        .area-btn.active .count {
-            background: rgba(255,255,255,0.2);
-        }
-
-        /* Sección de Censo Activo */
-        .censo-section {
-            display: none;
-            width: 100%;
-            background: white;
-            border-radius: 20px;
-            padding: 24px;
-            margin-top: 24px;
-            box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
-            border: 1px solid #e2e8f0;
-            animation: fadeIn 0.4s ease;
-        }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        .censo-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            padding-bottom: 12px;
-            border-bottom: 2px solid #f1f5f9;
-        }
-        .censo-title {
-            font-size: 1.1rem;
-            font-weight: 800;
-            color: #0f172a;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        .censo-table-container {
-            max-height: 400px;
-            overflow-y: auto;
-            border-radius: 12px;
-        }
-        .censo-table {
-            width: 100%;
-            border-collapse: separate;
-            border-spacing: 0;
-            text-align: left;
-        }
-        .censo-table th {
-            position: sticky;
-            top: 0;
-            background: #f8fafc;
-            padding: 12px 16px;
-            font-size: 0.75rem;
-            font-weight: 800;
-            text-transform: uppercase;
-            color: #64748b;
-            border-bottom: 1px solid #e2e8f0;
-            z-index: 10;
-        }
-        .censo-table td {
-            padding: 14px 16px;
-            font-size: 0.9rem;
-            border-bottom: 1px solid #f1f5f9;
-            transition: all 0.2s;
-        }
-        .censo-row:hover td {
-            background: #f0f7ff;
-            cursor: pointer;
-        }
-        .censo-badge {
-            padding: 4px 10px;
-            border-radius: 999px;
-            font-size: 0.75rem;
-            font-weight: 800;
-            background: #e0f2fe;
-            color: #0369a1;
-            border: 1px solid #bae6fd;
-        }
-        .censo-cama {
-            font-family: 'JetBrains Mono', monospace;
-            font-weight: 800;
-            color: #2563eb;
+        .search-form button:active {
+            transform: translateY(0);
         }
 
         /* Grid de Módulos (Cards) */
         .modules-grid {
-            display: none; /* Se muestra al encontrar paciente */
+            display: none;
+            /* Se muestra al encontrar paciente */
             grid-template-columns: repeat(3, minmax(0, 1fr));
             gap: 18px;
             width: 100%;
             max-width: none;
             margin-top: 24px;
         }
+
         .module-card {
             background: linear-gradient(145deg, #ffffff 0%, #f8fbff 65%, #f1f5ff 100%);
             padding: 24px;
@@ -448,6 +353,7 @@
             position: relative;
             overflow: hidden;
         }
+
         .module-card::before {
             content: "";
             position: absolute;
@@ -459,11 +365,13 @@
             background: rgba(255, 255, 255, 0.45);
             pointer-events: none;
         }
+
         .module-card:hover {
             transform: translateY(-6px);
             box-shadow: 0 18px 32px rgba(15, 23, 42, 0.18);
             border-color: currentColor;
         }
+
         .module-card .card-icon {
             width: 64px;
             height: 64px;
@@ -473,32 +381,48 @@
             justify-content: center;
             margin-bottom: 20px;
         }
-        .module-card h3 { margin: 0 0 10px; font-size: 18px; font-weight: 800; }
-        .module-card p { margin: 0; font-size: 14px; color: #64748b; line-height: 1.4; }
+
+        .module-card h3 {
+            margin: 0 0 10px;
+            font-size: 18px;
+            font-weight: 800;
+        }
+
+        .module-card p {
+            margin: 0;
+            font-size: 14px;
+            color: #64748b;
+            line-height: 1.4;
+        }
 
         .card-meows {
             color: #1d4ed8;
             border-top: 6px solid #2563eb;
             background: linear-gradient(145deg, #eff6ff 0%, #dbeafe 100%);
         }
+
         .card-meows .card-icon {
             background: linear-gradient(135deg, #bfdbfe 0%, #93c5fd 100%);
             box-shadow: 0 8px 18px rgba(37, 99, 235, 0.24);
         }
+
         .card-fetal {
             color: #be185d;
             border-top: 6px solid #ec4899;
             background: linear-gradient(145deg, #fdf2f8 0%, #fce7f3 100%);
         }
+
         .card-fetal .card-icon {
             background: linear-gradient(135deg, #fbcfe8 0%, #f9a8d4 100%);
             box-shadow: 0 8px 18px rgba(236, 72, 153, 0.24);
         }
+
         .card-parto {
             color: #6d28d9;
             border-top: 6px solid #8b5cf6;
             background: linear-gradient(145deg, #f5f3ff 0%, #ede9fe 100%);
         }
+
         .card-parto .card-icon {
             background: linear-gradient(135deg, #ddd6fe 0%, #c4b5fd 100%);
             box-shadow: 0 8px 18px rgba(109, 40, 217, 0.24);
@@ -506,7 +430,8 @@
 
         /* Card de Registro */
         .register-card {
-            display: none; /* Se muestra si no se encuentra paciente */
+            display: none;
+            /* Se muestra si no se encuentra paciente */
             width: 100%;
             max-width: none;
             background: white;
@@ -517,8 +442,17 @@
             background-size: 20px 20px;
             text-align: center;
         }
-        .register-card h2 { color: #334155; margin-bottom: 10px; }
-        .register-card p { color: #64748b; margin-bottom: 30px; }
+
+        .register-card h2 {
+            color: #334155;
+            margin-bottom: 10px;
+        }
+
+        .register-card p {
+            color: #64748b;
+            margin-bottom: 30px;
+        }
+
         .btn-register {
             display: inline-flex;
             align-items: center;
@@ -531,7 +465,10 @@
             font-weight: 700;
             transition: transform 0.2s;
         }
-        .btn-register:hover { transform: scale(1.05); }
+
+        .btn-register:hover {
+            transform: scale(1.05);
+        }
 
         /* Compact Clinical Card (Colorful & Organized) */
         .card-clinico-unificado {
@@ -549,6 +486,7 @@
             overflow: hidden;
             border-left: 6px solid #1d4ed8;
         }
+
         .card-clinico-unificado::before {
             content: "";
             position: absolute;
@@ -560,18 +498,20 @@
             background: radial-gradient(circle, rgba(29, 78, 216, 0.25) 0%, rgba(29, 78, 216, 0) 72%);
             pointer-events: none;
         }
+
         .card-clinico-unificado::after {
             content: "";
             position: absolute;
             inset: 0;
             border-radius: 16px;
             padding: 1px;
-            background: linear-gradient(120deg, rgba(29,78,216,0.34), rgba(236,72,153,0.24), rgba(109,40,217,0.24));
+            background: linear-gradient(120deg, rgba(29, 78, 216, 0.34), rgba(236, 72, 153, 0.24), rgba(109, 40, 217, 0.24));
             -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
             -webkit-mask-composite: xor;
             mask-composite: exclude;
             pointer-events: none;
         }
+
         .card-clinico-header {
             display: flex;
             justify-content: space-between;
@@ -582,6 +522,7 @@
             padding-bottom: 0;
             border-bottom: none;
         }
+
         /* Nombre del paciente en atención (titular principal de la card) */
         .card-clinico-patient-heading {
             margin: 0 0 6px;
@@ -593,6 +534,7 @@
             max-width: 100%;
             word-break: break-word;
         }
+
         .card-clinico-board-row {
             display: flex;
             flex-wrap: wrap;
@@ -600,6 +542,7 @@
             gap: 8px;
             margin-bottom: 6px;
         }
+
         .card-clinico-board-pill {
             display: inline-flex;
             align-items: center;
@@ -614,15 +557,170 @@
             background: rgba(59, 130, 246, 0.12);
             border: 1px solid rgba(37, 99, 235, 0.22);
         }
+
         .card-clinico-board-pill i,
         .card-clinico-board-pill svg {
             color: var(--primary-blue);
-            width: 16px;
-            height: 16px;
-            flex-shrink: 0;
+            width: 14px;
+            height: 14px;
         }
-        
-        .card-clinico-meta { display: flex; gap: 10px; margin-top: 2px; flex-wrap: wrap; }
+
+        /* 📋 Censo en Tiempo Real CSS */
+        .census-container {
+            width: 100%;
+            background: white;
+            border-radius: 20px;
+            margin-bottom: 24px;
+            box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+            border: 1px solid #e2e8f0;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .census-header {
+            padding: 16px 24px;
+            background: #f8fafc;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .census-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #1e3a5f;
+            font-weight: 800;
+            font-size: 15px;
+        }
+
+        .census-badge {
+            padding: 4px 12px;
+            background: #dbeafe;
+            color: #1e40af;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .census-list {
+            padding: 12px;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 12px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .census-item {
+            padding: 14px 18px;
+            background: #ffffff;
+            border-radius: 12px;
+            border: 1px solid #f1f5f9;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+        }
+
+        .census-item:hover {
+            background: #f8fbff;
+            border-color: #3b82f6;
+            transform: translateX(4px);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.1);
+        }
+
+        .census-item-name {
+            font-weight: 700;
+            color: #0f172a;
+            font-size: 14px;
+            margin-bottom: 4px;
+            text-transform: uppercase;
+        }
+
+        .census-item-info {
+            display: flex;
+            gap: 12px;
+            font-size: 11px;
+            color: #64748b;
+            font-weight: 600;
+        }
+
+        .census-item-info span {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .census-item-action {
+            color: #94a3b8;
+        }
+
+        .census-empty {
+            grid-column: 1 / -1;
+            padding: 40px;
+            text-align: center;
+            color: #64748b;
+        }
+
+        .census-empty i {
+            margin-bottom: 15px;
+            opacity: 0.5;
+        }
+
+        .census-empty p {
+            font-weight: 700;
+            margin: 0;
+        }
+
+        .census-empty small {
+            font-size: 12px;
+            opacity: 0.8;
+        }
+
+        .census-loading {
+            grid-column: 1 / -1;
+            padding: 30px;
+            text-align: center;
+            color: #64748b;
+        }
+
+        .census-loading .loader {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #3b82f6;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        width: 16px;
+        height: 16px;
+        flex-shrink: 0;
+        }
+
+        .card-clinico-meta {
+            display: flex;
+            gap: 10px;
+            margin-top: 2px;
+            flex-wrap: wrap;
+        }
+
         .card-clinico-meta-item {
             display: flex;
             align-items: center;
@@ -630,7 +728,7 @@
             font-size: 0.8rem;
             color: #1e3a8a;
             font-weight: 700;
-            background: linear-gradient(135deg, rgba(59,130,246,0.18) 0%, rgba(147,197,253,0.24) 100%);
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.18) 0%, rgba(147, 197, 253, 0.24) 100%);
             border: 1px solid rgba(37, 99, 235, 0.30);
             padding: 4px 10px;
             border-radius: 999px;
@@ -642,6 +740,7 @@
             gap: 10px;
             flex-wrap: wrap;
         }
+
         .card-clinico-btn-pdf {
             background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%);
             color: white !important;
@@ -656,12 +755,13 @@
             transition: all 0.2s;
             box-shadow: 0 12px 24px rgba(37, 99, 235, 0.38), 0 4px 12px rgba(29, 78, 216, 0.22);
         }
+
         .card-clinico-btn-pdf:hover {
             transform: translateY(-2px);
             filter: brightness(1.05);
             box-shadow: 0 16px 30px rgba(37, 99, 235, 0.46), 0 6px 14px rgba(29, 78, 216, 0.28);
         }
-        
+
         .card-clinico-status {
             padding: 7px 14px;
             border-radius: 999px;
@@ -672,9 +772,18 @@
             letter-spacing: 0.04em;
             box-shadow: 0 6px 14px rgba(15, 23, 42, 0.2);
         }
-        .status-critico { background: #dc2626; }
-        .status-alerta { background: #d97706; }
-        .status-estable { background: #15803d; }
+
+        .status-critico {
+            background: #dc2626;
+        }
+
+        .status-alerta {
+            background: #d97706;
+        }
+
+        .status-estable {
+            background: #15803d;
+        }
 
         .btn-change-patient {
             background: rgba(15, 23, 42, 0.08);
@@ -690,6 +799,7 @@
             gap: 6px;
             transition: all 0.2s;
         }
+
         .btn-change-patient:hover {
             background: rgba(15, 23, 42, 0.14);
             transform: translateY(-1px);
@@ -702,6 +812,7 @@
             padding-top: 12px;
             border-top: 1px dashed rgba(37, 99, 235, 0.35);
         }
+
         .stat-pill {
             flex: 1;
             display: flex;
@@ -715,6 +826,7 @@
             overflow: hidden;
             box-shadow: 0 8px 16px rgba(15, 23, 42, 0.12);
         }
+
         .stat-pill::after {
             content: "";
             position: absolute;
@@ -723,28 +835,33 @@
             width: 60px;
             height: 60px;
             border-radius: 50%;
-            background: rgba(255,255,255,0.24);
+            background: rgba(255, 255, 255, 0.24);
             pointer-events: none;
         }
-        .stat-pill strong { font-size: 1.1rem; }
-        
+
+        .stat-pill strong {
+            font-size: 1.1rem;
+        }
+
         .stat-meows {
             background: linear-gradient(135deg, #dbeafe 0%, #93c5fd 100%);
             color: #1e3a8a;
             border: 1px solid #60a5fa;
-            box-shadow: inset 0 0 0 1px rgba(255,255,255,0.42);
+            box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.42);
         }
+
         .stat-fetal {
             background: linear-gradient(135deg, #fce7f3 0%, #f9a8d4 100%);
             color: #9d174d;
             border: 1px solid #f472b6;
-            box-shadow: inset 0 0 0 1px rgba(255,255,255,0.42);
+            box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.42);
         }
+
         .stat-parto {
             background: linear-gradient(135deg, #ede9fe 0%, #c4b5fd 100%);
             color: #5b21b6;
             border: 1px solid #a78bfa;
-            box-shadow: inset 0 0 0 1px rgba(255,255,255,0.42);
+            box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.42);
         }
 
         /* Card informativa de paciente */
@@ -761,6 +878,7 @@
             position: relative;
             overflow: hidden;
         }
+
         .patient-info-card::before {
             content: "";
             position: absolute;
@@ -771,6 +889,7 @@
             background: radial-gradient(circle, rgba(56, 189, 248, 0.22) 0%, rgba(56, 189, 248, 0) 72%);
             pointer-events: none;
         }
+
         .patient-info-header {
             display: flex;
             align-items: center;
@@ -780,12 +899,15 @@
             margin-bottom: 14px;
             font-size: 0.98rem;
         }
+
         .patient-info-block {
             margin-bottom: 18px;
         }
+
         .patient-info-block:last-child {
             margin-bottom: 0;
         }
+
         .patient-info-section-title {
             font-size: 0.72rem;
             font-weight: 800;
@@ -796,18 +918,22 @@
             padding-bottom: 6px;
             border-bottom: 1px solid #e2e8f0;
         }
+
         .patient-info-grid {
             display: grid;
             gap: 12px;
         }
+
         /* Básicos: nombre ancho → documento+HC → fila demográfica → acompañante */
         .patient-info-grid--basic {
             grid-template-columns: repeat(4, minmax(0, 1fr));
         }
+
         /* Clínicos: diagnóstico ancho → ingreso/admin (4) → obstetricia (3) */
         .patient-info-grid--clinical {
             grid-template-columns: repeat(4, minmax(0, 1fr));
         }
+
         .patient-info-item {
             border: 1px solid #e2e8f0;
             border-radius: 10px;
@@ -817,33 +943,42 @@
             transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
             min-width: 0;
         }
+
         .patient-info-item:hover {
             transform: translateY(-2px);
             border-color: #bfdbfe;
             box-shadow: 0 12px 22px rgba(37, 99, 235, 0.12);
         }
+
         .patient-info-item--full {
             grid-column: 1 / -1;
         }
+
         .patient-info-block--basic .patient-info-item {
             border-left: 4px solid #2563eb;
         }
+
         .patient-info-block--basic .patient-info-item:hover {
             border-left-color: #1d4ed8;
         }
+
         .patient-info-block--basic .patient-info-label {
             color: #1e40af;
         }
+
         .patient-info-block--clinical .patient-info-item {
             border-left: 4px solid #0d9488;
         }
+
         .patient-info-block--clinical .patient-info-item:hover {
             border-color: #99f6e4;
             border-left-color: #0f766e;
         }
+
         .patient-info-block--clinical .patient-info-label {
             color: #0f766e;
         }
+
         .patient-info-label {
             font-size: 0.72rem;
             text-transform: uppercase;
@@ -852,6 +987,7 @@
             font-weight: 700;
             margin-bottom: 4px;
         }
+
         .patient-info-value {
             font-size: 0.92rem;
             color: #0f172a;
@@ -861,12 +997,15 @@
         }
 
         @media (max-width: 920px) {
+
             .patient-info-grid--basic,
             .patient-info-grid--clinical {
                 grid-template-columns: repeat(2, minmax(0, 1fr));
             }
         }
+
         @media (max-width: 620px) {
+
             .patient-info-grid--basic,
             .patient-info-grid--clinical {
                 grid-template-columns: 1fr;
@@ -874,8 +1013,25 @@
         }
 
         /* Loader */
-        .loader { display: none; width: 24px; height: 24px; border: 3px solid #f3f3f3; border-top: 3px solid var(--primary-blue); border-radius: 50%; animation: spin 1s linear infinite; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .loader {
+            display: none;
+            width: 24px;
+            height: 24px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid var(--primary-blue);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
 
         /* Timeline en Sala de Partos */
         .timeline-section {
@@ -891,32 +1047,37 @@
             position: relative;
             overflow: hidden;
         }
+
         .timeline-section::before {
             content: "";
             position: absolute;
             inset: 0;
             background: radial-gradient(circle at 12% 15%, rgba(59, 130, 246, 0.1), transparent 42%),
-                        radial-gradient(circle at 88% 12%, rgba(236, 72, 153, 0.1), transparent 40%),
-                        radial-gradient(circle at 54% 100%, rgba(139, 92, 246, 0.09), transparent 40%);
+                radial-gradient(circle at 88% 12%, rgba(236, 72, 153, 0.1), transparent 40%),
+                radial-gradient(circle at 54% 100%, rgba(139, 92, 246, 0.09), transparent 40%);
             pointer-events: none;
         }
-        .timeline-section > h3 {
+
+        .timeline-section>h3 {
             position: relative;
             z-index: 1;
             color: #1e3a8a !important;
             letter-spacing: 0.01em;
         }
+
         .timeline-container {
             position: relative;
             padding-left: 30px;
             border-left: 2px solid #e2e8f0;
             margin-left: 10px;
         }
+
         .timeline-groups {
             display: grid;
             grid-template-columns: repeat(3, minmax(0, 1fr));
             gap: 14px;
         }
+
         .timeline-group {
             border: 1px solid #dbeafe;
             border-radius: 14px;
@@ -925,6 +1086,7 @@
             box-shadow: 0 10px 22px rgba(15, 23, 42, 0.08);
             backdrop-filter: blur(1px);
         }
+
         .timeline-group-title {
             margin: 0 0 10px;
             font-size: 0.82rem;
@@ -936,68 +1098,102 @@
             align-items: center;
             gap: 6px;
         }
+
         .timeline-group .timeline-container {
             padding-left: 18px;
             margin-left: 0;
             border-left-width: 1px;
         }
+
         .timeline-group.timeline-group-meows {
             border-color: #93c5fd;
             background: linear-gradient(180deg, rgba(239, 246, 255, 0.95) 0%, rgba(219, 234, 254, 0.72) 100%);
         }
+
         .timeline-group.timeline-group-fetal {
             border-color: #f9a8d4;
             background: linear-gradient(180deg, rgba(253, 242, 248, 0.95) 0%, rgba(251, 207, 232, 0.72) 100%);
         }
+
         .timeline-group.timeline-group-parto {
             border-color: #c4b5fd;
             background: linear-gradient(180deg, rgba(245, 243, 255, 0.95) 0%, rgba(221, 214, 254, 0.74) 100%);
         }
-        .timeline-group.timeline-group-meows .timeline-group-title { color: #1d4ed8; }
-        .timeline-group.timeline-group-fetal .timeline-group-title { color: #be185d; }
-        .timeline-group.timeline-group-parto .timeline-group-title { color: #6d28d9; }
-        .timeline-group.timeline-group-meows .timeline-container { border-left-color: #93c5fd; }
-        .timeline-group.timeline-group-fetal .timeline-container { border-left-color: #f9a8d4; }
-        .timeline-group.timeline-group-parto .timeline-container { border-left-color: #c4b5fd; }
+
+        .timeline-group.timeline-group-meows .timeline-group-title {
+            color: #1d4ed8;
+        }
+
+        .timeline-group.timeline-group-fetal .timeline-group-title {
+            color: #be185d;
+        }
+
+        .timeline-group.timeline-group-parto .timeline-group-title {
+            color: #6d28d9;
+        }
+
+        .timeline-group.timeline-group-meows .timeline-container {
+            border-left-color: #93c5fd;
+        }
+
+        .timeline-group.timeline-group-fetal .timeline-container {
+            border-left-color: #f9a8d4;
+        }
+
+        .timeline-group.timeline-group-parto .timeline-container {
+            border-left-color: #c4b5fd;
+        }
+
         .timeline-group .timeline-item {
             margin-bottom: 12px;
         }
+
         .timeline-group .timeline-dot {
             left: -24px;
             width: 12px;
             height: 12px;
             border-width: 2px;
         }
+
         .timeline-group .timeline-content {
             padding: 10px 12px;
             border-radius: 10px;
-            border-color: rgba(255,255,255,0.8);
+            border-color: rgba(255, 255, 255, 0.8);
             box-shadow: 0 6px 14px rgba(15, 23, 42, 0.08);
         }
+
         .timeline-group .timeline-title {
             font-size: 12px;
             font-weight: 700;
         }
+
         .timeline-group .timeline-time {
             font-size: 11px;
         }
+
         .timeline-group .timeline-detail {
             font-size: 12px;
         }
+
         .timeline-empty-group {
             font-size: 12px;
             color: #64748b;
-            background: rgba(255,255,255,0.75);
+            background: rgba(255, 255, 255, 0.75);
             border: 1px dashed #94a3b8;
             border-radius: 8px;
             padding: 10px;
             text-align: center;
         }
+
         .timeline-item {
             position: relative;
             margin-bottom: 25px;
         }
-        .timeline-item:last-child { margin-bottom: 0; }
+
+        .timeline-item:last-child {
+            margin-bottom: 0;
+        }
+
         .timeline-dot {
             position: absolute;
             left: -41px;
@@ -1008,45 +1204,89 @@
             background: white;
             border: 4px solid var(--primary-blue);
         }
+
         .timeline-content {
             background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
             padding: 15px 20px;
             border-radius: 12px;
             border: 1px solid #e2e8f0;
         }
+
         .timeline-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
             margin-bottom: 5px;
         }
-        .timeline-title { font-weight: 700; font-size: 14px; color: #1e293b; display: flex; align-items: center; gap: 8px; }
-        .timeline-time { font-size: 12px; color: #64748b; font-weight: 600; }
-        .timeline-detail { font-size: 13px; color: #334155; }
+
+        .timeline-title {
+            font-weight: 700;
+            font-size: 14px;
+            color: #1e293b;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .timeline-time {
+            font-size: 12px;
+            color: #64748b;
+            font-weight: 600;
+        }
+
+        .timeline-detail {
+            font-size: 13px;
+            color: #334155;
+        }
 
         @media (max-width: 1100px) {
-            .modules-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .modules-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
         }
+
         @media (max-width: 760px) {
-            .main-content { padding: 20px 14px 30px; }
-            .modules-grid { grid-template-columns: 1fr; }
-            .search-container { align-self: stretch; max-width: 100%; }
-            .search-form { flex-direction: column; }
-            .search-form button { padding: 12px 16px; }
-            .timeline-groups { grid-template-columns: 1fr; }
+            .main-content {
+                padding: 20px 14px 30px;
+            }
+
+            .modules-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .search-container {
+                align-self: stretch;
+                max-width: 100%;
+            }
+
+            .search-form {
+                flex-direction: column;
+            }
+
+            .search-form button {
+                padding: 12px 16px;
+            }
+
+            .timeline-groups {
+                grid-template-columns: 1fr;
+            }
         }
+
         @media (max-width: 1040px) {
-            .timeline-groups { grid-template-columns: 1fr; }
+            .timeline-groups {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 </head>
+
 <body>
     <div class="app-layout">
         {% include "obstetricia/sidebar.html" with hide_sidebar_patient_unificado=True %}
-        
+
         <main class="main-content">
             <!-- Selector de Entorno (Switcher) -->
-            <div class="flex items-center justify-between mb-8" style="margin-top: -10px; display: flex; width: 100%;">
+            <div class="flex items-center justify-between mb-8" style="margin-top: -10px; display: flex; width: 100%; justify-content: space-between; align-items: center; margin-bottom: 24px;">
                 <div class="db-switcher-container">
                     <a href="?db=readonly" class="db-btn db-btn-readonly {% if selected_db == 'readonly' %}active{% endif %}">
                         <div class="dot"></div>
@@ -1066,26 +1306,50 @@
                 </div>
             </div>
 
+            <!-- ⚠️ NOTIFICACIÓN DINÁMICA DE ESTADO DE DATOS -->
+            <div id="db-status-banner"
+                class="status-banner {% if selected_db == 'nexus' %}banner-warning{% else %}banner-info{% endif %}">
+                <div class="banner-content">
+                    <i data-lucide="{% if selected_db == 'nexus' %}refresh-cw{% else %}history{% endif %}"
+                        size="18"></i>
+                    <span>
+                        {% if selected_db == 'nexus' %}
+                        <strong>ENTORNO DGEMPRES_NEXUS:</strong> Los datos se actualizan cada 6 horas aproximadamente.
+                        Use para consulta operativa reciente.
+                        {% else %}
+                        <strong>ENTORNO DGEMPRES03 (PRINCIPAL):</strong> Los datos tienen un retraso de 1 mes. Es normal
+                        que el censo aparezca en 0.
+                        {% endif %}
+                    </span>
+                </div>
+                <div class="banner-status">
+                    <span class="status-dot"></span>
+                    CONECTADA
+                </div>
+            </div>
+
             <!-- Sección de Consulta -->
             <div class="search-container" id="search-section">
                 <div class="search-header">
                     <div class="icon-container">
-                        <i data-lucide="search" size="24"></i>
+                        <i data-lucide="users" size="24"></i>
                     </div>
                     <div class="title-group">
-                        <div class="subtitle">Consulta</div>
-                        <div class="main-title">Identificar Paciente</div>
+                        <div class="subtitle">Censo Activo</div>
+                        <div class="main-title">Gineco-Obstetricia</div>
                     </div>
                 </div>
-                <p class="search-helper">Consulta por documento para abrir de inmediato el tablero clínico unificado del paciente.</p>
-                
+                <p class="search-helper">Busque pacientes por identificación para abrir su tablero clínico. <strong>Solo
+                        se listan pacientes con estancia activa en el área.</strong></p>
+
                 <div class="search-form">
                     <div class="search-input-wrap">
                         <i data-lucide="badge-check"></i>
-                        <input type="text" id="cedula-input" placeholder="Ingrese número de identificación..." maxlength="20">
+                        <input type="text" id="cedula-input" placeholder="Ingrese número de identificación..."
+                            maxlength="20">
                     </div>
                     <button type="button" id="btn-buscar" onclick="buscarPacienteSala()">
-                        <span id="btn-text">Consultar</span>
+                        <span id="btn-text">Filtrar Censo</span>
                         <div class="loader" id="btn-loader"></div>
                     </button>
                     <button type="button" class="btn-censo" onclick="toggleCenso()">
@@ -1095,35 +1359,21 @@
                 </div>
             </div>
 
-            <!-- 🏥 SECCIÓN CENSO ACTIVO (Oculta por defecto) -->
-            <div class="censo-section" id="censo-section">
-                <div class="censo-header">
-                    <div class="censo-title">
-                        <i data-lucide="layout-list" class="text-blue-600"></i>
-                        Censo Activo Ginecobstetricia
+            <!-- 📋 CENSO EN TIEMPO REAL -->
+            <div id="census-section" class="census-container">
+                <div class="census-header">
+                    <div class="census-title">
+                        <i data-lucide="clipboard-list" size="20"></i>
+                        <span>Censo Activo en Tiempo Real</span>
                     </div>
-                    <button onclick="toggleCenso()" class="btn-change-patient" style="padding: 4px 8px;">
-                        <i data-lucide="x" size="16"></i>
-                    </button>
+                    <div id="census-count" class="census-badge">0 Pacientes</div>
                 </div>
-                <div id="area-selector" class="area-selector">
-                    <!-- Dinámico con JS -->
-                </div>
-                <div class="censo-table-container">
-                    <table class="censo-table" id="tabla-censo">
-                        <thead>
-                            <tr>
-                                <th>Paciente</th>
-                                <th>Identificación</th>
-                                <th>Cama</th>
-                                <th>Servicio</th>
-                                <th>Ingreso</th>
-                            </tr>
-                        </thead>
-                        <tbody id="censo-body">
-                            <!-- JS populated -->
-                        </tbody>
-                    </table>
+
+                <div id="census-list" class="census-list">
+                    <div class="census-loading">
+                        <div class="loader"></div>
+                        <p>Cargando censo hospitalario...</p>
+                    </div>
                 </div>
             </div>
 
@@ -1133,19 +1383,21 @@
                     <div class="card-clinico-title">
                         <h2 id="display-nombre-paciente" class="card-clinico-patient-heading">—</h2>
                         <div class="card-clinico-board-row">
-                            <span class="card-clinico-board-pill"><i data-lucide="layout-dashboard" aria-hidden="true"></i> Tablero clínico unificado</span>
+                            <span class="card-clinico-board-pill"><i data-lucide="layout-dashboard"
+                                    aria-hidden="true"></i> Tablero clínico unificado</span>
                         </div>
                         <div class="card-clinico-meta">
-                            <span class="card-clinico-meta-item"><i data-lucide="hash" size="12"></i> <span id="display-atencion">Atención: -</span></span>
+                            <span class="card-clinico-meta-item"><i data-lucide="hash" size="12"></i> <span
+                                    id="display-atencion">Atención: -</span></span>
                         </div>
                     </div>
                     <div class="card-clinico-actions">
                         <span id="display-estado-valor" class="card-clinico-status status-estable">ESTABLE</span>
-                        
+
                         <a id="btn-pdf-unificado" href="#" target="_blank" class="card-clinico-btn-pdf">
-                           <i data-lucide="file-text" size="14"></i> PDF Unificado
+                            <i data-lucide="file-text" size="14"></i> PDF Unificado
                         </a>
-                        
+
                         <button onclick="nuevaBusqueda()" class="btn-change-patient">
                             <i data-lucide="refresh-cw" size="14"></i>
                         </button>
@@ -1180,7 +1432,8 @@
                     <i data-lucide="info" size="16"></i>
                     Datos registrados del paciente
                 </div>
-                <section class="patient-info-block patient-info-block--basic" aria-labelledby="patient-info-basic-title">
+                <section class="patient-info-block patient-info-block--basic"
+                    aria-labelledby="patient-info-basic-title">
                     <h4 class="patient-info-section-title" id="patient-info-basic-title">Datos básicos</h4>
                     <div class="patient-info-grid patient-info-grid--basic">
                         <div class="patient-info-item patient-info-item--full">
@@ -1217,8 +1470,10 @@
                         </div>
                     </div>
                 </section>
-                <section class="patient-info-block patient-info-block--clinical" aria-labelledby="patient-info-clinical-title">
-                    <h4 class="patient-info-section-title" id="patient-info-clinical-title">Atención obstétrica e ingreso</h4>
+                <section class="patient-info-block patient-info-block--clinical"
+                    aria-labelledby="patient-info-clinical-title">
+                    <h4 class="patient-info-section-title" id="patient-info-clinical-title">Atención obstétrica e
+                        ingreso</h4>
                     <div class="patient-info-grid patient-info-grid--clinical">
                         <div class="patient-info-item patient-info-item--full">
                             <div class="patient-info-label">Diagnóstico</div>
@@ -1258,7 +1513,8 @@
 
             <!-- Línea de Vida Cronológica -->
             <div class="timeline-section" id="timeline-section">
-                <h3 style="margin-bottom: 25px; font-size: 18px; font-weight: 800; color: var(--primary-blue); display: flex; align-items: center; gap: 10px;">
+                <h3
+                    style="margin-bottom: 25px; font-size: 18px; font-weight: 800; color: var(--primary-blue); display: flex; align-items: center; gap: 10px;">
                     <i data-lucide="history"></i> Línea de Vida del Paciente
                 </h3>
                 <div class="timeline-groups" id="timeline-list">
@@ -1268,12 +1524,16 @@
 
             <!-- Card de Registro (Visible si NO existe) -->
             <div class="register-card" id="register-card">
-                <div style="background: #fef2f2; color: #ef4444; width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px;">
+                <div
+                    style="background: #fef2f2; color: #ef4444; width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px;">
                     <i data-lucide="user-x" size="32"></i>
                 </div>
-                <h2>Paciente no registrado</h2>
-                <p>No se encontraron registros activos para este número de identificación en el sistema. <br> ¿Desea iniciar un nuevo registro clínico?</p>
-                
+                <h2>Paciente no encontrada en Censo</h2>
+                <p>No se encontraron registros de hospitalización activa para esta identificación en el área de
+                    <strong>Gineco-Obstetricia</strong>. <br> Solo se pueden abrir tableros clínicos para pacientes
+                    actualmente en el área.
+                </p>
+
                 <a href="/atencion/1/" id="link-nuevo-registro" class="btn-register">
                     <i data-lucide="user-plus" size="20"></i>
                     REALIZAR REGISTRO DE PACIENTE
@@ -1285,6 +1545,74 @@
     <script>
         lucide.createIcons();
         var SALA_SKIP_AUTORESTORE_KEY = 'sala_partos_skip_autorestore_v1';
+
+        // Al cargar la página, obtener el censo completo
+        document.addEventListener('DOMContentLoaded', function () {
+            cargarCensoTotal();
+        });
+
+        async function cargarCensoTotal() {
+            const listContainer = document.getElementById('census-list');
+            const countBadge = document.getElementById('census-count');
+
+            try {
+                // Usamos el endpoint de frecuenciafetal que ya devuelve el censo
+                const response = await fetch('/fetal/api/registros/sala-partos/');
+                const data = await response.json();
+
+                if (!Array.isArray(data) || data.length === 0) {
+                    const dbName = "{{ selected_db }}";
+                    let msgExtra = "";
+                    if (dbName === 'nexus') {
+                        msgExtra = "Nota: El entorno DGEMPRES_NEXUS se actualiza cada 6 horas.";
+                    } else {
+                        msgExtra = "Nota: En el entorno DGEMPRES03 (Prueba) es normal ver 0 pacientes debido al retraso de 1 mes.";
+                    }
+
+                    listContainer.innerHTML = `
+                        <div class="census-empty">
+                            <i data-lucide="database-zap" size="48"></i>
+                            <p>Pacientes: 0</p>
+                            <small>${msgExtra}</small>
+                        </div>
+                    `;
+                    countBadge.innerText = "0 Pacientes";
+                    lucide.createIcons();
+                    return;
+                }
+
+                countBadge.innerText = `${data.length} Pacientes`;
+                listContainer.innerHTML = '';
+
+                data.forEach(p => {
+                    const item = document.createElement('div');
+                    item.className = 'census-item';
+                    item.onclick = () => {
+                        document.getElementById('cedula-input').value = p.identificacion;
+                        buscarPacienteSala();
+                    };
+
+                    item.innerHTML = `
+                        <div class="census-item-main">
+                            <div class="census-item-name">${p.nombre_paciente}</div>
+                            <div class="census-item-info">
+                                <span><i data-lucide="credit-card" size="12"></i> ${p.identificacion}</span>
+                                <span><i data-lucide="bed" size="12"></i> Cama: ${p.numero_cama || '—'}</span>
+                            </div>
+                        </div>
+                        <div class="census-item-action">
+                            <i data-lucide="chevron-right" size="16"></i>
+                        </div>
+                    `;
+                    listContainer.appendChild(item);
+                });
+                lucide.createIcons();
+
+            } catch (error) {
+                console.error("Error cargando censo:", error);
+                listContainer.innerHTML = '<div class="census-empty"><p>Error al conectar con la base de datos.</p></div>';
+            }
+        }
 
         function mostrarBusquedaAnimada() {
             const searchSection = document.getElementById('search-section');
@@ -1311,14 +1639,14 @@
         async function cargarCenso() {
             const body = document.getElementById('censo-body');
             const selector = document.getElementById('area-selector');
-            
+
             body.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 40px; color: #64748b;"><div class="loader" style="display:inline-block; margin-bottom:10px;"></div><br>Consultando censo de ginecobstetricia...</td></tr>';
             selector.innerHTML = '';
 
             try {
                 const response = await fetch('/atencion/api/censo-gineco/');
                 const data = await response.json();
-                
+
                 if (data.ok && data.results.length > 0) {
                     censoCompleto = data.results;
                     renderizarFiltros();
@@ -1372,8 +1700,8 @@
 
         function renderizarTablaCenso() {
             const body = document.getElementById('censo-body');
-            const filtrados = areaSeleccionada === 'all' 
-                ? censoCompleto 
+            const filtrados = areaSeleccionada === 'all'
+                ? censoCompleto
                 : censoCompleto.filter(p => String(p.servicio) === areaSeleccionada);
 
             body.innerHTML = '';
@@ -1461,13 +1789,13 @@
         function mostrarModulos(data, cedula) {
             try {
                 sessionStorage.removeItem(SALA_SKIP_AUTORESTORE_KEY);
-            } catch (e) {}
+            } catch (e) { }
             document.getElementById('search-section').style.display = 'none';
             document.getElementById('register-card').style.display = 'none';
-            
+
             const card = document.getElementById('card-clinico-unificado');
             card.style.display = 'flex';
-            
+
             // Poblar Datos
             const docLink = (data.identificacion || data.num_identificacion || cedula || '').trim();
 
@@ -1498,13 +1826,13 @@
             }
 
             document.getElementById('display-atencion').textContent = `ID de Atención: ${data.atencion_id || '-'}`;
-            
+
             // Status
             const statusVal = document.getElementById('display-estado-valor');
             statusVal.textContent = data.estado_global || 'ESTABLE';
-            statusVal.className = 'card-clinico-status ' + 
-                (data.estado_global === 'CRÍTICO' ? 'status-critico' : 
-                 data.estado_global === 'ALERTA' ? 'status-alerta' : 'status-estable');
+            statusVal.className = 'card-clinico-status ' +
+                (data.estado_global === 'CRÍTICO' ? 'status-critico' :
+                    data.estado_global === 'ALERTA' ? 'status-alerta' : 'status-estable');
 
             // Stats
             const meowsCount = Number(data.mediciones_count || 0);
@@ -1566,7 +1894,7 @@
             // Renderizar Timeline
             const timelineSection = document.getElementById('timeline-section');
             const timelineList = document.getElementById('timeline-list');
-            timelineList.innerHTML = ''; 
+            timelineList.innerHTML = '';
 
             if (data.timeline && data.timeline.length > 0) {
                 timelineSection.style.display = 'block';
@@ -1601,7 +1929,7 @@
                     } else {
                         grupo.items.forEach(item => {
                             const dateObj = new Date(item.fecha);
-                            const dateStr = dateObj.toLocaleDateString('es-ES', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' });
+                            const dateStr = dateObj.toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 
                             const div = document.createElement('div');
                             div.className = 'timeline-item';
@@ -1631,7 +1959,7 @@
             // Enlaces con documento canónico (BD hospital / MEOWS) para coincidir con PACNUMDOC
             if (document.getElementById('link-fetal')) document.getElementById('link-fetal').href = `/fetal/?doc=${encodeURIComponent(docLink)}&atencion=${atencion_id}`;
             if (document.getElementById('link-parto')) document.getElementById('link-parto').href = `/parto/?doc=${encodeURIComponent(docLink)}&atencion=${atencion_id}`;
-            
+
             lucide.createIcons();
 
             if (window.ObstetriciaPacienteUnificado && data && data.ok && data.encontrado) {
@@ -1647,10 +1975,10 @@
             if (summaryCard) summaryCard.style.display = 'none';
             const infoCard = document.getElementById('patient-info-card');
             if (infoCard) infoCard.style.display = 'none';
-            
+
             const register = document.getElementById('register-card');
             register.style.display = 'block';
-            
+
             // El link de nuevo registro lleva al panel base donde puede crear al paciente
             // Aquí idealmente redirigiría a una vista de creación limpia, 
             // pero por ahora usamos el ID 1 o creamos uno nuevo si el sistema lo permite
@@ -1660,7 +1988,7 @@
         function nuevaBusqueda() {
             try {
                 sessionStorage.setItem(SALA_SKIP_AUTORESTORE_KEY, '1');
-            } catch (e) {}
+            } catch (e) { }
             mostrarBusquedaAnimada();
             const grid = document.getElementById('modulesGrid');
             if (grid) grid.style.display = 'none';
@@ -1702,7 +2030,7 @@
         async function restaurarPacienteDesdeCacheSala() {
             try {
                 if (sessionStorage.getItem(SALA_SKIP_AUTORESTORE_KEY)) return;
-            } catch (e) {}
+            } catch (e) { }
             if (!window.ObstetriciaPacienteUnificado || typeof window.ObstetriciaPacienteUnificado.getValidCached !== 'function') {
                 return;
             }
@@ -1720,7 +2048,7 @@
         }
 
         // Permitir búsqueda con Enter
-        document.getElementById('cedula-input').addEventListener('keypress', function(e) {
+        document.getElementById('cedula-input').addEventListener('keypress', function (e) {
             if (e.key === 'Enter') buscarPacienteSala();
         });
 
@@ -1735,7 +2063,5 @@
         })();
     </script>
 </body>
+
 </html>
-
-
-
