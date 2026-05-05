@@ -60,7 +60,7 @@ class Paciente(models.Model):
 
 class Formulario(models.Model):
     atencion = models.ForeignKey(
-        "obstetricia.AtencionParto",
+        "unificador_v1.AtencionParto",
         on_delete=models.SET_NULL,
         null=True,
         blank=True,

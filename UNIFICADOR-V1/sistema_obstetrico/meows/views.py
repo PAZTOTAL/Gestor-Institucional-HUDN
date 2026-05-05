@@ -6,7 +6,7 @@ from django.db.models import Q
 from django.contrib import messages
 from django.conf import settings
 from meows.models import Paciente, Formulario, Parametro, Medicion, MedicionValor, RangoParametro, Hpnestanc
-from obstetriciaunificador.models import AtencionParto
+from unificador_v1.models import AtencionParto
 from meows.services.meows import calcular_score_desde_bd
 # Importación diferida del generador PDF para evitar errores de WeasyPrint al iniciar
 # from meows.generador_pdf_meows import generar_pdf_meows

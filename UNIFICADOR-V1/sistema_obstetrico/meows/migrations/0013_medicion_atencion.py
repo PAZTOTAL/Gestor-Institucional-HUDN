@@ -8,13 +8,13 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('meows', '0012_alter_firmapaciente_formulario_id_and_more'),
-        ('obstetricia', '0001_initial'),
+        ('unificador_v1', '0001_initial'),
     ]
 
     operations = [
         migrations.AddField(
             model_name='medicion',
             name='atencion',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='mediciones_meows', to='obstetricia.atencionparto'),
+            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='mediciones_meows', to='unificador_v1.atencionparto'),
         ),
     ]
