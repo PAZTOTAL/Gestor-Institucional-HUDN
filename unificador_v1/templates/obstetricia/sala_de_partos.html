@@ -2175,8 +2175,7 @@
                 timelineSection.style.display = 'none';
             }
 
-            // Enlaces con documento canónico (BD hospital / MEOWS) para coincidir con PACNUMDOC
-            if (document.getElementById('link-meows')) document.getElementById('link-meows').href = `/meows/ingreso/?doc=${encodeURIComponent(docLink)}`;
+            if (document.getElementById('link-meows')) document.getElementById('link-meows').href = `/meows/crear/?doc=${encodeURIComponent(docLink)}`;
             if (document.getElementById('link-fetal')) document.getElementById('link-fetal').href = `/fetal/?doc=${encodeURIComponent(docLink)}&atencion=${atencion_id}`;
             if (document.getElementById('link-parto')) document.getElementById('link-parto').href = `/parto/?doc=${encodeURIComponent(docLink)}&atencion=${atencion_id}`;
 
