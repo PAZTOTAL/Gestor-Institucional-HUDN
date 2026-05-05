@@ -62,7 +62,7 @@ def listar_pacientes_sala_partos(query=None, db_name='readonly'):
         ING.AINCONSEC AS numero_ingreso,
         CAM.HCACODIGO AS numero_cama,
         SUB.HSUCODIGO AS area_id,
-        SUB.HSUDESCRIP AS area_nombre
+        SUB.HSUNOMBRE AS area_nombre
     FROM HPNESTANC AS EST
     INNER JOIN HPNDEFCAM AS CAM ON EST.HPNDEFCAM = CAM.OID
     INNER JOIN HPNGRUPOS AS GRP ON CAM.HPNGRUPOS = GRP.OID
