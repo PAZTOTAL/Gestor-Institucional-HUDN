@@ -32,6 +32,11 @@ except ImportError:
     TrabajoPartoPaciente = None
 
 logger = logging.getLogger(__name__)
+ 
+try:
+    from consultas_externas.models import Adningreso, Genpacien, Hpndefcam, Hpnestanc
+except ImportError:
+    Adningreso, Genpacien, Hpndefcam, Hpnestanc = None, None, None, None
 
 
 def _sexo_codigo_desde_his(val):
@@ -1237,13 +1242,94 @@ def pdf_atencion(request, id):
     return response
 
 
+@require_http_methods(["GET"])
+def api_censo_gineco(request):
+    """
+    Retorna la lista de pacientes activos en las áreas de Ginecobstetricia (0304, 0305, 0307).
+    Uso: GET /atencion/api/censo-gineco/
+    """
+    if Adningreso is None:
+        return JsonResponse({"ok": False, "error": "Modelos de hospitalización no disponibles"}, status=503)
+
+    # Áreas de Ginecobstetricia definidas para este hospital (Códigos de servicio)
+    areas_codigos = ['0304', '0305', '0307']
+    area_filter = request.GET.get('area')
+    
+    # Determinar base de datos desde la sesión
+    selected_db = request.session.get('hospital_db', 'readonly')
+    
+    # Obtener nombres y OIDs de áreas para el censo
+    from consultas_externas.models import Genareser
+    areas_qs = Genareser.objects.using(selected_db).filter(gascodigo__in=areas_codigos)
+    area_names = {a.oid: a.gasnombre for a in areas_qs}
+    areas_oids = list(area_names.keys())
+    
+    # Buscar ingresos activos en esas áreas o centros de atención
+    # ainestado=1 suele significar activo/registrado
+    query = Q(genareser__in=areas_oids) | Q(adncenate__in=areas_oids)
+    if area_filter:
+        query = Q(genareser=area_filter) | Q(adncenate=area_filter)
+
+    ingresos = Adningreso.objects.using(selected_db).filter(
+        query,
+        ainfecegre__isnull=True,
+        ainestado=1
+    ).select_related('genpacien').order_by('hpndefcam')
+
+    results = []
+    for ing in ingresos:
+        paciente = ing.genpacien
+        if not paciente:
+            continue
+            
+        # Determinar la cama
+        num_cama = 'S/C'
+        cama_obj = None
+        if ing.hpndefcam:
+            cama_obj = Hpndefcam.objects.using(selected_db).filter(oid=ing.hpndefcam).first()
+        
+        if not cama_obj:
+            # Reintentar por estancia activa
+            estancia = Hpnestanc.objects.using(selected_db).filter(
+                adningres=ing.oid, 
+                hesfecsal__isnull=True
+            ).order_by('-hesfecing').first()
+            if estancia and estancia.hpndefcam:
+                cama_obj = Hpndefcam.objects.using(selected_db).filter(oid=estancia.hpndefcam).first()
+
+        if cama_obj:
+            num_cama = cama_obj.hcacodigo or cama_obj.hcanumhabi or cama_obj.hcanombre
+
+        nombre_completo = f"{paciente.pacprinom or ''} {paciente.pacsegnom or ''} {paciente.pacpriape or ''} {paciente.pacsegape or ''}".strip()
+        
+        results.append({
+            'documento': paciente.pacnumdoc,
+            'nombre': nombre_completo,
+            'cama': num_cama,
+            'ingreso': ing.oid,
+            'fecha_ingreso': ing.ainfecing.strftime('%d/%m/%Y') if ing.ainfecing else '—',
+            'servicio': ing.genareser or ing.adncenate or 'GINECO',
+            'area_nombre': area_names.get(ing.genareser or ing.adncenate, 'GINECOBSETRICIA')
+        })
+
+    return JsonResponse({'ok': True, 'results': results, 'count': len(results)})
+
+
 def sala_de_partos(request):
     """
     Vista 'Sala de Partos': Hub para buscar pacientes y acceder a módulos.
     """
+    # Manejar cambio de base de datos
+    db_choice = request.GET.get('db')
+    if db_choice in ['readonly', 'nexus']:
+        request.session['hospital_db'] = db_choice
+    
+    selected_db = request.session.get('hospital_db', 'readonly')
+
     return render(request, "obstetricia/sala_de_partos.html", {
         "is_dashboard": False,  # No es dashboard general
-        "title": "Sala de Partos"
+        "title": "Sala de Partos",
+        "selected_db": selected_db
     })
 
 

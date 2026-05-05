@@ -17,16 +17,13 @@ class DocumentoInventarioListView(LoginRequiredMixin, ListView):
         # Por defecto usar 'readonly' (DGEMPRES03)
         selected_db = self.request.session.get('inventory_db', 'readonly')
 
-        # Capturar filtros de la URL (con valores por defecto para hoy)
-        from django.utils import timezone
-        hoy = timezone.now().date().strftime('%Y-%m-%d')
-        
+        # Capturar filtros de la URL (Sin valores por defecto para máxima flexibilidad)
         tipo_doc = self.request.GET.get('tipo')
         usuario_oid = self.request.GET.get('usuario')
-        estado = self.request.GET.get('estado')
+        estado = self.request.GET.get('estado', '0') # Mantenemos estado 0 (Activo) por defecto
         consecutivo = self.request.GET.get('consecutivo')
-        fecha_desde = self.request.GET.get('desde', hoy)
-        fecha_hasta = self.request.GET.get('hasta', hoy)
+        fecha_desde = self.request.GET.get('desde')
+        fecha_hasta = self.request.GET.get('hasta')
 
         base_query = """
         SELECT TOP 500
@@ -53,7 +50,7 @@ class DocumentoInventarioListView(LoginRequiredMixin, ListView):
                 WHEN IDTIPDOC= 19 THEN 'ORDEN SERVICIO'
                 WHEN IDTIPDOC= 20 THEN 'ORDEN PRODUCCION'
                 WHEN IDTIPDOC= 21 THEN 'DEVOLUCION ORDEN'
-                WHEN IDTIPDOC= 22 THEN 'SOLIICTUD PEDIDO'
+                WHEN IDTIPDOC= 22 THEN 'SOLICITUD PEDIDO'
                 WHEN IDTIPDOC= 23 THEN 'DEMANDA INSATISF'
                 WHEN IDTIPDOC= 24 THEN 'TRASLADO PRODUCTO'
                 WHEN IDTIPDOC= 25 THEN 'RECIBO ORDEN DE'
@@ -83,11 +80,8 @@ class DocumentoInventarioListView(LoginRequiredMixin, ListView):
             params.append(estado)
             
         if consecutivo:
-            # Limpiar y preparar la búsqueda por consecutivo
             consec_clean = consecutivo.strip()
-            # Si es puramente numérico, intentamos buscar coincidencia exacta con ceros o por sufijo
             if consec_clean.isdigit():
-                # Rellenar con ceros a la izquierda hasta 14 (estándar Dinámica/Nexus)
                 consec_padded = consec_clean.zfill(14)
                 base_query += " AND (IDCONSEC = %s OR IDCONSEC LIKE %s) "
                 params.append(consec_padded)
@@ -95,7 +89,8 @@ class DocumentoInventarioListView(LoginRequiredMixin, ListView):
             else:
                 base_query += " AND IDCONSEC LIKE %s "
                 params.append(f"%{consec_clean}%")
-            
+        
+        # Solo aplicar fechas si se proporcionan explícitamente
         if fecha_desde:
             base_query += " AND IDFECDOC >= %s "
             params.append(fecha_desde)
@@ -104,7 +99,8 @@ class DocumentoInventarioListView(LoginRequiredMixin, ListView):
             base_query += " AND IDFECDOC <= %s "
             params.append(fecha_hasta + " 23:59:59")
 
-        base_query += " ORDER BY INNDOCUME.IDFECDOC DESC "
+        # Orden ASC según script del usuario para ver lo más antiguo pendiente primero
+        base_query += " ORDER BY INNDOCUME.IDFECDOC ASC "
         
         with connections[selected_db].cursor() as cursor:
             cursor.execute(base_query, params)
@@ -120,15 +116,11 @@ class DocumentoInventarioListView(LoginRequiredMixin, ListView):
         ctx['selected_db'] = selected_db
         ctx['titulo'] = 'Listado de Documentos de Inventario'
         
-        # Filtros para el resumen (los mismos que en get_queryset)
-        from django.utils import timezone
-        hoy = timezone.now().date().strftime('%Y-%m-%d')
-        
         tipo_doc = self.request.GET.get('tipo')
         usuario_oid = self.request.GET.get('usuario')
-        estado = self.request.GET.get('estado')
-        fecha_desde = self.request.GET.get('desde', hoy)
-        fecha_hasta = self.request.GET.get('hasta', hoy)
+        estado = self.request.GET.get('estado', '0')
+        fecha_desde = self.request.GET.get('desde')
+        fecha_hasta = self.request.GET.get('hasta')
         
         ctx['fecha_desde_default'] = fecha_desde
         ctx['fecha_hasta_default'] = fecha_hasta

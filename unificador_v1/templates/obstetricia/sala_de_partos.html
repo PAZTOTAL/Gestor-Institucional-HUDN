@@ -203,6 +203,225 @@
         }
         .search-form button:hover::before { left: 120%; }
         .search-form button:active { transform: translateY(0); }
+ 
+        /* DB Switcher Styles */
+        .db-switcher-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.5);
+            backdrop-filter: blur(10px);
+            padding: 6px;
+            border-radius: 18px;
+            border: 2px solid #f1f5f9;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
+            width: fit-content;
+        }
+        .db-btn {
+            padding: 10px 18px;
+            border-radius: 14px;
+            font-size: 11px;
+            font-weight: 900;
+            text-transform: uppercase;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 2px solid transparent;
+            letter-spacing: 0.02em;
+        }
+        .db-btn .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+        .db-btn-readonly.active {
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            color: white !important;
+            box-shadow: 0 8px 20px rgba(37, 99, 235, 0.3);
+            border-color: #3b82f6;
+        }
+        .db-btn-readonly.active .dot {
+            background: white;
+            box-shadow: 0 0 8px white;
+            animation: pulse-white 2s infinite;
+        }
+        .db-btn-nexus.active {
+            background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%);
+            color: white !important;
+            box-shadow: 0 8px 20px rgba(79, 70, 229, 0.3);
+            border-color: #6366f1;
+        }
+        .db-btn-nexus.active .dot {
+            background: white;
+            box-shadow: 0 0 8px white;
+            animation: pulse-white 2s infinite;
+        }
+        .db-btn:not(.active) {
+            color: #64748b;
+            background: transparent;
+        }
+        .db-btn:not(.active) .dot {
+            background: #cbd5e1;
+        }
+        .db-btn:hover:not(.active) {
+            background: white;
+            color: #1e293b;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.05);
+        }
+        @keyframes pulse-white {
+            0% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.6; transform: scale(1.2); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+
+        .btn-censo {
+            padding: 0 22px;
+            height: 50px;
+            background: linear-gradient(135deg, #0f172a 0%, #334155 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-weight: 700;
+            letter-spacing: 0.01em;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 8px 18px rgba(15, 23, 42, 0.2);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .btn-censo:hover {
+            transform: translateY(-1px);
+            filter: brightness(1.1);
+            box-shadow: 0 12px 22px rgba(15, 23, 42, 0.25);
+        }
+
+        /* Area Filter Styles */
+        .area-selector {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px dashed #e2e8f0;
+            flex-wrap: wrap;
+        }
+        .area-btn {
+            padding: 8px 16px;
+            border-radius: 12px;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            font-size: 11px;
+            font-weight: 800;
+            color: #64748b;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .area-btn:hover {
+            background: #f1f5f9;
+            color: #1e293b;
+        }
+        .area-btn.active {
+            background: #2563eb;
+            color: white;
+            border-color: #2563eb;
+            box-shadow: 0 4px 10px rgba(37, 99, 235, 0.2);
+        }
+        .area-btn .count {
+            background: rgba(0,0,0,0.1);
+            padding: 2px 6px;
+            border-radius: 6px;
+            font-size: 9px;
+        }
+        .area-btn.active .count {
+            background: rgba(255,255,255,0.2);
+        }
+
+        /* Sección de Censo Activo */
+        .censo-section {
+            display: none;
+            width: 100%;
+            background: white;
+            border-radius: 20px;
+            padding: 24px;
+            margin-top: 24px;
+            box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
+            border: 1px solid #e2e8f0;
+            animation: fadeIn 0.4s ease;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .censo-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid #f1f5f9;
+        }
+        .censo-title {
+            font-size: 1.1rem;
+            font-weight: 800;
+            color: #0f172a;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .censo-table-container {
+            max-height: 400px;
+            overflow-y: auto;
+            border-radius: 12px;
+        }
+        .censo-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            text-align: left;
+        }
+        .censo-table th {
+            position: sticky;
+            top: 0;
+            background: #f8fafc;
+            padding: 12px 16px;
+            font-size: 0.75rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            color: #64748b;
+            border-bottom: 1px solid #e2e8f0;
+            z-index: 10;
+        }
+        .censo-table td {
+            padding: 14px 16px;
+            font-size: 0.9rem;
+            border-bottom: 1px solid #f1f5f9;
+            transition: all 0.2s;
+        }
+        .censo-row:hover td {
+            background: #f0f7ff;
+            cursor: pointer;
+        }
+        .censo-badge {
+            padding: 4px 10px;
+            border-radius: 999px;
+            font-size: 0.75rem;
+            font-weight: 800;
+            background: #e0f2fe;
+            color: #0369a1;
+            border: 1px solid #bae6fd;
+        }
+        .censo-cama {
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 800;
+            color: #2563eb;
+        }
 
         /* Grid de Módulos (Cards) */
         .modules-grid {
@@ -826,6 +1045,27 @@
         {% include "obstetricia/sidebar.html" with hide_sidebar_patient_unificado=True %}
         
         <main class="main-content">
+            <!-- Selector de Entorno (Switcher) -->
+            <div class="flex items-center justify-between mb-8" style="margin-top: -10px; display: flex; width: 100%;">
+                <div class="db-switcher-container">
+                    <a href="?db=readonly" class="db-btn db-btn-readonly {% if selected_db == 'readonly' %}active{% endif %}">
+                        <div class="dot"></div>
+                        DGEMPRES03 (PRINCIPAL)
+                    </a>
+                    <a href="?db=nexus" class="db-btn db-btn-nexus {% if selected_db == 'nexus' %}active{% endif %}">
+                        <div class="dot"></div>
+                        DGEMPRES_NEXUS (AUDITORÍA)
+                    </a>
+                </div>
+                
+                <div class="flex items-center gap-3" style="display: flex; align-items: center; gap: 12px;">
+                    <span style="font-size: 11px; font-weight: 900; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.12em;">Conexión Activa:</span>
+                    <span style="padding: 6px 14px; background: #0f172a; color: white; font-size: 11px; font-weight: 900; border-radius: 10px; text-transform: uppercase; letter-spacing: 0.05em; box-shadow: 0 4px 10px rgba(0,0,0,0.15);">
+                        {% if selected_db == 'readonly' %}DGEMPRES03{% else %}DGEMPRES_NEXUS{% endif %}
+                    </span>
+                </div>
+            </div>
+
             <!-- Sección de Consulta -->
             <div class="search-container" id="search-section">
                 <div class="search-header">
@@ -848,6 +1088,42 @@
                         <span id="btn-text">Consultar</span>
                         <div class="loader" id="btn-loader"></div>
                     </button>
+                    <button type="button" class="btn-censo" onclick="toggleCenso()">
+                        <i data-lucide="users" size="18"></i>
+                        <span>Censo Activo</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 🏥 SECCIÓN CENSO ACTIVO (Oculta por defecto) -->
+            <div class="censo-section" id="censo-section">
+                <div class="censo-header">
+                    <div class="censo-title">
+                        <i data-lucide="layout-list" class="text-blue-600"></i>
+                        Censo Activo Ginecobstetricia
+                    </div>
+                    <button onclick="toggleCenso()" class="btn-change-patient" style="padding: 4px 8px;">
+                        <i data-lucide="x" size="16"></i>
+                    </button>
+                </div>
+                <div id="area-selector" class="area-selector">
+                    <!-- Dinámico con JS -->
+                </div>
+                <div class="censo-table-container">
+                    <table class="censo-table" id="tabla-censo">
+                        <thead>
+                            <tr>
+                                <th>Paciente</th>
+                                <th>Identificación</th>
+                                <th>Cama</th>
+                                <th>Servicio</th>
+                                <th>Ingreso</th>
+                            </tr>
+                        </thead>
+                        <tbody id="censo-body">
+                            <!-- JS populated -->
+                        </tbody>
+                    </table>
                 </div>
             </div>
 
@@ -1017,6 +1293,110 @@
             searchSection.classList.remove('search-enter');
             void searchSection.offsetWidth;
             searchSection.classList.add('search-enter');
+        }
+
+        async function toggleCenso() {
+            const section = document.getElementById('censo-section');
+            if (section.style.display === 'block') {
+                section.style.display = 'none';
+            } else {
+                section.style.display = 'block';
+                cargarCenso();
+            }
+        }
+
+        let censoCompleto = [];
+        let areaSeleccionada = 'all';
+
+        async function cargarCenso() {
+            const body = document.getElementById('censo-body');
+            const selector = document.getElementById('area-selector');
+            
+            body.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 40px; color: #64748b;"><div class="loader" style="display:inline-block; margin-bottom:10px;"></div><br>Consultando censo de ginecobstetricia...</td></tr>';
+            selector.innerHTML = '';
+
+            try {
+                const response = await fetch('/atencion/api/censo-gineco/');
+                const data = await response.json();
+                
+                if (data.ok && data.results.length > 0) {
+                    censoCompleto = data.results;
+                    renderizarFiltros();
+                    renderizarTablaCenso();
+                } else {
+                    body.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 40px; color: #64748b;">No hay pacientes activos reportados en estas áreas actualmente.</td></tr>';
+                }
+            } catch (error) {
+                body.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 40px; color: #ef4444;">Error al conectar con el servidor de hospitalización.</td></tr>';
+            }
+            lucide.createIcons();
+        }
+
+        function renderizarFiltros() {
+            const selector = document.getElementById('area-selector');
+            const areas = {};
+            censoCompleto.forEach(p => {
+                const id = p.servicio || 'OTRO';
+                const nombre = p.area_nombre || 'General';
+                if (!areas[id]) areas[id] = { nombre: nombre, count: 0 };
+                areas[id].count++;
+            });
+
+            let html = `
+                <button class="area-btn ${areaSeleccionada === 'all' ? 'active' : ''}" onclick="filtrarCenso('all')">
+                    <i data-lucide="layout-grid" size="14"></i>
+                    TODOS LOS ACTIVOS
+                    <span class="count">${censoCompleto.length}</span>
+                </button>
+            `;
+
+            Object.keys(areas).sort().forEach(id => {
+                html += `
+                    <button class="area-btn ${areaSeleccionada === id ? 'active' : ''}" onclick="filtrarCenso('${id}')">
+                        <i data-lucide="door-open" size="14"></i>
+                        ${areas[id].nombre}
+                        <span class="count">${areas[id].count}</span>
+                    </button>
+                `;
+            });
+
+            selector.innerHTML = html;
+            lucide.createIcons();
+        }
+
+        function filtrarCenso(id) {
+            areaSeleccionada = String(id);
+            renderizarFiltros();
+            renderizarTablaCenso();
+        }
+
+        function renderizarTablaCenso() {
+            const body = document.getElementById('censo-body');
+            const filtrados = areaSeleccionada === 'all' 
+                ? censoCompleto 
+                : censoCompleto.filter(p => String(p.servicio) === areaSeleccionada);
+
+            body.innerHTML = '';
+            filtrados.forEach(p => {
+                const tr = document.createElement('tr');
+                tr.className = 'censo-row';
+                tr.onclick = () => seleccionarPacienteCenso(p.documento);
+                tr.innerHTML = `
+                    <td style="font-weight:800; color:#0f172a;">${p.nombre}</td>
+                    <td><span class="censo-badge">${p.documento}</span></td>
+                    <td><span class="censo-cama">${p.cama}</span></td>
+                    <td style="font-size:0.8rem; color:#64748b; font-weight:600;">${p.area_nombre}</td>
+                    <td style="font-size:0.8rem; color:#94a3b8;">${p.fecha_ingreso}</td>
+                `;
+                body.appendChild(tr);
+            });
+            lucide.createIcons();
+        }
+
+        function seleccionarPacienteCenso(documento) {
+            document.getElementById('cedula-input').value = documento;
+            document.getElementById('censo-section').style.display = 'none';
+            buscarPacienteSala();
         }
 
         async function buscarPacienteSala() {
