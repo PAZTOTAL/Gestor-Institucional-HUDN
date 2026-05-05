@@ -85,8 +85,8 @@ INSTALLED_APPS = [
     'paz_y_salvo',
     'inventarios',
     # Cuando integre el código completo de UNIFICADOR-V1 en la raíz del repo, descomente:
-    # 'meows',
-    # 'trabajoparto',
+    'meows',
+    'trabajoparto',
 ]
 
 MIDDLEWARE = [
