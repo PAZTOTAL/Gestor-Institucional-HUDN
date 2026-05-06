@@ -342,7 +342,7 @@ class BuscarFuncionarioView(LoginRequiredMixin, TemplateView):
                              RTRIM(LTRIM(ISNULL(e.EMPNOMBRE2, ''))) + ' ' + 
                              RTRIM(LTRIM(ISNULL(e.EMPAPELLI1, ''))) + ' ' + 
                              RTRIM(LTRIM(ISNULL(e.EMPAPELLI2, ''))) ) as nombre,
-                            e.EMPFECNACI as fecha_nacimiento,
+                            NULL as fecha_ingreso,
                             s.SUBNOMBRE as area,
                             'NOMEMPLEADO' as vinculacion,
                             'VERIFICAR EN FISICO' as cargo,

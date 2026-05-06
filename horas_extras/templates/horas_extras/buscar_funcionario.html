@@ -40,8 +40,8 @@
                         <span class="px-3 py-1 bg-blue-600 text-xs font-black rounded-lg tracking-widest">{{ funcionario.tipo_planta }}</span>
                         <span class="px-3 py-1 {% if funcionario.estado == 'ACTIVO' %}bg-emerald-600{% else %}bg-red-600{% endif %} text-xs font-black rounded-lg tracking-widest text-white">{{ funcionario.estado }}</span>
                     </div>
-                    <h2 class="text-3xl font-black">{{ funcionario.nombre }}</h2>
-                    <p class="text-slate-400 font-bold tracking-tight">C.C. {{ funcionario.documento }}</p>
+                    <h2 class="text-3xl font-black text-white drop-shadow-md">{{ funcionario.nombre }}</h2>
+                    <p class="text-slate-200 font-bold tracking-tight">C.C. {{ funcionario.documento }}</p>
                 </div>
                 <div class="w-20 h-20 bg-white/10 rounded-3xl flex items-center justify-center">
                     <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>

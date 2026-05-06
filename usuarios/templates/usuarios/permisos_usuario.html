@@ -72,16 +72,24 @@
                     <h3 class="font-black mb-4 uppercase text-sm border-b pb-2">Nivel de Usuario</h3>
                     <div class="space-y-2">
                         {% for c_code, c_label in categorias %}
-                        <label
-                            class="flex items-center p-3 rounded-lg border-2 cursor-pointer {% if perfil.categoria == c_code %}border-blue-600 bg-blue-50{% else %}border-gray-100{% endif %}">
+                        <label class="nivel-card flex items-center justify-between p-3 rounded-xl border-2 cursor-pointer transition-all duration-200 group
                             {% if perfil.categoria == c_code %}
-                            <input type="radio" name="categoria" value="{{ c_code }}" class="hidden" checked>
+                                border-blue-600 bg-blue-600 text-white shadow-md
                             {% else %}
-                            <input type="radio" name="categoria" value="{{ c_code }}" class="hidden">
-                            {% endif %}
-                            <span class="font-bold text-xs uppercase">
+                                border-slate-100 bg-white text-slate-600 hover:border-blue-200 hover:bg-slate-50
+                            {% endif %}"
+                            onclick="selectNivel(this)">
+                            
+                            <input type="radio" name="categoria" value="{{ c_code }}" class="hidden" 
+                                   {% if perfil.categoria == c_code %}checked{% endif %}>
+                            
+                            <span class="font-black text-xs uppercase tracking-tight">
                                 {{ c_label }}
                             </span>
+
+                            <div class="w-5 h-5 rounded-full border-2 border-current flex items-center justify-center">
+                                <div class="w-2.5 h-2.5 rounded-full bg-white opacity-0 transition-opacity {% if perfil.categoria == c_code %}opacity-100{% endif %}"></div>
+                            </div>
                         </label>
                         {% endfor %}
                     </div>
@@ -200,6 +208,25 @@
 </div>
 
 <script>
+    function selectNivel(element) {
+        // Remove active styles from all cards
+        document.querySelectorAll('.nivel-card').forEach(card => {
+            card.classList.remove('border-blue-600', 'bg-blue-600', 'text-white', 'shadow-md');
+            card.classList.add('border-slate-100', 'bg-white', 'text-slate-600');
+            // Hide the dots
+            card.querySelector('.rounded-full div').classList.add('opacity-0');
+        });
+
+        // Add active styles to clicked card
+        element.classList.remove('border-slate-100', 'bg-white', 'text-slate-600');
+        element.classList.add('border-blue-600', 'bg-blue-600', 'text-white', 'shadow-md');
+        // Show the dot
+        element.querySelector('.rounded-full div').classList.remove('opacity-0');
+        
+        // Ensure radio is checked
+        element.querySelector('input').checked = true;
+    }
+
     function toggleAll(name, state) {
         document.querySelectorAll('input[name="' + name + '"]').forEach(cb => {
             cb.checked = state;

@@ -124,13 +124,61 @@ class DynamicCreateView(AccessControlMixin, DynamicModelMixin, CreateView):
         initial = super().get_initial()
         model = self.get_model()
         
-        # Auto-increment fields containing 'CONSEC'
+        # 1. Auto-increment fields containing 'CONSEC'
         for field in model._meta.get_fields():
             if field.concrete and 'CONSEC' in field.name.upper():
                 max_val = model.objects.aggregate(models.Max(field.name))[f'{field.name}__max']
                 initial[field.name] = (max_val or 0) + 1
+        
+        # 2. Pre-fill from URL parameters (Hierarchy)
+        for key, value in self.request.GET.items():
+            if value:
+                initial[key] = value
+        
+        # 3. Recursive Ancestor Pre-filling (Pull parents of the parent)
+        # If we have a parent PK, fetch it and pull its own parents to fill ancestral FKs
+        for key, value in list(initial.items()):
+            try:
+                field = model._meta.get_field(key)
+                if field.is_relation and value:
+                    # Get the parent object
+                    parent_obj = field.related_model.objects.filter(pk=value).first()
+                    if parent_obj:
+                        # For each field in the current model that is still empty
+                        for f in model._meta.get_fields():
+                            if f.concrete and f.is_relation and f.name not in initial:
+                                # If parent_obj has an attribute with the same name, pull it
+                                if hasattr(parent_obj, f.name):
+                                    parent_val = getattr(parent_obj, f.name)
+                                    if parent_val:
+                                        initial[f.name] = parent_val.pk if hasattr(parent_val, 'pk') else parent_val
+            except:
+                pass
                 
         return initial
+
+    def get_form(self, form_class=None):
+        form = super().get_form(form_class)
+        initial = self.get_initial()
+        
+        # Bloquear campos que vienen por URL o fueron auto-completados por jerarquía
+        for key, value in initial.items():
+            if key in form.fields:
+                field = form.fields[key]
+                # Si es una relación (FK) y tiene valor inicial, o es un consecutivo, lo bloqueamos totalmente
+                if isinstance(field, forms.ModelChoiceField) or 'CONSEC' in key.upper() or key in self.request.GET:
+                    # Usamos disabled=True de Django: es más robusto, bloquea Select2 y mantiene el valor inicial al guardar
+                    field.disabled = True
+                    
+                    # Estilo visual de "Solo Vista"
+                    widget = field.widget
+                    existing_class = widget.attrs.get('class', '')
+                    if 'bg-slate-100' not in existing_class:
+                        widget.attrs['class'] = existing_class + ' bg-slate-100 cursor-not-allowed border-dashed opacity-80'
+                    
+                    if isinstance(widget, forms.Select):
+                        widget.attrs['style'] = 'pointer-events: none;'
+        return form
 
     def form_valid(self, form):
         if hasattr(form.instance, 'usuario'):
@@ -253,12 +301,11 @@ class HomeView(AccessControlMixin, TemplateView):
         is_superuser = user.is_superuser
         allowed_apps = getattr(self.request, '_allowed_apps', set())
 
-        # ── 1. Consultar módulos para TODOS (Prueba) ──────────────────────────
-        modules_qs = DashboardModule.objects.filter(is_active=True)
-        # if is_superuser:
-        #     modules_qs = DashboardModule.objects.filter(is_active=True)
-        # else:
-        #     modules_qs = DashboardModule.objects.filter(is_active=True, slug__in=allowed_apps)
+        # ── 1. Consultar módulos con filtrado de seguridad ────────────────────
+        if is_superuser:
+            modules_qs = DashboardModule.objects.filter(is_active=True)
+        else:
+            modules_qs = DashboardModule.objects.filter(is_active=True, slug__in=allowed_apps)
 
         all_modules = list(modules_qs.values('name', 'slug', 'description', 'url', 'icon', 'category'))
 
@@ -277,52 +324,65 @@ class HomeView(AccessControlMixin, TemplateView):
                 'icon': m['icon']
             })
         
-        # Agregar reportes individuales solicitados como botones directos (Acceso Inmediato)
-        all_permitted_modules.append({
-            'name': 'Trazabilidad Pacientes',
-            'slug': 'trazabilidad_pacientes',
-            'description': 'Seguimiento Urgencias y Triage',
-            'url': '/consultas/pacientes-urgencias/',
-            'icon': 'M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2'
-        })
-        all_permitted_modules.append({
-            'name': 'Facturación y Ventas',
-            'slug': 'facturacion_ventas',
-            'description': 'Auditoría de Ventas y RIPS',
-            'url': '/consultas/admin/?view=ventas&group_by=global',
-            'icon': 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2'
-        })
-        all_permitted_modules.append({
-            'name': 'Producción Médica',
-            'slug': 'productividad_medica',
-            'description': 'Indicadores de Productividad',
-            'url': '/consultas/produccion-medico/',
-            'icon': 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z'
-        })
-        
-        all_permitted_modules.append({
-            'name': 'Indicadores de Salud',
-            'slug': 'indicadores_salud',
-            'description': 'Dashboard de Gestión Hospitalaria',
-            'url': '/consultas/salud/',
-            'icon': 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z'
-        })
-        
-        all_permitted_modules.append({
-            'name': 'Consultas e Indicadores',
-            'slug': 'consultas_dashboard',
-            'description': 'Dashboard General de Reportes',
-            'url': '/?section=consultas',
-            'icon': 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z'
-        })
-        
-        all_permitted_modules.append({
-            'name': 'Inventarios Nexus',
-            'slug': 'inventarios_nexus',
-            'description': 'Consulta de Documentos e Inventario',
-            'url': '/inventarios/documentos/',
-            'icon': 'M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4'
-        })
+        # ── 3. Agregar reportes y módulos virtuales (Filtrado Estricto) ────────
+        extra_modules = [
+            {
+                'name': 'Trazabilidad Pacientes',
+                'slug': 'trazabilidad_pacientes',
+                'description': 'Seguimiento Urgencias y Triage',
+                'url': '/consultas/pacientes-urgencias/',
+                'icon': 'M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2'
+            },
+            {
+                'name': 'Facturación y Ventas',
+                'slug': 'facturacion_ventas',
+                'description': 'Auditoría de Ventas y RIPS',
+                'url': '/consultas/admin/?view=ventas&group_by=global',
+                'icon': 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2'
+            },
+            {
+                'name': 'Producción Médica',
+                'slug': 'productividad_medica',
+                'description': 'Indicadores de Productividad',
+                'url': '/consultas/produccion-medico/',
+                'icon': 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z'
+            },
+            {
+                'name': 'Indicadores de Salud',
+                'slug': 'indicadores_salud',
+                'description': 'Dashboard de Gestión Hospitalaria',
+                'url': '/consultas/salud/',
+                'icon': 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z'
+            },
+            {
+                'name': 'Consultas e Indicadores',
+                'slug': 'consultas_dashboard',
+                'description': 'Dashboard General de Reportes',
+                'url': '/?section=consultas',
+                'icon': 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z'
+            },
+        ]
+
+        for em in extra_modules:
+            if is_superuser or em['slug'] in allowed_apps:
+                all_permitted_modules.append(em)
+
+        # Módulos de Configuración (Solo Administradores)
+        if is_superuser:
+            all_permitted_modules.append({
+                'name': 'Usuarios y Permisos',
+                'slug': 'gestion_usuarios',
+                'description': 'Administración de accesos y roles',
+                'url': '/gestion/',
+                'icon': 'M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2 M9 7a4 4 0 1 1 0-8 4 4 0 0 1 0 8z'
+            })
+            all_permitted_modules.append({
+                'name': 'Apariencia Sistema',
+                'slug': 'config_perfil',
+                'description': 'Personalización de colores y temas',
+                'url': '/configuracion/apariencia/',
+                'icon': 'M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z'
+            })
         
         show_direct_modules = True # Forzamos vista de botones directa
 
@@ -373,6 +433,7 @@ class HomeView(AccessControlMixin, TemplateView):
         # ── 5. Construir contexto final ───────────────────────────────────────
         context.update({
             'is_superuser':          is_superuser,
+            'is_admin':              is_superuser,
             'all_permitted_modules': all_permitted_modules,
             'show_direct_modules':   show_direct_modules,
             'active_structure':      active_structure,
@@ -481,14 +542,47 @@ class TableDetailView(AccessControlMixin, TemplateView):
                 queryset = queryset[:int(limit)]
                 effective_paginate_by = int(limit)
 
+            # ── 4. Filtros Dinámicos (Padre -> Hijo) ──────────────────────────
+            active_filters = {}
+            for param, value in self.request.GET.items():
+                if param not in ['q', 'limit', 'order', 'page'] and value:
+                    try:
+                        # Verificamos si el campo existe en el modelo para filtrar
+                        model._meta.get_field(param)
+                        queryset = queryset.filter(**{param: value})
+                        active_filters[param] = value
+                    except:
+                        pass
+            context['active_filters'] = active_filters
+
+            # ── 5. Detección de Modelo Hijo (Drill-down) ─────────────────────
+            # Buscamos si existe un modelo correlativo en la misma app (ej: Nivel 1 -> Nivel 2)
+            child_model = None
+            import re
+            match = re.search(r'(\d+)$', model_name)
+            if match:
+                current_num = int(match.group(1))
+                next_model_name = model_name.replace(str(current_num).zfill(len(match.group(1))), str(current_num + 1).zfill(len(match.group(1))))
+                try:
+                    child_model = apps.get_model(module_slug, next_model_name)
+                except LookupError:
+                    pass
+            
+            if child_model:
+                context['child_model_slug'] = child_model._meta.model_name
+                context['child_model_name'] = child_model._meta.verbose_name
+                # Identificar el campo FK que apunta al modelo actual
+                for f in child_model._meta.get_fields():
+                    if f.is_relation and f.related_model == model:
+                        context['child_fk_field'] = f.name
+                        break
+
             # Simple pagination
             paginator = Paginator(queryset, effective_paginate_by)
             page_number = self.request.GET.get('page')
             page_obj = paginator.get_page(page_number)
             
             # Get field names for header
-            fields = [f.name for f in model._meta.get_fields() if f.concrete and not f.is_relation and f.name != 'id'] # Show concrete non-rel fields
-            # Better approach: Show all concrete fields including FKs (as strings)
             fields = [f.name for f in model._meta.get_fields() if f.concrete]
             
             # Prepare rows for template (needs pk + values list)
