@@ -189,6 +189,7 @@
           <span class="px-2 py-0.5 rounded-full text-white text-xs font-bold" style="background:#374151">24h</span>
           <span class="px-2 py-0.5 rounded-full text-white text-xs font-bold" style="background:#059669">Lib</span>
           <span class="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 text-xs font-bold">P/h</span>
+          <span class="px-2 py-0.5 rounded-full text-white text-xs font-bold" style="background:#0d9488">P</span>
         </div>
 
         <!-- Calendario -->
@@ -269,6 +270,7 @@ const TURNOS_OPS = [
   {v:'libre',        l:'Libre'},
   {v:'vacaciones',   l:'V - Vacaciones'},
   {v:'licencia',     l:'LI - Licencia'},
+  {v:'permiso',      l:'P - Permiso'},
 ];
 
 const TURNO_BADGE = {
@@ -279,6 +281,7 @@ const TURNO_BADGE = {
   por_horas:{l:'P/h',bg:'#f59e0b',c:'#78350f'},
   vacaciones:{l:'V',bg:'#16a34a'},
   licencia:{l:'LI',bg:'#9333ea'},
+  permiso:{l:'P',bg:'#0d9488'},
 };
 
 // Estado global
@@ -801,7 +804,7 @@ function rerenderDay(fecha) {
 }
 
 function calcularHorasDia(turno, especial, hd, hn, sigEsp) {
-  if (turno==='libre' || turno==='vacaciones' || turno==='licencia') return [0,0,0,0];
+  if (turno==='libre' || turno==='vacaciones' || turno==='licencia' || turno==='permiso') return [0,0,0,0];
   if (turno==='por_horas') { return especial?[0,0,hd,hn]:[hd,hn,0,0]; }
   if (turno==='noche') {
     if (especial&&sigEsp)  return [0,0,1,11];
@@ -833,7 +836,7 @@ function actualizarResumen(year, month) {
   let hod=0, hon=0, hdf=0, hnf=0;
   keys.forEach(fecha => {
     const info = turnos[fecha];
-    if (info.turno==='libre' || info.turno==='vacaciones' || info.turno==='licencia') return;
+    if (info.turno==='libre' || info.turno==='vacaciones' || info.turno==='licencia' || info.turno==='permiso') return;
     const d = new Date(fecha+'T00:00:00');
     const esp = d.getDay()===0 || fecha in festivos;
     const next = new Date(d); next.setDate(next.getDate()+1);
@@ -845,8 +848,8 @@ function actualizarResumen(year, month) {
 
   document.getElementById('cal-resumen-horas').innerHTML = keys.length ? `
     <span class="text-purple-600"><strong>${hon}h</strong> Ord. Nocturnas (+35%)</span>
-    <span class="text-orange-600"><strong>${hdf}h</strong> Diurnas Festivas (+75%)</span>
-    <span class="text-red-600"><strong>${hnf}h</strong> Noct. Festivas (+110%)</span>` : '';
+    <span class="text-orange-600"><strong>${hdf}h</strong> Diurnas Festivas (+200%)</span>
+    <span class="text-red-600"><strong>${hnf}h</strong> Noct. Festivas (+250%)</span>` : '';
 }
 
 async function guardarObsMensual() {

@@ -1,0 +1,38 @@
+FROM python:3.12-slim
+
+# Dependencias del sistema: ODBC + Playwright/Chromium
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl gnupg2 apt-transport-https \
+    unixodbc-dev \
+    libnss3 libnspr4 libdbus-1-3 libatk1.0-0 libatk-bridge2.0-0 \
+    libcups2 libdrm2 libxkbcommon0 libatspi2.0-0 libx11-6 \
+    libxcomposite1 libxdamage1 libxext6 libxfixes3 libxrandr2 \
+    libgbm1 libpango-1.0-0 libcairo2 libasound2 libglib2.0-0 \
+    && rm -rf /var/lib/apt/lists/*
+
+# ODBC Driver 17 for SQL Server (Debian 12 / Bookworm)
+RUN curl https://packages.microsoft.com/keys/microsoft.asc | apt-key add - \
+    && curl https://packages.microsoft.com/config/debian/12/prod.list \
+       > /etc/apt/sources.list.d/mssql-release.list \
+    && apt-get update \
+    && ACCEPT_EULA=Y apt-get install -y msodbcsql17 \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# Instalar dependencias Python primero (capa cacheada mientras no cambie requirements.txt)
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Instalar navegador Playwright (queda en volumen persistente)
+ENV PLAYWRIGHT_BROWSERS_PATH=/playwright-browsers
+RUN python -m playwright install chromium
+
+# Copiar código fuente
+COPY . .
+
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+EXPOSE 8000
+ENTRYPOINT ["/entrypoint.sh"]
