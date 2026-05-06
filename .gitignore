@@ -45,3 +45,5 @@ sessions/
 .DS_Store
 *.log
 .claude/settings.local.json
+brain/
+.gemini/

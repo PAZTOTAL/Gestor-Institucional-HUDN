@@ -1,0 +1,688 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CONTROL DE TRABAJO DE PARTO</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'unificador_v1/css/sidebar.css' %}">
+    <link rel="stylesheet" href="{% static 'unificador_v1/css/layout-decor.css' %}">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
+</head>
+<body>
+{% include 'obstetricia/header_formatos.html' %}
+
+<div class="page-with-sidebars">
+  {% include 'obstetricia/sidebar.html' with is_panel=False atencion_id=atencion_id documento=documento current_module='parto' %}
+  <aside class="sidebar-decor"><span class="decor-dots"></span></aside>
+  <div class="main-center">
+    <div class="main-wrapper">
+
+      <header class="site-header meows-header-replica">
+        <div class="header-logo-left">
+          <img src="{% static 'img/logo_hospital.png' %}" alt="Logo Hospital">
+        </div>
+        <div class="header-center">
+          <h1 class="header-title">CONTROL DE TRABAJO DE PARTO</h1>
+          <p class="header-subtitle">Hospital Universitario Departamental</p>
+        </div>
+        <div class="header-logo-right">
+          <img src="{% static 'img/logo_acreditacion.png' %}" alt="Logo Acreditación">
+        </div>
+      </header>
+
+        <!-- Encabezado del Formulario -->
+        <div class="meta-box">
+        <!-- Parámetros dinámicos desde estructura (parametro.campos) -->
+        {% if estructura_plana %}
+        <div class="estructura-params" style="margin: 16px 0; padding: 16px; background: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0;">
+            <h4 style="margin: 0 0 12px 0; color: #475569;">Parámetros desde estructura (campos)</h4>
+            {% for item in estructura_plana %}
+            <div style="margin-bottom: 12px;">
+                <label style="display: block; font-weight: 600; margin-bottom: 4px;">{{ item.parametro.nombre }}</label>
+                {% if item.opciones %}
+                <select class="form-input param-select-estructura" data-parametro-id="{{ item.parametro.id }}" style="min-width: 200px;">
+                    <option value="">Seleccione...</option>
+                    {% for op in item.opciones %}
+                    <option value="{{ op.codigo }}">{{ op.nombre }}</option>
+                    {% endfor %}
+                </select>
+                {% else %}
+                <input type="text" class="form-input param-input-estructura" data-parametro-id="{{ item.parametro.id }}" placeholder="{{ item.parametro.nombre }}" style="min-width: 200px;">
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- Campos ocultos para IDs -->
+        <input type="hidden" id="paciente_id" name="paciente_id">
+        <input type="hidden" id="formulario_id" name="formulario_id">
+        <input type="hidden" name="atencion" value="{{ atencion_id|default:'' }}">
+        </div> <!-- /meta-box -->
+
+        <form id="formulario-clinico" method="post">
+            {% csrf_token %}
+
+            <!-- Búsqueda de Paciente -->
+            <div class="patient-search-inline">
+                <input type="text" id="busqueda_paciente" placeholder="Buscar por cédula o diagnóstico (ej: 5206311 o 'embarazo')" class="patient-search-inline-input" style="flex: 1;">
+                <button type="button" id="btnBuscarPaciente" class="patient-search-inline-btn">
+                    BUSCAR PACIENTE
+                </button>
+                <button type="button" id="btnEmbarazosActivos" class="patient-search-inline-btn btn-embarazos-activos" title="Solo actualmente internas en el hospital">
+                    Embarazos activos
+                </button>
+            </div>
+            <div id="resultadoPaciente" style="margin-top: 20px;"></div>
+            
+            <!-- Demografía: consulta unificada (panel / caché). Campos técnicos ocultos para el envío. -->
+            <div class="patient-info-section">
+                <p style="margin:0 0 14px 0;padding:12px 14px;background:#f1f5f9;border-radius:10px;color:#334155;font-size:0.92rem;">
+                    Los datos de identificación, nombres, historia clínica, edad, aseguradora y grupo sanguíneo provienen de la <strong>consulta unificada</strong> (panel de atención o barra lateral). Se rellenan al abrir el formulario con <code>doc</code> en la URL.
+                </p>
+                <div class="patient-info-card-parto patient-info-sync-parto" style="position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden;" aria-hidden="true">
+                    <input type="hidden" id="estado" name="estado" value="g">
+                    <input type="hidden" id="diagnostico" name="diagnostico" value="">
+                    <div class="patient-info-grid">
+                        <div class="info-item">
+                            <label class="info-label" for="fecha_elabora_paciente">FECHA ELABORACIÓN</label>
+                            <input type="date" id="fecha_elabora_paciente" name="fecha_elabora_paciente" class="form-input patient-input">
+                        </div>
+                        <div class="info-item">
+                            <label class="info-label" for="num_identificacion">CC. IDENTIFICACIÓN</label>
+                            <input type="text" id="num_identificacion" name="num_identificacion" class="form-input patient-input" maxlength="255">
+                            <input type="hidden" id="cedula" name="cedula">
+                        </div>
+                        <div class="info-item">
+                            <label class="info-label" for="num_historia_clinica">N° HISTORIA CLÍNICA</label>
+                            <input type="text" id="num_historia_clinica" name="num_historia_clinica" class="form-input patient-input" maxlength="255">
+                        </div>
+                        <div class="info-item span-2">
+                            <label class="info-label" for="nombres">NOMBRE Y APELLIDO</label>
+                            <input type="text" id="nombres" name="nombres" class="form-input patient-input" maxlength="255">
+                            <input type="hidden" id="nombre" name="nombre">
+                        </div>
+                        <div class="info-item">
+                            <label class="info-label" for="edad_snapshot">EDAD</label>
+                            <input type="number" id="edad_snapshot" name="edad_snapshot" class="form-input patient-input" min="0" step="1">
+                        </div>
+                        <div class="info-item">
+                            <label class="info-label" for="aseguradora_nombre">ASEGURADORA</label>
+                            <input type="text" id="aseguradora_nombre" name="aseguradora_nombre" class="form-input patient-input"
+                                   list="aseguradora-list" placeholder="Ej. Sura EPS, Nueva EPS" autocomplete="off">
+                            <datalist id="aseguradora-list"></datalist>
+                        </div>
+                        <div class="info-item span-2">
+                            <label class="info-label" for="tipo_sangre">GRUPO SANGUÍNEO</label>
+                            <select id="tipo_sangre" name="tipo_sangre" class="form-input patient-input">
+                                <option value="">Seleccione...</option>
+                                <option value="O+">O+</option>
+                                <option value="O-">O-</option>
+                                <option value="A+">A+</option>
+                                <option value="A-">A-</option>
+                                <option value="B+">B+</option>
+                                <option value="B-">B-</option>
+                                <option value="AB+">AB+</option>
+                                <option value="AB-">AB-</option>
+                            </select>
+                            <input type="hidden" id="grupo_sanguineo" name="grupo_sanguineo">
+                        </div>
+                        <div class="info-item">
+                            <label class="info-label" for="edad_gestion">EDAD GESTACIONAL</label>
+                            <input type="number" id="edad_gestion" name="edad_gestion" class="form-input patient-input" min="0" step="1">
+                            <input type="hidden" id="edad_gestacional" name="edad_gestacional">
+                        </div>
+                        <div class="info-item">
+                            <label class="info-label" for="n_controles_prenatales">N° CONTROLES PRENATALES</label>
+                            <input type="number" id="n_controles_prenatales" name="n_controles_prenatales" class="form-input patient-input" min="0" step="1">
+                            <input type="hidden" id="controles_prenatales" name="controles_prenatales">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Vista previa clínica: solo mediciones -->
+            <div id="vista-previa-paciente" class="preview-card">
+                <div class="preview-card-header">
+                    <div class="preview-card-title">VISTA PREVIA DE MEDICIONES</div>
+                    <div id="preview-total-controles" class="preview-total-badge">0 REGISTROS</div>
+                </div>
+
+                <div class="preview-card-body">
+                    <div class="preview-section-title">Mediciones por fecha y hora</div>
+                    <div id="preview-mediciones-scroll" class="preview-mediciones-scroll">
+                        <div id="preview-empty-state" class="preview-empty-state">
+                            <span class="preview-empty-icon">📋</span>
+                            <p class="preview-empty-text">No se registran mediciones previas para este paciente todavía.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            
+<!-- Tabla Principal de Control -->
+
+            <!-- Selector Global de Hora -->
+            <div class="global-time-selector" style="margin: 10px 0 14px; width: 100%; background: linear-gradient(135deg, #ffffff 0%, #f8fbff 100%); padding: 10px 12px; border-radius: 10px; box-shadow: 0 3px 10px rgba(37,99,235,0.08); border: 1px solid #dbeafe; border-left: 4px solid #2563eb;">
+                <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: nowrap;">
+                    <label for="hora_registro_actual" style="font-weight: 700; font-size: 0.95em; color: #1d4ed8;">🕒 Hora del control actual:</label>
+                    <input type="datetime-local" id="hora_registro_actual" class="form-input" style="max-width: 240px; font-size: 0.92em; padding: 6px 8px; border-radius: 8px; border: 1px solid #bfdbfe; background: #fff;">
+                    <span id="hora-seleccionada-feedback" style="display: none; color: #059669; font-weight: 700; font-size: 0.78em; background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 999px; padding: 3px 8px;">Hora fijada</span>
+                </div>
+                <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 8px; padding-top: 7px; border-top: 1px dashed #dbeafe; flex-wrap: wrap;">
+                    <p style="color: #475569; font-size: 0.74em; margin: 0;">
+                        Seleccione la hora del registro y luego diligencie los parámetros.
+                    </p>
+                    <button type="button" id="btn-vista-previa" class="btn btn-secondary" onclick="abrirVistaPreviaMediciones()" style="height: 34px; padding: 0 14px; font-size: 0.8em; margin: 0;">
+                        Vista Previa
+                    </button>
+                </div>
+            </div>
+
+            <!-- Panel Clínico de Parámetros (Alineación Horizontal Premium) -->
+            <div class="parameter-buttons-section" style="background: #ffffff; padding: 24px; border-radius: 16px; box-shadow: 0 10px 40px rgba(0,0,0,0.05); margin-bottom: 32px; display: grid; grid-template-columns: repeat(6, 1fr); gap: 16px; border: 1px solid #f1f5f9;">
+                
+                <!-- 1. CONTROLES MATERNOS -->
+                <div class="category-section" style="border-radius: 12px; border: 1px solid #e2e8f0; background: #f8fafc; overflow: hidden; display: flex; flex-direction: column;">
+                    <h3 class="category-title" style="background: #2563eb; color: #fff; padding: 10px 12px; margin: 0; font-size: 0.85em; font-weight: 800; text-align: center; letter-spacing: 0.5px; text-transform: uppercase;">🫀 MATERNOS</h3>
+                    <div class="buttons-container" style="padding: 12px; display: flex; flex-direction: column; gap: 8px; flex-grow: 1;">
+                        <button type="button" class="btn-parametro" id="btn-parametro-1" data-parametro-id="1" data-parametro-nombre="TENSIÓN ARTERIAL" onclick="abrirModalParametro(this)" style="background: #fff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px; cursor: pointer; transition: all 0.2s; font-weight: 600; color: #334155; font-size: 0.78em; display: flex; align-items: center; justify-content: flex-start; gap: 6px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); height: 46px; width: 100%;">
+                            <span class="status-indicator" id="indicator-1" style="width: 8px; height: 8px; border-radius: 50%; background-color: #cbd5e1; flex-shrink: 0;"></span>
+                            💓 T. ARTERIAL
+                        </button>
+                        <button type="button" class="btn-parametro" id="btn-parametro-2" data-parametro-id="2" data-parametro-nombre="FREC. CARDIACA" onclick="abrirModalParametro(this)" style="background: #fff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px; cursor: pointer; transition: all 0.2s; font-weight: 600; color: #334155; font-size: 0.78em; display: flex; align-items: center; justify-content: flex-start; gap: 6px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); height: 46px; width: 100%;">
+                            <span class="status-indicator" id="indicator-2" style="width: 8px; height: 8px; border-radius: 50%; background-color: #cbd5e1; flex-shrink: 0;"></span>
+                            🩺 PULSO
+                        </button>
+                        <button type="button" class="btn-parametro" id="btn-parametro-3" data-parametro-id="3" data-parametro-nombre="FREC. RESPIRATORIA" onclick="abrirModalParametro(this)" style="background: #fff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px; cursor: pointer; transition: all 0.2s; font-weight: 600; color: #334155; font-size: 0.78em; display: flex; align-items: center; justify-content: flex-start; gap: 6px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); height: 46px; width: 100%;">
+                            <span class="status-indicator" id="indicator-3" style="width: 8px; height: 8px; border-radius: 50%; background-color: #cbd5e1; flex-shrink: 0;"></span>
+                            🌬️ RESP.
+                        </button>
+                        <button type="button" class="btn-parametro" id="btn-parametro-4" data-parametro-id="4" data-parametro-nombre="TEMPERATURA" onclick="abrirModalParametro(this)" style="background: #fff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px; cursor: pointer; transition: all 0.2s; font-weight: 600; color: #334155; font-size: 0.78em; display: flex; align-items: center; justify-content: flex-start; gap: 6px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); height: 46px; width: 100%;">
+                            <span class="status-indicator" id="indicator-4" style="width: 8px; height: 8px; border-radius: 50%; background-color: #cbd5e1; flex-shrink: 0;"></span>
+                            🌡️ TEMP.
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 2. CONTRACCIONES UTERINAS -->
+                <div class="category-section" style="border-radius: 12px; border: 1px solid #e0e7ff; background: #fff; overflow: hidden; display: flex; flex-direction: column;">
+                    <h3 class="category-title" style="background: #6366f1; color: #fff; padding: 10px 12px; margin: 0; font-size: 0.85em; font-weight: 800; text-align: center; letter-spacing: 0.5px; text-transform: uppercase;">📉 UTERINAS</h3>
+                    <div class="buttons-container" style="padding: 12px; display: flex; flex-direction: column; gap: 8px; flex-grow: 1;">
+                        <button type="button" class="btn-parametro" id="btn-parametro-5" data-parametro-id="5" data-parametro-nombre="FRECUENCIA" onclick="abrirModalParametro(this)" style="background: #fff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px; cursor: pointer; transition: all 0.2s; font-weight: 600; color: #334155; font-size: 0.78em; display: flex; align-items: center; justify-content: flex-start; gap: 6px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); height: 46px; width: 100%;">
+                            <span class="status-indicator" id="indicator-5" style="width: 8px; height: 8px; border-radius: 50%; background-color: #cbd5e1; flex-shrink: 0;"></span>
+                            🕒 FRECUENCIA
+                        </button>
+                        <button type="button" class="btn-parametro" id="btn-parametro-6" data-parametro-id="6" data-parametro-nombre="DURACIÓN" onclick="abrirModalParametro(this)" style="background: #fff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px; cursor: pointer; transition: all 0.2s; font-weight: 600; color: #334155; font-size: 0.78em; display: flex; align-items: center; justify-content: flex-start; gap: 6px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); height: 46px; width: 100%;">
+                            <span class="status-indicator" id="indicator-6" style="width: 8px; height: 8px; border-radius: 50%; background-color: #cbd5e1; flex-shrink: 0;"></span>
+                            ⏱️ DURACIÓN
+                        </button>
+                        <button type="button" class="btn-parametro" id="btn-parametro-7" data-parametro-id="7" data-parametro-nombre="INTENSIDAD" onclick="abrirModalParametro(this)" style="background: #fff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px; cursor: pointer; transition: all 0.2s; font-weight: 600; color: #334155; font-size: 0.78em; display: flex; align-items: center; justify-content: flex-start; gap: 6px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); height: 46px; width: 100%;">
+                            <span class="status-indicator" id="indicator-7" style="width: 8px; height: 8px; border-radius: 50%; background-color: #cbd5e1; flex-shrink: 0;"></span>
+                            📊 INTENSIDAD
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 3. CONTROL FETAL -->
+                <div class="category-section" style="border-radius: 12px; border: 1px solid #ffe4e6; background: #fff5f5; overflow: hidden; display: flex; flex-direction: column;">
+                    <h3 class="category-title" style="background: #e11d48; color: #fff; padding: 10px 12px; margin: 0; font-size: 0.85em; font-weight: 800; text-align: center; letter-spacing: 0.5px; text-transform: uppercase;">👶 FETAL</h3>
+                    <div class="buttons-container" style="padding: 12px; display: flex; flex-direction: column; gap: 8px; flex-grow: 1;">
+                        <button type="button" class="btn-parametro" id="btn-parametro-8" data-parametro-id="8" data-parametro-nombre="FRECUENCIA CARDIACA FETAL" onclick="abrirModalParametro(this)" style="background: #fff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px; cursor: pointer; transition: all 0.2s; font-weight: 600; color: #334155; font-size: 0.78em; display: flex; align-items: center; justify-content: flex-start; gap: 6px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); height: 46px; width: 100%;">
+                            <span class="status-indicator" id="indicator-8" style="width: 8px; height: 8px; border-radius: 50%; background-color: #cbd5e1; flex-shrink: 0;"></span>
+                            ❤️ F.C.F.
+                        </button>
+                        <button type="button" class="btn-parametro" id="btn-parametro-9" data-parametro-id="9" data-parametro-nombre="MOVIMIENTOS FETALES" onclick="abrirModalParametro(this)" style="background: #fff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px; cursor: pointer; transition: all 0.2s; font-weight: 600; color: #334155; font-size: 0.78em; display: flex; align-items: center; justify-content: flex-start; gap: 6px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); height: 46px; width: 100%;">
+                            <span class="status-indicator" id="indicator-9" style="width: 8px; height: 8px; border-radius: 50%; background-color: #cbd5e1; flex-shrink: 0;"></span>
+                            🦶 MOV. FETAL
+                        </button>
+                        <button type="button" class="btn-parametro" id="btn-parametro-10" data-parametro-id="10" data-parametro-nombre="PRESENTACIÓN" onclick="abrirModalParametro(this)" style="background: #fff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px; cursor: pointer; transition: all 0.2s; font-weight: 600; color: #334155; font-size: 0.78em; display: flex; align-items: center; justify-content: flex-start; gap: 6px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); height: 46px; width: 100%;">
+                            <span class="status-indicator" id="indicator-10" style="width: 8px; height: 8px; border-radius: 50%; background-color: #cbd5e1; flex-shrink: 0;"></span>
+                            📍 PRESENTACIÓN
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 4. TACTO VAGINAL -->
+                <div class="category-section" style="border-radius: 12px; border: 1px solid #fde68a; background: #fffbeb; overflow: hidden; display: flex; flex-direction: column;">
+                    <h3 class="category-title" style="background: #d97706; color: #fff; padding: 10px 12px; margin: 0; font-size: 0.85em; font-weight: 800; text-align: center; letter-spacing: 0.5px; text-transform: uppercase;">🩹 TACTO</h3>
+                    <div class="buttons-container" style="padding: 12px; display: flex; flex-direction: column; gap: 8px; flex-grow: 1;">
+                        <button type="button" class="btn-parametro" id="btn-parametro-11" data-parametro-id="11" data-parametro-nombre="MEMBRANAS INTEGRAS" onclick="abrirModalParametro(this)" style="background: #fff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px; cursor: pointer; transition: all 0.2s; font-weight: 600; color: #334155; font-size: 0.78em; display: flex; align-items: center; justify-content: flex-start; gap: 6px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); height: 46px; width: 100%;">
+                            <span class="status-indicator" id="indicator-11" style="width: 8px; height: 8px; border-radius: 50%; background-color: #cbd5e1; flex-shrink: 0;"></span>
+                            🛡️ INTEGRAS
+                        </button>
+                        <button type="button" class="btn-parametro" id="btn-parametro-12" data-parametro-id="12" data-parametro-nombre="MEMBRANAS ROTAS" onclick="abrirModalParametro(this)" style="background: #fff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px; cursor: pointer; transition: all 0.2s; font-weight: 600; color: #334155; font-size: 0.78em; display: flex; align-items: center; justify-content: flex-start; gap: 6px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); height: 46px; width: 100%;">
+                            <span class="status-indicator" id="indicator-12" style="width: 8px; height: 8px; border-radius: 50%; background-color: #cbd5e1; flex-shrink: 0;"></span>
+                            💥 ROTAS
+                        </button>
+                        <button type="button" class="btn-parametro" id="btn-parametro-13" data-parametro-id="13" data-parametro-nombre="LÍQUIDO AMNIOTICO" onclick="abrirModalParametro(this)" style="background: #fff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px; cursor: pointer; transition: all 0.2s; font-weight: 600; color: #334155; font-size: 0.78em; display: flex; align-items: center; justify-content: flex-start; gap: 6px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); height: 46px; width: 100%;">
+                            <span class="status-indicator" id="indicator-13" style="width: 8px; height: 8px; border-radius: 50%; background-color: #cbd5e1; flex-shrink: 0;"></span>
+                            💧 LÍQUIDO AM.
+                        </button>
+                        <button type="button" class="btn-parametro" id="btn-parametro-15" data-parametro-id="15" data-parametro-nombre="DILATACIÓN" onclick="abrirModalParametro(this)" style="background: #fff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px; cursor: pointer; transition: all 0.2s; font-weight: 600; color: #334155; font-size: 0.78em; display: flex; align-items: center; justify-content: flex-start; gap: 6px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); height: 46px; width: 100%;">
+                            <span class="status-indicator" id="indicator-15" style="width: 8px; height: 8px; border-radius: 50%; background-color: #cbd5e1; flex-shrink: 0;"></span>
+                            ⭕ DILATACIÓN
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 5. MONITOREO FETAL -->
+                <div class="category-section" style="border-radius: 12px; border: 1px solid #d1fae5; background: #f0fdf4; overflow: hidden; display: flex; flex-direction: column;">
+                    <h3 class="category-title" style="background: #10b981; color: #fff; padding: 10px 12px; margin: 0; font-size: 0.85em; font-weight: 800; text-align: center; letter-spacing: 0.5px; text-transform: uppercase;">📟 MONITOREO</h3>
+                    <div class="buttons-container" style="padding: 12px; display: flex; flex-direction: column; gap: 8px; flex-grow: 1;">
+                        <button type="button" class="btn-parametro" id="btn-parametro-17" data-parametro-id="17" data-parametro-nombre="HORA" onclick="abrirModalParametro(this)" style="background: #fff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px; cursor: pointer; transition: all 0.2s; font-weight: 600; color: #334155; font-size: 0.78em; display: flex; align-items: center; justify-content: flex-start; gap: 6px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); height: 46px; width: 100%;">
+                            <span class="status-indicator" id="indicator-17" style="width: 8px; height: 8px; border-radius: 50%; background-color: #cbd5e1; flex-shrink: 0;"></span>
+                            ⏰ HORA
+                        </button>
+                        <button type="button" class="btn-parametro" id="btn-parametro-18" data-parametro-id="18" data-parametro-nombre="CATEGORIA" onclick="abrirModalParametro(this)" style="background: #fff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px; cursor: pointer; transition: all 0.2s; font-weight: 600; color: #334155; font-size: 0.78em; display: flex; align-items: center; justify-content: flex-start; gap: 6px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); height: 46px; width: 100%;">
+                            <span class="status-indicator" id="indicator-18" style="width: 8px; height: 8px; border-radius: 50%; background-color: #cbd5e1; flex-shrink: 0;"></span>
+                            🏷️ CATEGORIA
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 6. OXITOCINA -->
+                <div class="category-section" style="border-radius: 12px; border: 1px solid #f3e8ff; background: #faf5ff; overflow: hidden; display: flex; flex-direction: column;">
+                    <h3 class="category-title" style="background: #9333ea; color: #fff; padding: 10px 12px; margin: 0; font-size: 0.85em; font-weight: 800; text-align: center; letter-spacing: 0.5px; text-transform: uppercase;">💉 MEDICACIÓN</h3>
+                    <div class="buttons-container" style="padding: 12px; display: flex; flex-direction: column; gap: 8px; flex-grow: 1;">
+                        <button type="button" class="btn-parametro" id="btn-parametro-19" data-parametro-id="19" data-parametro-nombre="MILIUNIDADES" onclick="abrirModalParametro(this)" style="background: #fff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px; cursor: pointer; transition: all 0.2s; font-weight: 600; color: #334155; font-size: 0.78em; display: flex; align-items: center; justify-content: flex-start; gap: 6px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); height: 46px; width: 100%;">
+                            <span class="status-indicator" id="indicator-19" style="width: 8px; height: 8px; border-radius: 50%; background-color: #cbd5e1; flex-shrink: 0;"></span>
+                            🩸 MILIUNIDADES
+                        </button>
+                        <button type="button" class="btn-parametro" id="btn-parametro-20" data-parametro-id="20" data-parametro-nombre="CC/H" onclick="abrirModalParametro(this)" style="background: #fff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px; cursor: pointer; transition: all 0.2s; font-weight: 600; color: #334155; font-size: 0.78em; display: flex; align-items: center; justify-content: flex-start; gap: 6px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); height: 46px; width: 100%;">
+                            <span class="status-indicator" id="indicator-20" style="width: 8px; height: 8px; border-radius: 50%; background-color: #cbd5e1; flex-shrink: 0;"></span>
+                            💊 CC/H
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Modales para cada parámetro (dinámicos con selects y opciones) -->
+            <div id="modales-parametros">
+                <style>
+                    @keyframes modalFadeIn { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+                    .btn-parametro:hover { border-color: #2563eb !important; color: #2563eb !important; background: #eff6ff !important; }
+                    .btn-parametro.tiene-datos { border-color: #10b981 !important; background: #ecfdf5 !important; color: #047857 !important; }
+                    .btn-parametro.tiene-datos .status-indicator { background-color: #10b981 !important; }
+                </style>
+                {% for item in items %}
+                    {% for parametro in item.parametros.all %}
+                    <div class="modal-parametro" id="modal-parametro-{{ parametro.id }}" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 1000; justify-content: center; align-items: center; backdrop-filter: blur(2px);">
+                    <div class="modal-content" style="background: #fff; padding: 0; border-radius: 12px; width: 95%; max-width: 500px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); overflow: hidden; animation: modalFadeIn 0.3s ease;">
+                        <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; background: #2563eb; color: white; padding: 15px 20px;">
+                                <h3 style="margin: 0; font-size: 1.25em;">{{ parametro.nombre|upper }}</h3>
+                                <button type="button" onclick="cerrarModalParametro({{ parametro.id }})" style="background: none; border: none; color: white; font-size: 1.8em; cursor: pointer; line-height: 1;">&times;</button>
+                        </div>
+                        <div class="modal-body" style="padding: 20px;">
+                                <div class="cell-inputs" style="display: flex; flex-direction: column; gap: 15px;">
+                                    {% for campo in parametro.campos.all %}
+                                    <div class="input-group" style="display: flex; flex-direction: column; gap: 8px;">
+                                        {% if parametro.campos.count > 1 %}
+                                        <label class="field-label" style="font-weight: 600; font-size: 0.95em; color: #475569;">{{ campo.nombre }}</label>
+                                        {% endif %}
+                                        {% if parametro.id == 1 and campo.id == 1 %}
+                                        <select class="data-input-modal form-input" data-parametro-id="{{ parametro.id }}" data-campo-id="{{ campo.id }}" data-tipo-valor="{{ campo.tipo_valor }}" style="width: 100%; padding: 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 1em;">
+                                            <option value="">Seleccione...</option>
+                                            <option value="70">70</option><option value="80">80</option><option value="90">90</option><option value="100">100</option><option value="110">110</option><option value="120">120</option><option value="130">130</option><option value="140">140</option><option value="150">150</option><option value="160">160</option><option value="170">170</option><option value="180">180</option><option value="190">190</option><option value="200">200</option><option value="210">210</option><option value="220">220</option>
+                                        </select>
+                                        {% elif parametro.id == 1 and campo.id == 2 %}
+                                        <select class="data-input-modal form-input" data-parametro-id="{{ parametro.id }}" data-campo-id="{{ campo.id }}" data-tipo-valor="{{ campo.tipo_valor }}" style="width: 100%; padding: 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 1em;">
+                                            <option value="">Seleccione...</option>
+                                            <option value="40">40</option><option value="50">50</option><option value="60">60</option><option value="70">70</option><option value="80">80</option><option value="90">90</option><option value="100">100</option><option value="110">110</option><option value="120">120</option><option value="130">130</option><option value="140">140</option>
+                                        </select>
+                                        {% elif parametro.id == 2 and campo.id == 3 %}
+                                        <select class="data-input-modal form-input" data-parametro-id="{{ parametro.id }}" data-campo-id="{{ campo.id }}" data-tipo-valor="{{ campo.tipo_valor }}" style="width: 100%; padding: 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 1em;">
+                                            <option value="">Seleccione...</option>
+                                            <option value="<40">< 40 Bradicardia severa</option><option value="40-59">40 – 59 Bradicardia</option><option value="60-100">60 – 100 Normal</option><option value="101-120">101 – 120 Taquicardia leve</option><option value="121-150">121 – 150 Taquicardia</option><option value=">150">> 150 Taquicardia severa</option>
+                                        </select>
+                                        {% elif parametro.id == 3 and campo.id == 4 %}
+                                        <select class="data-input-modal form-input" data-parametro-id="{{ parametro.id }}" data-campo-id="{{ campo.id }}" data-tipo-valor="{{ campo.tipo_valor }}" style="width: 100%; padding: 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 1em;">
+                                            <option value="">Seleccione...</option>
+                                            <option value="<8">< 8 Bradipnea</option><option value="8-11">8 – 11 FR baja</option><option value="12-20">12 – 20 Normal</option><option value="21-30">21 – 30 Taquipnea</option><option value=">30">> 30 Distrés respiratorio</option>
+                                        </select>
+                                        {% elif parametro.id == 4 and campo.id == 5 %}
+                                        <select class="data-input-modal form-input" data-parametro-id="{{ parametro.id }}" data-campo-id="{{ campo.id }}" data-tipo-valor="{{ campo.tipo_valor }}" style="width: 100%; padding: 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 1em;">
+                                            <option value="">Seleccione...</option>
+                                            <option value="<32.0">< 32.0 Hipotermia profunda</option><option value="32.0-34.9">32.0 – 34.9 Hipotermia moderada</option><option value="35.0-35.9">35.0 – 35.9 Hipotermia leve</option><option value="36.0-37.4">36.0 – 37.4 Normotermia</option><option value="37.5-37.9">37.5 – 37.9 Febrícula</option><option value="38.0-38.9">38.0 – 38.9 Fiebre</option><option value="39.0-40.9">39.0 – 40.9 Hipertermia</option><option value=">=41.0">≥ 41.0 Emergencia vital</option>
+                                        </select>
+                                        {% elif parametro.id == 5 and campo.id == 16 %}
+                                        <select class="data-input-modal form-input" data-parametro-id="{{ parametro.id }}" data-campo-id="{{ campo.id }}" data-tipo-valor="{{ campo.tipo_valor }}" style="width: 100%; padding: 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 1em;">
+                                            <option value="">Seleccione...</option>
+                                            <option value="0">0 Sin dinámica</option><option value="1-2">1–2 Fase latente</option><option value="3-5">3–5 Trabajo activo</option><option value=">5">> 5 Taquisistolia</option>
+                                        </select>
+                                        {% elif parametro.id == 6 and campo.id == 17 %}
+                                        <select class="data-input-modal form-input" data-parametro-id="{{ parametro.id }}" data-campo-id="{{ campo.id }}" data-tipo-valor="{{ campo.tipo_valor }}" style="width: 100%; padding: 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 1em;">
+                                            <option value="">Seleccione...</option>
+                                            <option value="<30">< 30 Ineficaz</option><option value="30-60">30 – 60 Normal</option><option value="61-90">61 – 90 Fuerte</option><option value=">90">> 90 Riesgo fetal</option>
+                                        </select>
+                                        {% elif parametro.id == 7 and campo.id == 9 %}
+                                        <select class="data-input-modal form-input" data-parametro-id="{{ parametro.id }}" data-campo-id="{{ campo.id }}" data-tipo-valor="{{ campo.tipo_valor }}" style="width: 100%; padding: 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 1em;">
+                                            <option value="">Seleccione...</option>
+                                            <option value="0">0 Ausente</option><option value="1">1 Leve (+)</option><option value="2">2 Moderada (++)</option><option value="3">3 Fuerte (+++)</option><option value="4">4 Hipertónica</option>
+                                        </select>
+                                        {% elif parametro.id == 8 and campo.id == 6 %}
+                                        <select class="data-input-modal form-input" data-parametro-id="{{ parametro.id }}" data-campo-id="{{ campo.id }}" data-tipo-valor="{{ campo.tipo_valor }}" style="width: 100%; padding: 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 1em;">
+                                            <option value="">Seleccione...</option>
+                                            <option value="<100">< 100 Bradicardia severa</option><option value="100-109">100 – 109 Bradicardia</option><option value="110-160">110 – 160 Normal</option><option value="161-180">161 – 180 Taquicardia</option><option value=">180">> 180 Taquicardia severa</option>
+                                        </select>
+                                        {% elif parametro.id == 9 and campo.id == 10 %}
+                                        <select class="data-input-modal form-input" data-parametro-id="{{ parametro.id }}" data-campo-id="{{ campo.id }}" data-tipo-valor="{{ campo.tipo_valor }}" style="width: 100%; padding: 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 1em;">
+                                            <option value="">Seleccione...</option>
+                                            <option value="0">0 - Ausentes</option><option value="1">1 - Disminuidos</option><option value="2">2 - Presentes</option><option value="3">3 - Exagerados</option>
+                                        </select>
+                                        {% elif parametro.id == 10 and campo.id == 11 %}
+                                        <select class="data-input-modal form-input" data-parametro-id="{{ parametro.id }}" data-campo-id="{{ campo.id }}" data-tipo-valor="{{ campo.tipo_valor }}" style="width: 100%; padding: 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 1em;">
+                                            <option value="">Seleccione...</option>
+                                            <option value="Cefálica">Cefálica</option><option value="Podálica">Podálica</option><option value="Transversa">Transversa</option><option value="Oblicua">Oblicua</option><option value="Compuesta">Compuesta</option>
+                                        </select>
+                                        {% elif parametro.id == 11 and campo.id == 14 %}
+                                        <select class="data-input-modal form-input" data-parametro-id="{{ parametro.id }}" data-campo-id="{{ campo.id }}" data-tipo-valor="{{ campo.tipo_valor }}" style="width: 100%; padding: 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 1em;">
+                                            <option value="">Seleccione...</option>
+                                            <option value="Sí - Bolsa amniótica íntegra">Sí - Bolsa amniótica íntegra</option><option value="No - Ya hubo ruptura">No - Ya hubo ruptura</option>
+                                        </select>
+                                        {% elif parametro.id == 12 and campo.id == 15 %}
+                                        <select class="data-input-modal form-input" data-parametro-id="{{ parametro.id }}" data-campo-id="{{ campo.id }}" data-tipo-valor="{{ campo.tipo_valor }}" style="width: 100%; padding: 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 1em;">
+                                            <option value="">Seleccione...</option>
+                                            <option value="No - Membranas aún íntegras">No - Membranas aún íntegras</option><option value="Sí – Espontánea o artificial">Sí – Espontánea o artificial</option>
+                                        </select>
+                                        {% elif parametro.id == 13 and campo.id == 12 %}
+                                        <select class="data-input-modal form-input" data-parametro-id="{{ parametro.id }}" data-campo-id="{{ campo.id }}" data-tipo-valor="{{ campo.tipo_valor }}" style="width: 100%; padding: 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 1em;">
+                                            <option value="">Seleccione...</option>
+                                            <option value="Claro">Claro</option><option value="Meconio leve">Meconio leve</option><option value="Meconio espeso">Meconio espeso</option><option value="Hemático">Hemático</option><option value="Turbio">Turbio</option><option value="Fétido">Fétido</option>
+                                        </select>
+                                        {% elif parametro.id == 14 and campo.id == 18 %}
+                                        <input type="time" class="data-input-modal form-input" data-parametro-id="{{ parametro.id }}" data-campo-id="{{ campo.id }}" data-tipo-valor="{{ campo.tipo_valor }}" placeholder="Tiempo" style="width: 100%; padding: 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 1em;">
+                                        {% elif parametro.id == 15 and campo.id == 7 %}
+                                        <select class="data-input-modal form-input" data-parametro-id="{{ parametro.id }}" data-campo-id="{{ campo.id }}" data-tipo-valor="{{ campo.tipo_valor }}" style="width: 100%; padding: 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 1em;">
+                                            <option value="">Seleccione...</option>
+                                            <option value="0–3 Latente">0–3 Latente</option><option value="4–6 Activa">4–6 Activa</option><option value="7–9 Transición">7–9 Transición</option><option value="10 Completa">10 Completa</option>
+                                        </select>
+                                        {% elif parametro.id == 17 and campo.id == 19 %}
+                                        <input type="time" class="data-input-modal form-input" data-parametro-id="{{ parametro.id }}" data-campo-id="{{ campo.id }}" data-tipo-valor="{{ campo.tipo_valor }}" placeholder="Tiempo" style="width: 100%; padding: 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 1em;">
+                                        {% elif parametro.id == 18 and campo.id == 13 %}
+                                        <select class="data-input-modal form-input" data-parametro-id="{{ parametro.id }}" data-campo-id="{{ campo.id }}" data-tipo-valor="{{ campo.tipo_valor }}" style="width: 100%; padding: 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 1em;">
+                                            <option value="">Seleccione...</option>
+                                            <option value="Categoría I (Normal)">Categoría I (Normal)</option><option value="Categoría II (Indeterminada)">Categoría II (Indeterminada)</option><option value="Categoría III (Patológica)">Categoría III (Patológica)</option><option value="No evaluable">No evaluable</option>
+                                        </select>
+                                        {% elif parametro.id == 19 and campo.id == 20 %}
+                                        <select class="data-input-modal form-input" data-parametro-id="{{ parametro.id }}" data-campo-id="{{ campo.id }}" data-tipo-valor="{{ campo.tipo_valor }}" style="width: 100%; padding: 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 1em;">
+                                            <option value="">Seleccione...</option>
+                                            <option value="0 No uso">0 No uso</option><option value="1 – 5 Dosis baja">1 – 5 Dosis baja</option><option value="6 – 20 Terapéutica">6 – 20 Terapéutica</option><option value="> 20 Riesgo">> 20 Riesgo</option>
+                                        </select>
+                                        {% else %}
+                                        <input type="text" class="data-input-modal form-input" data-parametro-id="{{ parametro.id }}" data-campo-id="{{ campo.id }}" data-tipo-valor="{{ campo.tipo_valor }}" placeholder="{{ campo.nombre }}" style="width: 100%; padding: 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 1em;">
+                                        {% endif %}
+                        </div>
+                                    {% endfor %}
+                    </div>
+                        </div>
+                        <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 10px; background: #f8fafc; padding: 15px 20px; border-top: 1px solid #e2e8f0;">
+                                <button type="button" class="btn btn-secondary" onclick="cerrarModalParametro({{ parametro.id }})" style="padding: 10px 20px; background: #64748b; color: white; border: none; border-radius: 6px; cursor: pointer;">Cerrar</button>
+                                <button type="button" class="btn btn-primary" onclick="guardarTemporalParametro({{ parametro.id }})" style="padding: 10px 20px; background: #10b981; color: white; border: none; border-radius: 6px; cursor: pointer;">Guardar Dato</button>
+                        </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% endfor %}
+                </div>
+
+            <!-- SECCIÓN DE BIOMETRÍA Y FIRMA -->
+            <style>
+            .biometria-card {
+                margin: 24px 0;
+                background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
+                border-radius: 16px;
+                box-shadow: 0 4px 20px rgba(15, 76, 129, 0.08), 0 1px 3px rgba(0,0,0,0.06);
+                border: 1px solid rgba(15, 76, 129, 0.12);
+                overflow: hidden;
+                transition: box-shadow 0.3s ease, transform 0.2s ease;
+            }
+            .biometria-card:hover { box-shadow: 0 8px 30px rgba(15, 76, 129, 0.12); }
+            .biometria-header {
+                display: flex; align-items: center; gap: 12px;
+                padding: 18px 24px;
+                background: linear-gradient(135deg, #0f4c81 0%, #1e5a9e 50%, #0d3d6b 100%);
+                color: #fff;
+            }
+            .biometria-header-icon {
+                width: 44px; height: 44px;
+                background: rgba(255,255,255,0.2);
+                border-radius: 12px;
+                display: flex; align-items: center; justify-content: center;
+                font-size: 1.4em;
+            }
+            .biometria-header h3 {
+                margin: 0; font-size: 1.15em; font-weight: 600;
+                letter-spacing: 0.02em;
+            }
+            .biometria-grid {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 0;
+                min-height: 200px;
+            }
+            .biometria-col {
+                display: flex; flex-direction: column; align-items: center; justify-content: center;
+                padding: 28px 24px;
+                gap: 16px;
+                position: relative;
+                transition: background 0.25s ease;
+            }
+            .biometria-col:hover { background: rgba(248,250,252,0.8); }
+            .biometria-col.huella-col {
+                border-right: 1px solid #e2e8f0;
+                background: linear-gradient(180deg, rgba(20,184,166,0.04) 0%, transparent 100%);
+            }
+            .biometria-col.firma-col {
+                background: linear-gradient(180deg, rgba(99,102,241,0.04) 0%, transparent 100%);
+            }
+            .biometria-preview {
+                min-height: 100px;
+                display: flex; align-items: center; justify-content: center;
+                border-radius: 12px;
+                border: 2px dashed #cbd5e1;
+                background: #f8fafc;
+                padding: 12px;
+                transition: border-color 0.2s, background 0.2s;
+            }
+            .biometria-col.huella-col .biometria-preview { border-color: rgba(20,184,166,0.4); background: rgba(20,184,166,0.06); }
+            .biometria-col.firma-col .biometria-preview { border-color: rgba(99,102,241,0.4); background: rgba(99,102,241,0.06); }
+            .biometria-preview img { max-height: 100px; max-width: 140px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+            .biometria-estado {
+                font-size: 0.9em; font-weight: 500;
+                padding: 6px 14px;
+                border-radius: 20px;
+                display: inline-flex; align-items: center; gap: 6px;
+            }
+            .biometria-col.huella-col .biometria-estado { background: rgba(20,184,166,0.12); color: #0d9488; }
+            .biometria-col.firma-col .biometria-estado { background: rgba(99,102,241,0.12); color: #4f46e5; }
+            .biometria-btns { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
+            .btn-biometria {
+                padding: 10px 18px;
+                font-size: 0.88em;
+                font-weight: 600;
+                border-radius: 10px;
+                cursor: pointer;
+                border: none;
+                transition: all 0.2s ease;
+                display: inline-flex; align-items: center; gap: 6px;
+            }
+            .btn-biometria-primary {
+                background: linear-gradient(135deg, #14b8a6 0%, #0d9488 100%);
+                color: #fff;
+                box-shadow: 0 2px 8px rgba(20,184,166,0.35);
+            }
+            .btn-biometria-primary:hover {
+                transform: translateY(-1px);
+                box-shadow: 0 4px 12px rgba(20,184,166,0.45);
+            }
+            .btn-biometria-firma {
+                background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+                color: #fff;
+                box-shadow: 0 2px 8px rgba(99,102,241,0.35);
+            }
+            .btn-biometria-firma:hover {
+                transform: translateY(-1px);
+                box-shadow: 0 4px 12px rgba(99,102,241,0.45);
+            }
+            .btn-biometria-secondary {
+                background: #fff;
+                color: #475569;
+                border: 1.5px solid #e2e8f0;
+            }
+            .btn-biometria-secondary:hover {
+                background: #f1f5f9;
+                border-color: #cbd5e1;
+            }
+            @media (max-width: 640px) {
+                .biometria-grid { grid-template-columns: 1fr; }
+                .biometria-col.huella-col { border-right: none; border-bottom: 1px solid #e2e8f0; }
+            }
+            </style>
+            <div class="biometria-card category-card biometria-section">
+                <div class="biometria-header">
+                    <div class="biometria-header-icon">✍️</div>
+                    <h3 class="category-title">FIRMA DEL RESPONSABLE</h3>
+                </div>
+                <div class="biometria-grid" style="grid-template-columns: 1fr;">
+                    <!-- Solo Firma del Responsable -->
+                    <div id="firma-container" class="biometria-col firma-col">
+                        <div class="biometria-preview">
+                            <img id="imgFirma" src="" alt="Firma" style="display:none;">
+                        </div>
+                        <div id="estadoFirma" class="biometria-estado">✍️ Pendiente de firma...</div>
+                        <div class="biometria-btns">
+                            <button type="button" id="btnCapturarFirma" class="btn-biometria btn-biometria-firma" onclick="abrirModalFirma()">✍️ FIRMAR AQUÍ</button>
+                            <button type="button" id="btnCapturarFirmaTablet" class="btn-biometria btn-biometria-secondary" onclick="activarCapturaTablet('firma')">📱 Firmar en tablet</button>
+                            <button type="button" id="btnRefrescarBiometriaFirma" class="btn-biometria btn-biometria-secondary" onclick="refrescarBiometriaAhora()">🔄 Refrescar</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+<!-- Pie del Formulario -->
+            <div class="form-footer">
+                <div class="responsible-field">
+                    <label>RESPONSABLE:</label>
+                    <input type="text" id="responsable" name="responsable" 
+                           class="responsible-input" required maxlength="255">
+                </div>
+                <div class="form-actions">
+                    <button type="button" id="btn-buscar-paciente" class="btn btn-secondary">Buscar Paciente</button>
+                    <button type="submit" id="btn-guardar" class="btn btn-primary">Guardar Formulario</button>
+                    <br>
+                    <button type="button" id="btn-descargar-pdf" class="btn btn-pdf" onclick="descargarPDF()" style="display: none; background: #dc2626; color: #ffffff; padding: 12px 24px; border-radius: 8px; border: none; font-weight: 600; cursor: pointer; margin-top: 10px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">📄 Descargar PDF Reporte</button>
+                </div>
+            </div>
+        </form>
+
+    </div> <!-- /main-wrapper -->
+  </div> <!-- /main-center -->
+  <aside class="sidebar-decor"><span class="decor-dots"></span></aside>
+</div> <!-- /page-with-sidebars -->
+
+<!-- Modal de captura de firma (PC) -->
+<div id="modalFirma" class="modal-firma-overlay" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 9999; align-items: center; justify-content: center;">
+    <div class="modal-firma-content" style="background: #fff; border-radius: 12px; max-width: 500px; width: 90%; box-shadow: 0 20px 40px rgba(0,0,0,0.2); overflow: hidden;">
+        <div class="modal-firma-header" style="display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; background: #f8fafc; border-bottom: 1px solid #e2e8f0;">
+            <h3 style="margin: 0; font-size: 1.1em; color: #334155;">✍️ Capturar Firma del Responsable</h3>
+            <button type="button" class="close-modal-btn" onclick="cerrarModalFirma()" style="background: none; border: none; font-size: 1.5em; cursor: pointer; color: #64748b; padding: 0 8px;">&times;</button>
+        </div>
+        <div class="modal-firma-body" style="padding: 20px;">
+            <p style="margin: 0 0 12px 0; color: #64748b; font-size: 0.95em;">Por favor, firme dentro del recuadro:</p>
+            <div class="signature-pad-wrapper" style="border: 2px dashed #cbd5e1; border-radius: 8px; background: #f8fafc;">
+                <canvas id="signature-pad" class="signature-pad-canvas" style="width: 100%; height: 180px; touch-action: none; cursor: crosshair;"></canvas>
+            </div>
+        </div>
+        <div class="modal-firma-footer" style="display: flex; gap: 12px; justify-content: flex-end; padding: 16px 20px; background: #f8fafc; border-top: 1px solid #e2e8f0;">
+            <button type="button" onclick="limpiarFirma()" style="padding: 8px 16px; background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 6px; cursor: pointer;">Limpiar</button>
+            <button type="button" onclick="guardarFirmaDigital()" style="padding: 8px 16px; background: #2563eb; color: #fff; border: none; border-radius: 6px; cursor: pointer;">Guardar Firma</button>
+        </div>
+    </div>
+</div>
+
+<script src="{% static 'unificador_v1/js/paciente_unificado_cache.js' %}"></script>
+<!-- Configuración de la aplicación (debe cargarse antes de main.js) -->
+<script src="{% static 'js/config.js' %}"></script>
+<script src="{% static 'js/main.js' %}"></script>
+<script>
+(function() {
+  const docFromCard = "{{ documento|default:''|escapejs }}".trim();
+  if (!docFromCard) return;
+  function aplicarPartoDesdeUnificado(data) {
+    if (!data || !data.ok || !data.encontrado) return;
+    const set = function(id, val) {
+      const el = document.getElementById(id);
+      if (el && val != null && val !== '') el.value = val;
+    };
+    const setIfEmpty = function(id, val) {
+      const el = document.getElementById(id);
+      if (!el || val == null || String(val).trim() === '') return;
+      if (el.value && String(el.value).trim() !== '') return;
+      el.value = String(val).trim();
+    };
+    set('nombres', data.nombre_completo || data.nombres);
+    if (data.num_historia_clinica && String(data.num_historia_clinica).trim()) {
+      set('num_historia_clinica', String(data.num_historia_clinica).trim());
+    } else {
+      set('num_historia_clinica', 'HC-' + docFromCard);
+    }
+    setIfEmpty('aseguradora_nombre', data.aseguradora);
+    setIfEmpty('edad_snapshot', data.edad != null && data.edad !== '' ? String(data.edad) : '');
+    setIfEmpty('edad_gestion', data.edad_gestacional != null && data.edad_gestacional !== '' ? String(data.edad_gestacional) : '');
+    const ts = (data.tipo_sangre || '').trim();
+    if (ts) {
+      const sel = document.getElementById('tipo_sangre');
+      if (sel) {
+        const okOpt = Array.prototype.slice.call(sel.options).some(function(o) { return (o.value || '').trim() === ts; });
+        if (okOpt) sel.value = ts;
+        else setIfEmpty('tipo_sangre', ts);
+      }
+    }
+    setIfEmpty('responsable', data.responsable);
+    setIfEmpty('n_controles_prenatales', data.n_controles_prenatales != null && data.n_controles_prenatales !== '' ? String(data.n_controles_prenatales) : '');
+    setIfEmpty('diagnostico', data.diagnostico);
+    if (typeof setValorInput === 'function') {
+      setValorInput('nombres', document.getElementById('nombres') && document.getElementById('nombres').value);
+      setValorInput('aseguradora_nombre', document.getElementById('aseguradora_nombre') && document.getElementById('aseguradora_nombre').value);
+      setValorInput('edad_snapshot', document.getElementById('edad_snapshot') && document.getElementById('edad_snapshot').value);
+      setValorInput('edad_gestion', document.getElementById('edad_gestion') && document.getElementById('edad_gestion').value);
+    }
+  }
+  function runWhenReady() {
+    if (document.readyState !== 'complete') {
+      setTimeout(runWhenReady, 50);
+      return;
+    }
+    const numIdent = document.getElementById('num_identificacion');
+    const busqueda = document.getElementById('busqueda_paciente');
+    if (numIdent) numIdent.value = docFromCard;
+    if (busqueda) busqueda.value = docFromCard;
+    if (window.ObstetriciaPacienteUnificado) {
+      window.ObstetriciaPacienteUnificado.ensure(docFromCard).then(aplicarPartoDesdeUnificado);
+    } else {
+      fetch(window.location.origin + '/atencion/api/datos-paciente-unificado/?doc=' + encodeURIComponent(docFromCard))
+        .then(function(r) { return r.json(); })
+        .then(aplicarPartoDesdeUnificado)
+        .catch(function() {});
+    }
+  }
+  if (document.readyState === 'complete') {
+    runWhenReady();
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+  } else {
+    window.addEventListener('load', function() {
+      runWhenReady();
+      if (typeof lucide !== 'undefined') lucide.createIcons();
+    });
+  }
+})();
+</script>
+</body>
+</html>
+

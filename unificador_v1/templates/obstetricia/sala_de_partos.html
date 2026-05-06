@@ -2175,9 +2175,14 @@
                 timelineSection.style.display = 'none';
             }
 
-            if (document.getElementById('link-meows')) document.getElementById('link-meows').href = `/meows/crear/?doc=${encodeURIComponent(docLink)}`;
+            if (document.getElementById('link-meows')) document.getElementById('link-meows').href = `/meows/crear/?doc=${encodeURIComponent(docLink)}&atencion=${atencion_id}`;
             if (document.getElementById('link-fetal')) document.getElementById('link-fetal').href = `/fetal/?doc=${encodeURIComponent(docLink)}&atencion=${atencion_id}`;
             if (document.getElementById('link-parto')) document.getElementById('link-parto').href = `/parto/?doc=${encodeURIComponent(docLink)}&atencion=${atencion_id}`;
+
+            // Actualizar también los enlaces del SIDEBAR para navegación directa
+            if (document.getElementById('side-link-meows')) document.getElementById('side-link-meows').href = `/meows/crear/?doc=${encodeURIComponent(docLink)}&atencion=${atencion_id}`;
+            if (document.getElementById('side-link-fetal')) document.getElementById('side-link-fetal').href = `/fetal/?doc=${encodeURIComponent(docLink)}&atencion=${atencion_id}`;
+            if (document.getElementById('side-link-parto')) document.getElementById('side-link-parto').href = `/parto/?doc=${encodeURIComponent(docLink)}&atencion=${atencion_id}`;
 
             lucide.createIcons();
 

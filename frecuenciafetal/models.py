@@ -1,12 +1,11 @@
 from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator
 import uuid
-from unificador_v1.models import AtencionParto
 
 class RegistroParto(models.Model):
     """Modelo principal del formato FRSPA-007"""
     atencion = models.ForeignKey(
-        AtencionParto,
+        'obstetricia.AtencionParto',
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
