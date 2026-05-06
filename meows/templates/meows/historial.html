@@ -1,0 +1,247 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Historial MEOWS — {{ paciente.nombres }} {{ paciente.apellidos }}</title>
+    <link rel="stylesheet" href="{% static 'css/meows-form.css' %}">
+    <link rel="stylesheet" href="{% static 'css/meows-historial.css' %}">
+    <link rel="stylesheet" href="{% static 'unificador_v1/css/sidebar.css' %}">
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+</head>
+<body class="meows-historial-body">
+{% include 'obstetricia/header_formatos.html' %}
+
+<div class="app-layout-sidebar meows-historial-layout">
+    {% include 'obstetricia/sidebar.html' with documento=paciente.numero_documento|default:'' current_module='meows' %}
+
+    <div class="sidebar-main-content meows-historial-main">
+        <div class="container meows-historial-container">
+
+            <header class="header mh-page-header">
+                <div class="header-left">
+                    <img src="{% static 'img/logo_hospital.png' %}" alt="Logo Hospital" class="logo-hospital" width="120" height="auto">
+                </div>
+                <div class="header-content">
+                    <p class="mh-kicker">Módulo MEOWS</p>
+                    <h1 class="title">Historial clínico</h1>
+                    <h2 class="subtitle">Evolución del estado obstétrico (alerta temprana)</h2>
+                </div>
+                <div class="header-right">
+                    <img src="{% static 'img/logo_acreditacion.png' %}" alt="Logo Acreditación" class="logo-acreditacion" width="100" height="auto">
+                </div>
+            </header>
+
+            <div class="mh-toolbar" role="navigation" aria-label="Acciones del historial">
+                <div class="mh-toolbar-group">
+                    {% if paciente.numero_documento %}
+                    <a href="{% url 'abrir_meows_desde_atencion_doc' doc=paciente.numero_documento %}" class="mh-btn mh-btn-secondary">
+                        <span class="mh-btn-icon" aria-hidden="true">📋</span>
+                        Ir al formulario MEOWS
+                    </a>
+                    {% endif %}
+                </div>
+                <p class="mh-toolbar-meta">
+                    Paciente ID <strong>{{ paciente.id }}</strong>
+                    {% if paciente.numero_documento %}· Doc. {{ paciente.numero_documento }}{% endif %}
+                </p>
+            </div>
+
+            <section class="mh-patient-card" aria-labelledby="mh-patient-heading">
+                <div class="mh-patient-card-head">
+                    <h3 id="mh-patient-heading" class="mh-patient-card-title">
+                        <span class="mh-patient-card-icon" aria-hidden="true">👤</span>
+                        Datos del paciente
+                    </h3>
+                </div>
+                <div class="patient-info-grid mh-patient-grid">
+                    <div class="info-item mh-info-item mh-info-item--nombre">
+                        <span class="info-label">Nombre completo</span>
+                        <div class="info-value">{{ paciente.nombres }} {{ paciente.apellidos }}</div>
+                    </div>
+                    <div class="info-item mh-info-item">
+                        <span class="info-label">Documento</span>
+                        <div class="info-value">{{ paciente.numero_documento|default:"—" }}</div>
+                    </div>
+                    {% if paciente.edad %}
+                    <div class="info-item mh-info-item">
+                        <span class="info-label">Edad</span>
+                        <div class="info-value">{{ paciente.edad }} años</div>
+                    </div>
+                    {% endif %}
+                    {% if paciente.aseguradora %}
+                    <div class="info-item mh-info-item">
+                        <span class="info-label">Aseguradora</span>
+                        <div class="info-value">{{ paciente.aseguradora }}</div>
+                    </div>
+                    {% endif %}
+                    {% if paciente.cama %}
+                    <div class="info-item mh-info-item">
+                        <span class="info-label">Cama</span>
+                        <div class="info-value">{{ paciente.cama }}</div>
+                    </div>
+                    {% endif %}
+                </div>
+            </section>
+
+            <section class="section timeline-section mh-timeline-wrap" aria-labelledby="mh-timeline-heading">
+                <div class="mh-section-head">
+                    <h3 id="mh-timeline-heading" class="section-title mh-section-title">
+                        <span class="icon" aria-hidden="true">📊</span>
+                        Línea de tiempo de mediciones
+                    </h3>
+                    <p class="mh-section-lead">Vista en cuadrícula: del más reciente al más antiguo. Muchas mediciones visibles a la vez.</p>
+                </div>
+
+                {% if mediciones_data %}
+                <div class="mh-mediciones-grid" role="list">
+                    {% for item in mediciones_data %}
+                    {% with medicion=item.medicion valores=item.valores %}
+                    <article class="mh-medicion-card timeline-content riesgo-{{ medicion.meows_riesgo|default:'none'|lower }}" role="listitem">
+                            <div class="medicion-header mh-medicion-card-head">
+                                <div class="medicion-time mh-medicion-time">
+                                    <span class="time-icon" aria-hidden="true">🕒</span>
+                                    <span class="time-text">{{ medicion.fecha_hora|date:"H:i" }}</span>
+                                    <span class="time-date">{{ medicion.fecha_hora|date:"d/m/Y" }}</span>
+                                </div>
+                                <div class="medicion-score mh-medicion-score">
+                                    <span class="score-label">Score</span>
+                                    <span class="score-value score-{{ medicion.meows_total|default:0 }}">{{ medicion.meows_total|default:"—" }}</span>
+                                </div>
+                                <div class="medicion-riesgo mh-medicion-riesgo">
+                                    {% if medicion.meows_riesgo == "BLANCO" %}
+                                        <span class="riesgo-badge riesgo-blanco" title="Riesgo BLANCO">⚪</span>
+                                    {% elif medicion.meows_riesgo == "VERDE" %}
+                                        <span class="riesgo-badge riesgo-verde" title="Riesgo VERDE">🟢</span>
+                                    {% elif medicion.meows_riesgo == "AMARILLO" %}
+                                        <span class="riesgo-badge riesgo-amarillo" title="Riesgo AMARILLO">🟡</span>
+                                    {% elif medicion.meows_riesgo == "ROJO" %}
+                                        <span class="riesgo-badge riesgo-rojo" title="Riesgo ROJO">🔴</span>
+                                    {% else %}
+                                        <span class="riesgo-badge riesgo-none" title="Sin clasificación">—</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <div class="medicion-valores mh-medicion-chips">
+                                {% if valores.fc %}
+                                <div class="valor-item {% if valores.fc.puntaje is not None %}item-score-{{ valores.fc.puntaje }}{% endif %}">
+                                    <span class="valor-label">FC</span>
+                                    <span class="valor-number">{{ valores.fc.valor }}</span>
+                                    <span class="valor-unit">{{ valores.fc.unidad }}</span>
+                                    {% if valores.fc.puntaje is not None %}
+                                    <span class="valor-score score-{{ valores.fc.puntaje }}">{{ valores.fc.puntaje }}</span>
+                                    {% endif %}
+                                </div>
+                                {% endif %}
+                                {% if valores.ta_sys or valores.ta_dia %}
+                                <div class="valor-item mh-chip-full">
+                                    <span class="valor-label">TA</span>
+                                    {% if valores.ta_sys %}
+                                    <span class="valor-number">{{ valores.ta_sys.valor }}</span>
+                                    {% if valores.ta_sys.puntaje is not None %}
+                                    <span class="valor-score score-{{ valores.ta_sys.puntaje }}">{{ valores.ta_sys.puntaje }}</span>
+                                    {% endif %}
+                                    {% endif %}
+                                    {% if valores.ta_sys and valores.ta_dia %}<span class="valor-sep">/</span>{% endif %}
+                                    {% if valores.ta_dia %}
+                                    <span class="valor-number">{{ valores.ta_dia.valor }}</span>
+                                    {% if valores.ta_dia.puntaje is not None %}
+                                    <span class="valor-score score-{{ valores.ta_dia.puntaje }}">{{ valores.ta_dia.puntaje }}</span>
+                                    {% endif %}
+                                    {% endif %}
+                                    <span class="valor-unit">mmHg</span>
+                                </div>
+                                {% endif %}
+                                {% if valores.temp %}
+                                <div class="valor-item {% if valores.temp.puntaje is not None %}item-score-{{ valores.temp.puntaje }}{% endif %}">
+                                    <span class="valor-label">Temp</span>
+                                    <span class="valor-number">{{ valores.temp.valor }}</span>
+                                    <span class="valor-unit">{{ valores.temp.unidad }}</span>
+                                    {% if valores.temp.puntaje is not None %}
+                                    <span class="valor-score score-{{ valores.temp.puntaje }}">{{ valores.temp.puntaje }}</span>
+                                    {% endif %}
+                                </div>
+                                {% endif %}
+                                {% if valores.fr %}
+                                <div class="valor-item {% if valores.fr.puntaje is not None %}item-score-{{ valores.fr.puntaje }}{% endif %}">
+                                    <span class="valor-label">FR</span>
+                                    <span class="valor-number">{{ valores.fr.valor }}</span>
+                                    <span class="valor-unit">{{ valores.fr.unidad }}</span>
+                                    {% if valores.fr.puntaje is not None %}
+                                    <span class="valor-score score-{{ valores.fr.puntaje }}">{{ valores.fr.puntaje }}</span>
+                                    {% endif %}
+                                </div>
+                                {% endif %}
+                                {% if valores.spo2 %}
+                                <div class="valor-item {% if valores.spo2.puntaje is not None %}item-score-{{ valores.spo2.puntaje }}{% endif %}">
+                                    <span class="valor-label">SpO₂</span>
+                                    <span class="valor-number">{{ valores.spo2.valor }}</span>
+                                    <span class="valor-unit">{{ valores.spo2.unidad }}</span>
+                                    {% if valores.spo2.puntaje is not None %}
+                                    <span class="valor-score score-{{ valores.spo2.puntaje }}">{{ valores.spo2.puntaje }}</span>
+                                    {% endif %}
+                                </div>
+                                {% endif %}
+                                {% if valores.glasgow %}
+                                <div class="valor-item {% if valores.glasgow.puntaje is not None %}item-score-{{ valores.glasgow.puntaje }}{% endif %}">
+                                    <span class="valor-label">Glasgow</span>
+                                    <span class="valor-number">{{ valores.glasgow.valor }}</span>
+                                    <span class="valor-unit">{{ valores.glasgow.unidad }}</span>
+                                    {% if valores.glasgow.puntaje is not None %}
+                                    <span class="valor-score score-{{ valores.glasgow.puntaje }}">{{ valores.glasgow.puntaje }}</span>
+                                    {% endif %}
+                                </div>
+                                {% endif %}
+                                {% if valores.fcf %}
+                                <div class="valor-item {% if valores.fcf.puntaje is not None %}item-score-{{ valores.fcf.puntaje }}{% endif %}">
+                                    <span class="valor-label">FCF</span>
+                                    <span class="valor-number">{{ valores.fcf.valor }}</span>
+                                    <span class="valor-unit">{{ valores.fcf.unidad }}</span>
+                                    {% if valores.fcf.puntaje is not None %}
+                                    <span class="valor-score score-{{ valores.fcf.puntaje }}">{{ valores.fcf.puntaje }}</span>
+                                    {% endif %}
+                                </div>
+                                {% endif %}
+                            </div>
+
+                            {% if medicion.meows_mensaje %}
+                            <div class="medicion-mensaje mh-medicion-msg riesgo-{{ medicion.meows_riesgo|default:'none'|lower }}">
+                                <span class="mensaje-icon" aria-hidden="true">💡</span>
+                                <span class="mensaje-text">{{ medicion.meows_mensaje }}</span>
+                            </div>
+                            {% endif %}
+
+                            <div class="medicion-actions mh-medicion-foot">
+                                <a href="{% url 'ver_meows' medicion_id=medicion.id %}" class="btn-detalle mh-btn-detalle">Detalle</a>
+                            </div>
+                    </article>
+                    {% endwith %}
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="empty-state mh-empty-state">
+                    <div class="empty-icon" aria-hidden="true">📋</div>
+                    <div class="empty-title">Sin mediciones registradas</div>
+                    <p class="empty-text">Este paciente aún no tiene mediciones MEOWS en el sistema.</p>
+                    <a href="{% url 'crear_meows' paciente_id=paciente.id %}" class="btn btn-primary">
+                        <span class="btn-icon" aria-hidden="true">➕</span>
+                        Crear primera medición
+                    </a>
+                </div>
+                {% endif %}
+            </section>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
+        }
+    });
+</script>
+</body>
+</html>

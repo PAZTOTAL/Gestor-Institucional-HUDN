@@ -556,10 +556,10 @@ def get_patient_timeline(documento):
     from django.db.models import Q
     from django.utils import timezone
 
-    # Consultar datos de todas las fuentes
-    meows = Medicion.objects.filter(paciente__numero_documento=documento).order_by("-fecha_hora") if Medicion else []
-    fetal = RegistroParto.objects.filter(identificacion=documento).order_by("-created_at")
-    parto = Formulario.objects.filter(paciente__num_identificacion=documento).order_by("-created_at") if Formulario else []
+    # Consultar datos de todas las fuentes (limitado para optimización)
+    meows = Medicion.objects.filter(paciente__numero_documento=documento).order_by("-fecha_hora")[:10] if Medicion else []
+    fetal = RegistroParto.objects.filter(identificacion=documento).order_by("-created_at")[:10]
+    parto = Formulario.objects.filter(paciente__num_identificacion=documento).order_by("-created_at")[:10] if Formulario else []
 
     timeline = []
 
@@ -748,10 +748,14 @@ def atencion_detalle(request, id):
     # Calcular Estado Global según el riesgo MEOWS más alto encontrado
     estado_global = "ESTABLE"
     if Medicion and meows:
-        riesgos_encontrados = set(meows.values_list("meows_riesgo", flat=True)) if hasattr(meows, 'values_list') else set([m.meows_riesgo for m in meows])
-        estado_global = "CRÍTICO"
-    elif "AMARILLO" in riesgos_encontrados:
-        estado_global = "ALERTA"
+        try:
+            riesgos_encontrados = set(meows.values_list("meows_riesgo", flat=True)) if hasattr(meows, 'values_list') else set([m.meows_riesgo for m in meows])
+            if "ROJO" in riesgos_encontrados:
+                estado_global = "CRÍTICO"
+            elif "AMARILLO" in riesgos_encontrados:
+                estado_global = "ALERTA"
+        except Exception as e:
+            logger.error(f"Error calculando estado global: {e}")
 
     # Determinar si hay un paciente vinculado
     has_paciente = bool(atencion.paciente)
@@ -774,120 +778,125 @@ def api_datos_paciente_unificado(request):
     RESTRICCIÓN: Solo busca personas ACTIVAS en el censo de Gineco-Obstetricia.
     Uso: GET /atencion/api/datos-paciente-unificado/?doc=123456
     """
-    doc = (request.GET.get("doc") or request.GET.get("num_identificacion") or "").strip()
-    if not doc:
-        return JsonResponse({"ok": False, "error": "Parámetro doc requerido"}, status=400)
-
-    selected_db = request.session.get('hospital_db', 'readonly')
-    from frecuenciafetal.sala_partos_db import listar_pacientes_sala_partos
-    from datetime import date
-
-    # 1. Buscar PRIMERO en el Censo Activo de la Base de Datos Hospitalaria
     try:
-        censo_pacientes = listar_pacientes_sala_partos(query=doc, db_name=selected_db)
-    except Exception as e:
-        logger.error(f"Error consultando censo activo en {selected_db}: {e}")
-        censo_pacientes = []
+        doc = (request.GET.get("doc") or request.GET.get("num_identificacion") or "").strip()
+        if not doc:
+            return JsonResponse({"ok": False, "error": "Parámetro doc requerido"}, status=400)
 
-    # Intentar encontrar coincidencia exacta en el censo
-    p_censo = next((p for p in censo_pacientes if str(p['identificacion']).strip() == doc), None)
-    
-    if not p_censo and len(censo_pacientes) > 0:
-        # Si no hubo coincidencia exacta pero hay resultados, probar con variantes
-        dids = _variantes_documento(doc)
-        p_censo = next((p for p in censo_pacientes if str(p['identificacion']).strip() in dids), None)
+        selected_db = request.session.get('hospital_db', 'readonly')
+        from frecuenciafetal.sala_partos_db import listar_pacientes_sala_partos
+        from datetime import date
 
-    if p_censo:
-        # Paciente está activa en el censo. Preparamos el payload.
-        doc_canon = str(p_censo['identificacion']).strip()
+        # 1. Buscar PRIMERO en el Censo Activo de la Base de Datos Hospitalaria
+        try:
+            censo_pacientes = listar_pacientes_sala_partos(query=doc, db_name=selected_db)
+        except Exception as e:
+            logger.error(f"Error consultando censo activo en {selected_db}: {e}")
+            censo_pacientes = []
+
+        # Intentar encontrar coincidencia exacta en el censo
+        p_censo = next((p for p in censo_pacientes if str(p['identificacion']).strip() == doc), None)
         
-        # Sincronizar/Crear paciente local si es necesario (MEOWS)
-        meows_p = None
-        if MeowsPaciente:
-            meows_p, _ = MeowsPaciente.objects.get_or_create(
-                numero_documento=doc_canon,
-                defaults={
-                    "nombres": p_censo['nombre_paciente'] or "PACIENTE",
-                    "apellidos": "",
-                    "num_historia_clinica": p_censo['historia_clinica'] or "",
-                    "tipo_sangre": p_censo['grupo_sanguineo'] or "",
-                    "aseguradora": p_censo['aseguradora'] or "",
-                    "cama": p_censo['numero_cama'] or "",
-                    "diagnostico": p_censo['diagnostico'] or "",
-                }
-            )
+        if not p_censo and len(censo_pacientes) > 0:
+            # Si no hubo coincidencia exacta pero hay resultados, probar con variantes
+            dids = _variantes_documento(doc)
+            p_censo = next((p for p in censo_pacientes if str(p['identificacion']).strip() in dids), None)
 
-        payload = {
-            "ok": True,
-            "encontrado": True,
-            "nombre_completo": p_censo['nombre_paciente'],
-            "nombre_paciente": p_censo['nombre_paciente'],
-            "nombres": p_censo['nombre_paciente'],
-            "apellidos": "",
-            "num_identificacion": doc_canon,
-            "identificacion": doc_canon,
-            "num_historia_clinica": p_censo['historia_clinica'],
-            "fecha_nacimiento": p_censo['fecha_nacimiento'].strftime("%Y-%m-%d") if hasattr(p_censo['fecha_nacimiento'], 'strftime') else None,
-            "edad": p_censo.get('edad_anos'),
-            "sexo": "F", # Por defecto en esta área
-            "aseguradora": p_censo['aseguradora'],
-            "cama": p_censo['numero_cama'],
-            "fecha_ingreso": p_censo['fecha_ingreso'].strftime("%Y-%m-%d") if hasattr(p_censo['fecha_ingreso'], 'strftime') else None,
-            "responsable": "",
-            "tipo_sangre": p_censo['grupo_sanguineo'],
-            "nombre_acompanante": "",
-            "diagnostico": p_censo['diagnostico'],
-            "edad_gestacional": p_censo['edad_gestacional'],
-            "gestas": p_censo['gestas'],
-            "n_controles_prenatales": p_censo.get('controles_prenatales'),
-            "atencion_id": AtencionParto.objects.filter(paciente=doc_canon).order_by("-fecha_inicio").values_list("id", flat=True).first(),
-            "mediciones_count": Medicion.objects.filter(paciente__numero_documento=doc_canon).count() if Medicion else 0,
-            "fetal_count": RegistroParto.objects.filter(identificacion=doc_canon).count(),
-            "parto_count": Formulario.objects.filter(paciente__num_identificacion=doc_canon).count() if Formulario else 0,
-            "estado_global": "ESTABLE",
-            "timeline": get_patient_timeline(doc_canon),
-            "fuente_datos": "censo_activo_hospital",
-        }
-        
-        # Recalcular edad si tenemos fecha de nacimiento real en meows_p
-        if meows_p and meows_p.fecha_nacimiento:
-            payload["fecha_nacimiento"] = meows_p.fecha_nacimiento.strftime("%Y-%m-%d")
-            today = date.today()
-            payload["edad"] = today.year - meows_p.fecha_nacimiento.year - (
-                (today.month, today.day) < (meows_p.fecha_nacimiento.month, meows_p.fecha_nacimiento.day)
-            )
-
-        _enriquecer_card_demografia(payload, doc_canon)
-        return JsonResponse(payload)
-
-    # 2. Fallback solo si ya está en el sistema local (pero no activa en censo)
-    # Nota: El usuario pidió buscar SOLAMENTE activas, pero permitimos ver registros locales
-    # si el documento ya tiene una atención iniciada para evitar romper el flujo de edición.
-    if AtencionParto.objects.filter(paciente__in=_variantes_documento(doc), estado="activo").exists():
-        # Lógica original simplificada para pacientes locales con atención activa
-        for did in _variantes_documento(doc):
+        if p_censo:
+            # Paciente está activa en el censo. Preparamos el payload.
+            doc_canon = str(p_censo['identificacion']).strip()
+            
+            # Sincronizar/Crear paciente local si es necesario (MEOWS)
+            meows_p = None
             if MeowsPaciente:
-                meows_p = MeowsPaciente.objects.filter(numero_documento=did).first()
-                if meows_p:
-                    # (Payload similar al original, pero marcado como local)
-                    payload = {
-                        "ok": True,
-                        "encontrado": True,
-                        "nombre_completo": f"{meows_p.nombres} {meows_p.apellidos}".strip(),
-                        "num_identificacion": meows_p.numero_documento,
-                        "atencion_id": AtencionParto.objects.filter(paciente=meows_p.numero_documento, estado="activo").first().id,
-                        "fuente_datos": "local_activo",
-                        "mensaje_aviso": "Paciente no figura en censo actual, pero tiene atención abierta."
+                meows_p, _ = MeowsPaciente.objects.get_or_create(
+                    numero_documento=doc_canon,
+                    defaults={
+                        "nombres": p_censo['nombre_paciente'] or "PACIENTE",
+                        "apellidos": "",
+                        "num_historia_clinica": p_censo['historia_clinica'] or "",
+                        "tipo_sangre": p_censo['grupo_sanguineo'] or "",
+                        "aseguradora": p_censo['aseguradora'] or "",
+                        "cama": p_censo['numero_cama'] or "",
+                        "diagnostico": p_censo['diagnostico'] or "",
                     }
-                    # ... llenar el resto ...
-                    _enriquecer_card_demografia(payload, did)
-                    return JsonResponse(payload)
+                )
 
-    return JsonResponse({
-        "ok": True, 
-        "encontrado": False, 
-        "mensaje": "Paciente no encontrada en el censo activo de Gineco-Obstetricia"
-    })
+            payload = {
+                "ok": True,
+                "encontrado": True,
+                "nombre_completo": p_censo['nombre_paciente'],
+                "nombre_paciente": p_censo['nombre_paciente'],
+                "nombres": p_censo['nombre_paciente'],
+                "apellidos": "",
+                "num_identificacion": doc_canon,
+                "identificacion": doc_canon,
+                "num_historia_clinica": p_censo['historia_clinica'],
+                "fecha_nacimiento": p_censo['fecha_nacimiento'].strftime("%Y-%m-%d") if hasattr(p_censo['fecha_nacimiento'], 'strftime') else None,
+                "edad": p_censo.get('edad_anos'),
+                "sexo": "F", # Por defecto en esta área
+                "aseguradora": p_censo['aseguradora'],
+                "cama": p_censo['numero_cama'],
+                "fecha_ingreso": p_censo['fecha_ingreso'].strftime("%Y-%m-%d") if hasattr(p_censo['fecha_ingreso'], 'strftime') else None,
+                "responsable": "",
+                "tipo_sangre": p_censo['grupo_sanguineo'],
+                "nombre_acompanante": "",
+                "diagnostico": p_censo['diagnostico'],
+                "edad_gestacional": p_censo['edad_gestacional'],
+                "gestas": p_censo['gestas'],
+                "n_controles_prenatales": p_censo.get('controles_prenatales'),
+                "atencion_id": AtencionParto.objects.filter(paciente=doc_canon).order_by("-fecha_inicio").values_list("id", flat=True).first(),
+                "mediciones_count": Medicion.objects.filter(paciente__numero_documento=doc_canon).count() if Medicion else 0,
+                "fetal_count": RegistroParto.objects.filter(identificacion=doc_canon).count(),
+                "parto_count": Formulario.objects.filter(paciente__num_identificacion=doc_canon).count() if Formulario else 0,
+                "estado_global": "ESTABLE",
+                "timeline": get_patient_timeline(doc_canon),
+                "fuente_datos": "censo_activo_hospital",
+            }
+            
+            # Recalcular edad si tenemos fecha de nacimiento real en meows_p
+            if meows_p and meows_p.fecha_nacimiento:
+                payload["fecha_nacimiento"] = meows_p.fecha_nacimiento.strftime("%Y-%m-%d")
+                today = date.today()
+                payload["edad"] = today.year - meows_p.fecha_nacimiento.year - (
+                    (today.month, today.day) < (meows_p.fecha_nacimiento.month, meows_p.fecha_nacimiento.day)
+                )
+
+            _enriquecer_card_demografia(payload, doc_canon)
+            return JsonResponse(payload, json_dumps_params={'ensure_ascii': False})
+
+        # 2. Fallback solo si ya está en el sistema local (pero no activa en censo)
+        atenciones_activas = AtencionParto.objects.filter(paciente__in=_variantes_documento(doc), estado="activo").order_by("-fecha_inicio")
+        if atenciones_activas.exists():
+            atencion_local = atenciones_activas.first()
+            did_encontrado = atencion_local.paciente
+            
+            meows_p = None
+            if MeowsPaciente:
+                meows_p = MeowsPaciente.objects.filter(numero_documento=did_encontrado).first()
+            
+            payload = {
+                "ok": True,
+                "encontrado": True,
+                "nombre_completo": f"{meows_p.nombres if meows_p else 'PACIENTE'} {meows_p.apellidos if meows_p else ''}".strip(),
+                "num_identificacion": did_encontrado,
+                "identificacion": did_encontrado,
+                "atencion_id": atencion_local.id,
+                "fuente_datos": "local_activo",
+                "mensaje_aviso": "Paciente no figura en censo actual, pero tiene atención abierta."
+            }
+            _enriquecer_card_demografia(payload, did_encontrado)
+            return JsonResponse(payload, json_dumps_params={'ensure_ascii': False})
+        
+        return JsonResponse({
+            "ok": True, 
+            "encontrado": False, 
+            "mensaje": "Paciente no encontrada en el censo activo de Gineco-Obstetricia"
+        })
+
+    except Exception as e:
+        logger.error(f"Error en api_datos_paciente_unificado: {e}")
+        return JsonResponse({"ok": False, "error": str(e)}, status=500)
 
 
 @require_http_methods(["POST"])
