@@ -47,3 +47,5 @@ sessions/
 .claude/settings.local.json
 brain/
 .gemini/
+.claude
+SERVIDOR_INSTRUCCIONES.txt

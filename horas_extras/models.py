@@ -53,6 +53,7 @@ class TurnoRecargos(models.Model):
         ('libre',        'Libre'),
         ('vacaciones',   'V - Vacaciones'),
         ('licencia',     'LI - Licencia'),
+        ('permiso',      'P - Permiso'),
     ]
     empleado_id     = models.IntegerField(help_text='ID del empleado (SQL Server o local)')
     fecha           = models.DateField()
