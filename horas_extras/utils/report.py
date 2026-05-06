@@ -51,6 +51,7 @@ TURNOS_HORAS = {
     'libre':         (0,  0),   # sin cálculo
     'vacaciones':    (0,  0),   # sin horas laboradas
     'licencia':      (0,  0),   # sin horas laboradas
+    'permiso':       (0,  0),   # sin horas laboradas
 }
 
 TURNOS_LABEL = {
@@ -64,6 +65,7 @@ TURNOS_LABEL = {
     'libre':         'Libre',
     'vacaciones':    'V - Vacaciones',
     'licencia':      'LI - Licencia',
+    'permiso':       'P - Permiso',
 }
 
 # Colores
@@ -109,7 +111,7 @@ def calcular_horas(turno, es_festivo, horas_diurnas=0, horas_nocturnas=0,
                  que ocurren ANTES de la medianoche (dentro del mes actual).
                  Las horas del día siguiente se calculan con calcular_spillover().
     """
-    if turno in ('libre', 'vacaciones', 'licencia'):
+    if turno in ('libre', 'vacaciones', 'licencia', 'permiso'):
         return 0, 0, 0, 0
 
     if turno == 'por_horas':
@@ -337,8 +339,8 @@ def _escribir_hoja_empleado(ws, trabajador, year, month, turnos_dict, festivos):
         'LEYENDA:',
         'HOD = Horas Ordinarias Diurnas (06:00–21:00)',
         'HON = Horas Ordinarias Nocturnas (21:00–06:00) — Recargo 35%',
-        'HDF = Horas Diurnas Festivas (domingos/festivos diurnas) — Recargo 75%',
-        'HNF = Horas Nocturnas Festivas (domingos/festivos nocturnas) — Recargo 110%',
+        'HDF = Horas Diurnas Festivas (domingos/festivos diurnas) — Recargo 200%',
+        'HNF = Horas Nocturnas Festivas (domingos/festivos nocturnas) — Recargo 250%',
     ]:
         ws.append([txt])
         ws.cell(row=ws.max_row, column=1).font = _font(italic=True, size=9, color='595959')
