@@ -1,4 +1,4 @@
-{% extends "remisiones/base.html" %}
+{% extends "crueremisiones/base.html" %}
 {% load static %}
 
 {% block title %}Editar Usuario — CRUE Remisiones{% endblock %}
@@ -44,7 +44,7 @@
         </div>
         <div class="mt-3 d-flex gap-2">
           <button type="submit" class="btn btn-primary btn-sm"><i class="bi bi-check-lg me-1"></i>Guardar Cambios</button>
-          <a href="{% url 'remisiones:usuarios' %}" class="btn btn-secondary btn-sm">Cancelar</a>
+          <a href="{% url 'crueremisiones:usuarios' %}" class="btn btn-secondary btn-sm">Cancelar</a>
         </div>
       </form>
     </div>

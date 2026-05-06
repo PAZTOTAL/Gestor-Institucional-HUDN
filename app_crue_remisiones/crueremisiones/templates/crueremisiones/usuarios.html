@@ -1,4 +1,4 @@
-{% extends "remisiones/base.html" %}
+{% extends "crueremisiones/base.html" %}
 {% load static %}
 
 {% block title %}Gestión de Usuarios — CRUE Remisiones{% endblock %}
@@ -29,17 +29,19 @@
         <i class="bi bi-shield-check me-1"></i>
         <span class="sidebar-text">Director</span>
       </div>
-      <form method="post" action="{% url 'remisiones:logout' %}" class="mt-2">
-        {% csrf_token %}
-        <button type="submit" class="btn btn-outline-danger btn-sm w-100 sidebar-btn-salir">
-          <i class="bi bi-box-arrow-right me-1"></i>
-          <span class="sidebar-text">Salir</span>
-        </button>
-      </form>
+
     </section>
 
     <hr class="sidebar-divider">
 
+    <!-- --- Menu Remisiones --- -->
+    <section class="sidebar-section">
+          <a href="{% url 'crueremisiones:main' %}" class="sidebar-menu-item">
+            <i class="bi bi-table me-1"></i>
+            <span class="sidebar-text">Remisiones</span>
+          </a>
+    </section>
+ 
     <!-- --- Menú Gestión --- -->
     <section class="sidebar-section">
       <div class="sidebar-menu-title">
@@ -47,26 +49,35 @@
         <span class="sidebar-text">Gestión</span>
       </div>
       <ul class="sidebar-menu-list">
-        <li>
-          <a href="{% url 'remisiones:main' %}" class="sidebar-menu-item">
-            <i class="bi bi-table me-1"></i>
-            <span class="sidebar-text">Remisiones</span>
-          </a>
-        </li>
-        <li>
-          <a href="{% url 'remisiones:cambiar_password' %}" class="sidebar-menu-item">
+       <li>
+          <a href="{% url 'crueremisiones:cambiar_password' %}" class="sidebar-menu-item">
             <i class="bi bi-key me-1"></i>
             <span class="sidebar-text">Contraseña</span>
           </a>
         </li>
         <li>
-          <a href="{% url 'remisiones:usuarios' %}" class="sidebar-menu-item" aria-current="page">
+          <a href="{% url 'crueremisiones:usuarios' %}" class="sidebar-menu-item" aria-current="page">
             <i class="bi bi-people me-1"></i>
             <span class="sidebar-text">Usuarios</span>
           </a>
         </li>
       </ul>
     </section>
+
+    <!-- Spacer to push Salir to bottom -->
+    <div class="sidebar-spacer"></div>
+
+    <!-- --- Sección 5: Salir (fijado al fondo) --- -->
+    <div class="sidebar-section sidebar-salir-section">
+      <hr class="sidebar-divider">
+      <form method="post" action="{% url 'crueremisiones:logout' %}">
+        {% csrf_token %}
+        <button type="submit" class="sidebar-menu-item sidebar-btn-salir w-100">
+          <i class="bi bi-box-arrow-right me-1 icon-salir"></i>
+          <span class="sidebar-text">Salir</span>
+        </button>
+      </form>
+    </div>
 
   </aside>
   <!-- /sidebar -->
@@ -127,7 +138,7 @@
             </div>
             {% endif %}
 
-            <form method="post" action="{% url 'remisiones:usuarios' %}" novalidate>
+            <form method="post" action="{% url 'crueremisiones:usuarios' %}" novalidate>
               {% csrf_token %}
 
               <div class="row g-3">
@@ -297,19 +308,19 @@
                     {% endif %}
                   </td>
                   <td class="text-center">
-                    <a href="{% url 'remisiones:usuario_edit' usuario.pk %}"
+                    <a href="{% url 'crueremisiones:usuario_edit' usuario.pk %}"
                        class="btn btn-outline-primary btn-sm py-0 px-2 me-1"
                        title="Modificar usuario {{ usuario.username }}">
                       <i class="bi bi-pencil-square me-1"></i>Modificar
                     </a>
-                    <a href="{% url 'remisiones:usuario_cambiar_password' usuario.pk %}"
+                    <a href="{% url 'crueremisiones:usuario_cambiar_password' usuario.pk %}"
                        class="btn btn-outline-warning btn-sm py-0 px-2 me-1"
                        title="Cambiar contraseña de {{ usuario.username }}">
                       <i class="bi bi-key me-1"></i>Contraseña
                     </a>
                     {% if usuario != request.user %}
                     <form method="post"
-                          action="{% url 'remisiones:usuario_delete' usuario.pk %}"
+                          action="{% url 'crueremisiones:usuario_delete' usuario.pk %}"
                           class="d-inline form-eliminar-usuario"
                           data-username="{{ usuario.username }}">
                       {% csrf_token %}
@@ -396,7 +407,7 @@
     <i class="bi bi-shield-lock fs-1 text-danger mb-3 d-block"></i>
     <h4 class="text-danger">Acceso denegado</h4>
     <p class="text-muted">No tiene permisos para acceder a esta sección.</p>
-    <a href="{% url 'remisiones:main' %}" class="btn btn-primary btn-sm">
+    <a href="{% url 'crueremisiones:main' %}" class="btn btn-primary btn-sm">
       <i class="bi bi-arrow-left me-1"></i>Volver al inicio
     </a>
   </div>

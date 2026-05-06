@@ -11,24 +11,20 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = 'django-insecure-fvyg4s259i8yf8+g)bsj!v)r_--bnq$8@+5v63*1u&*f)@9x(!'
 
-DEBUG = True
+DEBUG = False
 
 #ALLOWED_HOSTS = ["*"]
 #ALLOWED_HOSTS = os.getenv("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
 ALLOWED_HOSTS = [
-    '172.20.211.163',
-	"172.20.209.60",
 	"localhost",
 	"127.0.0.1",
+	"172.20.209.60"
 ]
 
+#FORCE_SCRIPT_NAME = '/crue-remisiones'
 USE_X_FORWARDED_HOST = True
-SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "http")
-
 CSRF_TRUSTED_ORIGINS = [
     'http://172.20.10.250',
-    'http://172.20.211.163',
-    'http://172.20.209.60',
 ]
 
 INSTALLED_APPS = [
@@ -61,7 +57,6 @@ TEMPLATES = [
         'OPTIONS': {
             'context_processors': [
                 'django.template.context_processors.debug',
-				"django.template.context_processors.csrf",
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
@@ -74,32 +69,14 @@ WSGI_APPLICATION = 'config.wsgi.application'
 
 import os
 
-# For local PG DB
-#DATABASES = {
-#    'default': {
-#        'ENGINE': 'django.db.backends.postgresql',
-#        'NAME': os.environ.get('DB_NAME', 'crue_remisiones_db'),
-#        'USER': os.environ.get('DB_USER', 'postgres'),
-#        'PASSWORD': os.environ.get('DB_PASSWORD', 'postgres2026'),
-#        'HOST': os.environ.get('DB_HOST', 'localhost'),
-#        'PORT': os.environ.get('DB_PORT', '5432'),
-#    }
-#}
-
-# For remote MSSQL DB
 DATABASES = {
     'default': {
-        'ENGINE': 'mssql',
-        'NAME': os.getenv('DB_DEFAULT_NAME', 'GestorInstitucional'),
-        'USER': os.getenv('DB_DEFAULT_USER', 'apantoja'),
-        'PASSWORD': os.getenv('DB_DEFAULT_PASSWORD', 'ConsultasPantojaHUDN_2026$'), 
-        'HOST': os.getenv('DB_DEFAULT_HOST', '172.20.100.209'),
-        'PORT': os.getenv('DB_DEFAULT_PORT', ''),
-        'CONN_MAX_AGE': 600,
-        'OPTIONS': {
-            'driver': 'ODBC Driver 17 for SQL Server',
-            'timeout': 30,
-        },
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': os.environ.get('DB_NAME', 'crue_remisiones_db'),
+        'USER': os.environ.get('DB_USER', 'postgres'),
+        'PASSWORD': os.environ.get('DB_PASSWORD', 'postgres2026'),
+        'HOST': os.environ.get('DB_HOST', 'localhost'),
+        'PORT': os.environ.get('DB_PORT', '5432'),
     }
 }
 
@@ -117,14 +94,12 @@ USE_I18N = True
 USE_TZ = False
 
 # ─── Archivos estáticos ──────────────────────────────────────────────────────
-FORCE_SCRIPT_NAME = '/crue-remisiones'
-
-STATIC_URL       = '/crue-remisiones/static/'
+STATIC_URL       = '/static/'
 STATIC_ROOT      = BASE_DIR / 'staticfiles'
 STATICFILES_DIRS = []
 
 # ─── Archivos de medios ──────────────────────────────────────────────────────
-MEDIA_URL        = '/crue-remisiones/media/'
+MEDIA_URL        = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
@@ -133,9 +108,9 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 AUTH_USER_MODEL = 'crueremisiones.Usuario'
 
 # ─── Autenticación ───────────────────────────────────────────────────────────
-LOGIN_URL = '/crue-remisiones/login/'
-LOGIN_REDIRECT_URL = '/crue-remisiones/'
-LOGOUT_REDIRECT_URL = '/crue-remisiones/login/'
+LOGIN_URL = '/login/'
+LOGIN_REDIRECT_URL = '/'
+LOGOUT_REDIRECT_URL = '/login/'
 
 # Email (configurar SMTP en producción)
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'

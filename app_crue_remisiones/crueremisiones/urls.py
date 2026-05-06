@@ -6,7 +6,7 @@ from django.urls import path
 
 from . import views
 
-app_name = 'remisiones'
+app_name = 'crueremisiones'
 
 urlpatterns = [
     path('login/', views.login_view, name='login'),
@@ -19,6 +19,7 @@ urlpatterns = [
     path('remisiones/<int:pk>/eliminar/', views.remision_delete, name='remision_delete'),
     path('exportar/excel/', views.exportar_excel, name='exportar_excel'),
     path('importar/excel/', views.importar_excel, name='importar_excel'),
+    path('importar/excel/hojas/', views.importar_excel_hojas, name='importar_excel_hojas'),
     path('usuarios/', views.usuarios_view, name='usuarios'),
     path('usuarios/<int:pk>/editar/', views.usuario_edit, name='usuario_edit'),
     path('usuarios/<int:pk>/cambiar-password/', views.usuario_cambiar_password, name='usuario_cambiar_password'),

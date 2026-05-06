@@ -74,32 +74,14 @@ WSGI_APPLICATION = 'config.wsgi.application'
 
 import os
 
-# For local PG DB
-#DATABASES = {
-#    'default': {
-#        'ENGINE': 'django.db.backends.postgresql',
-#        'NAME': os.environ.get('DB_NAME', 'crue_remisiones_db'),
-#        'USER': os.environ.get('DB_USER', 'postgres'),
-#        'PASSWORD': os.environ.get('DB_PASSWORD', 'postgres2026'),
-#        'HOST': os.environ.get('DB_HOST', 'localhost'),
-#        'PORT': os.environ.get('DB_PORT', '5432'),
-#    }
-#}
-
-# For remote MSSQL DB
 DATABASES = {
     'default': {
-        'ENGINE': 'mssql',
-        'NAME': os.getenv('DB_DEFAULT_NAME', 'GestorInstitucional'),
-        'USER': os.getenv('DB_DEFAULT_USER', 'apantoja'),
-        'PASSWORD': os.getenv('DB_DEFAULT_PASSWORD', 'ConsultasPantojaHUDN_2026$'), 
-        'HOST': os.getenv('DB_DEFAULT_HOST', '172.20.100.209'),
-        'PORT': os.getenv('DB_DEFAULT_PORT', ''),
-        'CONN_MAX_AGE': 600,
-        'OPTIONS': {
-            'driver': 'ODBC Driver 17 for SQL Server',
-            'timeout': 30,
-        },
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': os.environ.get('DB_NAME', 'crue_remisiones_db'),
+        'USER': os.environ.get('DB_USER', 'postgres'),
+        'PASSWORD': os.environ.get('DB_PASSWORD', 'postgres2026'),
+        'HOST': os.environ.get('DB_HOST', 'localhost'),
+        'PORT': os.environ.get('DB_PORT', '5432'),
     }
 }
 

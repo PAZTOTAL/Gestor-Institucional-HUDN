@@ -3,7 +3,7 @@ Filtros de template personalizados para la app remisiones.
 """
 from django import template
 
-from remisiones.utils import truncar_para_tabla as _truncar_para_tabla
+from crueremisiones.utils import truncar_para_tabla as _truncar_para_tabla
 
 register = template.Library()
 

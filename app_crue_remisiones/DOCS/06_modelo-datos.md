@@ -102,7 +102,7 @@ Registro de remisión de un paciente. Contiene información de identificación, 
 | `institucion_reporta` | CharField | 100 | blank=True | `''` | Institución que reporta la remisión |
 | `municipio` | CharField | 100 | blank=True | `''` | Municipio de origen |
 | `medico_refiere` | CharField | 100 | blank=True | `''` | Médico que refiere al paciente |
-| `medico_hudn` | TextField | — | blank=True | `''` | Médico del HUDN que confirma |
+| `medico_hudn` | TextField | — | blank=True | `''` | Médico del HUDN que recibe |
 | `radio_operador` | CharField | 100 | blank=True | `''` | Radio operador (asignado automáticamente al crear) |
 | `observacion` | TextField | — | blank=True | `''` | Observaciones adicionales |
 

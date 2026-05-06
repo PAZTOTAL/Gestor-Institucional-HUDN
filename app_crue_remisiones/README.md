@@ -12,14 +12,23 @@ El sistema **CRUE Remisiones Pacientes** es una aplicacion web Django que reempl
 - Importacion masiva desde Excel con validacion atomica.
 
 ## LOG
+May/06/26: r0.994 : Afte new changes (not tested): pagination, editable reg, medico_hudn charfield.
+
+May/06/26: r0.994 : Before new changes: pagination, editable reg, medico_hudn charfield.
+May/05/26: r0.994 : Improved UX interaction: Search by doc/name. No range filter. Clear obs and diag. Add Dr. DX:
+May/04/26: r0.993 : Improved UX: Filters autoupdate.
+May/04/26: r0.992 : Improved getDate format in excelToCsv: validating only current date
+
+May/04/26: r0.991 : Added excel sheet selection, for the different months.
+May/04/26: r0.99 : Renamed app 'remisiones' to 'crueremisiones' and 'UsuariCrue' to 'Usuario'
+May/04/26: r0.98 : Fixed statics and user creation. Before rename model entities.
+May/04/26: r0.97 : Improved UX: sorting. Fixed importing from excel. Removed PDFs.
+
+May/03/26: r0.96 : Added excelToCsv function in utils-lg.py. Added 'especialidad'. Added docs
 Abr/28/26: r0.95 : Testing by real users and data. Added 'Especialidad'. UX filling response date.
-
 Abr/28/26: r0.94 : Testing by real users and data.
-
 Abr/28/26: r0.93 : Fixed user reqs: full cloning, secure delete. Changed logo.
-
 Abr/27/26: r0.92 : Ready for testing.
-
 Abr/26/26: r0.91 : Running with logos and PG DB
 Abr/23/26: r0.90 : Requirements (90%), Design (90%), tasks (80%)
 

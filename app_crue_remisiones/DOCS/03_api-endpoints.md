@@ -121,7 +121,7 @@ Todos los endpoints están definidos en `remisiones/urls.py` bajo el namespace `
 | `institucion_reporta` | No | Institución que reporta |
 | `municipio` | No | Municipio |
 | `medico_refiere` | No | Médico que refiere |
-| `medico_hudn` | No | Médico HUDN que confirma |
+| `medico_hudn` | No | Médico HUDN que recibe |
 | `radio_operador` | No | Radio operador (se sobreescribe automáticamente) |
 | `observacion` | No | Observación |
 | `aceptado` | Sí | Aceptado (SI, NO, URG VITAL) |
