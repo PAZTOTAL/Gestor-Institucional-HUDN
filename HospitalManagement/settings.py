@@ -18,12 +18,7 @@ from dotenv import load_dotenv
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# Apps obstétricas (meows, trabajoparto) viven bajo UNIFICADOR-V1 en este monorepo.
-_SISTEMA_OBST = BASE_DIR / 'UNIFICADOR-V1' / 'sistema_obstetrico'
-if _SISTEMA_OBST.is_dir():
-    _obst_path = str(_SISTEMA_OBST)
-    if _obst_path not in sys.path:
-        sys.path.insert(0, _obst_path)
+# Apps obstétricas (meows, trabajoparto) ahora viven en la raíz.
 
 load_dotenv(BASE_DIR / '.env')
 
@@ -241,7 +236,6 @@ STATICFILES_STORAGE = 'whitenoise.storage.StaticFilesStorage'
 STATICFILES_DIRS = [
     BASE_DIR / 'static',
     BASE_DIR / 'defenjur_py' / 'static',
-    BASE_DIR / 'UNIFICADOR-V1' / 'sistema_obstetrico' / 'static',
     ('logos-hudn', BASE_DIR / 'LOGOS-HUDN'),
 ]
 MEDIA_URL = '/media/'
