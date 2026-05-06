@@ -21,7 +21,19 @@ class DynamicModelMixin:
     def get_model(self):
         module_name = self.kwargs.get('module_name')
         model_name = self.kwargs.get('model_name')
-        return apps.get_model(module_name, model_name)
+        if not module_name or not model_name:
+            return None
+            
+        try:
+            return apps.get_model(module_name, model_name)
+        except LookupError:
+            # Búsqueda robusta insensible a mayúsculas/minúsculas
+            for app_config in apps.get_app_configs():
+                if app_config.label.lower() == module_name.lower():
+                    for model in app_config.get_models():
+                        if model._meta.model_name.lower() == model_name.lower():
+                            return model
+            return None
 
     def get_success_url(self):
         return reverse('table_detail', kwargs={
@@ -31,6 +43,9 @@ class DynamicModelMixin:
 
     def get_form_class(self):
         model = self.get_model()
+        if not model:
+            from django.http import Http404
+            raise Http404("El modelo no existe en la aplicación.")
         widgets = {}
         
         for field in model._meta.get_fields():
@@ -94,13 +109,15 @@ class DynamicModelMixin:
                     # Let's use reverse directly as this method runs in view context usually
                     try:
                         add_url = reverse('table_create', kwargs={'module_name': rel_app, 'model_name': rel_model})
-                    except:
+                    except Exception as e:
+                        print(f"DEBUG: Error reversing table_create for {rel_app}.{rel_model}: {e}")
                         add_url = ""
                         
+                    print(f"DEBUG: Field {field.name} -> add_url: {add_url}")
                     attrs = {
                         'class': 'w-full p-3.5 bg-white text-black font-bold border-2 border-blue-400 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all shadow-sm hover:border-blue-600',
                         'data_add_url': add_url,
-                        'data_related_name': related_model._meta.verbose_name
+                        'data_related_name': getattr(related_model._meta, 'verbose_name', rel_model)
                     }
                     widgets[field.name] = forms.Select(attrs=attrs)
                 except Exception as e:
@@ -123,6 +140,8 @@ class DynamicCreateView(AccessControlMixin, DynamicModelMixin, CreateView):
     def get_initial(self):
         initial = super().get_initial()
         model = self.get_model()
+        if not model:
+            return initial
         
         # 1. Auto-increment fields containing 'CONSEC'
         for field in model._meta.get_fields():
@@ -187,10 +206,14 @@ class DynamicCreateView(AccessControlMixin, DynamicModelMixin, CreateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        model = self.get_model()
+        if not model:
+             from django.http import Http404
+             raise Http404("Modelo no encontrado")
+             
         context['module_slug'] = self.kwargs.get('module_name')
         context['model_slug'] = self.kwargs.get('model_name')
-        context['model_name'] = self.get_model()._meta.verbose_name
-        context['model_name'] = self.get_model()._meta.verbose_name
+        context['model_name'] = model._meta.verbose_name
         
         # Custom Label for Juridica
         if context['module_slug'] == 'juridica':
@@ -210,13 +233,21 @@ class DynamicUpdateView(AccessControlMixin, DynamicModelMixin, UpdateView):
 
 
     def get_queryset(self):
-        return self.get_model().objects.all()
+        model = self.get_model()
+        if not model:
+            from django.http import Http404
+            raise Http404("Modelo no encontrado.")
+        return model.objects.all()
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        model = self.get_model()
+        if not model:
+            from django.http import Http404
+            raise Http404("Modelo no encontrado.")
         context['module_slug'] = self.kwargs.get('module_name')
         context['model_slug'] = self.kwargs.get('model_name')
-        context['model_name'] = self.get_model()._meta.verbose_name
+        context['model_name'] = model._meta.verbose_name
         context['action'] = 'Editar'
         return context
 
@@ -225,13 +256,21 @@ class DynamicDeleteView(AccessControlMixin, DynamicModelMixin, DeleteView):
     template_name = 'core/confirm_delete.html'
 
     def get_queryset(self):
-        return self.get_model().objects.all()
+        model = self.get_model()
+        if not model:
+            from django.http import Http404
+            raise Http404("Modelo no encontrado.")
+        return model.objects.all()
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        model = self.get_model()
+        if not model:
+            from django.http import Http404
+            raise Http404("Modelo no encontrado.")
         context['module_slug'] = self.kwargs.get('module_name')
         context['model_slug'] = self.kwargs.get('model_name')
-        context['model_name'] = self.get_model()._meta.verbose_name
+        context['model_name'] = model._meta.verbose_name
         return context
 
 def render_to_pdf(template_src, context_dict={}):
@@ -642,43 +681,53 @@ class DynamicExcelTemplateView(AccessControlMixin, TemplateView):
         response["Content-Disposition"] = f'attachment; filename="{filename}"'
         return response
 
-class DynamicImportExcelView(AccessControlMixin, TemplateView):
+class DynamicImportExcelView(AccessControlMixin, DynamicModelMixin, TemplateView):
     permission_type = 'add'
     template_name = 'core/table_detail.html'
 
+    def get_context_data(self, **kwargs):
+        # Redirigir a la vista de tabla si se intenta entrar por GET
+        return super().get_context_data(**kwargs)
+
     def post(self, request, *args, **kwargs):
-        module_name = kwargs.get('module_name')
-        model_name = kwargs.get('model_name')
-        
-        model = get_model_safe(module_name, model_name)
-        if not model:
-            from django.http import Http404
-            raise Http404("Modelo no encontrado")
+        try:
+            module_name = kwargs.get('module_name')
+            model_name = kwargs.get('model_name')
             
-        file = request.FILES.get('file')
-        if not file:
-            from django.contrib import messages
-            messages.error(request, "Debe adjuntar un archivo.")
-            return redirect(request.META.get('HTTP_REFERER', '/'))
+            model = self.get_model()
+            if not model:
+                from django.http import Http404
+                raise Http404("Modelo no encontrado")
+                
+            file = request.FILES.get('file')
+            if not file:
+                messages.error(request, "Debe adjuntar un archivo.")
+                return redirect(request.META.get('HTTP_REFERER', '/'))
+                
+            preview = request.POST.get('preview') == '1'
             
-        preview = request.POST.get('preview') == '1'
-        
-        result = process_excel_import(request, model, file, preview=preview)
-        
-        from django.contrib import messages
-        if result.get('response'):
-            if preview:
-                messages.warning(request, f"VISTA PREVIA: {result['message']} Descargando reporte de errores.")
+            # Procesar importación
+            result = process_excel_import(request, model, file, preview=preview)
+            
+            if result.get('response'):
+                if preview:
+                    messages.warning(request, f"VISTA PREVIA: {result.get('message', 'Resultados generados')}. Descargando reporte.")
+                else:
+                    messages.error(request, f"Importación con observaciones: {result.get('message', 'Errores encontrados')}")
+                return result['response']
+            
+            if result['success']:
+                if preview:
+                    messages.info(request, f"VISTA PREVIA: Se importarían {result.get('count', 0)} registros correctamente.")
+                else:
+                    messages.success(request, f"Éxito: {result.get('message', 'Registros importados')}")
             else:
-                messages.error(request, f"Importación fallida: {result['message']}")
-            return result['response']
-        
-        if result['success']:
-            if preview:
-                messages.info(request, f"VISTA PREVIA: Se importarían {result['count']} registros correctamente.")
-            else:
-                messages.success(request, f"Éxito: {result['message']}")
-        else:
-            messages.error(request, result['message'])
+                messages.error(request, result.get('message', 'Error desconocido en la importación'))
+                
+        except Exception as e:
+            import traceback
+            print(f"CRITICAL ERROR IN IMPORT: {e}")
+            print(traceback.format_exc())
+            messages.error(request, f"Error crítico del servidor: {str(e)}")
             
         return redirect(request.META.get('HTTP_REFERER', '/'))

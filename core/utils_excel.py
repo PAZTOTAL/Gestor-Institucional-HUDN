@@ -55,11 +55,21 @@ def generate_excel_template(model):
     bio.seek(0)
     return bio
 
+def normalize_text(text):
+    import re
+    import unicodedata
+    if not text: return ""
+    # Quitar acentos
+    text = "".join(c for c in unicodedata.normalize('NFD', str(text)) if unicodedata.category(c) != 'Mn')
+    # Solo letras y números en minúsculas
+    return re.sub(r'[^a-z0-9]', '', text.lower())
+
 def process_excel_import(request, model, file, preview=False):
     """
     Processes an uploaded Excel or CSV file to import data into the model.
     """
-    print(f"--- INICIANDO IMPORTACIÓN PARA {model._meta.model_name} ---")
+    model_name_log = model._meta.model_name
+    print(f"--- INICIANDO IMPORTACIÓN PARA {model_name_log} ---")
     
     rows = []
     headers = []
@@ -70,100 +80,71 @@ def process_excel_import(request, model, file, preview=False):
     
     try:
         if is_csv:
-            import csv
-            # Read first few lines to detect titles and delimiters
+            # Leer CSV
             content = file.read().decode('latin-1')
             file.seek(0)
-            
+            import io
+            import csv
             lines = content.splitlines()
             if not lines:
                 return {'success': False, 'message': "Archivo vacío.", 'errors': []}
-                
-            # Detect title in line 1: if it has only one non-empty element and next line has more
-            start_row = 0
-            delimiter = ';' if ';' in content else ','
             
-            import io
+            delimiter = ';' if ';' in content else ','
             reader = csv.reader(io.StringIO(content), delimiter=delimiter)
             csv_rows = [[cell.strip() for cell in row] for row in list(reader)]
             
-            if len(csv_rows) > 1:
-                col_count_1 = len([c for c in csv_rows[0] if c])
-                col_count_2 = len([c for c in csv_rows[1] if c])
-                if col_count_1 == 1 and col_count_2 > 1:
-                    print(f"Detectado título '{csv_rows[0][0]}' en línea 1, saltando...")
-                    start_row = 1
-            
-            if len(csv_rows) <= start_row:
-                 return {'success': False, 'message': "No hay datos en el CSV.", 'errors': []}
-                 
-            headers = csv_rows[start_row]
-            # Convert remaining rows to values_only format
-            data_rows = csv_rows[start_row+1:]
-            rows = data_rows
+            if len(csv_rows) > 0:
+                headers = csv_rows[0]
+                rows = csv_rows[1:]
         else:
-            # Traditional Excel
+            # Excel
             wb = load_workbook(file, data_only=True)
             ws = wb.active
             headers = [cell.value for cell in ws[1]]
             rows = list(ws.iter_rows(min_row=2, values_only=True))
             
     except Exception as e:
-        print(f"ERROR LECTURA: {e}")
+        print(f"ERROR LECTURA {model_name_log}: {e}")
         return {'success': False, 'message': f"Error al leer archivo: {e}", 'errors': []}
 
-    print(f"ENCABEZADOS ENCONTRADOS: {headers}")
+    print(f"ENCABEZADOS: {headers}")
     
     if not headers:
         return {'success': False, 'message': "El archivo no tiene encabezados.", 'errors': []}
 
-    # Map headers to fields (Case Insensitive + Verbose Name)
+    # Map headers to fields
     valid_map = {} # col_idx -> field_name
-    normalized_fields = {f.name.lower(): f.name for f in model._meta.get_fields() if hasattr(f, 'name')}
-    verbose_map = {str(f.verbose_name).lower(): f.name for f in model._meta.get_fields() if hasattr(f, 'verbose_name') and f.verbose_name}
+    
+    # Pre-normalizar campos del modelo
     model_fields = {f.name: f for f in model._meta.get_fields() if hasattr(f, 'name')}
+    norm_to_real = {normalize_text(f.name): f.name for f in model_fields.values()}
+    verbose_to_real = {normalize_text(f.verbose_name): f.name for f in model_fields.values() if hasattr(f, 'verbose_name') and f.verbose_name}
     
     for idx, h in enumerate(headers):
         if not h: continue
-        h_str = str(h).strip()
-        import re
-        # Basic normalization: lowercase and remove any non-alphanumeric/non-space char
-        h_lower = re.sub(r'[^a-z0-9\s]', '', h_str.lower()).strip()
-        h_lower = h_lower.replace('  ', ' ') # Remove double spaces
+        h_norm = normalize_text(h)
+        if not h_norm: continue
         
-        if h_lower in normalized_fields:
-             valid_map[idx] = normalized_fields[h_lower]
-        elif h_lower in verbose_map:
-             valid_map[idx] = verbose_map[h_lower]
+        if h_norm in norm_to_real:
+            valid_map[idx] = norm_to_real[h_norm]
+        elif h_norm in verbose_to_real:
+            valid_map[idx] = verbose_to_real[h_norm]
         else:
-            # Fallback for common variations (normalized keys)
-            common_variations = {
-                'n proceso': 'num_proceso',
-                'n reparto': 'num_reparto',
-                'fecha correo': 'fecha_correo_electronico',
-                'fecha llegada': 'fecha_llegada',
-                'entidad requirente': 'entidad_remitente_requerimiento',
-                'tipo ident accionante': 'tipo_identificacion_accionante',
-                'ident accionante': 'identificacion_accionante',
-                'despacho judicial': 'despacho_judicial',
-                'despacho': 'despacho_actual',
-                'apoderado': 'apoderado',
-                'responsable': 'abogado_responsable',
+            # Variaciones comunes
+            variations = {
+                'codigo': 'codigo_formato',
+                'nombre': 'nombre_formato',
+                'elaborado': 'elaborado_por',
+                'modificado': 'modificado_por',
+                'version': 'version'
             }
-            # Also try without the 'n' prefix if it was 'N°'
-            h_var = h_lower.replace('n ', '').replace('num ', '')
+            if h_norm in variations:
+                valid_map[idx] = variations[h_norm]
             
-            if h_lower in common_variations:
-                valid_map[idx] = common_variations[h_lower]
-            elif h_var in common_variations:
-                valid_map[idx] = common_variations[h_var]
-            elif h_var in normalized_fields:
-                valid_map[idx] = normalized_fields[h_var]
-            
-    print(f"MAPA VALIDO: {valid_map}")
+    print(f"MAPA FINAL {model_name_log}: {valid_map}")
     
     if not valid_map:
-        return {'success': False, 'message': "Ningún encabezado coincide (Verifique mayúsculas/minúsculas).", 'errors': []}
+        return {'success': False, 'message': f"No se encontraron columnas válidas. Esperadas: {list(verbose_to_real.keys())[:5]}...", 'errors': []}
 
     errors = []
     created_count = 0
@@ -177,15 +158,16 @@ def process_excel_import(request, model, file, preview=False):
             
             for col_idx, field_name in valid_map.items():
                 val = row[col_idx]
-                field = model_fields[field_name]
+                field = model_fields.get(field_name)
+                if not field: continue
                 
                 if isinstance(val, str):
                     val = val.strip()
-                if val == "":
-                    val = None
+                if val == "" or val is None:
+                    continue # Skip empty fields, let defaults handle it
                     
                 # FK Resolving logic
-                if val is not None and field.is_relation and field.many_to_one:
+                if field.is_relation and field.many_to_one:
                     related = field.related_model
                     fk_obj = None
                     
@@ -193,33 +175,38 @@ def process_excel_import(request, model, file, preview=False):
                     if hasattr(related, 'codigo'):
                         try:
                             fk_obj = related.objects.get(codigo=val)
-                        except related.DoesNotExist:
-                            pass
+                        except: pass
+                    
+                    # Try 'username' (common for User models)
+                    if not fk_obj and hasattr(related, 'username'):
+                        try:
+                            fk_obj = related.objects.get(username=val)
+                        except: pass
+                        
+                    # Try 'nombre'
+                    if not fk_obj and hasattr(related, 'nombre'):
+                        try:
+                            fk_obj = related.objects.get(nombre=val)
+                        except: pass
                     
                     # Try PK
                     if not fk_obj:
                         try:
                             fk_obj = related.objects.get(pk=val)
-                        except (related.DoesNotExist, ValueError):
-                            pass
+                        except: pass
                             
                     if fk_obj:
                         val = fk_obj
                     else:
-                        row_errors.append(f"No se halló '{field_name}' con valor '{val}'")
+                        row_errors.append(f"No se halló '{field.verbose_name}' con valor '{val}'")
                         continue
                 
                 # Truncate strings if they exceed CharField max_length
                 if val and isinstance(val, str) and isinstance(field, models.CharField):
                     if field.max_length and len(val) > field.max_length:
-                        print(f"TRUNCADO: Fila {row_idx}, Campo {field_name} ({len(val)} -> {field.max_length})")
                         val = val[:field.max_length]
 
                 row_data[field_name] = val
-            
-            # Auto-fill defaults logic
-            if 'descripcion' in row_data and row_data.get('descripcion') and not row_data.get('nombre'):
-                row_data['nombre'] = row_data['descripcion'][:200] # Truncate to max_length
             
             if row_errors:
                 errors.append({'fila': row_idx, 'error': "; ".join(row_errors)})
@@ -228,10 +215,23 @@ def process_excel_import(request, model, file, preview=False):
             try:
                 with transaction.atomic():
                     instance = model(**row_data)
-                    if hasattr(instance, 'usuario') and request.user.is_authenticated:
-                        instance.usuario = request.user
+                    
+                    # Auto-fill user if model has 'usuario' or 'elaborado_por' (if empty)
+                    if hasattr(instance, 'usuario') and not instance.usuario_id:
+                         instance.usuario = request.user
+                    
+                    # Specific to Formatos_Hudn / Organigrama where elaborated_por is common
+                    if hasattr(instance, 'elaborado_por_id') and not instance.elaborado_por_id:
+                        instance.elaborado_por = request.user
+                    
                     instance.full_clean()
-                    instance.save()
+                    
+                    if preview:
+                        # Emular guardado para validar BD pero revertir
+                        transaction.set_rollback(True)
+                    else:
+                        instance.save()
+                        
                     created_count += 1
             except Exception as e:
                 errors.append({'fila': row_idx, 'error': str(e)})
