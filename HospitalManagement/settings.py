@@ -32,7 +32,7 @@ SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-vm8ux)05e9u$fc=qz5^$)ma+q!
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv('DEBUG', 'True') == 'True'
 
-ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1,GestorInstitucionalHUDN,.ngrok.io,.ngrok-free.app,.trycloudflare.com').split(',')
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1,GestorInstitucionalHUDN,.ngrok.io,.ngrok-free.app,.trycloudflare.com,*').split(',')
 
 
 # Para ngrok y túneles seguros
