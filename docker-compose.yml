@@ -3,6 +3,7 @@ services:
   web:
     build: .
     restart: unless-stopped
+    privileged: true
     env_file: .env
     volumes:
       - media:/app/media
