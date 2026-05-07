@@ -684,12 +684,12 @@
       <input type="hidden" id="edit-area-id-modal">
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:0 16px;">
         <div class="form-group" style="grid-column:1/-1;">
-          <label>Nombre del Área *</label>
-          <input id="edit-area-nombre" class="pys-input" required>
+          <label>Área *</label>
+          <input id="edit-area-responsable" class="pys-input" required>
         </div>
         <div class="form-group" style="grid-column:1/-1;">
-          <label>Responsable *</label>
-          <input id="edit-area-responsable" class="pys-input" required>
+          <label>Coordinador *</label>
+          <input id="edit-area-nombre" class="pys-input" required>
         </div>
         <div class="form-group">
           <label>Orden</label>
@@ -1677,7 +1677,7 @@ async function cargarAreasAdmin(mostrarTabla) {
     // Poblar selects de área
     ['select-area-nuevo-usuario', 'edit-area-id'].forEach(selId => {
       const sel = document.getElementById(selId);
-      if (sel) sel.innerHTML = '<option value="">— Sin área —</option>' + data.map(a => `<option value="${a.id}">${a.nombre}</option>`).join('');
+      if (sel) sel.innerHTML = '<option value="">— Sin área —</option>' + data.map(a => `<option value="${a.id}">${a.responsable}</option>`).join('');
     });
 
     if (!mostrarTabla || !wrap) return;
@@ -1687,8 +1687,8 @@ async function cargarAreasAdmin(mostrarTabla) {
       return;
     }
     const rows = data.map(a => `<tr>
-      <td style="font-weight:700;">${a.nombre}</td>
-      <td style="color:#64748b; font-size:12px;">${a.responsable}</td>
+      <td style="font-weight:700;">${a.responsable}</td>
+      <td style="color:#64748b; font-size:12px;">${a.nombre}</td>
       <td><span class="badge badge-tramite">Orden ${a.orden}</span></td>
       <td>
         <span style="background:${a.activa?'rgba(22,163,74,0.1)':'rgba(100,116,139,0.1)'};
@@ -1712,7 +1712,7 @@ async function cargarAreasAdmin(mostrarTabla) {
       </td>
     </tr>`).join('');
     wrap.innerHTML = `<table class="pys-table">
-      <thead><tr><th>Área</th><th>Responsable</th><th>Turno</th><th>Estado</th><th></th></tr></thead>
+      <thead><tr><th>Área</th><th>Coordinador</th><th>Turno</th><th>Estado</th><th></th></tr></thead>
       <tbody>${rows}</tbody>
     </table>`;
   } catch(e) {
@@ -1803,7 +1803,7 @@ async function guardarEdicionArea() {
   const orden = parseInt(document.getElementById('edit-area-orden').value) || 1;
   const activa = document.getElementById('edit-area-activa').checked;
   if (!nombre || !responsable) {
-    errEl.textContent = 'Nombre y responsable son obligatorios.';
+    errEl.textContent = 'Área y coordinador son obligatorios.';
     errEl.style.display = '';
     return;
   }
