@@ -7,12 +7,16 @@ El sistema **CRUE Remisiones Pacientes** es una aplicacion web Django que reempl
 - Reemplazar el flujo de trabajo en Excel con una aplicacion web Django.
 - Minimizar el esfuerzo de digitacion mediante valores por defecto y autoformato.
 - Garantizar integridad historica: registros de dias anteriores son inmutables.
-- Diseno portable: SQLite para MVP, migracion transparente a PostgreSQL/SQL Server via Django ORM exclusivamente.
+- Diseno portable: SQLite para MVP, PostgreSQL para pruebas, MSSQL para producción, todo via Django ORM exclusivamente.
 - UI responsiva con tabla estilo Excel, modales y panel lateral colapsable.
 - Importacion masiva desde Excel con validacion atomica.
 
 ## LOG
-May/06/26: r0.994 : Afte new changes (not tested): pagination, editable reg, medico_hudn charfield.
+May/07/26: r0.996 : Using a external DB. User taken from global django project. Ready for deploying as a module.
+
+May/07/26: r0.995 : changed to work with subpath: /crue-remisiones/. Before unifying to default user model.
+
+May/06/26: r0.994 : After new changes (not tested): pagination, editable reg, medico_hudn charfield.
 
 May/06/26: r0.994 : Before new changes: pagination, editable reg, medico_hudn charfield.
 May/05/26: r0.994 : Improved UX interaction: Search by doc/name. No range filter. Clear obs and diag. Add Dr. DX:

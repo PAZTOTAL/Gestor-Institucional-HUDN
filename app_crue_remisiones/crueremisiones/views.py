@@ -1,8 +1,8 @@
 """
 Vistas de la aplicación CRUE Remisiones Pacientes.
 
-Todas las vistas (excepto login, logout y recuperar_password) requieren
-autenticación mediante el decorador @login_required.
+Todas las vistas requieren pertenencia al grupo 'crue_remisiones'
+mediante el decorador @crue_required.
 """
 
 from datetime import date
@@ -14,26 +14,20 @@ from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
-#from django.utils import timezone
 from datetime import date
 
+from .decorators import crue_required
 from .forms import (
-	AdminCambiarPasswordForm,
 	CambiarPasswordForm,
 	ImportarExcelForm,
 	LoginForm,
-	RecuperarPasswordForm,
 	RemisionForm,
-	UsuarioEditForm,
-	UsuarioForm,
 )
-from .models import Remision, Usuario
+from .models import Remision
 from .services import (
 	calcular_oportunidad,
-	enviar_email_recuperacion,
 	es_registro_editable,
 	exportar_a_excel,
-	generar_password_temporal,
 	importar_desde_excel,
 	obtener_remisiones,
 )
@@ -91,7 +85,7 @@ def login_view(request):
 #def login_view(request):
 #	"""GET/POST /login/ — Autenticación de usuario."""
 #	if request.user.is_authenticated:
-#		#return redirect('/')
+#		#return redirect('crueremisiones:main')
 #		return redirect(settings.LOGIN_REDIRECT_URL)
 #
 #	form = LoginForm(request.POST or None)
@@ -104,7 +98,7 @@ def login_view(request):
 #		if user is not None:
 #			login(request, user)
 #			return redirect(settings.LOGIN_REDIRECT_URL)
-#			#return redirect('/')
+#			#return redirect('crueremisiones:main')
 #		else:
 #			error = 'Usuario o contraseña incorrectos.'
 #
@@ -117,40 +111,11 @@ def logout_view(request):
 	#return redirect('/login/')
 	return redirect(settings.LOGOUT_REDIRECT_URL)
 
-
-def recuperar_password_view(request):
-	"""GET/POST /recuperar-password/ — Recuperación de contraseña."""
-	form = RecuperarPasswordForm(request.POST or None)
-	mensaje = None
-
-	if request.method == 'POST' and form.is_valid():
-		username = form.cleaned_data['username']
-		try:
-			user = Usuario.objects.get(username=username)
-			password_temp = generar_password_temporal()
-			user.set_password(password_temp)
-			user.save()
-			enviar_email_recuperacion(user, password_temp)
-		except Usuario.DoesNotExist:
-			pass  # No revelar si el usuario existe o no (seguridad)
-		# Siempre mostrar mensaje genérico
-		mensaje = (
-			'Si el usuario existe, se ha enviado una contraseña temporal '
-			'al correo registrado.'
-		)
-
-	return render(
-		request,
-		'crueremisiones/recuperar_password.html',
-		{'form': form, 'mensaje': mensaje},
-	)
-
-
 # ---------------------------------------------------------------------------
 # Vista principal
 # ---------------------------------------------------------------------------
 
-@login_required
+@crue_required
 def main_view(request):
 	"""GET / — Vista principal con tabla de remisiones."""
 	#hoy = timezone.localdate()
@@ -239,7 +204,7 @@ def main_view(request):
 # Vistas CRUD
 # ---------------------------------------------------------------------------
 
-@login_required
+@crue_required
 def remision_create(request):
 	"""POST /remisiones/nueva/ — Crear remisión (AJAX)."""
 	form = RemisionForm(request.POST)
@@ -253,7 +218,7 @@ def remision_create(request):
 	return JsonResponse({'ok': False, 'errors': form.errors}, status=400)
 
 
-@login_required
+@crue_required
 def remision_detail(request, pk):
 	"""GET /remisiones/<pk>/detalle/ — Detalle JSON para modal (AJAX)."""
 	remision = get_object_or_404(Remision, pk=pk)
@@ -299,7 +264,7 @@ def remision_detail(request, pk):
 	return JsonResponse(data)
 
 
-@login_required
+@crue_required
 def remision_update(request, pk):
 	"""POST /remisiones/<pk>/editar/ — Editar remisión (AJAX)."""
 	remision = get_object_or_404(Remision, pk=pk)
@@ -326,7 +291,7 @@ def remision_update(request, pk):
 	return JsonResponse({'ok': False, 'errors': form.errors}, status=400)
 
 
-@login_required
+@crue_required
 def remision_delete(request, pk):
 	"""POST /remisiones/<pk>/eliminar/ — Eliminar remisión (AJAX)."""
 	remision = get_object_or_404(Remision, pk=pk)
@@ -348,7 +313,7 @@ def remision_delete(request, pk):
 	return JsonResponse({'ok': True})
 
 
-@login_required
+@crue_required
 def exportar_excel(request):
 	"""GET /exportar/excel/ — Exportar remisiones a Excel."""
 	#hoy = timezone.localdate()
@@ -393,7 +358,7 @@ def exportar_excel(request):
 	return response
 
 
-@login_required
+@crue_required
 def importar_excel(request):
 	"""POST /importar/excel/ — Importar remisiones desde Excel."""
 	import tempfile
@@ -417,7 +382,7 @@ def importar_excel(request):
 	return JsonResponse({'ok': False, 'errors': form.errors}, status=400)
 
 
-@login_required
+@crue_required
 def importar_excel_hojas(request):
 	"""POST /importar/excel/hojas/ — Retorna la lista de hojas del archivo Excel."""
 	import tempfile
@@ -449,121 +414,12 @@ def importar_excel_hojas(request):
 # Vistas de gestión de usuarios
 # ---------------------------------------------------------------------------
 
-@login_required
-def usuarios_view(request):
-	"""GET/POST /usuarios/ — Gestión de usuarios (solo DIRECTOR)."""
-	if request.user.rol != 'DIRECTOR':
-		messages.error(request, 'No tiene permisos para acceder a esta sección.')
-		return redirect('/')
 
-	usuarios = Usuario.objects.all().order_by('username')
-	form = UsuarioForm(request.POST or None)
-	error = None
+# ---------------------------------------------------------------------------
+# Cambio de contraseña propia
+# ---------------------------------------------------------------------------
 
-	if request.method == 'POST':
-		if form.is_valid():
-			data = form.cleaned_data
-			user = Usuario.objects.create_user(
-				username=data['username'],
-				password=data['password'],
-				first_name=data['first_name'],
-				last_name=data['last_name'],
-				email=data['email'],
-			)
-			user.rol = data['rol']
-			user.save()
-			messages.success(request, f'Usuario "{user.username}" creado correctamente.')
-			return redirect('/usuarios/')
-		else:
-			error = 'Por favor corrija los errores del formulario.'
-
-	return render(
-		request,
-		'crueremisiones/usuarios.html',
-		{'usuarios': usuarios, 'form': form, 'error': error},
-	)
-
-
-@login_required
-def usuario_delete(request, pk):
-	"""POST /usuarios/<pk>/eliminar/ — Eliminar usuario (solo DIRECTOR)."""
-	if request.user.rol != 'DIRECTOR':
-		return JsonResponse(
-			{'ok': False, 'error': 'No tiene permisos para esta acción.'},
-			status=403,
-		)
-
-	if pk == request.user.pk:
-		return JsonResponse(
-			{'ok': False, 'error': 'No puede eliminar su propio usuario.'},
-			status=400,
-		)
-
-	user = get_object_or_404(Usuario, pk=pk)
-	user.delete()
-	return JsonResponse({'ok': True})
-
-
-@login_required
-def usuario_edit(request, pk):
-	"""GET/POST /usuarios/<pk>/editar/ — Editar usuario (solo DIRECTOR)."""
-	if request.user.rol != 'DIRECTOR':
-		messages.error(request, 'No tiene permisos para esta acción.')
-		return redirect('/')
-
-	user = get_object_or_404(Usuario, pk=pk)
-
-	if request.method == 'POST':
-		form = UsuarioEditForm(request.POST)
-		if form.is_valid():
-			data = form.cleaned_data
-			user.first_name = data['first_name']
-			user.last_name = data['last_name']
-			user.email = data['email']
-			user.rol = data['rol']
-			user.save()
-			messages.success(request, f'Usuario "{user.username}" actualizado correctamente.')
-			return redirect('/usuarios/')
-	else:
-		form = UsuarioEditForm(initial={
-			'first_name': user.first_name,
-			'last_name': user.last_name,
-			'email': user.email,
-			'rol': user.rol,
-		})
-
-	return render(request, 'crueremisiones/usuario_editar.html', {
-		'form': form,
-		'usuario_editado': user,
-	})
-
-
-@login_required
-def usuario_cambiar_password(request, pk):
-	"""GET/POST /usuarios/<pk>/cambiar-password/ — Cambiar contraseña de usuario (solo DIRECTOR)."""
-	if request.user.rol != 'DIRECTOR':
-		messages.error(request, 'No tiene permisos para esta acción.')
-		return redirect('/')
-
-	user = get_object_or_404(Usuario, pk=pk)
-
-	if request.method == 'POST':
-		form = AdminCambiarPasswordForm(request.POST)
-		if form.is_valid():
-			user.set_password(form.cleaned_data['password_nueva'])
-			user.save()
-			messages.success(request, f'Contraseña de "{user.username}" cambiada correctamente.')
-			return redirect('/usuarios/')
-	else:
-		form = AdminCambiarPasswordForm()
-
-	return render(request, 'crueremisiones/usuario_cambiar_password.html', {
-		'form': form,
-		'usuario_editado': user,
-	})
-
-
-@login_required
+@crue_required
 def cambiar_password_view(request):
 	"""GET/POST /cambiar-password/ — Cambio de contraseña propia."""
 	form = CambiarPasswordForm(request.POST or None)
@@ -581,7 +437,7 @@ def cambiar_password_view(request):
 			request.user.save()
 			update_session_auth_hash(request, request.user)
 			exito = 'Contraseña cambiada correctamente.'
-			form = CambiarPasswordForm()  # Limpiar formulario
+			form = CambiarPasswordForm()
 
 	return render(
 		request,

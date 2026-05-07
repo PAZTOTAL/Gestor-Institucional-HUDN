@@ -1,4 +1,7 @@
 # Python
+tmp/
+/static/
+
 __pycache__/
 *.py[cod]
 *.pyo
@@ -11,7 +14,6 @@ __pycache__/
 .pytest_cache
 .vscode/
 tests/
-static/
 staticfiles/
 env/
 .env

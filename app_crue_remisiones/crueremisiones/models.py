@@ -1,30 +1,12 @@
 from django.conf import settings
-from django.contrib.auth.models import AbstractUser
 from django.db import models
-from django.utils import timezone
 
 
-class Usuario(AbstractUser):
-	"""Modelo de usuario unificado que reemplaza User + PerfilUsuario."""
-
-	ROL_CHOICES = [
-		('RADIOOPERADOR', 'Radiooperador'),
-		('DIRECTOR', 'Director'),
-	]
-
-	rol = models.CharField(
-		max_length=15,
-		choices=ROL_CHOICES,
-		default='RADIOOPERADOR',
-		verbose_name='Rol',
-	)
-
-	class Meta:
-		verbose_name = 'Usuario'
-		verbose_name_plural = 'Usuarios'
-
-	def __str__(self):
-		return f'{self.username} ({self.rol})'
+# ---------------------------------------------------------------------------
+# Nombre del grupo que autoriza acceso a esta aplicación.
+# Los usuarios deben pertenecer a este grupo para usar CRUE Remisiones.
+# ---------------------------------------------------------------------------
+GRUPO_CRUE_REMISIONES = 'crue_remisiones'
 
 
 class Remision(models.Model):
@@ -277,15 +259,3 @@ class Remision(models.Model):
 
 		dias_diferencia = (date.today() - self.fecha.date()).days
 		return dias_diferencia <= 1
-
-#	 @property
-#	 def es_editable(self) -> bool:
-#		 """
-#		 Un registro es editable si su fecha.date() es igual a la fecha de hoy
-#		 en la zona horaria local configurada en Django.
-#		 Los registros históricos (fecha.date() < hoy) son de solo lectura.
-#		 """
-#		 return self.fecha.astimezone(timezone.get_current_timezone()).date() == timezone.localdate()
-
-
-

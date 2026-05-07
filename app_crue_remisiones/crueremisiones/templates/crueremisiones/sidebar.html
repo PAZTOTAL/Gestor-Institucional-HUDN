@@ -61,14 +61,6 @@
             <span class="sidebar-text">Contraseña</span>
           </a>
         </li>
-        {% if request.user.rol == 'DIRECTOR' %}
-        <li>
-          <a href="{% url 'crueremisiones:usuarios' %}" class="sidebar-sub-item">
-            <i class="bi bi-people-fill me-1 icon-users"></i>
-            <span class="sidebar-text">Usuarios</span>
-          </a>
-        </li>
-        {% endif %}
       </ul>
     </section>
 

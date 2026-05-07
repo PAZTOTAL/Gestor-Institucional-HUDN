@@ -506,12 +506,19 @@
 <script src="{% static 'crueremisiones/js/tabla.js' %}"></script>
 <script>
   // Pasar URLs de Django a JavaScript
-  const URLS = {
-	remisionNueva:	 "{% url 'crueremisiones:remision_create' %}",
-	remisionDetalle: "/remisiones/__ID__/detalle/",
-	remisionEditar:  "/remisiones/__ID__/editar/",
-	remisionEliminar:"/remisiones/__ID__/eliminar/",
-  };
+//  const URLS = {
+//	remisionNueva:	 "{% url 'crueremisiones:remision_create' %}",
+//	remisionDetalle: "/remisiones/__ID__/detalle/",
+//	remisionEditar:  "/remisiones/__ID__/editar/",
+//	remisionEliminar:"/remisiones/__ID__/eliminar/",
+//  };
+const URLS = {
+    remisionNueva:   "{% url 'crueremisiones:remision_create' %}",
+    remisionDetalle: "{% url 'crueremisiones:remision_detail' 999999 %}",
+    remisionEditar:  "{% url 'crueremisiones:remision_update' 999999 %}",
+    remisionEliminar: "{% url 'crueremisiones:remision_delete' 999999 %}",
+    importarExcelHojas: "{% url 'crueremisiones:importar_excel_hojas' %}",
+};	
   const CSRF_TOKEN = document.querySelector('[name=csrfmiddlewaretoken]').value;
 </script>
 <script>

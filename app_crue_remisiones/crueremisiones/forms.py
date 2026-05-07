@@ -3,7 +3,7 @@ Formularios Django para la aplicación CRUE Remisiones Pacientes.
 """
 from django import forms
 
-from .models import Remision, Usuario
+from .models import Remision
 from .services import validar_edad, validar_glasg, validar_ta
 
 
@@ -112,14 +112,11 @@ class RemisionForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # fecha_res no es obligatorio
         self.fields['fecha_res'].required = False
-        # Campos clínicos no obligatorios
         for field in ['especialidad', 'diagnostico', 'ta', 'fc', 'fr', 'tm', 'spo2', 'glasg',
                       'eps', 'institucion_reporta', 'municipio',
                       'medico_refiere', 'medico_hudn', 'radio_operador', 'observacion']:
             self.fields[field].required = False
-        # Formato de entrada para datetime-local
         self.fields['fecha'].input_formats = ['%Y-%m-%dT%H:%M', '%d/%m/%Y %H:%M']
         self.fields['fecha_res'].input_formats = ['%Y-%m-%dT%H:%M', '%d/%m/%Y %H:%M']
 
@@ -171,99 +168,8 @@ class RemisionForm(forms.ModelForm):
 
 
 # ---------------------------------------------------------------------------
-# Gestión de usuarios
+# Cambio de contraseña propia
 # ---------------------------------------------------------------------------
-
-class UsuarioForm(forms.Form):
-    """Formulario para crear un nuevo usuario con su perfil."""
-    username = forms.CharField(
-        label='Nombre de usuario (login)',
-        max_length=150,
-        widget=forms.TextInput(attrs={'class': 'form-control'}),
-    )
-    first_name = forms.CharField(
-        label='Nombre',
-        max_length=150,
-        widget=forms.TextInput(attrs={'class': 'form-control'}),
-    )
-    last_name = forms.CharField(
-        label='Apellido',
-        max_length=150,
-        widget=forms.TextInput(attrs={'class': 'form-control'}),
-    )
-    email = forms.EmailField(
-        label='Correo electrónico',
-        widget=forms.EmailInput(attrs={'class': 'form-control'}),
-    )
-    password = forms.CharField(
-        label='Contraseña inicial',
-        widget=forms.PasswordInput(attrs={'class': 'form-control'}),
-        min_length=8,
-    )
-    rol = forms.ChoiceField(
-        label='Rol',
-        choices=Usuario.ROL_CHOICES,
-        widget=forms.Select(attrs={'class': 'form-select'}),
-    )
-
-    def clean_username(self):
-        username = self.cleaned_data['username'].strip()
-        if Usuario.objects.filter(username=username).exists():
-            raise forms.ValidationError('Ya existe un usuario con ese nombre de usuario.')
-        return username
-
-    def clean_email(self):
-        email = self.cleaned_data['email'].strip()
-        if Usuario.objects.filter(email=email).exists():
-            raise forms.ValidationError('Ya existe un usuario con ese correo electrónico.')
-        return email
-
-
-class UsuarioEditForm(forms.Form):
-    """Formulario para editar un usuario existente."""
-    first_name = forms.CharField(
-        label='Nombre',
-        max_length=150,
-        widget=forms.TextInput(attrs={'class': 'form-control'}),
-    )
-    last_name = forms.CharField(
-        label='Apellido',
-        max_length=150,
-        widget=forms.TextInput(attrs={'class': 'form-control'}),
-    )
-    email = forms.EmailField(
-        label='Correo electrónico',
-        widget=forms.EmailInput(attrs={'class': 'form-control'}),
-    )
-    rol = forms.ChoiceField(
-        label='Rol',
-        choices=Usuario.ROL_CHOICES,
-        widget=forms.Select(attrs={'class': 'form-select'}),
-    )
-
-
-class AdminCambiarPasswordForm(forms.Form):
-    """Formulario para que el DIRECTOR cambie la contraseña de cualquier usuario."""
-    password_nueva = forms.CharField(
-        label='Nueva contraseña',
-        widget=forms.PasswordInput(attrs={'class': 'form-control'}),
-        min_length=8,
-    )
-    password_confirmacion = forms.CharField(
-        label='Confirmar nueva contraseña',
-        widget=forms.PasswordInput(attrs={'class': 'form-control'}),
-    )
-
-    def clean(self):
-        cleaned_data = super().clean()
-        nueva = cleaned_data.get('password_nueva')
-        confirmacion = cleaned_data.get('password_confirmacion')
-        if nueva and confirmacion and nueva != confirmacion:
-            raise forms.ValidationError(
-                'La nueva contraseña y su confirmación no coinciden.'
-            )
-        return cleaned_data
-
 
 class CambiarPasswordForm(forms.Form):
     """Formulario para que el usuario cambie su propia contraseña."""
@@ -304,7 +210,6 @@ class ImportarExcelForm(forms.Form):
             'class': 'form-control',
             'accept': '.xlsx,.xls',
         }),
-        help_text='Solo archivos .xlsx o .xls. Se importará únicamente la primera hoja.',
     )
 
     def clean_archivo(self):
