@@ -1,0 +1,93 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Registros FRQUI-001 - Traslado de Pacientes{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto py-8 px-4">
+    <div class="flex items-center justify-between mb-8">
+        <div class="flex items-center gap-4">
+            <div class="p-4 bg-indigo-600 rounded-3xl shadow-xl shadow-indigo-500/40 text-white">
+                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
+                    <rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>
+                </svg>
+            </div>
+            <div>
+                <h1 class="text-3xl font-black text-slate-900 tracking-tight uppercase">FRQUI - 001</h1>
+                <p class="text-slate-500 font-bold uppercase text-xs tracking-widest">Registros de Traslado de Pacientes (Recuperación)</p>
+            </div>
+        </div>
+        
+        <a href="{% url 'formatos_apps:frqui_001_create' %}" class="px-6 py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-2xl shadow-xl shadow-indigo-500/40 transition-all uppercase tracking-widest text-xs flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            Nuevo Registro
+        </a>
+    </div>
+
+    <div class="bg-white rounded-[2.5rem] shadow-xl border border-slate-100 overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="bg-slate-50/50 border-b border-slate-100 text-[10px] font-black text-slate-500 uppercase tracking-widest">
+                        <th class="px-8 py-6">Paciente / Identificación</th>
+                        <th class="px-8 py-6">Fecha Registro</th>
+                        <th class="px-8 py-6">Hora Egreso</th>
+                        <th class="px-8 py-6">Registrado Por</th>
+                        <th class="px-8 py-6 text-right">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-50">
+                    {% for registro in registros %}
+                    <tr class="hover:bg-indigo-50/30 transition-all group">
+                        <td class="px-8 py-6">
+                            <div class="text-sm font-black text-slate-800 uppercase group-hover:text-indigo-600 transition-colors">{{ registro.paciente_nombre }}</div>
+                            <div class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">{{ registro.identificacion_paciente }}</div>
+                        </td>
+                        <td class="px-8 py-6">
+                            <div class="text-xs font-bold text-slate-600">{{ registro.fecha_registro|date:"d/m/Y" }}</div>
+                            <div class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">{{ registro.fecha_registro|date:"H:i" }}</div>
+                        </td>
+                        <td class="px-8 py-6">
+                            <span class="px-3 py-1 bg-indigo-50 text-indigo-700 rounded-lg text-xs font-black">
+                                {{ registro.hora_egreso|time:"H:i" }}
+                            </span>
+                        </td>
+                        <td class="px-8 py-6">
+                            <div class="flex items-center gap-2">
+                                <div class="w-6 h-6 bg-slate-100 rounded-full flex items-center justify-center text-[10px] font-black text-slate-500">
+                                    {{ registro.usuario_registro.username|slice:":1"|upper }}
+                                </div>
+                                <span class="text-xs font-bold text-slate-600">{{ registro.usuario_registro.get_full_name|default:registro.usuario_registro.username }}</span>
+                            </div>
+                        </td>
+                        <td class="px-8 py-6 text-right">
+                            <div class="flex justify-end gap-2">
+                                <a href="{% url 'formatos_apps:frqui_001_update' registro.pk %}" class="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all" title="Editar">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                                </a>
+                                <a href="{% url 'formatos_apps:frqui_001_pdf' registro.pk %}" target="_blank" class="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all" title="Generar PDF">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="px-8 py-20 text-center">
+                            <div class="flex flex-col items-center gap-4">
+                                <div class="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center text-slate-200">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                                </div>
+                                <p class="text-slate-400 font-bold uppercase tracking-widest text-[10px]">No se han encontrado registros digitales</p>
+                                <a href="{% url 'formatos_apps:frqui_001_create' %}" class="text-indigo-600 font-black uppercase tracking-widest text-[10px] hover:underline">Crear el primer registro ahora</a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

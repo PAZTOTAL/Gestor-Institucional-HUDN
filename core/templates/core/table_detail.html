@@ -23,8 +23,7 @@
     <div class="flex items-center gap-2 mb-4 text-sm text-black font-medium">
         <a href="{% url 'home' %}" class="hover:text-blue-700 transition-colors">Inicio</a>
         <span>/</span>
-        <a href="{% url 'module_detail' module_slug %}" class="hover:text-blue-700 transition-colors">{{
-            module_slug|title }}</a>
+        <a href="{% url 'module_detail' module_slug %}" class="hover:text-blue-700 transition-colors">{{ module_slug|title }}</a>
 
         <span>/</span>
         <span class="text-blue-800 font-bold">{{ model_name }}</span>
@@ -36,8 +35,7 @@
             <p class="font-mono text-primary">{{ model_slug }}</p>
         </div>
         <div class="flex gap-4 items-center">
-            <span class="text-muted text-sm">Mostrando {{ page_obj.start_index }}-{{ page_obj.end_index }} de {{
-                page_obj.paginator.count }} registros</span>
+            <span class="text-muted text-sm">Mostrando {{ page_obj.start_index }}-{{ page_obj.end_index }} de {{ page_obj.paginator.count }} registros</span>
 
             <!-- Excel Actions -->
             <div class="flex gap-2">
@@ -246,6 +244,20 @@
                             <span class="text-[10px] font-black uppercase hidden group-hover:block ml-1">Abrir {{ child_model_name }}</span>
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M7 7l5 5-5 5M13 7l5 5-5 5"/>
+                            </svg>
+                        </a>
+                        {% endif %}
+
+                        {# Lógica especial para abrir Apps de Formatos HUDN #}
+                        {% if row.slug_app %}
+                        <a href="/formatos-apps/{{ row.slug_app }}/nuevo/"
+                           class="ml-2 text-purple-600 hover:text-purple-800 transition-all p-1 bg-purple-50 rounded-lg border border-purple-200 hover:bg-purple-100 flex items-center gap-1 group"
+                           title="Abrir Registro Digital">
+                            <span class="text-[10px] font-black uppercase hidden group-hover:block ml-1">Abrir App Digital</span>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                                <polyline points="15 3 21 3 21 9"></polyline>
+                                <line x1="10" y1="14" x2="21" y2="3"></line>
                             </svg>
                         </a>
                         {% endif %}

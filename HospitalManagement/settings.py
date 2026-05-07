@@ -79,6 +79,7 @@ INSTALLED_APPS = [
     'tercerizadas',
     'paz_y_salvo',
     'inventarios',
+    'formatos_apps',
     # Cuando integre el código completo de UNIFICADOR-V1 en la raíz del repo, descomente:
     'meows',
     'trabajoparto',

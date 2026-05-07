@@ -562,15 +562,23 @@ class TableDetailView(AccessControlMixin, TemplateView):
             context['active_filters'] = active_filters
 
             # ── 5. Detección de Modelo Hijo (Drill-down) ─────────────────────
-            # Buscamos si existe un modelo correlativo en la misma app (ej: Nivel 1 -> Nivel 2)
             child_model = None
             import re
+            
+            # Caso 1: Modelos numerados (ej: Nivel 1 -> Nivel 2)
             match = re.search(r'(\d+)$', model_name)
             if match:
                 current_num = int(match.group(1))
                 next_model_name = model_name.replace(str(current_num).zfill(len(match.group(1))), str(current_num + 1).zfill(len(match.group(1))))
                 try:
                     child_model = apps.get_model(module_slug, next_model_name)
+                except LookupError:
+                    pass
+            
+            # Caso 2: Áreas de Formatos -> Formatos HUDN
+            if not child_model and model_name == 'Formatos_Hudn_area':
+                try:
+                    child_model = apps.get_model(module_slug, 'Formatos_Hudn')
                 except LookupError:
                     pass
             
@@ -603,7 +611,8 @@ class TableDetailView(AccessControlMixin, TemplateView):
                 
                 rows.append({
                     'pk': obj.pk,
-                    'values': row_values
+                    'values': row_values,
+                    'slug_app': getattr(obj, 'slug_app', None) if model_name == 'Formatos_Hudn' else None
                 })
             
             context['model_name'] = model._meta.verbose_name
@@ -618,6 +627,13 @@ class TableDetailView(AccessControlMixin, TemplateView):
             context['fields'] = fields
             context['is_paginated'] = page_obj.has_other_pages()
             
+            # Identificar índice de slug_app para Formatos_Hudn
+            if model_name == 'Formatos_Hudn':
+                try:
+                    context['slug_app_index'] = fields.index('slug_app')
+                except ValueError:
+                    pass
+
             # Pasar parámetros actuales para mantener filtros en paginación/UI
             context['query'] = q
             context['current_limit'] = limit
