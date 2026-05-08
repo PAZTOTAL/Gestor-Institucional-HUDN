@@ -1347,7 +1347,7 @@ def api_reporte_pdf(request):
     obs_map = {
         o.empleado_id: o.observacion
         for o in ObservacionMensualRecargos.objects.filter(
-            empleado_id__in=list(trabajadores.values_list('id', flat=True)),
+            empleado_id__in=[t.id for t in trabajadores],
             year=year, month=month
         )
     }
