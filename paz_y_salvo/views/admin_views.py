@@ -26,7 +26,7 @@ class ListaBlancaListCreateView(APIView):
                 'avatar': lb.avatar,
                 'rol': lb.rol,
                 'area_id': lb.area_id,
-                'area_nombre': lb.area.nombre if lb.area else None,
+                'area_nombre': lb.area.responsable if lb.area else None,
                 'activo': lb.activo,
                 'created_at': str(lb.created_at),
             })

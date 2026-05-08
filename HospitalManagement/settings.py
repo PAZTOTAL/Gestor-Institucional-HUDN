@@ -150,12 +150,12 @@ DATABASES = {
         'PASSWORD': os.getenv('DB_READONLY_PASSWORD', 'ConsultaHUDN2026*/$'),
         'HOST': os.getenv('DB_READONLY_HOST', '172.20.100.209'),
         'PORT': os.getenv('DB_READONLY_PORT', ''),
-        'CONN_MAX_AGE': 0,
+        'CONN_MAX_AGE': 600,
         'OPTIONS': {
             'driver': 'ODBC Driver 17 for SQL Server',
             'host_is_server': True,
             'timeout': 10,
-            'connection_timeout': 1,
+            'connection_timeout': 5,
         },
     },
     'nexus': {
@@ -165,12 +165,12 @@ DATABASES = {
         'PASSWORD': os.getenv('DB_READONLY_PASSWORD', 'ConsultaHUDN2026*/$'),
         'HOST': os.getenv('DB_READONLY_HOST', '172.20.100.209'),
         'PORT': os.getenv('DB_READONLY_PORT', ''),
-        'CONN_MAX_AGE': 0,
+        'CONN_MAX_AGE': 600,
         'OPTIONS': {
             'driver': 'ODBC Driver 17 for SQL Server',
             'host_is_server': True,
             'timeout': 10,
-            'connection_timeout': 1,
+            'connection_timeout': 5,
         },
     }
 }
