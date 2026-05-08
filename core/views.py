@@ -1,4 +1,5 @@
 from django.views.generic import TemplateView, ListView, CreateView, UpdateView, DeleteView
+from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.apps import apps
 from django.core.paginator import Paginator
@@ -20,7 +21,19 @@ class DynamicModelMixin:
     def get_model(self):
         module_name = self.kwargs.get('module_name')
         model_name = self.kwargs.get('model_name')
-        return apps.get_model(module_name, model_name)
+        if not module_name or not model_name:
+            return None
+            
+        try:
+            return apps.get_model(module_name, model_name)
+        except LookupError:
+            # Búsqueda robusta insensible a mayúsculas/minúsculas
+            for app_config in apps.get_app_configs():
+                if app_config.label.lower() == module_name.lower():
+                    for model in app_config.get_models():
+                        if model._meta.model_name.lower() == model_name.lower():
+                            return model
+            return None
 
     def get_success_url(self):
         return reverse('table_detail', kwargs={
@@ -30,6 +43,9 @@ class DynamicModelMixin:
 
     def get_form_class(self):
         model = self.get_model()
+        if not model:
+            from django.http import Http404
+            raise Http404("El modelo no existe en la aplicación.")
         widgets = {}
         
         for field in model._meta.get_fields():
@@ -93,13 +109,15 @@ class DynamicModelMixin:
                     # Let's use reverse directly as this method runs in view context usually
                     try:
                         add_url = reverse('table_create', kwargs={'module_name': rel_app, 'model_name': rel_model})
-                    except:
+                    except Exception as e:
+                        print(f"DEBUG: Error reversing table_create for {rel_app}.{rel_model}: {e}")
                         add_url = ""
                         
+                    print(f"DEBUG: Field {field.name} -> add_url: {add_url}")
                     attrs = {
                         'class': 'w-full p-3.5 bg-white text-black font-bold border-2 border-blue-400 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all shadow-sm hover:border-blue-600',
                         'data_add_url': add_url,
-                        'data_related_name': related_model._meta.verbose_name
+                        'data_related_name': getattr(related_model._meta, 'verbose_name', rel_model)
                     }
                     widgets[field.name] = forms.Select(attrs=attrs)
                 except Exception as e:
@@ -122,14 +140,64 @@ class DynamicCreateView(AccessControlMixin, DynamicModelMixin, CreateView):
     def get_initial(self):
         initial = super().get_initial()
         model = self.get_model()
+        if not model:
+            return initial
         
-        # Auto-increment fields containing 'CONSEC'
+        # 1. Auto-increment fields containing 'CONSEC'
         for field in model._meta.get_fields():
             if field.concrete and 'CONSEC' in field.name.upper():
                 max_val = model.objects.aggregate(models.Max(field.name))[f'{field.name}__max']
                 initial[field.name] = (max_val or 0) + 1
+        
+        # 2. Pre-fill from URL parameters (Hierarchy)
+        for key, value in self.request.GET.items():
+            if value:
+                initial[key] = value
+        
+        # 3. Recursive Ancestor Pre-filling (Pull parents of the parent)
+        # If we have a parent PK, fetch it and pull its own parents to fill ancestral FKs
+        for key, value in list(initial.items()):
+            try:
+                field = model._meta.get_field(key)
+                if field.is_relation and value:
+                    # Get the parent object
+                    parent_obj = field.related_model.objects.filter(pk=value).first()
+                    if parent_obj:
+                        # For each field in the current model that is still empty
+                        for f in model._meta.get_fields():
+                            if f.concrete and f.is_relation and f.name not in initial:
+                                # If parent_obj has an attribute with the same name, pull it
+                                if hasattr(parent_obj, f.name):
+                                    parent_val = getattr(parent_obj, f.name)
+                                    if parent_val:
+                                        initial[f.name] = parent_val.pk if hasattr(parent_val, 'pk') else parent_val
+            except:
+                pass
                 
         return initial
+
+    def get_form(self, form_class=None):
+        form = super().get_form(form_class)
+        initial = self.get_initial()
+        
+        # Bloquear campos que vienen por URL o fueron auto-completados por jerarquía
+        for key, value in initial.items():
+            if key in form.fields:
+                field = form.fields[key]
+                # Si es una relación (FK) y tiene valor inicial, o es un consecutivo, lo bloqueamos totalmente
+                if isinstance(field, forms.ModelChoiceField) or 'CONSEC' in key.upper() or key in self.request.GET:
+                    # Usamos disabled=True de Django: es más robusto, bloquea Select2 y mantiene el valor inicial al guardar
+                    field.disabled = True
+                    
+                    # Estilo visual de "Solo Vista"
+                    widget = field.widget
+                    existing_class = widget.attrs.get('class', '')
+                    if 'bg-slate-100' not in existing_class:
+                        widget.attrs['class'] = existing_class + ' bg-slate-100 cursor-not-allowed border-dashed opacity-80'
+                    
+                    if isinstance(widget, forms.Select):
+                        widget.attrs['style'] = 'pointer-events: none;'
+        return form
 
     def form_valid(self, form):
         if hasattr(form.instance, 'usuario'):
@@ -138,10 +206,14 @@ class DynamicCreateView(AccessControlMixin, DynamicModelMixin, CreateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        model = self.get_model()
+        if not model:
+             from django.http import Http404
+             raise Http404("Modelo no encontrado")
+             
         context['module_slug'] = self.kwargs.get('module_name')
         context['model_slug'] = self.kwargs.get('model_name')
-        context['model_name'] = self.get_model()._meta.verbose_name
-        context['model_name'] = self.get_model()._meta.verbose_name
+        context['model_name'] = model._meta.verbose_name
         
         # Custom Label for Juridica
         if context['module_slug'] == 'juridica':
@@ -161,13 +233,21 @@ class DynamicUpdateView(AccessControlMixin, DynamicModelMixin, UpdateView):
 
 
     def get_queryset(self):
-        return self.get_model().objects.all()
+        model = self.get_model()
+        if not model:
+            from django.http import Http404
+            raise Http404("Modelo no encontrado.")
+        return model.objects.all()
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        model = self.get_model()
+        if not model:
+            from django.http import Http404
+            raise Http404("Modelo no encontrado.")
         context['module_slug'] = self.kwargs.get('module_name')
         context['model_slug'] = self.kwargs.get('model_name')
-        context['model_name'] = self.get_model()._meta.verbose_name
+        context['model_name'] = model._meta.verbose_name
         context['action'] = 'Editar'
         return context
 
@@ -176,13 +256,21 @@ class DynamicDeleteView(AccessControlMixin, DynamicModelMixin, DeleteView):
     template_name = 'core/confirm_delete.html'
 
     def get_queryset(self):
-        return self.get_model().objects.all()
+        model = self.get_model()
+        if not model:
+            from django.http import Http404
+            raise Http404("Modelo no encontrado.")
+        return model.objects.all()
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        model = self.get_model()
+        if not model:
+            from django.http import Http404
+            raise Http404("Modelo no encontrado.")
         context['module_slug'] = self.kwargs.get('module_name')
         context['model_slug'] = self.kwargs.get('model_name')
-        context['model_name'] = self.get_model()._meta.verbose_name
+        context['model_name'] = model._meta.verbose_name
         return context
 
 def render_to_pdf(template_src, context_dict={}):
@@ -198,6 +286,11 @@ def render_to_pdf(template_src, context_dict={}):
     if not pdf.err:
         return HttpResponse(result.getvalue(), content_type='application/pdf')
     return None
+
+def csrf_failure(request, reason=''):
+    messages.warning(request, 'Tu sesión expiró. Por favor inicia sesión nuevamente.')
+    return redirect('login')
+
 
 class VariosPanelView(LoginRequiredMixin, TemplateView):
     template_name = 'core/varios_panel.html'
@@ -217,11 +310,12 @@ class HomeView(AccessControlMixin, TemplateView):
         'financiera':     {'name': 'FINANCIERA',            'slug': 'financiera',     'icon': 'M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6',   'description': 'Gestión contable y presupuestal'},
         'varios':         {'name': 'VARIOS',                'slug': 'varios',         'icon': 'M4 6h16M4 12h16M4 18h16',                                       'description': 'Formatos y herramientas generales'},
         'consultas':      {'name': 'CONSULTAS',             'slug': 'consultas',      'icon': 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z', 'description': 'Indicadores y Reportes'},
+        'bienes_servicios': {'name': 'BIENES Y SERVICIOS',   'slug': 'bienes_servicios', 'icon': 'M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4', 'description': 'Almacén e Inventarios'},
     }
 
     # Categorías que pertenecen a cada subgerencia en la vista jerárquica
     SALUD_CATS     = {'asistencial', 'consultas'}
-    FINANCIERA_CATS = {'talento_humano', 'financiera', 'contabilidad', 'juridica', 'administrativo', 'varios'}
+    FINANCIERA_CATS = {'talento_humano', 'financiera', 'contabilidad', 'juridica', 'administrativo', 'varios', 'bienes_servicios'}
 
     def dispatch(self, request, *args, **kwargs):
         if request.user.is_authenticated and not request.user.is_superuser:
@@ -246,7 +340,7 @@ class HomeView(AccessControlMixin, TemplateView):
         is_superuser = user.is_superuser
         allowed_apps = getattr(self.request, '_allowed_apps', set())
 
-        # ── 1. Consultar módulos según rol ────────────────────────────────────
+        # ── 1. Consultar módulos con filtrado de seguridad ────────────────────
         if is_superuser:
             modules_qs = DashboardModule.objects.filter(is_active=True)
         else:
@@ -254,19 +348,59 @@ class HomeView(AccessControlMixin, TemplateView):
 
         all_modules = list(modules_qs.values('name', 'slug', 'description', 'url', 'icon', 'category'))
 
-        # ── 2. Lista plana para la vista "Mis Aplicaciones" (no-superusuarios) ─
-        all_permitted_modules = [
-            {'name': m['name'], 'slug': m['slug'], 'description': m['description'],
-             'url': m['url'] or f"/modulo/{m['slug']}/", 'icon': m['icon']}
-            for m in all_modules
+        # ── 2. Lista plana para la vista "Mis Aplicaciones" (usuarios regulares) ─
+        all_permitted_modules = []
+        for m in all_modules:
+            name = m['name']
+            if name == 'UNIFICADOR-V1':
+                name = 'SALA DE PARTOS'
+            all_permitted_modules.append({
+                'name': name,
+                'slug': m['slug'],
+                'description': m['description'],
+                'url': m['url'] or f"/modulo/{m['slug']}/",
+                'icon': m['icon']
+            })
+        
+        # ── 3. Agregar reportes y módulos virtuales (Filtrado Estricto) ────────
+        extra_modules = [
+            {'name': 'Trazabilidad Pacientes', 'slug': 'trazabilidad_pacientes', 'description': 'Seguimiento Urgencias y Triage', 'url': '/consultas/pacientes-urgencias/', 'icon': 'M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2'},
+            {'name': 'Facturación y Ventas', 'slug': 'facturacion_ventas', 'description': 'Auditoría de Ventas y RIPS', 'url': '/consultas/admin/?view=ventas&group_by=global', 'icon': 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2'},
+            {'name': 'Producción Médica', 'slug': 'productividad_medica', 'description': 'Indicadores de Productividad', 'url': '/consultas/produccion-medico/', 'icon': 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z'},
+            {'name': 'Indicadores de Salud', 'slug': 'indicadores_salud', 'description': 'Dashboard de Gestión Hospitalaria', 'url': '/consultas/salud/', 'icon': 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z'},
+            {'name': 'Consultas e Indicadores', 'slug': 'consultas_dashboard', 'description': 'Dashboard General de Reportes', 'url': '/?section=consultas', 'icon': 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z'},
         ]
-        show_direct_modules = not is_superuser and bool(all_permitted_modules)
 
-        # ── 3. Agrupar por categoría para la vista jerárquica (superusuarios) ─
+        for em in extra_modules:
+            if is_superuser or em['slug'] in allowed_apps:
+                all_permitted_modules.append(em)
+
+        # Inventarios Nexus (Nuevo módulo integrado)
+        if is_superuser or 'inventarios' in allowed_apps:
+            all_permitted_modules.append({
+                'name': 'Inventarios Nexus', 'slug': 'inventarios_nexus', 'description': 'Consulta de Documentos e Inventario', 'url': '/inventarios/documentos/', 'icon': 'M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4'
+            })
+
+        # Módulos de Configuración (Solo Administradores)
+        if is_superuser:
+            all_permitted_modules.append({
+                'name': 'Usuarios y Permisos', 'slug': 'gestion_usuarios', 'description': 'Administración de accesos y roles', 'url': '/gestion/', 'icon': 'M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2 M9 7a4 4 0 1 1 0-8 4 4 0 0 1 0 8z'
+            })
+            all_permitted_modules.append({
+                'name': 'Apariencia Sistema', 'slug': 'config_perfil', 'description': 'Personalización de colores y temas', 'url': '/configuracion/apariencia/', 'icon': 'M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z'
+            })
+        
+        show_direct_modules = True # Forzamos vista de botones directa
+
+        # ── 3. Agrupar por categoría para la vista jerárquica ──────────────────
         cat_modules: dict = {}
         for m in all_modules:
+            name = m['name']
+            if name == 'UNIFICADOR-V1':
+                name = 'SALA DE PARTOS'
+
             cat_modules.setdefault(m['category'], []).append({
-                'name': m['name'], 'slug': m['slug'], 'description': m['description'],
+                'name': name, 'slug': m['slug'], 'description': m['description'],
                 'url': m['url'] or f"/modulo/{m['slug']}/", 'icon': m['icon']
             })
 
@@ -275,34 +409,37 @@ class HomeView(AccessControlMixin, TemplateView):
             mods = cat_modules.get(cat_slug, [])
             if mods:
                 active_structure.append({'category': meta, 'modules': mods})
+                # Inyectar nav_slug para compatibilidad con base.html
+                context[f"nav_{cat_slug}"] = mods
 
+        # Mantener estas para compatibilidad específica del template home.html
         nav_asistenciales  = [i for i in active_structure if i['category']['slug'] in self.SALUD_CATS]
         nav_financiera_cat = [i for i in active_structure if i['category']['slug'] in self.FINANCIERA_CATS]
 
         # ── 4. Sección especial Consultas ─────────────────────────────────────
         has_consultas = is_superuser or 'consultas' in allowed_apps
-        if has_consultas:
-            consultas_ctx = {
-                'consultas': [
-                    {'name': 'Administrativas', 'slug': 'consultas_administrativas', 'description': 'Facturación y RIPS'},
-                    {'name': 'Asistenciales',   'slug': 'consultas_asistenciales',   'description': 'Indicadores Médicos'},
-                ],
-                'admin_reports': [
-                    {'name': 'Facturación Total', 'url': '/consultas/admin/?view=ventas&group_by=global'},
-                    {'name': 'Reportes RIPS',     'url': '/consultas/admin/?view=rips&group_by=global'},
-                ],
-                'salud_reports': [
-                    {'name': 'Indicadores de Salud',        'url': '/consultas/salud/'},
-                    {'name': 'Producción Médica',            'url': '/consultas/produccion-medico/'},
-                    {'name': 'Trazabilidad de Pacientes',    'url': '/consultas/pacientes-urgencias/'},
-                ],
-            }
-        else:
-            consultas_ctx = {'consultas': [], 'admin_reports': [], 'salud_reports': []}
+        consultas_ctx = {
+            'consultas': [
+                {'name': 'Administrativas', 'slug': 'consultas_administrativas', 'description': 'Facturación y RIPS'},
+                {'name': 'Asistenciales',   'slug': 'consultas_asistenciales',   'description': 'Indicadores Médicos'},
+            ],
+            'admin_reports': [
+                {'name': 'Facturación Total', 'url': '/consultas/admin/?view=ventas&group_by=global'},
+                {'name': 'Reportes RIPS',     'url': '/consultas/admin/?view=rips&group_by=global'},
+            ],
+            'salud_reports': [
+                {'name': 'Indicadores de Salud',        'url': '/consultas/salud/'},
+                {'name': 'Producción Médica',            'url': '/consultas/produccion-medico/'},
+                {'name': 'Trazabilidad de Pacientes',    'url': '/consultas/pacientes-urgencias/'},
+            ],
+        }
+        # Asegurar que nav_consultas sea detectado por el header
+        context['nav_consultas'] = consultas_ctx['consultas']
 
         # ── 5. Construir contexto final ───────────────────────────────────────
         context.update({
             'is_superuser':          is_superuser,
+            'is_admin':              is_superuser,
             'all_permitted_modules': all_permitted_modules,
             'show_direct_modules':   show_direct_modules,
             'active_structure':      active_structure,
@@ -411,14 +548,55 @@ class TableDetailView(AccessControlMixin, TemplateView):
                 queryset = queryset[:int(limit)]
                 effective_paginate_by = int(limit)
 
+            # ── 4. Filtros Dinámicos (Padre -> Hijo) ──────────────────────────
+            active_filters = {}
+            for param, value in self.request.GET.items():
+                if param not in ['q', 'limit', 'order', 'page'] and value:
+                    try:
+                        # Verificamos si el campo existe en el modelo para filtrar
+                        model._meta.get_field(param)
+                        queryset = queryset.filter(**{param: value})
+                        active_filters[param] = value
+                    except:
+                        pass
+            context['active_filters'] = active_filters
+
+            # ── 5. Detección de Modelo Hijo (Drill-down) ─────────────────────
+            child_model = None
+            import re
+            
+            # Caso 1: Modelos numerados (ej: Nivel 1 -> Nivel 2)
+            match = re.search(r'(\d+)$', model_name)
+            if match:
+                current_num = int(match.group(1))
+                next_model_name = model_name.replace(str(current_num).zfill(len(match.group(1))), str(current_num + 1).zfill(len(match.group(1))))
+                try:
+                    child_model = apps.get_model(module_slug, next_model_name)
+                except LookupError:
+                    pass
+            
+            # Caso 2: Áreas de Formatos -> Formatos HUDN
+            if not child_model and model_name == 'Formatos_Hudn_area':
+                try:
+                    child_model = apps.get_model(module_slug, 'Formatos_Hudn')
+                except LookupError:
+                    pass
+            
+            if child_model:
+                context['child_model_slug'] = child_model._meta.model_name
+                context['child_model_name'] = child_model._meta.verbose_name
+                # Identificar el campo FK que apunta al modelo actual
+                for f in child_model._meta.get_fields():
+                    if f.is_relation and f.related_model == model:
+                        context['child_fk_field'] = f.name
+                        break
+
             # Simple pagination
             paginator = Paginator(queryset, effective_paginate_by)
             page_number = self.request.GET.get('page')
             page_obj = paginator.get_page(page_number)
             
             # Get field names for header
-            fields = [f.name for f in model._meta.get_fields() if f.concrete and not f.is_relation and f.name != 'id'] # Show concrete non-rel fields
-            # Better approach: Show all concrete fields including FKs (as strings)
             fields = [f.name for f in model._meta.get_fields() if f.concrete]
             
             # Prepare rows for template (needs pk + values list)
@@ -433,7 +611,8 @@ class TableDetailView(AccessControlMixin, TemplateView):
                 
                 rows.append({
                     'pk': obj.pk,
-                    'values': row_values
+                    'values': row_values,
+                    'slug_app': getattr(obj, 'slug_app', None) if model_name == 'Formatos_Hudn' else None
                 })
             
             context['model_name'] = model._meta.verbose_name
@@ -448,6 +627,13 @@ class TableDetailView(AccessControlMixin, TemplateView):
             context['fields'] = fields
             context['is_paginated'] = page_obj.has_other_pages()
             
+            # Identificar índice de slug_app para Formatos_Hudn
+            if model_name == 'Formatos_Hudn':
+                try:
+                    context['slug_app_index'] = fields.index('slug_app')
+                except ValueError:
+                    pass
+
             # Pasar parámetros actuales para mantener filtros en paginación/UI
             context['query'] = q
             context['current_limit'] = limit
@@ -478,43 +664,53 @@ class DynamicExcelTemplateView(AccessControlMixin, TemplateView):
         response["Content-Disposition"] = f'attachment; filename="{filename}"'
         return response
 
-class DynamicImportExcelView(AccessControlMixin, TemplateView):
+class DynamicImportExcelView(AccessControlMixin, DynamicModelMixin, TemplateView):
     permission_type = 'add'
     template_name = 'core/table_detail.html'
 
+    def get_context_data(self, **kwargs):
+        # Redirigir a la vista de tabla si se intenta entrar por GET
+        return super().get_context_data(**kwargs)
+
     def post(self, request, *args, **kwargs):
-        module_name = kwargs.get('module_name')
-        model_name = kwargs.get('model_name')
-        
-        model = get_model_safe(module_name, model_name)
-        if not model:
-            from django.http import Http404
-            raise Http404("Modelo no encontrado")
+        try:
+            module_name = kwargs.get('module_name')
+            model_name = kwargs.get('model_name')
             
-        file = request.FILES.get('file')
-        if not file:
-            from django.contrib import messages
-            messages.error(request, "Debe adjuntar un archivo.")
-            return redirect(request.META.get('HTTP_REFERER', '/'))
+            model = self.get_model()
+            if not model:
+                from django.http import Http404
+                raise Http404("Modelo no encontrado")
+                
+            file = request.FILES.get('file')
+            if not file:
+                messages.error(request, "Debe adjuntar un archivo.")
+                return redirect(request.META.get('HTTP_REFERER', '/'))
+                
+            preview = request.POST.get('preview') == '1'
             
-        preview = request.POST.get('preview') == '1'
-        
-        result = process_excel_import(request, model, file, preview=preview)
-        
-        from django.contrib import messages
-        if result.get('response'):
-            if preview:
-                messages.warning(request, f"VISTA PREVIA: {result['message']} Descargando reporte de errores.")
+            # Procesar importación
+            result = process_excel_import(request, model, file, preview=preview)
+            
+            if result.get('response'):
+                if preview:
+                    messages.warning(request, f"VISTA PREVIA: {result.get('message', 'Resultados generados')}. Descargando reporte.")
+                else:
+                    messages.error(request, f"Importación con observaciones: {result.get('message', 'Errores encontrados')}")
+                return result['response']
+            
+            if result['success']:
+                if preview:
+                    messages.info(request, f"VISTA PREVIA: Se importarían {result.get('count', 0)} registros correctamente.")
+                else:
+                    messages.success(request, f"Éxito: {result.get('message', 'Registros importados')}")
             else:
-                messages.error(request, f"Importación fallida: {result['message']}")
-            return result['response']
-        
-        if result['success']:
-            if preview:
-                messages.info(request, f"VISTA PREVIA: Se importarían {result['count']} registros correctamente.")
-            else:
-                messages.success(request, f"Éxito: {result['message']}")
-        else:
-            messages.error(request, result['message'])
+                messages.error(request, result.get('message', 'Error desconocido en la importación'))
+                
+        except Exception as e:
+            import traceback
+            print(f"CRITICAL ERROR IN IMPORT: {e}")
+            print(traceback.format_exc())
+            messages.error(request, f"Error crítico del servidor: {str(e)}")
             
         return redirect(request.META.get('HTTP_REFERER', '/'))

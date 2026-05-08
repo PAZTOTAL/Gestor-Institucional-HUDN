@@ -1,0 +1,3 @@
+
+[DELETE] Intento eliminar: tipo=tutela, id=2803, method=DELETE, user=SISTEMAS
+  -> Eliminado correctamente: tutela ID 2803

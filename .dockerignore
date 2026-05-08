@@ -1,0 +1,14 @@
+venv/
+staticfiles/
+media/
+sessions/
+__pycache__/
+*.pyc
+*.pyo
+.env
+.git/
+*.xlsx
+*.xlsm
+*.pdf
+error_log.txt
+temp_import/

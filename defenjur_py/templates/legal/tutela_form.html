@@ -1,25 +1,57 @@
 {% extends 'base.html' %}
 
-{% block title %}Nueva Tutela | DEFENJUR{% endblock %}
+{% block title %}{% if object.pk %}Editar Tutela #{{ object.id }}{% else %}Nueva Tutela{% endif %} | DEFENJUR{% endblock %}
 
-{% block header_title %}Registrar Nueva Acción de Tutela{% endblock %}
+{% block header_title %}{% if object.pk %}Editar / Responder Tutela{% else %}Registrar Nueva Acción de Tutela{% endif %}{% endblock %}
 
 {% block content %}
 <div class="card animate-fade">
     <form method="post" enctype="multipart/form-data">
         {% csrf_token %}
         
-        <div class="form-grid">
+        <!-- SECCIÓN 1: RADICACIÓN -->
+        <div class="section-header-premium">
+            <i data-lucide="folder-plus"></i>
+            <div>
+                <h3>Sección 1: Radicación y Reparto</h3>
+                <p>Datos iniciales de la tutela, despacho y asignación de abogado.</p>
+            </div>
+        </div>
+        
+        <div class="form-grid" style="margin-bottom: 2rem;">
             {% for field in form %}
-                <div class="form-group {% if field.name in 'vinculados,objeto_tutela,asunto_tutela,causa,observaciones,tramite_impartido,fallo_primera_instancia,fallo_segunda_instancia,respuesta_incidente_desacato,fallo_desacato,derechos_vulnerados,pretensiones' %}full-width{% endif %}">
+                {% if field.name in form.campos_fase1 %}
+                <div class="form-group {% if field.name in 'objeto_tutela,asunto_tutela,causa,observaciones,tramite_impartido,fallo_primera_instancia,fallo_segunda_instancia,respuesta_incidente_desacato,fallo_desacato,pretensiones' %}full-width{% endif %}">
                     <label for="{{ field.id_for_label }}">{{ field.label }}</label>
                     {{ field }}
                     {% if field.errors %}
-                        <div style="color: var(--accent); font-size: 0.8rem; margin-top: 5px;">
-                            {{ field.errors }}
-                        </div>
+                        <div class="field-error">{{ field.errors }}</div>
                     {% endif %}
                 </div>
+                {% endif %}
+            {% endfor %}
+        </div>
+
+        <!-- SECCIÓN 2: GESTIÓN JURÍDICA -->
+        <div class="section-header-premium secondary">
+            <i data-lucide="scale"></i>
+            <div>
+                <h3>Sección 2: Gestión Jurídica y Respuesta</h3>
+                <p>Seguimiento del proceso, sentido del fallo y contestación oficial.</p>
+            </div>
+        </div>
+
+        <div class="form-grid">
+            {% for field in form %}
+                {% if field.name in form.campos_fase2 %}
+                <div class="form-group {% if field.name in 'objeto_tutela,asunto_tutela,causa,observaciones,tramite_impartido,fallo_primera_instancia,fallo_segunda_instancia,respuesta_incidente_desacato,fallo_desacato,pretensiones' %}full-width{% endif %}">
+                    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                    {{ field }}
+                    {% if field.errors %}
+                        <div class="field-error">{{ field.errors }}</div>
+                    {% endif %}
+                </div>
+                {% endif %}
             {% endfor %}
         </div>
 
@@ -31,7 +63,7 @@
 
         <div style="margin-top: 2rem; display: flex; gap: 1rem; justify-content: flex-end;">
             <a href="{% url 'tutelas' %}" class="btn-premium" style="background: rgba(255,255,255,0.1); text-decoration: none;">Cancelar</a>
-            <button type="submit" class="btn-premium">Guardar Registro</button>
+            <button type="submit" class="btn-premium">{% if object.pk %}Guardar Cambios{% else %}Guardar Registro{% endif %}</button>
         </div>
     </form>
 </div>
@@ -39,4 +71,367 @@
 
 {% block extra_js %}
 {% include 'legal/includes/nexus_lookup_js.html' %}
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<style>
+/* Estilos para secciones y campos bloqueados */
+.section-header-premium {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+.section-header-premium i {
+    width: 32px;
+    height: 32px;
+    color: #6366f1;
+}
+.section-header-premium h3 {
+    margin: 0;
+    font-size: 1.1rem;
+    color: #f8fafc;
+}
+.section-header-premium p {
+    margin: 0;
+    font-size: 0.85rem;
+    color: #94a3b8;
+}
+.section-header-premium.secondary i {
+    color: #10b981;
+}
+
+.readonly-field {
+    background-color: rgba(15, 23, 42, 0.5) !important;
+    border-color: rgba(255, 255, 255, 0.05) !important;
+    color: #64748b !important;
+    cursor: not-allowed !important;
+    pointer-events: none;
+}
+
+.field-error {
+    color: #f43f5e;
+    font-size: 0.8rem;
+    margin-top: 5px;
+}
+/* Select2 Dark Theme Overrides para DEFENJUR */
+.select2-container--default .select2-selection--multiple {
+    background-color: rgba(15, 23, 42, 0.5) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border-radius: 8px !important;
+    min-height: 44px;
+}
+.select2-container--default.select2-container--focus .select2-selection--multiple {
+    border-color: #6366f1 !important;
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2) !important;
+}
+.select2-container--default .select2-selection--multiple .select2-selection__choice {
+    background-color: rgba(99, 102, 241, 0.3) !important;
+    border: 1px solid #6366f1 !important;
+    color: #f8fafc !important;
+    border-radius: 6px;
+    padding: 2px 6px;
+    margin-top: 6px;
+}
+.select2-container--default .select2-selection--multiple .select2-selection__choice__remove {
+    color: #f8fafc !important;
+    margin-right: 6px;
+    border-right: 1px solid rgba(255,255,255,0.2);
+    padding-right: 6px;
+}
+.select2-container--default .select2-selection--multiple .select2-selection__choice__remove:hover {
+    background-color: transparent !important;
+    color: #f43f5e !important;
+}
+.select2-dropdown {
+    background-color: #1e293b !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border-radius: 8px !important;
+    color: #f8fafc !important;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+}
+.select2-container--default .select2-results__option--highlighted[aria-selected] {
+    background-color: #6366f1 !important;
+    color: white !important;
+}
+.select2-container--default .select2-results__option[aria-selected=true] {
+    background-color: rgba(255, 255, 255, 0.05) !important;
+    color: #94a3b8 !important;
+}
+.select2-container--default .select2-search--inline .select2-search__field {
+    color: #f8fafc !important;
+    margin-top: 8px;
+}
+.select2-container--default .select2-results__option {
+    padding: 8px 12px;
+}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script>
+    $(document).ready(function() {
+        $('.select2-tags').select2({
+            tags: true,
+            tokenSeparators: [',', '\n'],
+            width: '100%',
+            createTag: function(params) {
+                var term = $.trim(params.term);
+                if (term === '') {
+                    return null;
+                }
+                return {
+                    id: term,
+                    text: term,
+                    newTag: true
+                }
+            }
+        });
+
+        /* --- Lógica de Desacato --- */
+        const $chkDesacato = $('#id_incidente_desacato');
+        if($chkDesacato.length) {
+            // Estilizar el checkbox como un switch
+            const $wrapper = $('<label class="switch-premium"></label>');
+            $chkDesacato.wrap($wrapper);
+            $chkDesacato.after('<span class="slider-premium"></span>');
+            
+            // Crear el contenedor para los campos de desacato
+            const $desacatoContainer = $('<div id="desacato-container" style="display: none; width: 100%; grid-column: 1 / -1; margin-top: 1rem;"></div>');
+            
+            // Estructura para los incidentes (Formset)
+            const $incidentesWrapper = $(`
+                <div class="incidentes-formset" style="background: rgba(99,102,241,0.05); padding: 1.5rem; border-radius: 12px; border: 1px solid rgba(99,102,241,0.2);">
+                    <h4 style="margin-top: 0; color: #6366f1; display: flex; align-items: center; gap: 8px;">
+                        <i data-lucide="alert-circle"></i> Seguimiento de Incidentes de Desacato
+                    </h4>
+                    {{ incidentes.management_form }}
+                    <div id="incidentes-list">
+                        {% for inc_form in incidentes %}
+                            <div class="incidente-item card" style="margin-bottom: 1rem; border: 1px solid rgba(255,255,255,0.05);">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                                    <strong style="color: #94a3b8;">Incidente #{{ forloop.counter }}</strong>
+                                    {% if incidentes.can_delete %}
+                                        <div style="display: flex; align-items: center; gap: 4px; font-size: 0.8rem; color: #f43f5e;">
+                                            {{ inc_form.DELETE }} <label for="{{ inc_form.DELETE.id_for_label }}">Eliminar</label>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                <div class="form-grid">
+                                    {% for f in inc_form.visible_fields %}
+                                        {% if f.name != 'DELETE' %}
+                                        <div class="form-group {% if f.name == 'observaciones' %}full-width{% endif %}">
+                                            <label>{{ f.label }}</label>
+                                            {{ f }}
+                                        </div>
+                                        {% endif %}
+                                    {% endfor %}
+                                    {% for h in inc_form.hidden_fields %}{{ h }}{% endfor %}
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                    <button type="button" id="add-incidente" class="btn-premium" style="background: #6366f1; width: auto; font-size: 0.85rem; padding: 0.5rem 1rem;">
+                        <i data-lucide="plus-circle" style="width: 16px;"></i> Agregar otro Incidente
+                    </button>
+                </div>
+            `);
+            
+            $desacatoContainer.append($incidentesWrapper);
+            $chkDesacato.closest('.form-group').after($desacatoContainer);
+
+            // --- SECCIÓN: RESPUESTA DE TUTELA (HECHOS) ---
+            const $respTutelaContainer = $('<div id="resp-tutela-container" style="display: none; width: 100%; grid-column: 1 / -1; margin-top: 1rem;"></div>');
+            const $pronunciamientosWrapper = $(`
+                <div class="pronunciamientos-formset" style="background: rgba(16, 185, 129, 0.05); padding: 1.5rem; border-radius: 12px; border: 1px solid rgba(16, 185, 129, 0.2);">
+                    <h4 style="margin-top: 0; color: #10b981; display: flex; align-items: center; gap: 8px;">
+                        <i data-lucide="message-square"></i> Respuesta de Tutela (Pronunciamiento sobre Hechos)
+                    </h4>
+                    {{ pronunciamientos.management_form }}
+                    <div id="pronunciamientos-list">
+                        {% for p_form in pronunciamientos %}
+                            <div class="pronunciamiento-item card" style="margin-bottom: 1rem; border: 1px solid rgba(16, 185, 129, 0.1);">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                                    <strong style="color: #94a3b8;">Hecho #{{ forloop.counter }}</strong>
+                                    {% if pronunciamientos.can_delete %}
+                                        <div style="display: flex; align-items: center; gap: 4px; font-size: 0.8rem; color: #f43f5e;">
+                                            {{ p_form.DELETE }} <label for="{{ p_form.DELETE.id_for_label }}">Eliminar</label>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                <div class="form-grid">
+                                    <div class="form-group full-width">
+                                        <label>{{ p_form.hecho_referencia.label }}</label>
+                                        {{ p_form.hecho_referencia }}
+                                    </div>
+                                    <div class="form-group">
+                                        <label>{{ p_form.tipo_respuesta.label }}</label>
+                                        {{ p_form.tipo_respuesta }}
+                                    </div>
+                                    <div class="form-group full-width">
+                                        <label>{{ p_form.pronunciamiento.label }}</label>
+                                        {{ p_form.pronunciamiento }}
+                                    </div>
+                                    {% for h in p_form.hidden_fields %}{{ h }}{% endfor %}
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                    <button type="button" id="add-pronunciamiento" class="btn-premium" style="background: #10b981; width: auto; font-size: 0.85rem; padding: 0.5rem 1rem;">
+                        <i data-lucide="plus-circle" style="width: 16px;"></i> Agregar otro Pronunciamiento
+                    </button>
+                </div>
+            `);
+            $respTutelaContainer.append($pronunciamientosWrapper);
+            
+            // Insertar botón disparador antes del contenedor de desacato
+            const $btnRespTutela = $(`
+                <div class="form-group" style="grid-column: 1 / -1; margin-bottom: 1rem; display: flex; gap: 1rem; align-items: center;">
+                    <button type="button" id="btn-toggle-resp-tutela" class="btn-premium" style="background: rgba(16, 185, 129, 0.1); border: 1px solid #10b981; color: #10b981; width: auto;">
+                        <i data-lucide="message-square"></i> Cargar Respuesta de Tutela (Hechos)
+                    </button>
+                    <button type="button" class="btn-premium" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #94a3b8; width: auto; cursor: not-allowed; opacity: 0.6;" title="Primero debe guardar la tutela para generar el documento">
+                        <i data-lucide="file-text"></i> Generar Documento (.docx)
+                    </button>
+                </div>
+            `);
+            const $pretensionesGroup = $('[name="pretensiones"]').closest('.form-group');
+            if ($pretensionesGroup.length) {
+                $pretensionesGroup.before($btnRespTutela);
+                $btnRespTutela.after($respTutelaContainer);
+            } else {
+                $chkDesacato.closest('.form-group').before($btnRespTutela);
+                $btnRespTutela.after($respTutelaContainer);
+            }
+
+            $btnRespTutela.find('#btn-toggle-resp-tutela').on('click', function() {
+                $respTutelaContainer.slideToggle(300);
+            });
+
+            // Lógica para agregar pronunciamientos
+            $('#add-pronunciamiento').on('click', function() {
+                const prefix = '{{ pronunciamientos.prefix }}';
+                const formIdx = $(`#id_${prefix}-TOTAL_FORMS`).val();
+                const emptyForm = $('#empty-pronunciamiento-template').html().replace(/__prefix__/g, formIdx);
+                $('#pronunciamientos-list').append(emptyForm);
+                $(`#id_${prefix}-TOTAL_FORMS`).val(parseInt(formIdx) + 1);
+                if(window.lucide) window.lucide.createIcons();
+            });
+
+            // Función para mostrar/ocultar desacato
+            function toggleDesacato() {
+                if($chkDesacato.is(':checked')) {
+                    $desacatoContainer.slideDown(300);
+                } else {
+                    $desacatoContainer.slideUp(300);
+                }
+            }
+
+            // Lógica para agregar incidentes
+            $('#add-incidente').on('click', function() {
+                const prefix = '{{ incidentes.prefix }}';
+                const formIdx = $(`#id_${prefix}-TOTAL_FORMS`).val();
+                const emptyForm = $('#empty-form-template').html().replace(/__prefix__/g, formIdx);
+                $('#incidentes-list').append(emptyForm);
+                $(`#id_${prefix}-TOTAL_FORMS`).val(parseInt(formIdx) + 1);
+                if(window.lucide) window.lucide.createIcons();
+            });
+
+            // Inicializar y escuchar cambios
+            toggleDesacato();
+            $chkDesacato.on('change', toggleDesacato);
+        }
+    });
+</script>
+
+<script type="text/html" id="empty-pronunciamiento-template">
+    <div class="pronunciamiento-item card" style="margin-bottom: 1rem; border: 1px solid rgba(16, 185, 129, 0.1);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+            <strong style="color: #10b981;">Nuevo Pronunciamiento</strong>
+        </div>
+        <div class="form-grid">
+            <div class="form-group full-width">
+                <label>{{ pronunciamientos.empty_form.hecho_referencia.label }}</label>
+                {{ pronunciamientos.empty_form.hecho_referencia }}
+            </div>
+            <div class="form-group">
+                <label>{{ pronunciamientos.empty_form.tipo_respuesta.label }}</label>
+                {{ pronunciamientos.empty_form.tipo_respuesta }}
+            </div>
+            <div class="form-group full-width">
+                <label>{{ pronunciamientos.empty_form.pronunciamiento.label }}</label>
+                {{ pronunciamientos.empty_form.pronunciamiento }}
+            </div>
+            {% for h in pronunciamientos.empty_form.hidden_fields %}{{ h }}{% endfor %}
+        </div>
+    </div>
+</script>
+
+<!-- Template para formulario vacío -->
+<script type="text/html" id="empty-form-template">
+    <div class="incidente-item card" style="margin-bottom: 1rem; border: 1px solid rgba(255,255,255,0.05);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+            <strong style="color: #6366f1;">Nuevo Incidente</strong>
+        </div>
+        <div class="form-grid">
+            {% for f in incidentes.empty_form.visible_fields %}
+                {% if f.name != 'DELETE' %}
+                <div class="form-group {% if f.name == 'observaciones' %}full-width{% endif %}">
+                    <label>{{ f.label }}</label>
+                    {{ f }}
+                </div>
+                {% endif %}
+            {% endfor %}
+            {% for h in incidentes.empty_form.hidden_fields %}{{ h }}{% endfor %}
+        </div>
+    </div>
+</script>
+
+<style>
+/* Estilos para el Switch Premium */
+.switch-premium {
+  position: relative;
+  display: inline-block;
+  width: 50px;
+  height: 26px;
+  margin-top: 8px;
+}
+.switch-premium input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+.slider-premium {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #cbd5e1;
+  transition: .4s;
+  border-radius: 34px;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+}
+.slider-premium:before {
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  left: 4px;
+  bottom: 4px;
+  background-color: white;
+  transition: .4s;
+  border-radius: 50%;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+}
+input:checked + .slider-premium {
+  background-color: #10b981;
+}
+input:checked + .slider-premium:before {
+  transform: translateX(24px);
+}
+#id_incidente_desacato {
+    display: none !important;
+}
+</style>
 {% endblock %}

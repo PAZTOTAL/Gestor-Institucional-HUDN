@@ -11,7 +11,7 @@
     </div>
 
     <!-- Cards Grid -->
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 animate-in fade-in slide-in-from-bottom-8 duration-1000">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-8 animate-in fade-in slide-in-from-bottom-8 duration-1000">
         <!-- Horas Extras Portal -->
         <a href="{% url 'horas_extras:hora_extra_list' %}" class="group text-decoration-none">
             <div class="glass-card h-full p-8 flex flex-col items-center text-center transition-all duration-300 border-2 border-transparent hover:border-blue-600">
@@ -47,6 +47,26 @@
                 </p>
                 <div class="mt-auto inline-flex items-center px-8 py-3 bg-emerald-600 group-hover:bg-black text-white font-black rounded-2xl transition-all shadow-xl shadow-emerald-100">
                     Ver Reportes
+                    <svg class="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
+                    </svg>
+                </div>
+            </div>
+        </a>
+        <!-- Paz y Salvo -->
+        <a href="{% url 'paz_y_salvo:pys_landing' %}" class="group text-decoration-none">
+            <div class="glass-card h-full p-8 flex flex-col items-center text-center transition-all duration-300 border-2 border-transparent hover:border-sky-600">
+                <div class="w-20 h-20 bg-sky-100 rounded-3xl flex items-center justify-center text-sky-600 mb-6 group-hover:scale-110 transition-transform duration-500 shadow-inner">
+                    <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                </div>
+                <h2 class="text-3xl font-black text-slate-900 mb-4">Paz y Salvo</h2>
+                <p class="text-slate-600 text-lg mb-8 leading-relaxed">
+                    Gestión y seguimiento de paz y salvos institucionales para el retiro de funcionarios.
+                </p>
+                <div class="mt-auto inline-flex items-center px-8 py-3 bg-sky-600 group-hover:bg-black text-white font-black rounded-2xl transition-all shadow-xl shadow-sky-100">
+                    Ingresar Ahora
                     <svg class="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
                     </svg>

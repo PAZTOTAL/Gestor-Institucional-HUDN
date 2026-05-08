@@ -18,12 +18,7 @@ from dotenv import load_dotenv
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# Apps obstétricas (meows, trabajoparto) viven bajo UNIFICADOR-V1 en este monorepo.
-_SISTEMA_OBST = BASE_DIR / 'UNIFICADOR-V1' / 'sistema_obstetrico'
-if _SISTEMA_OBST.is_dir():
-    _obst_path = str(_SISTEMA_OBST)
-    if _obst_path not in sys.path:
-        sys.path.insert(0, _obst_path)
+# Apps obstétricas (meows, trabajoparto) ahora viven en la raíz.
 
 load_dotenv(BASE_DIR / '.env')
 
@@ -37,7 +32,7 @@ SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-vm8ux)05e9u$fc=qz5^$)ma+q!
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv('DEBUG', 'True') == 'True'
 
-ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1,GestorInstitucionalHUDN,.ngrok.io,.ngrok-free.app,.trycloudflare.com').split(',')
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1,GestorInstitucionalHUDN,.ngrok.io,.ngrok-free.app,.trycloudflare.com,*').split(',')
 
 
 # Para ngrok y túneles seguros
@@ -82,9 +77,12 @@ INSTALLED_APPS = [
     'certificados_laborales',
     'visor_soportes',
     'tercerizadas',
+    'paz_y_salvo',
+    'inventarios',
+    'formatos_apps',
     # Cuando integre el código completo de UNIFICADOR-V1 en la raíz del repo, descomente:
-    # 'meows',
-    # 'trabajoparto',
+    'meows',
+    'trabajoparto',
 ]
 
 MIDDLEWARE = [
@@ -147,17 +145,32 @@ DATABASES = {
     },
     'readonly': {
         'ENGINE': 'mssql',
-        'NAME': os.getenv('DB_READONLY_NAME', 'DGEMPRES_NEXUS'),
-        'USER': os.getenv('DB_READONLY_USER', 'apantoja'),
-        'PASSWORD': os.getenv('DB_READONLY_PASSWORD', 'ConsultasPantojaHUDN_2026$'),
+        'NAME': os.getenv('DB_READONLY_NAME', 'DGEMPRES03'),
+        'USER': os.getenv('DB_READONLY_USER', 'dsolarte'),
+        'PASSWORD': os.getenv('DB_READONLY_PASSWORD', 'ConsultaHUDN2026*/$'),
         'HOST': os.getenv('DB_READONLY_HOST', '172.20.100.209'),
         'PORT': os.getenv('DB_READONLY_PORT', ''),
-        'CONN_MAX_AGE': 0,
+        'CONN_MAX_AGE': 600,
         'OPTIONS': {
             'driver': 'ODBC Driver 17 for SQL Server',
             'host_is_server': True,
             'timeout': 10,
-            'connection_timeout': 1,
+            'connection_timeout': 5,
+        },
+    },
+    'nexus': {
+        'ENGINE': 'mssql',
+        'NAME': 'DGEMPRES_NEXUS',
+        'USER': os.getenv('DB_READONLY_USER', 'dsolarte'),
+        'PASSWORD': os.getenv('DB_READONLY_PASSWORD', 'ConsultaHUDN2026*/$'),
+        'HOST': os.getenv('DB_READONLY_HOST', '172.20.100.209'),
+        'PORT': os.getenv('DB_READONLY_PORT', ''),
+        'CONN_MAX_AGE': 600,
+        'OPTIONS': {
+            'driver': 'ODBC Driver 17 for SQL Server',
+            'host_is_server': True,
+            'timeout': 10,
+            'connection_timeout': 5,
         },
     }
 }
@@ -224,7 +237,7 @@ STATICFILES_STORAGE = 'whitenoise.storage.StaticFilesStorage'
 STATICFILES_DIRS = [
     BASE_DIR / 'static',
     BASE_DIR / 'defenjur_py' / 'static',
-    BASE_DIR / 'UNIFICADOR-V1' / 'sistema_obstetrico' / 'static',
+    ('logos-hudn', BASE_DIR / 'LOGOS-HUDN'),
 ]
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
@@ -234,9 +247,11 @@ MEDIA_ROOT = BASE_DIR / 'media'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# Sesiones en RAM pura — sin escritura a SQL Server (django_session es lento ~13s)
-# Las sesiones se pierden al reiniciar el servidor, pero el login es instantáneo
-SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
+# Sesiones en archivo — rápidas, persisten entre reinicios del servidor
+SESSION_ENGINE = 'django.contrib.sessions.backends.file'
+SESSION_FILE_PATH = os.path.join(BASE_DIR, 'sessions')
+os.makedirs(SESSION_FILE_PATH, exist_ok=True)
+SESSION_COOKIE_AGE = 28800  # 8 horas
 CACHES = {
     'default': {
         'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
@@ -248,6 +263,7 @@ CACHES = {
 LOGIN_URL = 'login'
 LOGIN_REDIRECT_URL = 'home'
 LOGOUT_REDIRECT_URL = 'login'
+CSRF_FAILURE_VIEW = 'core.views.csrf_failure'
 
 # Increase max fields for permission matrix
 DATA_UPLOAD_MAX_NUMBER_FIELDS = 10000
@@ -255,7 +271,7 @@ DATA_UPLOAD_MAX_NUMBER_FIELDS = 10000
 # DIAN Certificates Configuration
 # 1. Origen de datos (Plantilla y Excel)
 DIAN_EXCEL_PATH = os.path.join(BASE_DIR, 'CertificadoIngresos2025.xlsm')
-DIAN_TEMPLATE_PATH = os.path.join(BASE_DIR, 'media', 'certificados_dian', 'Formulario_220_2026.pdf')
+DIAN_TEMPLATE_PATH = os.path.join(BASE_DIR, 'CertificadosDIAN', 'templates', 'CertificadosDIAN', 'Formulario_220_2026_Calibracion.pdf')
 
 # 2. Destino de los PDF generados
 DIAN_OUTPUT_DIR = os.path.join(BASE_DIR.parent, 'Dian2025')
@@ -281,6 +297,13 @@ EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', '')
 EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')
 DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', EMAIL_HOST_USER)
 
+# Paz y Salvo — SMTP dedicado (MAIL_HOST / MAIL_USER / MAIL_PASS / MAIL_FROM)
+PYS_MAIL_HOST = os.getenv('MAIL_HOST', 'smtp.gmail.com')
+PYS_MAIL_PORT = int(os.getenv('MAIL_PORT', 587))
+PYS_MAIL_USER = os.getenv('MAIL_USER', '')
+PYS_MAIL_PASS = os.getenv('MAIL_PASS', '')
+PYS_MAIL_FROM = os.getenv('MAIL_FROM', os.getenv('MAIL_USER', ''))
+
 
 # Defenjur FTP / NAS Configuration
 DEFENJUR_FTP_ENABLED = True
@@ -289,6 +312,17 @@ DEFENJUR_FTP_USER = os.getenv('FTP_USER', '')
 DEFENJUR_FTP_PASSWORD = os.getenv('FTP_PASSWORD', '')
 DEFENJUR_FTP_BASE_PATH = '/web/defenjur_files/'
 
+# Paz y Salvo — JWT
+PYS_JWT_SECRET = os.getenv('PYS_JWT_SECRET', 'hudn-paz-y-salvo-secret-change-in-prod')
+PYS_JWT_EXPIRE_HOURS = 8
+
+# Paz y Salvo — Bases de datos SQL Server para catálogos
+PYS_DB_NEXUS_NAME = os.getenv('PYS_DB_NEXUS_NAME', 'DGEMPRES_NEXUS')
+PYS_DB_NEXUS_USER = os.getenv('PYS_DB_NEXUS_USER', 'apantoja')
+PYS_DB_NEXUS_PASS = os.getenv('PYS_DB_NEXUS_PASS', 'ConsultasPantojaHUDN_2026$')
+PYS_DB_SGC_NAME   = os.getenv('PYS_DB_SGC_NAME',   'SGC_HUDN')
+PYS_DB_SGC_USER   = os.getenv('PYS_DB_SGC_USER',   'apantoja')
+PYS_DB_SGC_PASS   = os.getenv('PYS_DB_SGC_PASS',   'ConsultasPantojaHUDN_2026$')
 # SECURITY HARDENING SETTINGS
 if not DEBUG:
     # Security headers

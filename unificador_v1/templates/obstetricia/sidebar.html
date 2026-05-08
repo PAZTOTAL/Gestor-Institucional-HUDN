@@ -32,6 +32,36 @@ Variables: is_panel (bool), atencion_id, documento, current_module (meows|fetal|
         </div>
     </div>
 
+    <!-- Navegación de Módulos Obstétricos -->
+    <div class="sidebar-module">
+        <div class="sidebar-module-header expanded">
+            <div class="icon-container">
+                <i data-lucide="stethoscope" class="nav-icon"></i>
+            </div>
+            <div class="sidebar-module-info">
+                <div class="sidebar-module-title">Atención</div>
+                <div class="sidebar-module-name">Obstétrica</div>
+            </div>
+            <i data-lucide="chevron-down" class="chevron"></i>
+        </div>
+        <div class="sidebar-module-dropdown expanded">
+            <nav class="tabs">
+                <a id="side-link-meows" href="/meows/crear/?atencion={{ atencion_id|default:'' }}&doc={{ documento|default:'' }}" 
+                   class="tabs-link {% if active_tab == 'meows' %}active{% endif %}">
+                    <i data-lucide="activity" class="nav-icon"></i> MEOWS
+                </a>
+                <a id="side-link-fetal" href="/fetal/?atencion={{ atencion_id|default:'' }}&doc={{ documento|default:'' }}" 
+                   class="tabs-link {% if active_tab == 'fetal' %}active{% endif %}">
+                    <i data-lucide="baby" class="nav-icon"></i> FETAL
+                </a>
+                <a id="side-link-parto" href="/parto/?atencion={{ atencion_id|default:'' }}&doc={{ documento|default:'' }}" 
+                   class="tabs-link {% if active_tab == 'parto' %}active{% endif %}">
+                    <i data-lucide="clipboard-list" class="nav-icon"></i> PARTO
+                </a>
+            </nav>
+        </div>
+    </div>
+
     <!-- Navegación de Módulos Clínicos -->
     <div class="sidebar-module">
         <a href="/atencion/sala-de-partos/" class="sidebar-module-header" style="text-decoration: none; color: inherit;">

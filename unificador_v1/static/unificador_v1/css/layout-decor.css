@@ -1,0 +1,180 @@
+/* 
+   ESTILOS DE MAQUETACIÓN PREMIUM CON DECORADOS LATERALES
+   Inspirado en el diseño de Frecuencia Fetal
+*/
+
+:root {
+    --primary-color: #2563eb;
+    --primary-hover: #1e40af;
+    --primary-dark: #1e40af;
+    --primary-light: #3b82f6;
+    --secondary-color: #64748b;
+    --secondary-dark: #475569;
+    --success-color: #10b981;
+    --success-dark: #059669;
+    --danger-color: #ef4444;
+    --danger-dark: #dc2626;
+    --warning-color: #f59e0b;
+    --warning-dark: #d97706;
+    --bg-color: #f8fafc;
+    --card-bg: #ffffff;
+    --text-primary: #0f172a;
+    --text-secondary: #64748b;
+    --border-color: #e2e8f0;
+    --border-light: #f1f5f9;
+    --accent-teal: #a78bfa;
+    --gradient-bg-start: #667eea;
+    --gradient-bg-end: #764ba2;
+    --header-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #667eea 100%);
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+    --radius: 0.5rem;
+    --radius-lg: 0.75rem;
+    --transition: 0.2s ease;
+}
+
+body {
+    background: linear-gradient(135deg, var(--gradient-bg-start) 0%, var(--gradient-bg-end) 100%) !important;
+    min-height: 100vh !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+.page-with-sidebars {
+    display: flex !important;
+    min-height: 100vh !important;
+    width: 100% !important;
+}
+
+.sidebar-decor {
+    flex: 0 0 16px !important;
+    min-width: 16px !important;
+    background: linear-gradient(180deg,
+        #667eea 0%,
+        #764ba2 20%,
+        #667eea 50%,
+        #764ba2 80%,
+        #667eea 100%) !important;
+    position: relative !important;
+    box-shadow: inset 0 0 80px rgba(255, 255, 255, 0.15),
+                inset 3px 0 0 rgba(255, 255, 255, 0.4),
+                inset -3px 0 0 rgba(0, 0, 0, 0.15),
+                0 0 35px rgba(14, 116, 144, 0.25) !important;
+}
+
+.sidebar-decor::before {
+    content: '' !important;
+    position: absolute !important;
+    inset: 0 !important;
+    background: repeating-linear-gradient(135deg,
+        transparent,
+        transparent 6px,
+        rgba(255, 255, 255, 0.12) 6px,
+        rgba(255, 255, 255, 0.12) 8px) !important;
+    pointer-events: none !important;
+}
+
+.sidebar-decor::after {
+    content: '' !important;
+    position: absolute !important;
+    inset: 0 !important;
+    background: linear-gradient(90deg, rgba(255, 255, 255, 0.15) 0%, transparent 30%, transparent 70%, rgba(255, 255, 255, 0.15) 100%) !important;
+    pointer-events: none !important;
+}
+
+.sidebar-decor .decor-dots {
+    position: absolute !important;
+    width: 100% !important;
+    height: 100% !important;
+    background-image: radial-gradient(circle at 50% 8%, rgba(255, 255, 255, 0.35) 4px, transparent 4px),
+                      radial-gradient(circle at 50% 25%, rgba(255, 255, 255, 0.2) 3px, transparent 3px),
+                      radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.35) 4px, transparent 4px),
+                      radial-gradient(circle at 50% 75%, rgba(255, 255, 255, 0.2) 3px, transparent 3px),
+                      radial-gradient(circle at 50% 92%, rgba(255, 255, 255, 0.35) 4px, transparent 4px) !important;
+    background-size: 100% 25% !important;
+    pointer-events: none !important;
+    z-index: 1 !important;
+}
+
+.main-center {
+    flex: 1 !important;
+    display: flex !important;
+    justify-content: center !important;
+    min-width: 0 !important;
+    background: #f8fafc !important;
+}
+
+.main-wrapper {
+    width: 100% !important;
+    max-width: 1360px !important;
+    margin: 0 !important;
+    padding: 2rem !important;
+    border-left: 1px solid rgba(8, 145, 178, 0.3) !important;
+    border-right: 1px solid rgba(8, 145, 178, 0.3) !important;
+    background: var(--card-bg) !important;
+    box-shadow: 0 0 25px rgba(0, 0, 0, 0.08) !important;
+    min-height: 100vh !important;
+}
+
+/* Header Replica Styles */
+.site-header.meows-header-replica {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #667eea 100%) !important;
+    color: #fff !important;
+    padding: 0.4rem 1.15rem !important;
+    display: grid !important;
+    grid-template-columns: 120px 1fr 120px !important;
+    align-items: center !important;
+    gap: 12px !important;
+    border-bottom: none !important;
+    border-radius: 12px !important;
+    margin: -1.5rem auto 1rem auto !important;
+    width: calc(100% - 16px) !important;
+    max-width: 1360px !important;
+    position: relative !important;
+    top: auto !important;
+    overflow: visible !important;
+    box-shadow: 0 4px 14px rgba(102, 126, 234, 0.35) !important;
+}
+
+.site-header.meows-header-replica .header-logo-left,
+.site-header.meows-header-replica .header-logo-right {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(248, 250, 252, 0.9) 100%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.75) !important;
+    border-radius: 12px !important;
+    box-shadow: 0 3px 10px rgba(15, 23, 42, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.85) !important;
+    backdrop-filter: blur(2px);
+    padding: 0.3rem 0.6rem !important;
+    justify-self: center !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.site-header.meows-header-replica .header-logo-left img,
+.site-header.meows-header-replica .header-logo-right img {
+    height: 44px;
+    width: auto;
+    object-fit: contain;
+}
+
+.site-header.meows-header-replica .header-center {
+    text-align: center !important;
+}
+
+.site-header.meows-header-replica .header-title {
+    font-size: 1.45rem;
+    font-weight: 700;
+    color: #fff !important;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+    margin: 0 0 2px 0;
+}
+
+.site-header.meows-header-replica .header-subtitle {
+    margin: 0;
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: rgba(255,255,255,0.95);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}

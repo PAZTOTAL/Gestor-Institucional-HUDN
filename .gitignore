@@ -36,6 +36,7 @@ db.sqlite3
 db.sqlite3-journal
 media/
 staticfiles/
+sessions/
 
 # VS Code
 .vscode/
@@ -44,3 +45,7 @@ staticfiles/
 .DS_Store
 *.log
 .claude/settings.local.json
+brain/
+.gemini/
+.claude
+SERVIDOR_INSTRUCCIONES.txt

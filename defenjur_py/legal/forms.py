@@ -3,7 +3,8 @@ from django.contrib.auth import get_user_model
 from .models import (
     AccionTutela, DerechoPeticion, ProcesoExtrajudicial, ProcesoJudicialActiva, ProcesoJudicialPasiva,
     Peritaje, PagoSentenciaJudicial, ProcesoJudicialTerminado,
-    ProcesoAdministrativoSancionatorio, RequerimientoEnteControl, DespachoJudicial
+    ProcesoAdministrativoSancionatorio, RequerimientoEnteControl, DespachoJudicial,
+    CatalogoDerechoVulnerado, CatalogoAccionado, IncidenteDesacato, PronunciamientoHecho
 )
 
 
@@ -29,11 +30,15 @@ class PremiumModelForm(forms.ModelForm):
             if isinstance(field.widget, forms.Textarea):
                 field.widget.attrs['rows'] = 4
 
+class AnyMultipleChoiceField(forms.MultipleChoiceField):
+    def valid_value(self, value):
+        return True
+
 class AccionTutelaForm(PremiumModelForm):
-    cedula_accionante = forms.CharField(
-        label='CÉDULA ACCIONANTE', 
-        required=False, 
-        widget=forms.TextInput(attrs={'placeholder': 'Digite cédula para buscar...'})
+    email_accionante = forms.EmailField(
+        label='EMAIL ACCIONANTE',
+        required=False,
+        widget=forms.EmailInput(attrs={'placeholder': 'correo@ejemplo.com'})
     )
     cedula_abogado = forms.CharField(
         label='CÉDULA ABOGADO', 
@@ -45,22 +50,131 @@ class AccionTutelaForm(PremiumModelForm):
         required=False,
         widget=forms.Select(attrs={'class': 'premium-input'})
     )
+    accionado = AnyMultipleChoiceField(
+        label='ACCIONADO',
+        required=False,
+        widget=forms.SelectMultiple(attrs={'class': 'premium-input select2-tags', 'data-placeholder': 'Escriba entidades y presione Enter...', 'style': 'width: 100%'})
+    )
+    vinculados = AnyMultipleChoiceField(
+        label='VINCULADOS',
+        required=False,
+        widget=forms.SelectMultiple(attrs={'class': 'premium-input select2-tags', 'data-placeholder': 'Escriba vinculados y presione Enter...', 'style': 'width: 100%'})
+    )
+    derechos_vulnerados = AnyMultipleChoiceField(
+        label='DERECHOS VULNERADOS',
+        choices=[],
+        required=False,
+        widget=forms.SelectMultiple(attrs={'class': 'premium-input select2-tags', 'data-placeholder': 'Seleccione o escriba derechos...', 'style': 'width: 100%'})
+    )
+
+    campos_fase1 = [
+        'num_proceso', 'fecha_llegada', 'despacho_judicial', 'num_reparto', 'cedula_accionante', 
+        'accionante', 'email_accionante', 'accionado', 'cedula_abogado', 
+        'abogado_responsable', 'fecha_notificacion', 'termino_dias', 
+        'termino_horas', 'fecha_vencimiento'
+    ]
+    
+    campos_fase2 = [
+        'vinculados', 'derechos_vulnerados', 'pretensiones', 'fecha_respuesta', 'radicado_respuesta', 'medio_envio_respuesta',
+        'estado_tutela', 'sentido_fallo', 'requiere_cumplimiento', 'fecha_limite_cumplimiento', 'incidente_desacato', 'observaciones'
+    ]
 
     def __init__(self, *args, **kwargs):
+        self.user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
+        
+        # Lógica de detección de roles (Paridad con views.py)
+        perfil = getattr(self.user, 'perfil', None) if self.user else None
+        rol = (getattr(self.user, 'rol', None) or getattr(perfil, 'legal_rol', '') or '').lower()
+        
+        is_abogado = rol in ['abogado', 'especialista', 'coordinador']
+        is_radicador = rol == 'radicador'
+        
+        # 1. Si es ABOGADO y ya existe el registro, BLOQUEAR fase 1 (Radicación)
+        if is_abogado and self.instance and self.instance.pk:
+            for field_name in self.campos_fase1:
+                if field_name in self.fields:
+                    # Usar readonly en lugar de disabled para asegurar visualización de datos
+                    self.fields[field_name].widget.attrs['readonly'] = True
+                    self.fields[field_name].widget.attrs['class'] = self.fields[field_name].widget.attrs.get('class', '') + ' readonly-field'
+                    # Para selects, disabled es necesario pero readonly-field ayudará
+                    if isinstance(self.fields[field_name].widget, (forms.Select, forms.SelectMultiple)):
+                        self.fields[field_name].disabled = True
+
+        # 2. Si es RADICADOR, BLOQUEAR fase 2 (Gestión)
+        if is_radicador:
+            for field_name in self.campos_fase2:
+                if field_name in self.fields:
+                    self.fields[field_name].widget.attrs['readonly'] = True
+                    self.fields[field_name].widget.attrs['class'] = self.fields[field_name].widget.attrs.get('class', '') + ' readonly-field'
+                    if isinstance(self.fields[field_name].widget, (forms.Select, forms.SelectMultiple)):
+                        self.fields[field_name].disabled = True
+
         self.fields['despacho_judicial'].choices = get_despacho_choices()
-        if 'identificacion_accionante' in self.fields: # Si existe en el modelo (check migrations)
-            self.fields['cedula_accionante'].initial = self.instance.identificacion_accionante
+            
+        derecho_choices = list(CatalogoDerechoVulnerado.objects.values_list('nombre', 'nombre'))
+        
+        accionado_objs = CatalogoAccionado.objects.all()
+        accionado_choices = []
+        for obj in accionado_objs:
+            label = f"[{obj.nit}] {obj.nombre}" if obj.nit else obj.nombre
+            accionado_choices.append((obj.nombre, label))
+            
+        self.fields['derechos_vulnerados'].choices = derecho_choices
+        self.fields['accionado'].choices = accionado_choices
+        
+        if self.instance and self.instance.pk:
+            if self.instance.despacho_judicial:
+                current_desp_choices = [c[0] for c in self.fields['despacho_judicial'].choices]
+                if self.instance.despacho_judicial not in current_desp_choices:
+                    self.fields['despacho_judicial'].choices.append((self.instance.despacho_judicial, self.instance.despacho_judicial))
+
+            if self.instance.vinculados:
+                curr_vinc = [x.strip() for x in self.instance.vinculados.split(',') if x.strip()]
+                self.initial['vinculados'] = curr_vinc
+                self.fields['vinculados'].choices = [(x, x) for x in curr_vinc]
+                
+            if self.instance.accionado:
+                curr_acc = [x.strip() for x in self.instance.accionado.split(',') if x.strip()]
+                self.initial['accionado'] = curr_acc
+                exist_acc = [c[0] for c in accionado_choices]
+                extra_acc = [(x, x) for x in curr_acc if x not in exist_acc]
+                self.fields['accionado'].choices = accionado_choices + extra_acc
+            if self.instance.derechos_vulnerados:
+                curr_der = [x.strip() for x in self.instance.derechos_vulnerados.split(',') if x.strip()]
+                self.initial['derechos_vulnerados'] = curr_der
+                exist_der = [c[0] for c in derecho_choices]
+                extra_der = [(x, x) for x in curr_der if x not in exist_der]
+                self.fields['derechos_vulnerados'].choices = derecho_choices + extra_der
+
+    def clean_accionado(self):
+        data = self.cleaned_data.get('accionado')
+        if isinstance(data, list):
+            return ", ".join([x.strip() for x in data if x.strip()])
+        return data
+
+    def clean_vinculados(self):
+        data = self.cleaned_data.get('vinculados')
+        if isinstance(data, list):
+            return ", ".join([x.strip() for x in data if x.strip()])
+        return data
+
+    def clean_derechos_vulnerados(self):
+        data = self.cleaned_data.get('derechos_vulnerados')
+        if isinstance(data, list):
+            return ", ".join([x.strip() for x in data if x.strip()])
+        return data
 
     class Meta:
         model = AccionTutela
         fields = [
-            'num_proceso', 'fecha_llegada', 'despacho_judicial', 'cedula_accionante', 'accionante', 'accionado', 'cedula_abogado', 'abogado_responsable',
+            'num_proceso', 'fecha_llegada', 'despacho_judicial', 'num_reparto', 'cedula_accionante', 'accionante', 'email_accionante', 'accionado', 'cedula_abogado', 'abogado_responsable',
             'fecha_notificacion', 'termino_dias', 'termino_horas', 'fecha_vencimiento',
+            'vinculados', 'derechos_vulnerados', 'pretensiones',
             'fecha_respuesta', 'radicado_respuesta', 'medio_envio_respuesta',
-            'derechos_vulnerados', 'pretensiones',
             'estado_tutela', 'sentido_fallo',
-            'requiere_cumplimiento', 'fecha_limite_cumplimiento', 'incidente_desacato', 'observaciones'
+            'requiere_cumplimiento', 'fecha_limite_cumplimiento', 'incidente_desacato',
+            'observaciones'
         ]
         widgets = {
             'fecha_llegada': forms.DateInput(attrs={'type': 'date'}),
@@ -68,10 +182,45 @@ class AccionTutelaForm(PremiumModelForm):
             'fecha_vencimiento': forms.DateTimeInput(attrs={'type': 'datetime-local'}),
             'fecha_respuesta': forms.DateTimeInput(attrs={'type': 'datetime-local'}),
             'fecha_limite_cumplimiento': forms.DateInput(attrs={'type': 'date'}),
-            'derechos_vulnerados': forms.Textarea(attrs={'rows': 2}),
+            'cedula_accionante': forms.TextInput(attrs={'placeholder': 'Digite cédula para buscar...'}),
             'pretensiones': forms.Textarea(attrs={'rows': 4}),
             'observaciones': forms.Textarea(attrs={'rows': 3}),
         }
+
+class IncidenteDesacatoForm(PremiumModelForm):
+    class Meta:
+        model = IncidenteDesacato
+        fields = [
+            'fecha_notificacion', 'termino_dias', 'termino_horas', 
+            'fecha_vencimiento', 'fecha_respuesta', 'radicado_respuesta', 
+            'medio_envio', 'observaciones'
+        ]
+        widgets = {
+            'fecha_notificacion': forms.DateTimeInput(attrs={'type': 'datetime-local'}),
+            'fecha_vencimiento': forms.DateTimeInput(attrs={'type': 'datetime-local'}),
+            'fecha_respuesta': forms.DateTimeInput(attrs={'type': 'datetime-local'}),
+            'observaciones': forms.Textarea(attrs={'rows': 2}),
+        }
+
+from django.forms import inlineformset_factory
+IncidenteDesacatoFormSet = inlineformset_factory(
+    AccionTutela, IncidenteDesacato, form=IncidenteDesacatoForm,
+    extra=1, can_delete=True
+)
+
+class PronunciamientoHechoForm(PremiumModelForm):
+    class Meta:
+        model = PronunciamientoHecho
+        fields = ['hecho_referencia', 'tipo_respuesta', 'pronunciamiento']
+        widgets = {
+            'hecho_referencia': forms.TextInput(attrs={'placeholder': 'Ej: FRENTE AL PRIMER HECHO...'}),
+            'pronunciamiento': forms.Textarea(attrs={'rows': 2}),
+        }
+
+PronunciamientoHechoFormSet = inlineformset_factory(
+    AccionTutela, PronunciamientoHecho, form=PronunciamientoHechoForm,
+    extra=1, can_delete=True
+)
 
 class DerechoPeticionForm(PremiumModelForm):
     cedula_accionante = forms.CharField(
@@ -238,7 +387,7 @@ class UsuarioHudnCreateForm(PremiumModelForm):
         help_text='Busque el funcionario por su nombre de usuario o cédula.',
         widget=forms.Select(attrs={'class': 'premium-input select2-enabled'})
     )
-    rol = forms.ChoiceField(choices=[('administrador', 'Administrador'), ('abogado', 'Abogado'), ('invitado', 'Invitado')], required=True)
+    rol = forms.ChoiceField(choices=[('administrador', 'Administrador'), ('abogado', 'Abogado'), ('radicador', 'Radicador'), ('invitado', 'Invitado')], required=True)
 
     # Matriz de Permisos
     perm_tutela = forms.BooleanField(label='Tutelas', required=False)
@@ -251,6 +400,7 @@ class UsuarioHudnCreateForm(PremiumModelForm):
     perm_sancionatorio = forms.BooleanField(label='Sancionatorios', required=False)
     perm_requerimiento = forms.BooleanField(label='Requerimientos', required=False)
     perm_extrajudicial = forms.BooleanField(label='Extrajudiciales', required=False)
+    perm_catalogo = forms.BooleanField(label='Catálogos', required=False)
 
     MAP_PERMS = {
         'perm_tutela': 'acciontutela',
@@ -263,6 +413,7 @@ class UsuarioHudnCreateForm(PremiumModelForm):
         'perm_sancionatorio': 'procesoadministrativosancionatorio',
         'perm_requerimiento': 'requerimientoentecontrol',
         'perm_extrajudicial': 'procesoextrajudicial',
+        'perm_catalogo': 'catalogoderechovulnerado',
     }
 
     class Meta:
@@ -291,8 +442,13 @@ class UsuarioHudnCreateForm(PremiumModelForm):
             from django.core.cache import cache
             
             with transaction.atomic():
+                selected_rol = self.cleaned_data.get('rol')
+                # Sincronizar campo 'rol' en el modelo de Usuario (para listas)
+                user.rol = selected_rol
+                user.save()
+
                 perfil, created = PerfilUsuario.objects.get_or_create(user=user)
-                perfil.legal_rol = self.cleaned_data.get('rol')
+                perfil.legal_rol = selected_rol
                 perfil.legal_nick = user.username
                 perfil.save()
                 
@@ -320,7 +476,7 @@ class UsuarioHudnCreateForm(PremiumModelForm):
 
 
 class UsuarioHudnUpdateForm(PremiumModelForm):
-    rol = forms.ChoiceField(choices=[('administrador', 'Administrador'), ('abogado', 'Abogado'), ('invitado', 'Invitado')], required=False)
+    rol = forms.ChoiceField(choices=[('administrador', 'Administrador'), ('abogado', 'Abogado'), ('radicador', 'Radicador'), ('invitado', 'Invitado')], required=False)
 
     # Matriz de Permisos DEFENJUR
     perm_tutela = forms.BooleanField(label='Tutelas', required=False)
@@ -333,6 +489,7 @@ class UsuarioHudnUpdateForm(PremiumModelForm):
     perm_sancionatorio = forms.BooleanField(label='Sancionatorios', required=False)
     perm_requerimiento = forms.BooleanField(label='Requerimientos', required=False)
     perm_extrajudicial = forms.BooleanField(label='Extrajudiciales', required=False)
+    perm_catalogo = forms.BooleanField(label='Catálogos', required=False)
 
     MAP_PERMS = {
         'perm_tutela': 'acciontutela',
@@ -345,6 +502,7 @@ class UsuarioHudnUpdateForm(PremiumModelForm):
         'perm_sancionatorio': 'procesoadministrativosancionatorio',
         'perm_requerimiento': 'requerimientoentecontrol',
         'perm_extrajudicial': 'procesoextrajudicial',
+        'perm_catalogo': 'catalogoderechovulnerado',
     }
 
     class Meta:
@@ -360,8 +518,12 @@ class UsuarioHudnUpdateForm(PremiumModelForm):
             
             # Cargar permisos existentes
             from usuarios.models import PermisoModelo
-            permisos = PermisoModelo.objects.filter(user=self.instance, app_label='defenjur')
-            perm_dict = {p.model_name: p.permitido for p in permisos}
+            permisos = PermisoModelo.objects.filter(user=self.instance, app_label__in=['defenjur', 'legal'])
+            # Prioritize True if there are duplicates
+            perm_dict = {}
+            for p in permisos:
+                if p.permitido or p.model_name not in perm_dict:
+                    perm_dict[p.model_name] = p.permitido
             for field_name, model_name in self.MAP_PERMS.items():
                 self.fields[field_name].initial = perm_dict.get(model_name, False)
 
@@ -374,34 +536,29 @@ class UsuarioHudnUpdateForm(PremiumModelForm):
         
         if commit:
             with transaction.atomic():
+                selected_rol = self.cleaned_data.get('rol')
+                if selected_rol:
+                    user.rol = selected_rol
                 user.save()
                 
                 # 1. Actualizar Perfil
                 perfil, created = PerfilUsuario.objects.get_or_create(user=user)
-                if self.cleaned_data.get('rol'):
-                    perfil.legal_rol = self.cleaned_data.get('rol')
+                if selected_rol:
+                    perfil.legal_rol = selected_rol
                 perfil.legal_nick = user.username
                 perfil.save()
 
-                # 2. Guardar Permisos de Módulo (Optimizado con Bulk)
-                permisos_actuales = {p.model_name: p for p in PermisoModelo.objects.filter(user=user, app_label='defenjur')}
-                objs_to_update = []
-                objs_to_create = []
-                
+                # 2. Guardar Permisos de Módulo (Usando update_or_create para asegurar ambos app_labels)
                 for field_name, model_name in self.MAP_PERMS.items():
                     val = self.cleaned_data.get(field_name, False)
-                    if model_name in permisos_actuales:
-                        p = permisos_actuales[model_name]
-                        if p.permitido != val:
-                            p.permitido = val
-                            objs_to_update.append(p)
-                    else:
-                        objs_to_create.append(PermisoModelo(user=user, app_label='defenjur', model_name=model_name, permitido=val))
-                
-                if objs_to_update:
-                    PermisoModelo.objects.bulk_update(objs_to_update, ['permitido'])
-                if objs_to_create:
-                    PermisoModelo.objects.bulk_create(objs_to_create)
+                    PermisoModelo.objects.update_or_create(
+                        user=user, app_label='defenjur', model_name=model_name,
+                        defaults={'permitido': val}
+                    )
+                    PermisoModelo.objects.update_or_create(
+                        user=user, app_label='legal', model_name=model_name,
+                        defaults={'permitido': val}
+                    )
 
                 # 3. Invalidar Cache de Navegación
                 cache.delete(f'user_dashboard_nav_{user.id}')

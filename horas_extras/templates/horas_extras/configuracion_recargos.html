@@ -31,6 +31,16 @@
       class="tab-btn px-5 py-2 rounded-lg font-bold text-sm transition text-slate-500 hover:text-slate-800">
       Coordinadores
     </button>
+    <button onclick="setTab('periodos')" id="tab-periodos"
+      class="tab-btn px-5 py-2 rounded-lg font-bold text-sm transition text-slate-500 hover:text-slate-800">
+      Períodos
+    </button>
+    {% endif %}
+    {% if es_superusuario %}
+    <button onclick="setTab('usuarios')" id="tab-usuarios"
+      class="tab-btn px-5 py-2 rounded-lg font-bold text-sm transition text-slate-500 hover:text-slate-800">
+      Usuarios
+    </button>
     {% endif %}
   </div>
 
@@ -132,9 +142,101 @@
       </div>
     </div>
   </div>
+
+  <!-- ── PESTAÑA PERÍODOS ──────────────────────────────────────────────────── -->
+  <div id="panel-periodos" class="hidden">
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
+      <div class="flex items-center justify-between mb-2">
+        <div>
+          <h2 class="font-black text-slate-800 text-lg">Control de Períodos</h2>
+          <p class="text-slate-400 text-xs mt-0.5">Habilita o deshabilita meses manualmente. Por defecto, el mes siguiente siempre está abierto para registro y el reporte se activa los últimos 10 días.</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <button onclick="cambiarYearPeriodos(-1)" class="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 font-bold text-slate-600 transition">‹</button>
+          <span id="year-label-periodos" class="font-black text-slate-800 text-lg w-14 text-center"></span>
+          <button onclick="cambiarYearPeriodos(1)" class="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 font-bold text-slate-600 transition">›</button>
+        </div>
+      </div>
+      <div class="flex flex-wrap gap-3 text-xs text-slate-500 mb-5 mt-3">
+        <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-emerald-400 inline-block"></span>Habilitado (manual)</span>
+        <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-red-400 inline-block"></span>Deshabilitado (manual)</span>
+        <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-slate-300 inline-block"></span>Automático</span>
+      </div>
+      <div id="periodos-grid" class="grid grid-cols-3 gap-3 sm:grid-cols-4"></div>
+      <div id="periodos-msg" class="hidden mt-3 px-4 py-2 rounded-lg text-sm font-medium"></div>
+    </div>
+  </div>
+  {% endif %}
+
+  {% if es_superusuario %}
+  <!-- ── PESTAÑA USUARIOS ──────────────────────────────────────────────────── -->
+  <div id="panel-usuarios" class="hidden">
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
+      <div class="flex items-start justify-between mb-5">
+        <div>
+          <h2 class="font-black text-slate-800 text-lg">Usuarios del Módulo</h2>
+          <p class="text-slate-400 text-xs mt-0.5">
+            Usuarios con acceso activo a Recargos/Turnos.
+            Para activar o desactivar el acceso a un usuario ve a
+            <span class="font-bold text-blue-600">Gestión → Permisos de usuario</span>.
+          </p>
+        </div>
+      </div>
+      <div id="usuarios-body">
+        <p class="text-slate-400 text-sm py-4">Cargando...</p>
+      </div>
+    </div>
+  </div>
   {% endif %}
 
 </div>
+
+{% if es_superusuario %}
+<!-- ═══════════════ MODAL ROL USUARIO ═══════════════ -->
+<div id="modal-usuario-rol" class="fixed inset-0 z-50 flex items-center justify-center hidden">
+  <div class="absolute inset-0 bg-black/40" onclick="cerrarModalUsuario()"></div>
+  <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 p-6 z-10">
+    <h3 class="text-xl font-black text-slate-800 mb-1">Asignar rol en Recargos</h3>
+    <p id="modal-u-nombre" class="text-slate-500 text-sm mb-4"></p>
+    <div id="modal-u-error" class="hidden mb-3 px-4 py-2 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm"></div>
+    <div class="mb-4">
+      <label class="block text-sm font-semibold text-slate-700 mb-2">Rol *</label>
+      <div class="flex gap-3">
+        <label class="flex-1 flex items-center gap-2 p-3 rounded-xl border-2 cursor-pointer transition hover:border-blue-300" id="lbl-u-admin">
+          <input type="radio" name="u-rol" value="admin" onchange="onRolChange()" class="accent-blue-600">
+          <div>
+            <div class="font-bold text-slate-800 text-sm">Admin</div>
+            <div class="text-xs text-slate-500">Acceso total al módulo</div>
+          </div>
+        </label>
+        <label class="flex-1 flex items-center gap-2 p-3 rounded-xl border-2 cursor-pointer transition hover:border-blue-300" id="lbl-u-coord">
+          <input type="radio" name="u-rol" value="coordinador" onchange="onRolChange()" class="accent-blue-600">
+          <div>
+            <div class="font-bold text-slate-800 text-sm">Coordinador</div>
+            <div class="text-xs text-slate-500">Solo sus áreas asignadas</div>
+          </div>
+        </label>
+      </div>
+    </div>
+    <div id="u-areas-section" class="hidden mb-5">
+      <label class="block text-sm font-semibold text-slate-700 mb-2">Áreas asignadas</label>
+      <div id="u-areas-checkboxes"
+        class="max-h-44 overflow-y-auto border border-slate-200 rounded-xl p-3 space-y-2 text-sm"></div>
+    </div>
+    <div class="flex justify-end gap-3">
+      <button onclick="cerrarModalUsuario()"
+        class="px-5 py-2 rounded-xl border border-slate-200 text-slate-700 text-sm font-bold hover:bg-slate-50 transition">
+        Cancelar
+      </button>
+      <button onclick="guardarRolUsuario()" id="btn-guardar-u-rol"
+        style="background:#1e3a5f;color:white"
+        class="px-5 py-2 rounded-xl text-sm font-bold hover:opacity-90 transition">
+        Guardar
+      </button>
+    </div>
+  </div>
+</div>
+{% endif %}
 
 <!-- ═══════════════ MODAL ÁREA ═══════════════ -->
 <div id="modal-area" class="fixed inset-0 z-50 flex items-center justify-center hidden">
@@ -433,13 +535,14 @@ let areas      = [];
 let areasModal = [];   // copia independiente para el modal de coordinadores
 let empleados  = [];
 let coordsList = [];
-let editAreaId   = null;
-let editEmpId    = null;
-let editCoordId  = null;
+let editAreaId    = null;
+let editEmpId     = null;
+let editCoordId   = null;
+let editUsuarioId = null;
 
 // ── Tabs ───────────────────────────────────────────────────────────────────
 function setTab(tab) {
-  ['areas','empleados','coordinadores'].forEach(t => {
+  ['areas','empleados','coordinadores','periodos','usuarios'].forEach(t => {
     const panel = document.getElementById('panel-' + t);
     const btn   = document.getElementById('tab-' + t);
     if (!panel || !btn) return;
@@ -456,6 +559,8 @@ function setTab(tab) {
   if (tab === 'areas')         cargarAreas();
   if (tab === 'empleados')     cargarEmpleados();
   if (tab === 'coordinadores') cargarCoords();
+  if (tab === 'periodos')      cargarConfigPeriodos();
+  if (tab === 'usuarios')      cargarUsuarios();
 }
 
 // ══════════════════════════════════════════════════════════════════════
@@ -663,7 +768,7 @@ function renderEmpleados(resp) {
       <th class="px-4 py-2 font-bold text-slate-600">Cargo</th>
       <th class="px-4 py-2 font-bold text-slate-600">Área</th>
       <th class="px-4 py-2 font-bold text-slate-600">Tipo</th>
-      ${ES_ADMIN ? '<th class="px-4 py-2 font-bold text-slate-600">Acciones</th>' : ''}
+      <th class="px-4 py-2 font-bold text-slate-600">Acciones</th>
     </tr></thead><tbody>`;
   empleados.forEach(e => {
     const tipoCls = TIPO_COLORS[e.tipo] || 'bg-slate-100 text-slate-700';
@@ -673,16 +778,16 @@ function renderEmpleados(resp) {
       <td class="px-4 py-2.5 text-slate-500">${e.cargo||'—'}</td>
       <td class="px-4 py-2.5 text-slate-600">${e.area_nombre}</td>
       <td class="px-4 py-2.5"><span class="px-2 py-0.5 rounded-full text-xs font-bold ${tipoCls}">${e.tipo_display}</span></td>
-      ${ES_ADMIN ? `<td class="px-4 py-2.5">
+      <td class="px-4 py-2.5">
         <div class="flex gap-2 flex-wrap">
-          <button onclick="abrirModalEmpleado(${e.id})"
-            class="px-3 py-1 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg text-xs font-bold transition">Editar</button>
+          ${ES_ADMIN ? `<button onclick="abrirModalEmpleado(${e.id})"
+            class="px-3 py-1 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg text-xs font-bold transition">Editar</button>` : ''}
           <button onclick="abrirModalMover(${e.id},'${e.nombre.replace(/'/g,"\\'")}',${e.area})"
             class="px-3 py-1 bg-indigo-100 hover:bg-indigo-200 text-indigo-700 rounded-lg text-xs font-bold transition">Cambiar Área</button>
-          <button onclick="eliminarEmpleado(${e.id},'${e.nombre.replace(/'/g,"\\'")}' )"
-            class="px-3 py-1 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg text-xs font-bold transition">Eliminar</button>
+          ${ES_ADMIN ? `<button onclick="eliminarEmpleado(${e.id},'${e.nombre.replace(/'/g,"\\'")}' )"
+            class="px-3 py-1 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg text-xs font-bold transition">Eliminar</button>` : ''}
         </div>
-      </td>` : ''}
+      </td>
     </tr>`;
   });
   html += '</tbody></table></div>';
@@ -1062,6 +1167,124 @@ async function moverAlArea(empId, nombre, areaActual) {
     alert(e.error || 'Error al mover el funcionario');
   }
 }
+
+// ══════════════════════════════════════════════════════════════════════
+// CONTROL DE PERÍODOS
+// ══════════════════════════════════════════════════════════════════════
+let periodosCfg   = {};   // { "year_month": true/false }
+let yearPeriodos  = new Date().getFullYear();
+const MESES_P = ['Enero','Febrero','Marzo','Abril','Mayo','Junio',
+                 'Julio','Agosto','Sep.','Octubre','Nov.','Dic.'];
+
+async function cargarConfigPeriodos() {
+  try {
+    const resp = await api('mes-config/');
+    periodosCfg = {};
+    (resp.configs || []).forEach(c => { periodosCfg[`${c.year}_${c.month}`] = c.habilitado; });
+    renderPeriodos();
+  } catch { renderPeriodos(); }
+}
+
+function cambiarYearPeriodos(delta) {
+  yearPeriodos += delta;
+  renderPeriodos();
+}
+
+function _estadoAutoRegistro(year, month) {
+  const hoy = new Date(); hoy.setHours(0,0,0,0);
+  // Ventana propia del mes (últimos 10 días → día 10 del mes siguiente)
+  const diasMes = new Date(year, month, 0).getDate();
+  const ini = new Date(year, month - 1, diasMes - 9);
+  const ny = month === 12 ? year + 1 : year;
+  const nm = month === 12 ? 1 : month + 1;
+  const fin = new Date(ny, nm - 1, 10);
+  if (hoy >= ini && hoy <= fin) return true;
+  // Pre-carga: abierto mientras el mes anterior está en su ventana
+  const prevY    = month === 1 ? year - 1 : year;
+  const prevM    = month === 1 ? 12 : month - 1;
+  const diasPrev = new Date(prevY, prevM, 0).getDate();
+  const iniPrev  = new Date(prevY, prevM - 1, diasPrev - 9);
+  const finPrev  = new Date(year, month - 1, 10);
+  return hoy >= iniPrev && hoy <= finPrev;
+}
+
+function _estadoAutoReporte(year, month) {
+  const hoy = new Date(); hoy.setHours(0,0,0,0);
+  const diasMes = new Date(year, month, 0).getDate();
+  const ini = new Date(year, month - 1, diasMes - 9);
+  const sig = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 1);
+  if (year === sig.getFullYear() && month === sig.getMonth() + 1) return false;
+  return hoy >= ini;
+}
+
+function renderPeriodos() {
+  document.getElementById('year-label-periodos').textContent = yearPeriodos;
+  const grid = document.getElementById('periodos-grid');
+  grid.innerHTML = MESES_P.map((mes, i) => {
+    const m   = i + 1;
+    const key = `${yearPeriodos}_${m}`;
+    const override = periodosCfg.hasOwnProperty(key) ? periodosCfg[key] : null;
+    const autoReg = _estadoAutoRegistro(yearPeriodos, m);
+    const autoRep = _estadoAutoReporte(yearPeriodos, m);
+    const regOk   = override !== null ? override : autoReg;
+    const repOk   = override !== null ? override : autoRep;
+
+    let badge, dot;
+    if (override === true)       { badge = 'bg-emerald-100 text-emerald-800'; dot = 'bg-emerald-400'; }
+    else if (override === false) { badge = 'bg-red-100 text-red-700';        dot = 'bg-red-400';     }
+    else                         { badge = 'bg-slate-100 text-slate-600';    dot = 'bg-slate-300';   }
+
+    const overrideLabel = override === true ? 'Habilitado' : override === false ? 'Deshabilitado' : 'Automático';
+
+    return `<div class="rounded-xl border ${override===true?'border-emerald-300':override===false?'border-red-300':'border-slate-200'} p-3 text-sm">
+      <div class="flex items-center gap-2 mb-2">
+        <span class="w-2.5 h-2.5 rounded-full ${dot} shrink-0"></span>
+        <span class="font-black text-slate-800">${mes} ${yearPeriodos}</span>
+      </div>
+      <span class="inline-block px-2 py-0.5 rounded-full text-xs font-bold ${badge} mb-2">${overrideLabel}</span>
+      <div class="text-xs text-slate-500 mb-3 space-y-0.5">
+        <div>Registro: <span class="font-bold ${regOk?'text-emerald-700':'text-red-600'}">${regOk?'✓ Abierto':'✗ Cerrado'}</span></div>
+        <div>Reporte: <span class="font-bold ${repOk?'text-emerald-700':'text-slate-400'}">${repOk?'✓ Disponible':'✗ No disponible'}</span></div>
+      </div>
+      <div class="flex gap-1 flex-wrap">
+        <button onclick="setPeriodo(${yearPeriodos},${m},true)"
+          class="px-2 py-1 rounded-lg text-xs font-bold transition ${override===true?'bg-emerald-600 text-white':'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'}">Hab.</button>
+        <button onclick="setPeriodo(${yearPeriodos},${m},false)"
+          class="px-2 py-1 rounded-lg text-xs font-bold transition ${override===false?'bg-red-600 text-white':'bg-red-50 text-red-700 hover:bg-red-100'}">Deshab.</button>
+        <button onclick="resetPeriodo(${yearPeriodos},${m})"
+          class="px-2 py-1 rounded-lg text-xs font-bold transition ${override===null?'bg-slate-400 text-white':'bg-slate-100 text-slate-600 hover:bg-slate-200'}">Auto</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function setPeriodo(year, month, habilitado) {
+  try {
+    await api('mes-config/', { method:'POST', body: JSON.stringify({year, month, habilitado}) });
+    periodosCfg[`${year}_${month}`] = habilitado;
+    renderPeriodos();
+    mostrarMsgPeriodos('success', `${MESES_P[month-1]} ${year} ${habilitado?'habilitado':'deshabilitado'} correctamente.`);
+  } catch(e) { mostrarMsgPeriodos('error', e.error || 'Error al guardar'); }
+}
+
+async function resetPeriodo(year, month) {
+  try {
+    await api('mes-config/', { method:'DELETE', body: JSON.stringify({year, month}) });
+    delete periodosCfg[`${year}_${month}`];
+    renderPeriodos();
+    mostrarMsgPeriodos('success', `${MESES_P[month-1]} ${year} restaurado a comportamiento automático.`);
+  } catch(e) { mostrarMsgPeriodos('error', e.error || 'Error al restaurar'); }
+}
+
+function mostrarMsgPeriodos(tipo, texto) {
+  const el = document.getElementById('periodos-msg');
+  el.className = `mt-3 px-4 py-2 rounded-lg text-sm font-medium ${
+    tipo==='success' ? 'bg-emerald-50 border border-emerald-200 text-emerald-800'
+                     : 'bg-red-50 border border-red-200 text-red-700'}`;
+  el.textContent = texto;
+  el.classList.remove('hidden');
+  setTimeout(() => el.classList.add('hidden'), 3500);
+}
 {% endif %}
 
 // ══════════════════════════════════════════════════════════════════════
@@ -1234,6 +1457,141 @@ async function guardarMover() {
     btn.disabled = false; btn.textContent = 'Mover';
   }
 }
+
+{% if es_superusuario %}
+// ══════════════════════════════════════════════════════════════════════
+// USUARIOS DEL MÓDULO
+// ══════════════════════════════════════════════════════════════════════
+async function cargarUsuarios() {
+  const el = document.getElementById('usuarios-body');
+  el.innerHTML = '<p class="text-slate-400 text-sm py-4">Cargando...</p>';
+  try {
+    const data = await api('usuarios-recargos/');
+    renderUsuarios(data);
+  } catch {
+    el.innerHTML = '<p class="text-red-500 text-sm py-4">Error al cargar usuarios.</p>';
+  }
+}
+
+const ROL_COLORS = {admin:'bg-violet-100 text-violet-800', coordinador:'bg-blue-100 text-blue-800'};
+const ROL_LABELS = {admin:'Admin', coordinador:'Coordinador'};
+
+function renderUsuarios(data) {
+  const el = document.getElementById('usuarios-body');
+  if (!data.length) {
+    el.innerHTML = '<p class="text-slate-400 text-sm py-4">No hay usuarios con acceso al módulo. Actívalos desde <strong>Gestión → Permisos de usuario</strong>.</p>';
+    return;
+  }
+  let html = `<div class="overflow-x-auto"><table class="w-full text-sm">
+    <thead><tr class="bg-slate-50 text-left">
+      <th class="px-4 py-2 font-bold text-slate-600">Usuario</th>
+      <th class="px-4 py-2 font-bold text-slate-600">Nombre</th>
+      <th class="px-4 py-2 font-bold text-slate-600">Rol en Recargos</th>
+      <th class="px-4 py-2 font-bold text-slate-600">Áreas asignadas</th>
+      <th class="px-4 py-2 font-bold text-slate-600">Acciones</th>
+    </tr></thead><tbody>`;
+  data.forEach(u => {
+    const rolCls   = ROL_COLORS[u.rol] || '';
+    const rolLabel = ROL_LABELS[u.rol] || '';
+    const areasHtml = u.areas.length
+      ? u.areas.map(a => `<span class="px-2 py-0.5 rounded-full text-xs font-bold bg-blue-100 text-blue-800 mr-1">${a.nombre}</span>`).join('')
+      : '<span class="text-slate-400 text-xs">—</span>';
+    const areasIds = JSON.stringify(u.areas.map(a => a.id));
+    const nombreEsc = u.nombre.replace(/'/g, "\\'");
+    html += `<tr class="border-t border-slate-100 hover:bg-slate-50">
+      <td class="px-4 py-2.5 text-slate-500 font-mono text-xs">${u.username}</td>
+      <td class="px-4 py-2.5 font-bold text-slate-800">${u.nombre}</td>
+      <td class="px-4 py-2.5">
+        ${u.rol
+          ? `<span class="px-2 py-0.5 rounded-full text-xs font-bold ${rolCls}">${rolLabel}</span>`
+          : '<span class="text-slate-400 text-xs italic">Sin rol</span>'}
+      </td>
+      <td class="px-4 py-2.5">${areasHtml}</td>
+      <td class="px-4 py-2.5">
+        <div class="flex gap-2">
+          <button onclick="abrirModalUsuario(${u.id},'${nombreEsc}','${u.rol||''}',${areasIds})"
+            class="px-3 py-1 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg text-xs font-bold transition">
+            ${u.rol ? 'Editar rol' : 'Asignar rol'}
+          </button>
+          ${u.rol ? `<button onclick="quitarRolUsuario(${u.id},'${nombreEsc}')"
+            class="px-3 py-1 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg text-xs font-bold transition">Quitar rol</button>` : ''}
+        </div>
+      </td>
+    </tr>`;
+  });
+  html += '</tbody></table></div>';
+  el.innerHTML = html;
+}
+
+async function abrirModalUsuario(id, nombre, rol, areasIds) {
+  editUsuarioId = id;
+  document.getElementById('modal-u-nombre').textContent = nombre;
+  document.getElementById('modal-u-error').classList.add('hidden');
+  document.querySelectorAll('input[name="u-rol"]').forEach(r => { r.checked = r.value === rol; });
+
+  if (!areasModal.length) {
+    const resp = await api('areas/?page_size=500&page=1');
+    areasModal = resp.results || [];
+  }
+
+  document.getElementById('u-areas-checkboxes').innerHTML = areasModal.map(a => {
+    const checked = areasIds.includes(a.id) ? 'checked' : '';
+    return `<label class="flex items-center gap-2 cursor-pointer hover:bg-slate-50 rounded-lg px-2 py-1">
+      <input type="checkbox" class="u-area-chk accent-blue-600" value="${a.id}" ${checked}>
+      <span class="text-slate-700 text-sm">${a.nombre}</span>
+    </label>`;
+  }).join('');
+
+  onRolChange();
+  document.getElementById('modal-usuario-rol').classList.remove('hidden');
+}
+
+function onRolChange() {
+  const rol = document.querySelector('input[name="u-rol"]:checked')?.value;
+  document.getElementById('u-areas-section').classList.toggle('hidden', rol !== 'coordinador');
+}
+
+function cerrarModalUsuario() {
+  document.getElementById('modal-usuario-rol').classList.add('hidden');
+  editUsuarioId = null;
+}
+
+async function guardarRolUsuario() {
+  const rol   = document.querySelector('input[name="u-rol"]:checked')?.value;
+  const errEl = document.getElementById('modal-u-error');
+  if (!rol) { errEl.textContent = 'Selecciona un rol'; errEl.classList.remove('hidden'); return; }
+  const areasSelec = [...document.querySelectorAll('.u-area-chk:checked')].map(cb => parseInt(cb.value));
+  if (rol === 'coordinador' && !areasSelec.length) {
+    errEl.textContent = 'Asigna al menos un área al coordinador';
+    errEl.classList.remove('hidden');
+    return;
+  }
+  errEl.classList.add('hidden');
+  const btn = document.getElementById('btn-guardar-u-rol');
+  btn.disabled = true; btn.textContent = 'Guardando...';
+  try {
+    await api(`usuarios-recargos/${editUsuarioId}/`, {
+      method: 'POST',
+      body: JSON.stringify({ rol, areas: areasSelec })
+    });
+    cerrarModalUsuario();
+    cargarUsuarios();
+  } catch(e) {
+    errEl.textContent = e.error || 'Error al guardar';
+    errEl.classList.remove('hidden');
+  } finally {
+    btn.disabled = false; btn.textContent = 'Guardar';
+  }
+}
+
+async function quitarRolUsuario(id, nombre) {
+  if (!confirm(`¿Quitar el rol de recargos a "${nombre}"?\n\nSeguirá teniendo acceso al módulo pero sin permisos especiales.`)) return;
+  try {
+    await api(`usuarios-recargos/${id}/`, { method: 'DELETE' });
+    cargarUsuarios();
+  } catch(e) { alert(e.error || 'Error al quitar el rol'); }
+}
+{% endif %}
 
 // ── Inicio ─────────────────────────────────────────────────────────────────
 cargarAreas();

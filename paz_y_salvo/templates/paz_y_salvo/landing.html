@@ -1,0 +1,217 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Paz y Salvo — HUDN</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700;9..40,800;9..40,900&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'DM Sans', 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #e0f2fe 0%, #f0f9ff 50%, #f8fafc 100%);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+    }
+    .btn-role {
+      display: flex; align-items: center; gap: 14px;
+      padding: 14px 20px; border-radius: 14px; text-decoration: none;
+      width: 100%; transition: transform 0.15s, opacity 0.15s;
+      cursor: pointer; border: none;
+    }
+    .btn-role:hover { transform: translateY(-2px); opacity: 0.92; }
+    .btn-role:active { transform: translateY(0); }
+  </style>
+</head>
+<body style="padding:0; justify-content:flex-start;">
+
+  <!-- ── Header superior ─────────────────────────────────────────────────── -->
+  <header style="width:100%; background:#fff; border-bottom:1px solid #e2e8f0;
+                 box-shadow:0 1px 8px rgba(0,0,0,0.06);">
+    <div style="max-width:700px; margin:0 auto; padding:14px 24px;
+                display:flex; align-items:center; gap:14px;">
+
+      <!-- Logo -->
+      <img src="{% static 'logos-hudn/logo-hudn-colores-vertical.png' %}" alt="HUDN"
+           style="height:56px; object-fit:contain; flex-shrink:0;"
+           onerror="this.style.display='none'">
+
+      <!-- Separador -->
+      <div style="width:1px; height:36px; background:linear-gradient(to bottom,transparent,#bae6fd,transparent); flex-shrink:0;"></div>
+
+      <!-- Nombre institución -->
+      <div style="flex:1; min-width:0;">
+        <div style="font-size:14px; font-weight:800; color:#0369a1; line-height:1.25; letter-spacing:-0.2px;">
+          Hospital Universitario Departamental de Nariño
+        </div>
+        <div style="font-size:11px; color:#94a3b8; margin-top:2px; font-weight:500;">
+          Sistema de Información Institucional
+        </div>
+      </div>
+
+      <!-- Usuario (nombre + rol) -->
+      {% if request.user.is_authenticated %}
+      <div style="display:flex; align-items:center; gap:10px; flex-shrink:0;
+                  padding-left:14px; border-left:1px solid #e2e8f0;">
+        <div style="width:38px; height:38px; border-radius:50%;
+                    background:linear-gradient(135deg,#0284c7,#0369a1);
+                    border:2px solid rgba(186,230,253,0.7);
+                    display:flex; align-items:center; justify-content:center;
+                    font-size:13px; font-weight:800; color:#fff; flex-shrink:0;">
+          {{ avatar }}
+        </div>
+        <div>
+          <div style="font-size:13px; font-weight:700; color:#0f172a; line-height:1.2;">{{ username }}</div>
+          <div style="margin-top:3px;">
+            {% if rol_info %}
+              {% if rol_info.rol == 'admin' %}
+              <span style="font-size:10px; font-weight:700; color:#7c3aed; background:rgba(124,58,237,0.1); padding:2px 8px; border-radius:99px;">Administrador</span>
+              {% elif rol_info.rol == 'validador' %}
+              <span style="font-size:10px; font-weight:700; color:#059669; background:rgba(5,150,105,0.1); padding:2px 8px; border-radius:99px;">Validador{% if rol_info.area_nombre %} · {{ rol_info.area_nombre }}{% endif %}</span>
+              {% elif rol_info.rol == 'paz_salvo' %}
+              <span style="font-size:10px; font-weight:700; color:#0284c7; background:rgba(2,132,199,0.1); padding:2px 8px; border-radius:99px;">Gestor Paz y Salvo</span>
+              {% else %}
+              <span style="font-size:10px; color:#94a3b8; font-weight:500;">{{ rol_info.rol }}</span>
+              {% endif %}
+            {% else %}
+              <span style="font-size:10px; color:#94a3b8; font-weight:500;">Sin rol asignado</span>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+      {% endif %}
+
+    </div>
+  </header>
+
+  <!-- ── Contenido centrado ───────────────────────────────────────────────── -->
+  <div style="flex:1; display:flex; align-items:center; justify-content:center;
+              padding:32px 16px 48px; width:100%;">
+  <div style="width:100%; max-width:400px;">
+
+  <!-- Card principal -->
+  <div style="background:#ffffff; border-radius:22px;
+              box-shadow:0 12px 48px rgba(0,0,0,0.10), 0 2px 8px rgba(2,132,199,0.07);
+              overflow:hidden;">
+
+    <!-- Banda superior con degradado -->
+    <div style="background:linear-gradient(135deg,#0284c7 0%,#0369a1 100%);
+                padding:28px 28px 22px; text-align:center;">
+      <div style="display:inline-flex; align-items:center; justify-content:center;
+                  width:54px; height:54px; border-radius:16px;
+                  background:rgba(255,255,255,0.18); border:1.5px solid rgba(255,255,255,0.3);
+                  margin-bottom:12px;">
+        <svg width="26" height="26" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round"
+                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+      </div>
+      <h1 style="font-size:22px; font-weight:900; color:#fff; letter-spacing:-0.4px; margin-bottom:5px;">
+        Paz y Salvo
+      </h1>
+      <p style="font-size:12.5px; color:rgba(255,255,255,0.78); font-weight:500; line-height:1.4;">
+        Gestión del proceso de retiro de funcionarios
+      </p>
+    </div>
+
+    <!-- Cuerpo con todos los botones juntos -->
+    <div style="padding:20px 22px; display:flex; flex-direction:column; gap:10px;">
+
+      {% if rol_info %}
+      <!-- Botón principal según rol -->
+      <a href="{% url 'paz_y_salvo:pys_panel' %}" class="btn-role"
+         style="{% if rol_info.rol == 'admin' %}background:linear-gradient(135deg,#7c3aed,#6d28d9); box-shadow:0 4px 16px rgba(124,58,237,0.35);
+                {% elif rol_info.rol == 'validador' %}background:linear-gradient(135deg,#059669,#047857); box-shadow:0 4px 16px rgba(5,150,105,0.35);
+                {% else %}background:linear-gradient(135deg,#0284c7,#0369a1); box-shadow:0 4px 16px rgba(2,132,199,0.35);
+                {% endif %}color:#fff;">
+        <div style="width:38px; height:38px; border-radius:11px; background:rgba(255,255,255,0.2);
+                    border:1.5px solid rgba(255,255,255,0.25);
+                    display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+          {% if rol_info.rol == 'admin' %}
+          <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round"
+                  d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+          </svg>
+          {% elif rol_info.rol == 'validador' %}
+          <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round"
+                  d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+          </svg>
+          {% else %}
+          <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round"
+                  d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+          </svg>
+          {% endif %}
+        </div>
+        <div style="flex:1;">
+          <div style="font-size:10px; font-weight:600; color:rgba(255,255,255,0.7); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:2px;">Ingresar como</div>
+          <div style="font-size:15px; font-weight:800; color:#fff; letter-spacing:-0.2px;">
+            {% if rol_info.rol == 'admin' %}Administrador
+            {% elif rol_info.rol == 'validador' %}Validador
+            {% else %}Gestor de Paz y Salvos{% endif %}
+          </div>
+        </div>
+        <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="rgba(255,255,255,0.6)" stroke-width="2.5" style="flex-shrink:0;">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+        </svg>
+      </a>
+      {% endif %}
+
+      <!-- Botón crear solicitud pública -->
+      <a href="{% url 'paz_y_salvo:pys_solicitud_publica' %}" class="btn-role"
+         style="background:#f8fafc; border:2px solid #e2e8f0; color:#475569;"
+         onmouseover="this.style.borderColor='#7dd3fc'; this.style.color='#0284c7'; this.style.background='#f0f9ff';"
+         onmouseout="this.style.borderColor='#e2e8f0'; this.style.color='#475569'; this.style.background='#f8fafc';">
+        <div style="width:38px; height:38px; border-radius:11px; background:#e2e8f0;
+                    display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+          <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="#64748b" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+          </svg>
+        </div>
+        <div style="flex:1;">
+          <div style="font-size:10px; font-weight:600; opacity:0.5; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:2px;">Formulario público</div>
+          <div style="font-size:14px; font-weight:700;">Crear solicitud de Paz y Salvo</div>
+        </div>
+        <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="flex-shrink:0; opacity:0.35;">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+        </svg>
+      </a>
+
+      {% if not rol_info %}
+      <div style="background:rgba(245,158,11,0.08); border:1px solid rgba(245,158,11,0.3); border-radius:11px; padding:11px 14px; text-align:center;">
+        <p style="font-size:11.5px; color:#92400e; line-height:1.6; font-weight:500;">
+          Tu usuario no tiene rol asignado en este módulo.<br>
+          Contacta al administrador para obtener acceso.
+        </p>
+      </div>
+      {% endif %}
+
+      <!-- Botón Volver al inicio -->
+      <a href="{% url 'home' %}"
+         style="display:flex; align-items:center; justify-content:center; gap:7px;
+                padding:10px 14px; border-radius:11px; text-decoration:none;
+                background:#f1f5f9; border:1.5px solid #e2e8f0; color:#64748b;
+                font-size:12.5px; font-weight:700; transition:background 0.15s, color 0.15s;"
+         onmouseover="this.style.background='#e2e8f0'; this.style.color='#475569';"
+         onmouseout="this.style.background='#f1f5f9'; this.style.color='#64748b';">
+        <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+          <polyline points="9 22 9 12 15 12 15 22"/>
+        </svg>
+        Volver al Inicio
+      </a>
+
+    </div>
+  </div>
+
+  </div><!-- /max-width wrapper -->
+  </div><!-- /flex center -->
+
+</body>
+</html>

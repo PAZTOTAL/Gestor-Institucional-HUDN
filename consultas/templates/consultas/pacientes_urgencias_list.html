@@ -157,8 +157,8 @@
 
 <!-- Active Patients Modal (Adapted from Registro Anestesia) -->
 <div class="modal fade" id="activePatientsModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-lg modal-dialog-scrollable">
-        <div class="modal-content">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content border-0 shadow-lg">
             <div class="modal-header bg-light pb-0">
                 <div class="w-100">
                     <div class="d-flex justify-content-between align-items-center mb-2">
@@ -173,11 +173,31 @@
             </div>
             <div class="modal-body">
                 <div id="modal-loading" class="text-center py-5 text-muted">
-                    <i class="fas fa-circle-notch fa-spin fa-2x mb-2"></i>
-                    <p>Consultando pacientes activos...</p>
+                    <i class="fas fa-circle-notch fa-spin fa-3x mb-3 text-primary"></i>
+                    <p class="fs-5">Consultando base de datos institucional...</p>
                 </div>
                 <div id="modal-content-area" class="d-none">
-                    <!-- Results injected here -->
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle" style="font-size: 0.85rem;" id="patientsTable">
+                            <thead class="bg-primary text-white">
+                                <tr>
+                                    <th class="py-3">Consecutivo</th>
+                                    <th class="py-3">Estados</th>
+                                    <th class="py-3">Ingreso Por</th>
+                                    <th class="py-3">Ingreso (Detalle)</th>
+                                    <th class="py-3">Fecha Ingreso</th>
+                                    <th class="py-3">Documento</th>
+                                    <th class="py-3">Paciente</th>
+                                    <th class="py-3">Centro Atención</th>
+                                    <th class="py-3">Area Servicio</th>
+                                    <th class="py-3 text-center">Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Results injected here -->
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
@@ -237,79 +257,46 @@
                 dataType: 'json',
                 success: function (data) {
                     if (data.results && data.results.length > 0) {
-                        const groups = {};
+                        const tbody = $('#patientsTable tbody');
+                        tbody.empty();
+
                         data.results.forEach(p => {
-                            const sala = p.sala || "Sin Ubicación Definida";
-                            if (!groups[sala]) groups[sala] = [];
-                            groups[sala].push(p);
-                        });
+                            const detailUrl = `/consultas/paciente/${p.ingreso_id || p.id}/`; 
+                            
+                            const estadoBadge = p.estado === 'Activo' ? 'bg-success' : 
+                                              p.estado === 'Facturado' ? 'bg-info' :
+                                              p.estado === 'Anulado' ? 'bg-danger' : 'bg-secondary';
 
-                        const accordionContainer = $('<div class="manual-accordion" id="patientAccordion"></div>');
-                        let groupIdx = 0;
-
-                        // Sort keys for better UX?
-                        const sortedKeys = Object.keys(groups).sort();
-
-                        for (const salaName of sortedKeys) {
-                            const patients = groups[salaName];
-                            groupIdx++;
-                            const collapseId = `manual-collapse-${groupIdx}`;
-
-                            const section = $(`
-                                <div class="manual-accordion-item mb-2 shadow-sm">
-                                    <div class="manual-accordion-header d-flex justify-content-between align-items-center" 
-                                         data-target="#${collapseId}">
-                                        <span>
-                                            <i class="fas fa-door-open me-2 text-primary"></i> 
-                                            <strong>${salaName}</strong>
-                                        </span>
-                                        <div class="d-flex align-items-center">
-                                            <span class="badge bg-primary rounded-pill me-2">${patients.length}</span>
-                                            <i class="fas fa-chevron-down text-muted transition-icon"></i>
+                            const row = $(`
+                                <tr>
+                                    <td class="fw-bold text-primary">${p.consecutivo || 'S.C'}</td>
+                                    <td><span class="badge ${estadoBadge} rounded-pill px-3">${p.estado || 'S.D'}</span></td>
+                                    <td class="text-muted fw-bold">${p.ingreso_por || 'Ambulatorio'}</td>
+                                    <td style="max-width: 250px;">
+                                        <div class="small fw-bold text-dark">${p.tipo_ingreso || 'Consulta Externa'}</div>
+                                        <div class="text-muted" style="font-size: 0.75rem;">
+                                            Enf. General Adulto<br>
+                                            ${p.aseguradora || 'Particular'}
                                         </div>
-                                    </div>
-                                    <div id="${collapseId}" class="manual-accordion-body" style="display: none; border-top: 1px solid #dee2e6;">
-                                        <div class="list-group list-group-flush"></div>
-                                    </div>
-                                </div>
+                                    </td>
+                                    <td class="text-nowrap">
+                                        <div class="fw-bold">${p.fecha_ingreso.split(' ')[0]}</div>
+                                        <div class="small text-muted">${p.fecha_ingreso.split(' ')[1] || ''}</div>
+                                    </td>
+                                    <td class="text-nowrap fw-bold">${p.documento}</td>
+                                    <td class="fw-bold text-uppercase" style="max-width: 200px; white-space: normal;">${p.nombre}</td>
+                                    <td class="small text-muted">${p.centro_atencion || 'S.D'}</td>
+                                    <td class="small text-muted">${p.area_servicio || 'S.D'}</td>
+                                    <td class="text-center">
+                                        <a href="${detailUrl}" class="btn btn-sm btn-outline-primary rounded-pill px-3 fw-bold open-popup-link" 
+                                           onclick="window.openPopup(event, '${detailUrl}'); return false;">
+                                            Trazabilidad <i class="fas fa-arrow-right ms-1"></i>
+                                        </a>
+                                    </td>
+                                </tr>
                             `);
-
-                            const listGroup = section.find('.list-group');
-                            patients.forEach(p => {
-                                // IMPORTANT: Link to Traceability Detail using 'ingreso_id'
-                                // Fallback to safe ID if missing, but we added it to API
-                                const detailUrl = `/consultas/paciente/${p.ingreso_id || p.id}/`; 
-                                
-                                const item = $(`
-                                    <a href="${detailUrl}" class="list-group-item list-group-item-action py-3 open-popup-link" onclick="window.openPopup(event, '${detailUrl}'); return false;">
-                                        <div class="d-flex w-100 justify-content-between align-items-center">
-                                            <div class="flex-grow-1">
-                                                <h6 class="mb-1 text-dark fw-black" style="font-size: 1.1rem;">${p.nombre}</h6>
-                                                <div class="d-flex gap-3 small text-muted">
-                                                    <span><i class="fas fa-id-card me-1 text-primary"></i> <strong>${p.documento}</strong></span>
-                                                    <span><i class="fas fa-calendar-alt me-1 text-primary"></i> Ingreso: <strong>${p.fecha_ingreso}</strong></span>
-                                                    <span><i class="fas fa-university me-1 text-primary"></i> <strong>${p.aseguradora || 'Particular'}</strong></span>
-                                                </div>
-                                            </div>
-                                            <div class="text-end d-flex align-items-center gap-2">
-                                                <div class="d-flex flex-column align-items-end me-3">
-                                                    <span class="badge bg-soft-blue text-primary border border-primary px-3 py-1 rounded-pill mb-1" style="font-size: 0.7rem; background-color: #e3f2fd;">
-                                                        <i class="fas fa-bed me-1"></i> ${p.cama || 'Sin cama'}
-                                                    </span>
-                                                    <span class="text-[10px] fw-bold text-success uppercase text-nowrap"><i class="fas fa-check-circle me-1"></i> Paciente Activo</span>
-                                                </div>
-                                                <div class="btn btn-sm btn-primary rounded-pill px-3 fw-bold">
-                                                    Trazabilidad <i class="fas fa-chevron-right ms-1"></i>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </a>
-                                `);
-                                listGroup.append(item);
-                            });
-                            accordionContainer.append(section);
-                        }
-                        $contentArea.append(accordionContainer);
+                            tbody.append(row);
+                        });
                     } else {
                         $contentArea.html('<div class="alert alert-info border-0 shadow-sm"><i class="fas fa-info-circle me-2"></i>No se encontraron pacientes activos actualmente.</div>');
                     }

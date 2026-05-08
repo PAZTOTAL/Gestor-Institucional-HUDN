@@ -228,13 +228,32 @@ class ListaTipoGrupoSanguineo(models.Model):
 
 
 
+# Catálogo de Áreas para Formatos HUDN
+class Formatos_Hudn_area(models.Model):
+    codigo = models.CharField(
+        max_length=5,
+        primary_key=True,
+        verbose_name="Código de Área",
+        help_text="Ejemplo: FRFAR, FRHOS, FRLAB",
+    )
+    nombre = models.CharField(
+        max_length=100,
+        verbose_name="Nombre del Área",
+    )
+    cantidad_estimada = models.IntegerField(
+        default=0,
+        verbose_name="Cantidad de Formatos",
+    )
 
+    class Meta:
+        db_table = "Formatos_Hudn_area"
+        verbose_name = "Área de Formatos"
+        verbose_name_plural = "Áreas de Formatos"
+        ordering = ["codigo"]
 
+    def __str__(self):
+        return f"{self.codigo} - {self.nombre}"
 
-
-# ============================
-# Catálogo de Formatos HUDN
-# ============================
 
 # Validador para código de formato: FR + 3 letras mayúsculas + guion + 3 dígitos
 formato_hudn_validator = RegexValidator(
@@ -244,12 +263,24 @@ formato_hudn_validator = RegexValidator(
 
 
 class Formatos_Hudn(models.Model):
+    area = models.ForeignKey(
+        Formatos_Hudn_area,
+        on_delete=models.PROTECT,
+        related_name="formatos",
+        verbose_name="Área del Formato",
+    )
+    consecutivo = models.IntegerField(
+        editable=False,
+        null=True,
+        blank=True,
+        verbose_name="N° de Formato",
+        help_text="Número secuencial dentro del área (001, 002...)",
+    )
     codigo_formato = models.CharField(
-        max_length=10,
+        max_length=15,
         primary_key=True,
-        validators=[formato_hudn_validator],
         verbose_name="Código del Formato",
-        help_text="Formato: FR + 3 letras del área + guion + 3 dígitos (ej: FRJUR-001)",
+        help_text="Generado automáticamente: AREA-NNN (Ej: FRJUR-001)",
     )
     nombre_formato = models.CharField(
         max_length=200,
@@ -284,6 +315,13 @@ class Formatos_Hudn(models.Model):
         blank=True,
         verbose_name="Modificado Por",
     )
+    slug_app = models.SlugField(
+        max_length=50,
+        blank=True,
+        null=True,
+        verbose_name="Slug de Aplicación",
+        help_text="Si se define, este formato abrirá una aplicación funcional en lugar de solo vista estática."
+    )
 
     class Meta:
         db_table = "Formatos_Hudn"
@@ -295,9 +333,15 @@ class Formatos_Hudn(models.Model):
         return f"{self.codigo_formato} - {self.nombre_formato} (v{self.version})"
 
     def save(self, *args, **kwargs):
-        # Convertir código a mayúsculas automáticamente
-        if self.codigo_formato:
-            self.codigo_formato = self.codigo_formato.upper()
+        # 1. Autocompletar consecutivo si es nuevo
+        if not self.consecutivo:
+            ultimo = Formatos_Hudn.objects.filter(area=self.area).aggregate(models.Max('consecutivo'))['consecutivo__max'] or 0
+            self.consecutivo = ultimo + 1
+        
+        # 2. Generar el código de formato: AREA-NNN
+        # self.area.codigo ya incluye el prefijo 'FR' según la carga de datos (ej: 'FRFAR')
+        self.codigo_formato = f"{self.area_id}-{str(self.consecutivo).zfill(3)}"
+        
         super().save(*args, **kwargs)
 
 

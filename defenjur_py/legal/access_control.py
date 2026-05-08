@@ -39,9 +39,9 @@ def filter_queryset_by_role(queryset, user, model, active_usernames=None):
     rol = (getattr(user, 'rol', None) or getattr(perfil, 'legal_rol', '') or '').lower()
     is_admin = user.is_superuser or rol == 'administrador'
     
-    # Aplicar filtro de seguridad (solo registros de usuarios activos)
+    # Aplicar filtro de seguridad (solo registros de usuarios activos o legados)
     if 'usuario_carga' in fields and not user.is_superuser:
-        queryset = queryset.filter(usuario_carga__in=active_usernames)
+        queryset = queryset.filter(Q(usuario_carga__in=active_usernames) | Q(usuario_carga__isnull=True) | Q(usuario_carga=''))
 
     if is_admin:
         return queryset

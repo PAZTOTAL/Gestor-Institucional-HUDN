@@ -1,0 +1,89 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ titulo }} | DEFENJUR{% endblock %}
+{% block header_title %}{{ titulo }}{% endblock %}
+
+{% block content %}
+<div class="card animate-fade" style="margin-bottom:1.5rem;">
+    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem;">
+        <div>
+            <h3 style="margin:0; font-size:1.1rem;">
+                <i data-lucide="list" style="width:18px; vertical-align:middle;"></i>
+                {{ titulo }}
+            </h3>
+        </div>
+        <div style="display:flex; gap:0.75rem; align-items:center; flex-wrap:wrap;">
+            <a href="{% url url_nuevo %}" class="btn-premium" style="background:linear-gradient(135deg,#10b981,#059669); display:inline-flex; align-items:center; gap:6px; font-size:0.85rem;">
+                <i data-lucide="plus-circle" style="width:15px;"></i> Nuevo Elemento
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="card animate-fade" style="padding:0; overflow:hidden;">
+    <table style="width:100%; border-collapse:collapse; font-size:0.9rem;">
+        <thead>
+            <tr style="background:rgba(99,102,241,0.1); border-bottom:2px solid rgba(99,102,241,0.2);">
+                <th style="padding:0.85rem 1rem; text-align:left; font-weight:600; color:#6366f1; width:80px;">#</th>
+                {% if mostrar_nit %}
+                <th style="padding:0.85rem 1rem; text-align:left; font-weight:600; color:#6366f1; width:150px;">NIT / Código</th>
+                {% endif %}
+                <th style="padding:0.85rem 1rem; text-align:left; font-weight:600; color:#6366f1;">Nombre</th>
+                <th style="padding:0.85rem 1rem; text-align:left; font-weight:600; color:#6366f1; width:200px;">Fecha Registro</th>
+                <th style="padding:0.85rem 1rem; text-align:center; font-weight:600; color:#6366f1; width:150px;">Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for obj in objetos %}
+            <tr style="border-bottom:1px solid rgba(255,255,255,0.05); transition:background 0.2s;" onmouseover="this.style.background='rgba(99,102,241,0.05)'" onmouseout="this.style.background=''">
+                <td style="padding:0.75rem 1rem; color:var(--text-muted);">{{ obj.id }}</td>
+                {% if mostrar_nit %}
+                <td style="padding:0.75rem 1rem; font-weight:500;">{{ obj.nit|default:"-" }}</td>
+                {% endif %}
+                <td style="padding:0.75rem 1rem; font-weight:500;">{{ obj.nombre }}</td>
+                <td style="padding:0.75rem 1rem; color:var(--text-muted);">{{ obj.fecha_registro|date:"d/m/Y H:i" }}</td>
+                <td style="padding:0.75rem 1rem; text-align:center; display:flex; gap:0.5rem; justify-content:center;">
+                    <a href="{% url url_editar_base obj.pk %}" style="background:rgba(99,102,241,0.15); color:#6366f1; border:none; padding:4px 12px; border-radius:6px; font-size:0.8rem; text-decoration:none; display:inline-flex; align-items:center; gap:4px; cursor:pointer;">
+                        <i data-lucide="pencil" style="width:13px;"></i> Editar
+                    </a>
+                    <form onsubmit="event.preventDefault(); eliminarElemento('{% url url_eliminar_base obj.pk %}', this.closest('tr'))" style="display:inline;">
+                        {% csrf_token %}
+                        <button type="submit" style="background:rgba(239,68,68,0.15); color:#ef4444; border:none; padding:4px 12px; border-radius:6px; font-size:0.8rem; display:inline-flex; align-items:center; gap:4px; cursor:pointer;">
+                            <i data-lucide="trash-2" style="width:13px;"></i> Eliminar
+                        </button>
+                    </form>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="4" style="padding:2rem; text-align:center; color:var(--text-muted);">
+                    <i data-lucide="inbox" style="width:32px; height:32px; display:block; margin:0 auto 0.5rem;"></i>
+                    No hay elementos registrados.
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<script>
+    function eliminarElemento(url, fila) {
+        if (!confirm('¿Está seguro de eliminar este elemento?')) return;
+        fetch(url, {
+            method: 'DELETE',
+            headers: {'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value}
+        }).then(r => r.json()).then(data => {
+            if (data.success) { fila.remove(); }
+        }).catch(err => console.error(err));
+    }
+    
+    function abrirPremiumModal(url, titulo) {
+        document.getElementById('modalTitle').innerText = titulo;
+        const modalBody = document.getElementById('modalBody');
+        modalBody.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--text-muted);"><i data-lucide="loader-2" class="lucide-spin" style="width:32px;height:32px;"></i><br>Cargando...</div>';
+        lucide.createIcons();
+        document.getElementById('premiumModal').showModal();
+        htmx.ajax('GET', url, {target: '#modalBody', swap: 'innerHTML'});
+    }
+</script>
+{% endblock %}

@@ -38,7 +38,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'legal',
+    'defenjur_py.legal',
 ]
 
 MIDDLEWARE = [

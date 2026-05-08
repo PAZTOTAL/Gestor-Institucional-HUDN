@@ -189,6 +189,7 @@
           <span class="px-2 py-0.5 rounded-full text-white text-xs font-bold" style="background:#374151">24h</span>
           <span class="px-2 py-0.5 rounded-full text-white text-xs font-bold" style="background:#059669">Lib</span>
           <span class="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 text-xs font-bold">P/h</span>
+          <span class="px-2 py-0.5 rounded-full text-white text-xs font-bold" style="background:#0d9488">P</span>
         </div>
 
         <!-- Calendario -->
@@ -267,6 +268,10 @@ const TURNOS_OPS = [
   {v:'veinticuatro', l:'24 Horas (07:00–07:00)'},
   {v:'por_horas',    l:'Por horas'},
   {v:'libre',        l:'Libre'},
+  {v:'vacaciones',   l:'V - Vacaciones'},
+  {v:'licencia',     l:'LI - Licencia'},
+  {v:'permiso',      l:'P - Permiso'},
+  {v:'incapacidad',  l:'INC - Incapacidad'},
 ];
 
 const TURNO_BADGE = {
@@ -275,6 +280,10 @@ const TURNO_BADGE = {
   manana_tarde:{l:'M-T',bg:'#0369a1'},
   veinticuatro:{l:'24h',bg:'#374151'},libre:{l:'Lib',bg:'#059669'},
   por_horas:{l:'P/h',bg:'#f59e0b',c:'#78350f'},
+  vacaciones:{l:'V',bg:'#16a34a'},
+  licencia:{l:'LI',bg:'#9333ea'},
+  permiso:{l:'P',bg:'#0d9488'},
+  incapacidad:{l:'INC',bg:'#b45309'},
 };
 
 // Estado global
@@ -300,22 +309,48 @@ function fmtFecha(y,m,d) {
   return `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
 }
 
-function getMonthState(year, month) {
-  const hoy = new Date(); hoy.setHours(0,0,0,0);
+// mesesConfig: sobrescrituras manuales del admin { "year_month": true/false }
+let mesesConfig = {};
 
-  // Ventana editable: últimos 10 días del mes → primeros 10 días del mes siguiente
-  const diasEnMes  = new Date(year, month, 0).getDate();          // último día del mes
-  const inicioVentana = new Date(year, month - 1, diasEnMes - 9); // día 22 (en meses de 31)
-  const nextYear   = month === 12 ? year + 1 : year;
-  const nextMonth  = month === 12 ? 1 : month + 1;
-  const finVentana = new Date(nextYear, nextMonth - 1, 10);        // día 10 del mes siguiente
+async function cargarMesesConfig() {
+  try {
+    const resp = await api('mes-config/');
+    mesesConfig = {};
+    (resp.configs || []).forEach(c => { mesesConfig[`${c.year}_${c.month}`] = c.habilitado; });
+  } catch { mesesConfig = {}; }
+}
+
+function getMonthState(year, month) {
+  const key = `${year}_${month}`;
+  // Override manual del admin
+  if (key in mesesConfig) return mesesConfig[key] ? 'editable' : 'closed';
+
+  const hoy = new Date(); hoy.setHours(0,0,0,0);
+  const diasEnMes     = new Date(year, month, 0).getDate();
+  const inicioVentana = new Date(year, month - 1, diasEnMes - 9);
+  const nextYear      = month === 12 ? year + 1 : year;
+  const nextMonth     = month === 12 ? 1 : month + 1;
+  const finVentana    = new Date(nextYear, nextMonth - 1, 10);
 
   if (hoy >= inicioVentana && hoy <= finVentana) return 'editable';
+
+  // Pre-carga: abierto mientras el mes anterior está en su propia ventana
+  // (ej: cuando estamos en la ventana de abril, mayo queda abierto para pre-cargar)
+  const prevY    = month === 1 ? year - 1 : year;
+  const prevM    = month === 1 ? 12 : month - 1;
+  const diasPrev = new Date(prevY, prevM, 0).getDate();
+  const iniPrev  = new Date(prevY, prevM - 1, diasPrev - 9);
+  const finPrev  = new Date(year, month - 1, 10);
+  if (hoy >= iniPrev && hoy <= finPrev) return 'open';
+
   if (hoy < inicioVentana) return 'upcoming';
   return 'closed';
 }
 
-function canEdit(year, month) { return getMonthState(year,month)==='editable'; }
+function canEdit(year, month) {
+  const st = getMonthState(year, month);
+  return st === 'editable' || st === 'open';
+}
 
 // ── Paso 1 ──────────────────────────────────────────────────────────────────
 let areaT1Pagina = 1;
@@ -391,6 +426,7 @@ function renderMeses() {
     const st = getMonthState(yearVista, m);
     const sel = mesSeleccionado?.year===yearVista && mesSeleccionado?.month===m;
     const color = {editable:'border-emerald-400 bg-emerald-50 text-emerald-800',
+                   open:'border-blue-400 bg-blue-50 text-blue-800',
                    upcoming:'border-amber-300 bg-amber-50 text-amber-700',
                    closed:'border-slate-200 bg-slate-50 text-slate-400'}[st];
     const selCls = sel ? 'ring-2 ring-blue-600 ring-offset-1' : '';
@@ -398,7 +434,7 @@ function renderMeses() {
               class="p-2 rounded-xl border-2 text-xs font-bold text-center transition ${color} ${selCls} cursor-pointer hover:scale-105">
               <div>${mes}</div>
               <div class="font-normal text-[10px] mt-0.5 opacity-70">
-                ${{editable:'Editable',upcoming:'Próximo',closed:'Cerrado'}[st]}</div>
+                ${{editable:'Editable',open:'Abierto',upcoming:'Próximo',closed:'Cerrado'}[st]}</div>
             </button>`;
   }).join('');
 }
@@ -551,8 +587,16 @@ function renderSidebar() {
             : 'background:#f8fafc;color:#334155;border:1px solid #e2e8f0'}"
           onmouseover="if(!${activo}) this.style.background='#eff6ff'"
           onmouseout="if(!${activo}) this.style.background='#f8fafc'">
-          <div class="font-bold leading-tight">${e.nombre}</div>
-          <div class="opacity-70">${e.documento}</div>
+          <div class="flex items-start justify-between gap-1">
+            <div class="min-w-0">
+              <div class="font-bold leading-tight truncate">${e.nombre}</div>
+              <div class="opacity-70">${e.documento}</div>
+            </div>
+            ${areas.length > 1 ? `<button onclick="event.stopPropagation();abrirModalMoverTurnos(${e.id},'${e.nombre.replace(/'/g,"\\'")}',${e.area})"
+              title="Cambiar área"
+              style="${activo ? 'background:rgba(255,255,255,0.2);color:white;border:1px solid rgba(255,255,255,0.4)' : 'background:#e0e7ff;color:#4338ca;border:1px solid #c7d2fe'}"
+              class="shrink-0 px-1.5 py-0.5 rounded font-bold hover:opacity-80 transition self-start">⇄</button>` : ''}
+          </div>
         </div>`;
       }).join('')
     : '<p class="text-slate-400 text-xs p-2">Sin resultados.</p>';
@@ -678,9 +722,26 @@ function _buildDayHtml(fecha, dia, esDom, esFest, especial, info, editable) {
   const selCls = editable
     ? 'w-full mt-auto border border-slate-300 rounded-lg px-1 py-1 text-xs bg-white focus:outline-none focus:border-blue-500 cursor-pointer'
     : 'w-full mt-auto border border-slate-200 rounded-lg px-1 py-1 text-xs bg-slate-50 opacity-50 cursor-not-allowed';
-  html += `<select onchange="cambiarTurno('${fecha}',this.value)" ${!editable?'disabled':''}
+  html += `<select data-fecha="${fecha}" onchange="cambiarTurno('${fecha}',this.value)" ${!editable?'disabled':''}
              class="${selCls}">${selOpts}</select>`;
   html += `<div id="saving-${fecha}" class="hidden text-[10px] text-blue-500 mt-0.5 text-center">guardando...</div>`;
+
+  // Aviso cross-month: turno nocturno en último día del mes y el siguiente es festivo de otro mes
+  if (info && ['noche','manana_noche','veinticuatro'].includes(info.turno)) {
+    const d = new Date(fecha + 'T00:00:00');
+    const sigD = new Date(d); sigD.setDate(sigD.getDate() + 1);
+    const sigFecha = sigD.toISOString().slice(0,10);
+    const sigEsMesDistinto = sigD.getMonth() !== d.getMonth();
+    const sigEsp = sigD.getDay() === 0 || festivos[sigFecha];
+    if (sigEsMesDistinto && sigEsp) {
+      const nomMes = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto',
+                      'Septiembre','Octubre','Noviembre','Diciembre'][sigD.getMonth()];
+      html += `<div class="mt-1 px-1.5 py-1 bg-amber-50 border border-amber-300 rounded-lg text-[9px] text-amber-800 font-medium leading-tight">
+        ⚠ Las horas festivas de este turno (1 HDF + 6 HNF) se acreditan a <b>${nomMes}</b> por iniciar en día festivo/domingo.
+      </div>`;
+    }
+  }
+
   return html;
 }
 
@@ -780,7 +841,7 @@ function rerenderDay(fecha) {
 }
 
 function calcularHorasDia(turno, especial, hd, hn, sigEsp) {
-  if (turno==='libre') return [0,0,0,0];
+  if (turno==='libre' || turno==='vacaciones' || turno==='licencia' || turno==='permiso' || turno==='incapacidad') return [0,0,0,0];
   if (turno==='por_horas') { return especial?[0,0,hd,hn]:[hd,hn,0,0]; }
   if (turno==='noche') {
     if (especial&&sigEsp)  return [0,0,1,11];
@@ -812,7 +873,7 @@ function actualizarResumen(year, month) {
   let hod=0, hon=0, hdf=0, hnf=0;
   keys.forEach(fecha => {
     const info = turnos[fecha];
-    if (info.turno==='libre') return;
+    if (info.turno==='libre' || info.turno==='vacaciones' || info.turno==='licencia' || info.turno==='permiso' || info.turno==='incapacidad') return;
     const d = new Date(fecha+'T00:00:00');
     const esp = d.getDay()===0 || fecha in festivos;
     const next = new Date(d); next.setDate(next.getDate()+1);
@@ -824,8 +885,8 @@ function actualizarResumen(year, month) {
 
   document.getElementById('cal-resumen-horas').innerHTML = keys.length ? `
     <span class="text-purple-600"><strong>${hon}h</strong> Ord. Nocturnas (+35%)</span>
-    <span class="text-orange-600"><strong>${hdf}h</strong> Diurnas Festivas (+75%)</span>
-    <span class="text-red-600"><strong>${hnf}h</strong> Noct. Festivas (+110%)</span>` : '';
+    <span class="text-orange-600"><strong>${hdf}h</strong> Diurnas Festivas (+200%)</span>
+    <span class="text-red-600"><strong>${hnf}h</strong> Noct. Festivas (+250%)</span>` : '';
 }
 
 async function guardarObsMensual() {
@@ -928,8 +989,40 @@ async function guardarMoverTurnos() {
   }
 }
 
+// ── Navegación rápida en el calendario ────────────────────────────────────
+(function iniciarNavCalendario() {
+  const calDays = document.getElementById('cal-days');
+  if (!calDays) return;
+
+  // Click en cualquier parte del cuadro del día → abrir el dropdown
+  calDays.addEventListener('click', function(e) {
+    if (e.target.tagName === 'SELECT' || e.target.tagName === 'INPUT' || e.target.tagName === 'BUTTON') return;
+    const cell = e.target.closest('[id^="day-"]');
+    if (!cell) return;
+    const sel = cell.querySelector('select:not(:disabled)');
+    if (!sel) return;
+    sel.focus();
+    try { sel.showPicker(); } catch(_) {}
+  });
+
+  // Tab en un select de día → saltar al select del día siguiente (Shift+Tab = anterior)
+  calDays.addEventListener('keydown', function(e) {
+    if (e.key !== 'Tab') return;
+    const sel = e.target.closest('[id^="day-"] select');
+    if (!sel) return;
+    e.preventDefault();
+    const allSels = [...calDays.querySelectorAll('select:not(:disabled)')];
+    const idx = allSels.indexOf(sel);
+    const next = e.shiftKey ? allSels[idx - 1] : allSels[idx + 1];
+    if (next) {
+      next.focus();
+      next.closest('[id^="day-"]')?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    }
+  });
+})();
+
 // ── Init ──────────────────────────────────────────────────────────────────────
+cargarMesesConfig().then(() => renderMeses());
 cargarAreas();
-renderMeses();
 </script>
 {% endblock %}

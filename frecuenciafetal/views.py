@@ -187,36 +187,38 @@ class RegistroPartoViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get'], url_path='sala-partos')
     def sala_partos(self, request):
         """
-        Lista pacientes en Sala de Partos desde DGEMPRES03 (readonly).
+        Lista pacientes en Sala de Partos desde la base de datos seleccionada.
         q: opcional; filtra por nombre o identificación.
         Devuelve datos para autocompletar el formulario (nombre, identificación, edad gestacional, gestas).
         """
         query = (request.query_params.get('q', '') or '').strip()
+        selected_db = request.session.get('hospital_db', 'readonly')
         try:
-            data = listar_pacientes_sala_partos(query=query if query else None)
+            data = listar_pacientes_sala_partos(query=query if query else None, db_name=selected_db)
             return Response(data)
         except Exception as e:
             return Response(
-                {'error': str(e), 'detail': 'No se pudo conectar a la base de datos de consulta.'},
+                {'error': str(e), 'detail': f'No se pudo conectar a la base de datos {selected_db}.'},
                 status=status.HTTP_503_SERVICE_UNAVAILABLE
             )
 
     @action(detail=False, methods=['get'], url_path='mi-firma')
     def mi_firma(self, request):
         """
-        Obtiene la firma digital del médico logueado desde DGH (readonly).
+        Obtiene la firma digital del médico logueado desde la base seleccionada.
         Si no hay sesión o firma, devuelve 200 con firma_b64: null para no generar 404 en consola.
         """
         from django.db import connections
         dgh_info = request.session.get('dgh_info', {})
         codigo_medico = dgh_info.get('codigo_medico')
+        selected_db = request.session.get('hospital_db', 'readonly')
         
         if not codigo_medico:
             return Response({'firma_b64': None, 'message': 'No hay profesional en sesión.'}, status=status.HTTP_200_OK)
         
         sql = "SELECT GMEFIRMADI FROM GENMEDICO WHERE GMECODIGO = %s"
         try:
-            with connections['readonly'].cursor() as cursor:
+            with connections[selected_db].cursor() as cursor:
                 cursor.execute(sql, [codigo_medico])
                 row = cursor.fetchone()
                 if row and row[0]:
@@ -228,7 +230,7 @@ class RegistroPartoViewSet(viewsets.ModelViewSet):
                         'identificacion': dgh_info.get('identificacion'),
                         'tarjeta_pro': dgh_info.get('tarjeta_pro')
                     })
-                return Response({'firma_b64': None, 'message': 'El profesional no tiene firma registrada en DGH.'})
+                return Response({'firma_b64': None, 'message': 'El profesional no tiene firma registrada.'})
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 

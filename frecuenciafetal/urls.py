@@ -18,7 +18,7 @@ registros_router.register(r'recien-nacido', ControlRecienNacidoViewSet, basename
 registros_router.register(r'postparto', ControlPostpartoViewSet, basename='postparto')
 
 urlpatterns = [
-    path('', FormularioRegistroView.as_view(), name='home'),
+    path('', FormularioRegistroView.as_view(), name='frecuenciafetal_home'),
     # Puente para entornos donde este módulo queda montado en raíz.
     # path('meows/', include('meows.urls')),
     path('captura-huella/', views.captura_huella, name='captura_huella'),

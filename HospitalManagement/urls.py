@@ -17,11 +17,16 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 
-from .api_views import query_tercero, get_tercero_details, query_paciente_enhanced, get_diagnostico_paciente
+from .api_views import (
+    query_tercero, get_tercero_details, query_paciente_enhanced, 
+    get_diagnostico_paciente, lookup_tercero_by_documento
+)
+from paz_y_salvo.urls import urlpatterns as pys_api_patterns, template_urlpatterns as pys_template_patterns
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/lookup-tercero/', query_tercero, name='api_lookup_tercero'),
+    path('api/lookup-tercero-doc/', lookup_tercero_by_documento, name='api_lookup_tercero_doc'),
     path('api/lookup-paciente-enhanced/', query_paciente_enhanced, name='api_lookup_paciente_enhanced'),
     path('api/tercero-details/<int:oid>/', get_tercero_details, name='api_tercero_details'),
     path('api/paciente-ultimo-diagnostico/<int:oid>/', get_diagnostico_paciente, name='api_paciente_ultimo_diagnostico'),
@@ -45,7 +50,14 @@ urlpatterns = [
     path('organigrama/', include('A_00_Organigrama.urls')),
     path('visor-soportes/', include('visor_soportes.urls')),
     path('atencion/', include('unificador_v1.urls')),
+    path('fetal/', include('frecuenciafetal.urls')),
+    path('meows/', include('meows.urls')), 
+    path('parto/', include('trabajoparto.urls')),
     path('tercerizadas/', include('tercerizadas.urls', namespace='tercerizadas')),
+    path('paz-y-salvo/', include((pys_template_patterns, 'paz_y_salvo'), namespace='paz_y_salvo')),
+    path('api/', include(pys_api_patterns)),
+    path('inventarios/', include('inventarios.urls')),
+    path('formatos-apps/', include('formatos_apps.urls')),
 ]
 
 

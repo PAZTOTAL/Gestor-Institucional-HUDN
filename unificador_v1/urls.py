@@ -9,6 +9,7 @@ urlpatterns = [
     path('', views.dashboard, name='dashboard'),
     path('manual-usuario/', views.manual_usuario, name='manual_usuario'),
     path('api/datos-paciente-unificado/', views.api_datos_paciente_unificado, name='api_datos_paciente_unificado'),
+    path('api/censo-gineco/', views.api_censo_gineco, name='api_censo_gineco'),
     path('sala-de-partos/', views.sala_de_partos, name='sala_de_partos'),
     path('<int:atencion_id>/guardar-datos-paciente/', views.guardar_datos_paciente_card, name='guardar_datos_paciente_card'),
     path('<int:id>/', views.atencion_detalle, name='atencion_detalle'),
