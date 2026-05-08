@@ -6,7 +6,8 @@ from datetime import datetime
 # Core and Infrastructure models
 from consultas_externas.models import (
     Genpacien, Adningreso, Hpnestanc, Hpndefcam, Hpnsubgru, Gendetcon,
-    Hcnfolio, Hcndiapac, Gendiagno, Hcnregenf, Genareser, Adncenate
+    Hcnfolio, Hcndiapac, Gendiagno, Hcnregenf, Genareser, Adncenate,
+    Hpngrupos
 )
 
 def calculate_age(born):
@@ -15,12 +16,12 @@ def calculate_age(born):
     today = datetime.now()
     return today.year - born.year - ((today.month, today.day) < (born.month, born.day))
 
-def get_datos_antropometricos(paciente_oid):
+def get_datos_antropometricos(paciente_oid, db_name='readonly'):
     """
     Obtiene el peso y talla más recientes del paciente desde Hcnregenf
     """
     try:
-        ultimo_reg = Hcnregenf.objects.using('readonly').filter(
+        ultimo_reg = Hcnregenf.objects.using(db_name).filter(
             genpacien=paciente_oid
         ).exclude(hcrpeso=0, hcrtalla=0).order_by('-hcfecreg').first()
         
@@ -33,13 +34,13 @@ def get_datos_antropometricos(paciente_oid):
         pass
     return {'peso': None, 'talla': None}
 
-def get_ultimo_diagnostico(paciente_oid):
+def get_ultimo_diagnostico(paciente_oid, db_name='readonly'):
     """
     Busca el último diagnóstico principal del paciente en Consultas Externas
     """
     try:
         # 1. Obtener el último folio
-        ultimo_folio = Hcnfolio.objects.using('readonly').filter(
+        ultimo_folio = Hcnfolio.objects.using(db_name).filter(
             genpacien=paciente_oid
         ).order_by('-hcfecfol').first()
         
@@ -47,14 +48,14 @@ def get_ultimo_diagnostico(paciente_oid):
             return ""
             
         # 2. Obtener el diagnóstico principal de ese folio
-        diag_pac = Hcndiapac.objects.using('readonly').filter(
+        diag_pac = Hcndiapac.objects.using(db_name).filter(
             hcnfolio=ultimo_folio.oid,
             hcpdiaprin=True
         ).first()
         
         if not diag_pac:
             # Si no hay principal, buscar el primero que aparezca
-            diag_pac = Hcndiapac.objects.using('readonly').filter(
+            diag_pac = Hcndiapac.objects.using(db_name).filter(
                 hcnfolio=ultimo_folio.oid
             ).first()
             
@@ -62,7 +63,7 @@ def get_ultimo_diagnostico(paciente_oid):
             return ""
             
         # 3. Obtener el nombre desde Gendiagno
-        diag_def = Gendiagno.objects.using('readonly').filter(oid=diag_pac.gendiagno).first()
+        diag_def = Gendiagno.objects.using(db_name).filter(oid=diag_pac.gendiagno).first()
         if diag_def:
             return f"{diag_def.diacodigo} - {diag_def.dianombre}"
             
@@ -80,18 +81,32 @@ def query_paciente_enhanced(request):
     try:
         term = request.GET.get('term', '')
         limit = int(request.GET.get('limit', 20))
+        area_filter = request.GET.get('area', '') # HGRCODIGO
+        
+        # Obtener base de datos de la sesión
+        db_name = request.session.get('hospital_db', 'readonly')
         data = []
         
         if not term:
-            # 1. Start with ALL Active Stays (Patients in a bed: ICU, Floors, etc.)
-            active_stays = Hpnestanc.objects.using('readonly').filter(
-                hesfecsal__isnull=True
-            ).order_by('-hesfecing')[:500] # Usually < 400 total
+            # 1. Start with ALL Active Stays
+            query_stays = Hpnestanc.objects.using(db_name).filter(hesfecsal__isnull=True)
+            
+            if area_filter:
+                areas = [a.strip() for a in area_filter.split(',') if a.strip()]
+                if areas:
+                    # 1. Obtener OIDs de los grupos que coincidan con los códigos
+                    group_oids = Hpngrupos.objects.using(db_name).filter(hgrcodigo__in=areas).values_list('oid', flat=True)
+                    # 2. Obtener OIDs de las camas que pertenecen a esos grupos
+                    bed_oids = Hpndefcam.objects.using(db_name).filter(hpngrupos__in=group_oids).values_list('oid', flat=True)
+                    # 3. Filtrar estancias por esas camas
+                    query_stays = query_stays.filter(hpndefcam__in=bed_oids)
+            
+            active_stays = query_stays.order_by('-hesfecing')[:500]
             
             adm_oids = [s.adningres for s in active_stays if s.adningres]
             
             # 2. ALSO get very recent admissions (Transit/Arrivals) who might not have a bed yet
-            recent_adms = Adningreso.objects.using('readonly').filter(
+            recent_adms = Adningreso.objects.using(db_name).filter(
                 ainfecegre__isnull=True
             ).order_by('-ainfecing')[:100]
             
@@ -100,17 +115,17 @@ def query_paciente_enhanced(request):
                 all_adm_oids.add(a.oid)
             
             # Fetch all associated Admissions
-            active_adms = Adningreso.objects.using('readonly').filter(oid__in=all_adm_oids)
+            active_adms = Adningreso.objects.using(db_name).filter(oid__in=all_adm_oids)
             adm_map = {a.oid: a for a in active_adms}
             
             # Collect Patient IDs
             pac_ids = [a.genpacien_id for a in active_adms if a.genpacien_id]
-            pacs = Genpacien.objects.using('readonly').filter(oid__in=pac_ids)
+            pacs = Genpacien.objects.using(db_name).filter(oid__in=pac_ids)
             pac_map = {p.oid: p for p in pacs}
             
             # Fetch Insurers
             detcon_ids = [a.gendetcon_id for a in active_adms if a.gendetcon_id]
-            detcons = Gendetcon.objects.using('readonly').filter(oid__in=detcon_ids)
+            detcons = Gendetcon.objects.using(db_name).filter(oid__in=detcon_ids)
             detcon_map = {d.oid: d for d in detcons}
 
             # Map stays for fast access
@@ -118,20 +133,20 @@ def query_paciente_enhanced(request):
 
             # Prepare Helper Data for Beds/Rooms
             bed_ids = [s.hpndefcam for s in active_stays if s.hpndefcam]
-            beds = Hpndefcam.objects.using('readonly').filter(oid__in=bed_ids)
+            beds = Hpndefcam.objects.using(db_name).filter(oid__in=bed_ids)
             bed_map = {b.oid: b for b in beds}
             
             subgru_ids = [b.hpnsubgru for b in beds if b.hpnsubgru]
-            subgrus = Hpnsubgru.objects.using('readonly').filter(oid__in=subgru_ids)
+            subgrus = Hpnsubgru.objects.using(db_name).filter(oid__in=subgru_ids)
             subgru_map = {s.oid: s for s in subgrus}
 
             # Infrastructure Maps for results
             area_ids = [a.genareser for a in active_adms if a.genareser]
-            areas = Genareser.objects.using('readonly').filter(oid__in=area_ids)
+            areas = Genareser.objects.using(db_name).filter(oid__in=area_ids)
             area_map = {a.oid: a.gasnombre for a in areas}
 
             center_ids = [a.adncenate for a in active_adms if a.adncenate]
-            centers = Adncenate.objects.using('readonly').filter(oid__in=center_ids)
+            centers = Adncenate.objects.using(db_name).filter(oid__in=center_ids)
             center_map = {c.oid: c.acanombre for c in centers}
 
             # Build Result List
@@ -198,7 +213,7 @@ def query_paciente_enhanced(request):
             # Cannot select_related genpacien! Must filter manually or use double query approach
             # Approach: Find Genpacien matching term -> Find Adningreso for those patients
             
-            pacs = Genpacien.objects.using('readonly').filter(
+            pacs = Genpacien.objects.using(db_name).filter(
                 Q(pacnumdoc__icontains=term) | 
                 Q(pacprinom__icontains=term) | 
                 Q(pacpriape__icontains=term)
@@ -211,22 +226,22 @@ def query_paciente_enhanced(request):
                 return JsonResponse({'results': []})
             
             # Find Admissions for these patients (Active and Recent)
-            qs = Adningreso.objects.using('readonly').filter(
+            qs = Adningreso.objects.using(db_name).filter(
                 genpacien__in=pac_ids,
             ).order_by('-ainfecing')[:limit]
             
             # Get Insurers
             detcon_ids = [a.gendetcon_id for a in qs if a.gendetcon_id]
-            detcons = Gendetcon.objects.using('readonly').filter(oid__in=detcon_ids)
+            detcons = Gendetcon.objects.using(db_name).filter(oid__in=detcon_ids)
             detcon_map = {d.oid: d for d in detcons}
 
             # Infrastructure Maps for search results
             area_ids = [a.genareser for a in qs if a.genareser]
-            areas = Genareser.objects.using('readonly').filter(oid__in=area_ids)
+            areas = Genareser.objects.using(db_name).filter(oid__in=area_ids)
             area_map = {a.oid: a.gasnombre for a in areas}
 
             center_ids = [a.adncenate for a in qs if a.adncenate]
-            centers = Adncenate.objects.using('readonly').filter(oid__in=center_ids)
+            centers = Adncenate.objects.using(db_name).filter(oid__in=center_ids)
             center_map = {c.oid: c.acanombre for c in centers}
 
             for adm in qs:
@@ -235,7 +250,7 @@ def query_paciente_enhanced(request):
                 detcon = detcon_map.get(adm.gendetcon_id)
 
                 # Get latest active stay for this admission
-                latest_estancia = Hpnestanc.objects.using('readonly').filter(
+                latest_estancia = Hpnestanc.objects.using(db_name).filter(
                     adningres=adm.oid, 
                     hesfecsal__isnull=True 
                 ).order_by('-hesfecing').first()
@@ -244,14 +259,14 @@ def query_paciente_enhanced(request):
                 sala_nombre = ""
                 if latest_estancia:
                     if latest_estancia.hpndefcam:
-                        cama_obj = Hpndefcam.objects.using('readonly').filter(oid=latest_estancia.hpndefcam).first()
+                        cama_obj = Hpndefcam.objects.using(db_name).filter(oid=latest_estancia.hpndefcam).first()
                         if cama_obj:
                             cama_nombre = cama_obj.hcacodigo or cama_obj.hcanumhabi or cama_obj.hcanombre
                             if any(x in str(cama_nombre).upper() for x in ['URGENCIAS', 'OBSERVACION', 'PISO']):
                                 if cama_obj.hcacodigo and cama_obj.hcacodigo.strip():
                                     cama_nombre = cama_obj.hcacodigo
                             if cama_obj.hpnsubgru:
-                                 subgru_obj = Hpnsubgru.objects.using('readonly').filter(oid=cama_obj.hpnsubgru).first()
+                                 subgru_obj = Hpnsubgru.objects.using(db_name).filter(oid=cama_obj.hpnsubgru).first()
                                  if subgru_obj:
                                      sala_nombre = subgru_obj.hsunombre
 
@@ -350,10 +365,44 @@ def get_diagnostico_paciente(request, oid):
     Endpoint dedicado para obtener el último diagnóstico y datos antropométricos.
     Esto evita ralentizar las búsquedas masivas.
     """
-    diag = get_ultimo_diagnostico(oid)
-    antropometricos = get_datos_antropometricos(oid)
+    db_name = request.session.get('hospital_db', 'readonly')
+    diag = get_ultimo_diagnostico(oid, db_name=db_name)
+    antropometricos = get_datos_antropometricos(oid, db_name=db_name)
     return JsonResponse({
         'ultimo_diagnostico': diag,
         'peso': antropometricos['peso'],
         'talla': antropometricos['talla']
     })
+def lookup_tercero_by_documento(request):
+    doc = request.GET.get('doc', '')
+    if not doc:
+        return JsonResponse({'found': False, 'error': 'No documento provided'})
+    
+    try:
+        Gentercer = apps.get_model('consultas_externas', 'Gentercer')
+        tercero = Gentercer.objects.using('readonly').filter(ternumdoc=doc).first()
+        
+        if not tercero:
+            # Fallback to Comtercero if Gentercer fails
+            Comtercero = apps.get_model('consultas_externas', 'Comtercero')
+            tercero_com = Comtercero.objects.using('readonly').filter(teridenti=doc).first()
+            if tercero_com:
+                return JsonResponse({
+                    'found': True,
+                    'nombre': tercero_com.ternomcom,
+                    'documento': tercero_com.teridenti
+                })
+            return JsonResponse({'found': False, 'error': 'Not found'})
+            
+        full_name = f"{tercero.terprinom or ''} {tercero.tersegnom or ''} {tercero.terpriape or ''} {tercero.tersegape or ''}".strip()
+        if not full_name:
+             full_name = tercero.ternomcom
+             
+        return JsonResponse({
+            'found': True,
+            'oid': tercero.pk,
+            'documento': tercero.ternumdoc,
+            'nombre': full_name
+        })
+    except Exception as e:
+        return JsonResponse({'found': False, 'error': str(e)})

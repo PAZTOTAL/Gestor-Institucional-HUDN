@@ -1,0 +1,84 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Registros FRQUI-095{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto py-8 px-4">
+    <div class="flex justify-between items-center mb-8">
+        <div class="flex items-center gap-4">
+            <div class="p-3 bg-indigo-600 rounded-2xl shadow-lg shadow-indigo-500/30">
+                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                    <polyline points="10 9 9 9 8 9"></polyline>
+                </svg>
+            </div>
+            <div>
+                <h1 class="text-3xl font-black text-slate-900 tracking-tight uppercase">Registros FRQUI-095</h1>
+                <p class="text-slate-500 font-bold uppercase text-xs tracking-widest">Historial de Instrumentación Quirúrgica</p>
+            </div>
+        </div>
+        <a href="{% url 'formatos_apps:frqui_095_create' %}" class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-xl shadow-lg shadow-blue-500/30 transition-all uppercase text-xs flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            Nuevo Registro
+        </a>
+    </div>
+
+    <div class="glass-card overflow-hidden rounded-3xl border border-slate-200 shadow-xl">
+        <table class="w-full text-left">
+            <thead class="bg-slate-50 border-b border-slate-200">
+                <tr>
+                    <th class="p-4 text-xs font-black text-slate-500 uppercase tracking-widest">Fecha</th>
+                    <th class="p-4 text-xs font-black text-slate-500 uppercase tracking-widest">Identificación</th>
+                    <th class="p-4 text-xs font-black text-slate-500 uppercase tracking-widest">Registrado Por</th>
+                    <th class="p-4 text-xs font-black text-slate-500 uppercase tracking-widest">Estado Conteo</th>
+                    <th class="p-4 text-xs font-black text-slate-500 uppercase tracking-widest text-right">Acciones</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100">
+                {% for registro in registros %}
+                <tr class="hover:bg-blue-50/50 transition-colors">
+                    <td class="p-4">
+                        <span class="text-sm font-black text-slate-900">{{ registro.fecha_registro|date:"d/m/Y" }}</span>
+                        <br>
+                        <span class="text-[10px] text-slate-400 font-bold">{{ registro.fecha_registro|date:"H:i" }}</span>
+                    </td>
+                    <td class="p-4 font-bold text-slate-700">{{ registro.identificacion_paciente }}</td>
+                    <td class="p-4">
+                        <div class="flex items-center gap-2">
+                            <div class="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-600 text-xs font-black">
+                                {{ registro.usuario_registro.username|slice:":2"|upper }}
+                            </div>
+                            <span class="text-sm font-bold text-slate-600">{{ registro.usuario_registro.get_full_name|default:registro.usuario_registro.username }}</span>
+                        </div>
+                    </td>
+                    <td class="p-4">
+                        <span class="px-3 py-1 bg-green-100 text-green-700 text-[10px] font-black rounded-full uppercase">Completado</span>
+                    </td>
+                    <td class="p-4 text-right flex justify-end gap-2">
+                        <a href="{% url 'formatos_apps:frqui_095_update' registro.pk %}" class="p-2 bg-slate-100 hover:bg-amber-600 text-slate-400 hover:text-white rounded-xl transition-all shadow-sm" title="Editar Registro">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                        </a>
+                        <a href="{% url 'formatos_apps:frqui_095_pdf' registro.pk %}" target="_blank" class="p-2 bg-slate-100 hover:bg-blue-600 text-slate-400 hover:text-white rounded-xl transition-all shadow-sm" title="Descargar PDF Oficial">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="12" y1="18" x2="12" y2="12"></line><polyline points="9 15 12 18 15 15"></polyline></svg>
+                        </a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5" class="p-12 text-center">
+                        <div class="flex flex-col items-center gap-4">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#e2e8f0" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                            <p class="text-slate-400 font-bold">No hay registros guardados aún.</p>
+                            <a href="{% url 'formatos_apps:frqui_095_create' %}" class="text-blue-600 font-black uppercase text-xs hover:underline">Crear el primer registro</a>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
