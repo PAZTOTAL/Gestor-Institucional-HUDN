@@ -21,7 +21,10 @@
       "Bash(Select-Object -Property FullName, PSIsContainer)",
       "Bash(Sort-Object FullName)",
       "Bash(Format-Table -AutoSize)",
-      "Bash(python manage.py makemigrations horas_extras --name=\"mes_config_recargos\")"
+      "Bash(python manage.py makemigrations horas_extras --name=\"mes_config_recargos\")",
+      "Bash(Get-ChildItem -Path \"D:\\\\Gestor-Institucional-HUDN\" -Directory)",
+      "Bash(Select-Object Name)",
+      "Bash(python *)"
     ]
   }
 }

@@ -799,7 +799,8 @@ class ConfiguracionRecargosView(LoginRequiredMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        ctx['es_admin'] = _es_admin_recargos(self.request.user)
+        ctx['es_admin']        = _es_admin_recargos(self.request.user)
+        ctx['es_superusuario'] = self.request.user.is_superuser
         return ctx
 
 
@@ -1202,6 +1203,78 @@ def api_reporte_area_xlsx(request):
 
 
 # ── API: Coordinadores ────────────────────────────────────────────────────────
+
+@login_required
+@require_http_methods(['GET'])
+def api_usuarios_recargos(request):
+    """Lista usuarios con acceso a horas_extras y su PerfilRecargos. Solo superusuarios."""
+    if not request.user.is_superuser:
+        return JsonResponse({'error': 'Solo superusuarios'}, status=403)
+
+    # Evitamos importar PermisoApp directamente (usuarios importa de horas_extras → circular)
+    usuarios = (
+        User.objects
+        .filter(permisos_app__app_label='horas_extras', permisos_app__permitido=True)
+        .select_related('perfil_recargos')
+        .order_by('first_name', 'last_name', 'username')
+    )
+    data = []
+    for u in usuarios:
+        try:
+            p = u.perfil_recargos
+            rol   = p.rol
+            areas = [{'id': a.id, 'nombre': a.nombre} for a in p.areas.all()]
+        except PerfilRecargos.DoesNotExist:
+            rol   = None
+            areas = []
+        data.append({
+            'id':       u.id,
+            'username': u.username,
+            'nombre':   u.get_full_name() or u.username,
+            'email':    u.email,
+            'rol':      rol,
+            'areas':    areas,
+        })
+    return JsonResponse(data, safe=False)
+
+
+@login_required
+@require_http_methods(['POST', 'DELETE'])
+def api_usuario_recargos_detail(request, pk):
+    """Crea/actualiza o elimina el PerfilRecargos de un usuario. Solo superusuarios."""
+    if not request.user.is_superuser:
+        return JsonResponse({'error': 'Solo superusuarios'}, status=403)
+
+    target = get_object_or_404(User, pk=pk)
+
+    if request.method == 'DELETE':
+        PerfilRecargos.objects.filter(user=target).delete()
+        cache.delete(f'perfil_recargos_{target.pk}')
+        return JsonResponse({'ok': True})
+
+    body = json.loads(request.body)
+    rol  = body.get('rol')
+    if rol not in ('admin', 'coordinador'):
+        return JsonResponse({'error': 'rol debe ser admin o coordinador'}, status=400)
+
+    perfil, _ = PerfilRecargos.objects.update_or_create(
+        user=target, defaults={'rol': rol}
+    )
+    if rol == 'coordinador':
+        areas_ids = body.get('areas', [])
+        perfil.areas.set(AreaRecargos.objects.filter(id__in=areas_ids))
+    else:
+        perfil.areas.clear()
+
+    cache.delete(f'perfil_recargos_{target.pk}')
+    return JsonResponse({
+        'ok':    True,
+        'id':    target.id,
+        'nombre': target.get_full_name() or target.username,
+        'rol':   perfil.rol,
+        'areas': [{'id': a.id, 'nombre': a.nombre} for a in perfil.areas.all()],
+    })
+
 
 @login_required
 @require_http_methods(['GET', 'POST'])
