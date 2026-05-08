@@ -9,7 +9,19 @@
       "PowerShell(Test-Path \"D:\\\\Gestor-Institucional-HUDN\\\\staticfiles\" ; if \\(Test-Path \"D:\\\\Gestor-Institucional-HUDN\\\\staticfiles\"\\) { \\(Get-ChildItem \"D:\\\\Gestor-Institucional-HUDN\\\\staticfiles\" -Recurse | Measure-Object\\).Count })",
       "PowerShell($env:PLAYWRIGHT_BROWSERS_PATH = \"D:\\\\apps\\\\playwright-browsers\"; cd \"D:\\\\Gestor-Institucional-HUDN\"; .\\\\venv\\\\Scripts\\\\python.exe -m playwright install chromium 2>&1)",
       "Bash(grep -v \"^venv$\\\\|^staticfiles$\\\\|^media$\\\\|^sessions$\\\\|^__pycache__$\")",
-      "PowerShell(Set-Content *)"
+      "PowerShell(Set-Content *)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git push *)",
+      "Bash(cd /d \"D:\\\\Gestor-Institucional-HUDN\")",
+      "Bash(python manage.py makemigrations --check)",
+      "Bash(echo \"EXIT:$?\")",
+      "Bash(Remove-Item *)",
+      "Bash(Get-ChildItem -Path \"D:\\\\Gestor-Institucional-HUDN\\\\horas_extras\" -Recurse -Force)",
+      "Bash(Select-Object -Property FullName, PSIsContainer)",
+      "Bash(Sort-Object FullName)",
+      "Bash(Format-Table -AutoSize)",
+      "Bash(python manage.py makemigrations horas_extras --name=\"mes_config_recargos\")"
     ]
   }
 }

@@ -14,7 +14,8 @@ from django.db.models import Count, Q
 from django.utils import timezone
 from django.views.decorators.http import require_http_methods
 from .models import (HoraExtra, AreaRecargos, TrabajadorRecargos, TurnoRecargos,
-                     ObservacionMensualRecargos, PerfilRecargos, CoordinadorRecargos)
+                     ObservacionMensualRecargos, PerfilRecargos, CoordinadorRecargos,
+                     MesConfigRecargos, SnapshotEmpleadoArea)
 from .utils.holidays import festivos_colombia, festivos_mes
 from .utils.report import (generar_planilla, generar_planilla_area,
                             EmpleadoInfo, MESES_ES, calcular_horas,
@@ -608,6 +609,141 @@ def _es_admin_recargos(user):
     return p is not None and p.es_admin()
 
 
+def _mes_es_editable_registro(year, month):
+    """
+    Retorna True si el mes acepta registro de turnos:
+    - Override habilitado=True (admin forzó apertura), o
+    - Sin override: en la ventana automática (últimos 10 días del mes →
+      primeros 10 del mes siguiente) o es el mes siguiente al actual.
+    Retorna False si override habilitado=False o fuera de ventana.
+    """
+    from datetime import date as _d
+    override = MesConfigRecargos.objects.filter(year=year, month=month).first()
+    if override is not None:
+        return override.habilitado
+
+    hoy = _d.today()
+    dias_mes = calendar.monthrange(year, month)[1]
+    inicio = _d(year, month, dias_mes - 9)
+    next_y = year + 1 if month == 12 else year
+    next_m = 1 if month == 12 else month + 1
+    fin = _d(next_y, next_m, 10)
+    if inicio <= hoy <= fin:
+        return True
+
+    # Pre-carga: abierto mientras el mes anterior está en su propia ventana
+    prev_m    = 12 if month == 1 else month - 1
+    prev_y    = year - 1 if month == 1 else year
+    dias_prev = calendar.monthrange(prev_y, prev_m)[1]
+    ini_prev  = _d(prev_y, prev_m, dias_prev - 9)
+    fin_prev  = _d(year, month, 10)
+    return ini_prev <= hoy <= fin_prev
+
+
+def _tomar_snapshot_mes(year, month):
+    """
+    Guarda (o actualiza) el snapshot empleado-área para el mes indicado.
+    Captura todos los empleados con turnos en ese mes usando su área actual.
+    Debe llamarse justo antes o al momento de cerrar el mes.
+    """
+    emp_ids = list(
+        TurnoRecargos.objects.filter(fecha__year=year, fecha__month=month)
+        .values_list('empleado_id', flat=True).distinct()
+    )
+    for emp_id in emp_ids:
+        try:
+            t = TrabajadorRecargos.objects.select_related('area').get(id=emp_id)
+            SnapshotEmpleadoArea.objects.update_or_create(
+                year=year, month=month, empleado_id=emp_id,
+                defaults={
+                    'nombre':      t.nombre,
+                    'documento':   t.documento,
+                    'cargo':       t.cargo,
+                    'area_id':     t.area_id,
+                    'area_nombre': t.area.nombre if t.area else '',
+                    'tipo':        t.tipo,
+                }
+            )
+        except TrabajadorRecargos.DoesNotExist:
+            pass
+
+
+from collections import namedtuple as _namedtuple
+_EmpRow = _namedtuple('_EmpRow', ['id', 'nombre', 'documento', 'cargo', 'tipo', 'tipo_display', 'area_nombre'])
+
+_TIPO_DISPLAY = {'permanente': 'Planta Permanente', 'temporal': 'Planta Temporal', 'ops': 'OPS'}
+
+
+def _get_trabajadores_reporte(area_id, year, month):
+    """
+    Retorna lista de _EmpRow para generar el reporte de un área/mes.
+    Si el mes está cerrado usa el snapshot (tomándolo en el momento si aún no existe).
+    Si el mes sigue abierto usa los datos actuales.
+    """
+    area_id = int(area_id)
+
+    # Si el mes está cerrado, asegurar que exista snapshot
+    if not _mes_es_editable_registro(year, month):
+        if not SnapshotEmpleadoArea.objects.filter(year=year, month=month, area_id=area_id).exists():
+            _tomar_snapshot_mes(year, month)
+
+    snapshots = SnapshotEmpleadoArea.objects.filter(year=year, month=month, area_id=area_id)
+    if snapshots.exists():
+        return sorted(
+            [_EmpRow(id=s.empleado_id, nombre=s.nombre, documento=s.documento,
+                     cargo=s.cargo, tipo=s.tipo,
+                     tipo_display=_TIPO_DISPLAY.get(s.tipo, s.tipo),
+                     area_nombre=s.area_nombre)
+             for s in snapshots],
+            key=lambda x: (x.tipo, x.nombre)
+        )
+
+    # Mes aún abierto o sin turnos registrados: datos actuales
+    try:
+        area_nombre = AreaRecargos.objects.get(pk=area_id).nombre
+    except AreaRecargos.DoesNotExist:
+        area_nombre = ''
+    return sorted(
+        [_EmpRow(id=t.id, nombre=t.nombre, documento=t.documento,
+                 cargo=t.cargo, tipo=t.tipo,
+                 tipo_display=_TIPO_DISPLAY.get(t.tipo, t.tipo),
+                 area_nombre=area_nombre)
+         for t in TrabajadorRecargos.objects.filter(area_id=area_id)],
+        key=lambda x: (x.tipo, x.nombre)
+    )
+
+
+@login_required
+@require_http_methods(['GET', 'POST', 'DELETE'])
+def api_mes_config(request):
+    if request.method == 'GET':
+        configs = list(MesConfigRecargos.objects.values('year', 'month', 'habilitado'))
+        return JsonResponse({'configs': configs})
+
+    if not _es_admin_recargos(request.user):
+        return JsonResponse({'error': 'Solo el administrador puede modificar esta configuración'}, status=403)
+
+    body = json.loads(request.body)
+    year  = int(body.get('year', 0))
+    month = int(body.get('month', 0))
+    if not (year and 1 <= month <= 12):
+        return JsonResponse({'error': 'year y month requeridos'}, status=400)
+
+    if request.method == 'POST':
+        habilitado = bool(body.get('habilitado'))
+        MesConfigRecargos.objects.update_or_create(
+            year=year, month=month, defaults={'habilitado': habilitado}
+        )
+        # Guardar snapshot al cerrar manualmente (y al volver a cerrar tras re-apertura)
+        if not habilitado:
+            _tomar_snapshot_mes(year, month)
+        return JsonResponse({'ok': True})
+
+    # DELETE: restaurar comportamiento automático
+    MesConfigRecargos.objects.filter(year=year, month=month).delete()
+    return JsonResponse({'ok': True})
+
+
 def _areas_ids_recargos(user):
     """
     Devuelve None (todas las áreas) si es admin.
@@ -911,6 +1047,16 @@ def api_turnos(request):
     emp_id = body.get('empleado_id')
     fecha  = body.get('fecha')
     turno  = body.get('turno')
+
+    if not _es_admin_recargos(request.user):
+        from datetime import date as _d
+        try:
+            fd = _d.fromisoformat(fecha)
+        except (ValueError, TypeError):
+            return JsonResponse({'error': 'Fecha inválida'}, status=400)
+        if not _mes_es_editable_registro(fd.year, fd.month):
+            return JsonResponse({'error': 'Este período está cerrado para modificaciones'}, status=403)
+
     existing = TurnoRecargos.objects.filter(empleado_id=emp_id, fecha=fecha).first()
     if existing:
         existing.turno           = turno
@@ -935,6 +1081,9 @@ def api_turnos(request):
 @require_http_methods(['DELETE'])
 def api_turno_detail(request, pk):
     t = get_object_or_404(TurnoRecargos, pk=pk)
+    if not _es_admin_recargos(request.user):
+        if not _mes_es_editable_registro(t.fecha.year, t.fecha.month):
+            return JsonResponse({'error': 'Este período está cerrado'}, status=403)
     t.delete()
     return JsonResponse({'ok': True})
 
@@ -1033,12 +1182,12 @@ def api_reporte_area_xlsx(request):
     dia_anterior = primer_dia - _td(days=1)
     ultimo_dia   = _date(year, month, calendar.monthrange(year, month)[1])
 
-    trabajadores = TrabajadorRecargos.objects.filter(area=area).select_related('area')
+    trabajadores = _get_trabajadores_reporte(area_id, year, month)
     coord_nombre = request.user.get_full_name() or request.user.username
     empleados_turnos = []
-    for t in sorted(trabajadores, key=lambda x: (x.tipo, x.nombre)):
+    for t in trabajadores:
         emp    = EmpleadoInfo(id=t.id, nombre=t.nombre, documento=t.documento,
-                              cargo=t.cargo, area_nombre=area.nombre, tipo=t.tipo)
+                              cargo=t.cargo, area_nombre=t.area_nombre, tipo=t.tipo)
         turnos = TurnoRecargos.objects.filter(
             empleado_id=t.id,
             fecha__gte=dia_anterior, fecha__lte=ultimo_dia,
@@ -1118,9 +1267,9 @@ def api_reporte_pdf(request):
     year, month = int(year), int(month)
     festivos_dict = festivos_colombia(year)
 
-    trabajadores = TrabajadorRecargos.objects.filter(area=area)
+    trabajadores = _get_trabajadores_reporte(area_id, year, month)
     if tipo in ('temporal', 'permanente'):
-        trabajadores = trabajadores.filter(tipo=tipo)
+        trabajadores = [t for t in trabajadores if t.tipo == tipo]
 
     obs_map = {
         o.empleado_id: o.observacion
@@ -1192,12 +1341,12 @@ def api_preview_area(request):
     year, month = int(year), int(month)
     festivos    = festivos_colombia(year)
     num_dias    = _cal.monthrange(year, month)[1]
-    trabajadores = TrabajadorRecargos.objects.filter(area=area).select_related('area')
+    trabajadores = _get_trabajadores_reporte(area_id, year, month)
 
     resultado  = []
     tot_global = {'hon': 0, 'hdf': 0, 'hnf': 0}
 
-    for t in sorted(trabajadores, key=lambda x: (x.tipo, x.nombre)):
+    for t in trabajadores:
         turnos_qs   = TurnoRecargos.objects.filter(empleado_id=t.id, fecha__year=year, fecha__month=month)
         turnos_dict = {str(tr.fecha): tr for tr in turnos_qs}
 
@@ -1236,7 +1385,7 @@ def api_preview_area(request):
         resultado.append({
             'id': t.id, 'nombre': t.nombre, 'documento': t.documento,
             'cargo': t.cargo, 'tipo': t.tipo,
-            'tipo_display': t.get_tipo_display(),
+            'tipo_display': t.tipo_display,
             'total_dias': len(turnos_dict),
             'hon': hon, 'hdf': hdf, 'hnf': hnf,
             'detalle': detalle,

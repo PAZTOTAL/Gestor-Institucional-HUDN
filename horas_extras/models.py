@@ -122,6 +122,43 @@ class PerfilRecargos(models.Model):
     def __str__(self):
         return f"{self.user.username} ({self.get_rol_display()})"
 
+class SnapshotEmpleadoArea(models.Model):
+    """Estado empleado-área guardado al cierre de cada mes."""
+    year       = models.IntegerField()
+    month      = models.IntegerField()
+    empleado_id = models.IntegerField()
+    nombre     = models.CharField(max_length=150)
+    documento  = models.CharField(max_length=20, blank=True, default='')
+    cargo      = models.CharField(max_length=100, blank=True, default='')
+    area_id    = models.IntegerField(null=True)
+    area_nombre = models.CharField(max_length=100, blank=True, default='')
+    tipo       = models.CharField(max_length=15, default='permanente')
+
+    class Meta:
+        unique_together     = ['year', 'month', 'empleado_id']
+        ordering            = ['year', 'month', 'nombre']
+        verbose_name        = 'Snapshot Empleado-Área'
+        verbose_name_plural = 'Snapshots Empleado-Área'
+
+    def __str__(self):
+        return f"{self.year}/{self.month:02d} — {self.nombre} → {self.area_nombre}"
+
+
+class MesConfigRecargos(models.Model):
+    year      = models.IntegerField()
+    month     = models.IntegerField()
+    habilitado = models.BooleanField()
+
+    class Meta:
+        unique_together     = ['year', 'month']
+        ordering            = ['year', 'month']
+        verbose_name        = 'Configuración Mes (Recargos)'
+        verbose_name_plural = 'Configuraciones de Meses (Recargos)'
+
+    def __str__(self):
+        return f"{self.year}/{self.month:02d} — {'Hab.' if self.habilitado else 'Deshabilitado'}"
+
+
 class HoraExtra(models.Model):
     # Relación lógica con Gentercer (al estar en otra DB, no usamos ForeignKey real de DB)
     empleado_oid = models.IntegerField(verbose_name="ID Empleado (OID)")

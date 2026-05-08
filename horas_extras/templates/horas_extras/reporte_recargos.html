@@ -51,6 +51,9 @@
       </div>
       <div id="meses-grid" class="grid grid-cols-3 gap-2"></div>
       <div class="mt-4 text-right">
+        <p id="warn-mes-futuro" class="hidden text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mb-2 text-left">
+          Este mes aún no está disponible para reportes. El reporte se habilitará durante los últimos 10 días del mes.
+        </p>
         <button id="btn-ver" onclick="verReporte()" disabled
           style="background:#1e3a5f;color:white;opacity:0.35;cursor:not-allowed"
           class="px-5 py-2.5 rounded-xl text-sm font-bold transition">
@@ -217,6 +220,17 @@ let previewData       = null;
 let empleadoActivo    = null;
 
 // ── Mes helpers ───────────────────────────────────────────────────────────
+// mesesConfig: sobrescrituras manuales del admin
+let mesesConfig = {};
+
+async function cargarMesesConfig() {
+  try {
+    const resp = await api('mes-config/');
+    mesesConfig = {};
+    (resp.configs || []).forEach(c => { mesesConfig[`${c.year}_${c.month}`] = c.habilitado; });
+  } catch { mesesConfig = {}; }
+}
+
 function getMonthState(year, month) {
   const now   = new Date();
   const cur   = now.getFullYear() * 12 + (now.getMonth() + 1);
@@ -225,6 +239,27 @@ function getMonthState(year, month) {
   if (diff === 0 || diff === -1 || diff === 1) return 'editable';
   if (diff >= 2) return 'upcoming';
   return 'closed';
+}
+
+function canReport(year, month) {
+  const key = `${year}_${month}`;
+  // Override manual del admin
+  if (key in mesesConfig) return mesesConfig[key];
+
+  // El mes siguiente al actual no tiene reporte disponible todavía
+  const hoy = new Date(); hoy.setHours(0,0,0,0);
+  const sigMes = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 1);
+  if (year === sigMes.getFullYear() && month === sigMes.getMonth() + 1) return false;
+
+  // Meses pasados y en ventana automática sí permiten reporte
+  const diasEnMes     = new Date(year, month, 0).getDate();
+  const inicioVentana = new Date(year, month - 1, diasEnMes - 9);
+  const nextYear      = month === 12 ? year + 1 : year;
+  const nextMonth     = month === 12 ? 1 : month + 1;
+  const finVentana    = new Date(nextYear, nextMonth - 1, 10);
+
+  if (hoy >= inicioVentana) return true;   // en ventana o ya pasó
+  return false;                             // aún no llega la ventana
 }
 
 function cambiarYear(d) { yearVista += d; renderMeses(); }
@@ -263,15 +298,21 @@ function selMes(m) {
 }
 
 function actualizarBtnVer() {
-  const btn = document.getElementById('btn-ver');
+  const btn  = document.getElementById('btn-ver');
+  const warn = document.getElementById('warn-mes-futuro');
   if (areaSeleccionada && mesSeleccionado) {
-    btn.disabled = false;
-    btn.style.cssText = 'background:#1e3a5f;color:white;opacity:1;cursor:pointer';
+    const ok = canReport(mesSeleccionado.year, mesSeleccionado.month);
+    btn.disabled = !ok;
+    btn.style.cssText = ok
+      ? 'background:#1e3a5f;color:white;opacity:1;cursor:pointer'
+      : 'background:#1e3a5f;color:white;opacity:0.35;cursor:not-allowed';
     btn.textContent = `Ver reporte · ${areaSeleccionada.nombre} — ${MESES[mesSeleccionado.month-1]} ${mesSeleccionado.year}`;
+    if (warn) warn.classList.toggle('hidden', ok);
   } else {
     btn.disabled = true;
     btn.style.cssText = 'background:#1e3a5f;color:white;opacity:0.35;cursor:not-allowed';
     btn.textContent = 'Ver reporte';
+    if (warn) warn.classList.add('hidden');
   }
 }
 
@@ -544,7 +585,7 @@ function showFlash(type, msg) {
 }
 
 // ── Inicio ─────────────────────────────────────────────────────────────────
+cargarMesesConfig().then(() => renderMeses());
 cargarAreas();
-renderMeses();
 </script>
 {% endblock %}

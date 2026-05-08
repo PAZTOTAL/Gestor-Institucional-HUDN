@@ -307,22 +307,48 @@ function fmtFecha(y,m,d) {
   return `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
 }
 
-function getMonthState(year, month) {
-  const hoy = new Date(); hoy.setHours(0,0,0,0);
+// mesesConfig: sobrescrituras manuales del admin { "year_month": true/false }
+let mesesConfig = {};
 
-  // Ventana editable: últimos 10 días del mes → primeros 10 días del mes siguiente
-  const diasEnMes  = new Date(year, month, 0).getDate();          // último día del mes
-  const inicioVentana = new Date(year, month - 1, diasEnMes - 9); // día 22 (en meses de 31)
-  const nextYear   = month === 12 ? year + 1 : year;
-  const nextMonth  = month === 12 ? 1 : month + 1;
-  const finVentana = new Date(nextYear, nextMonth - 1, 10);        // día 10 del mes siguiente
+async function cargarMesesConfig() {
+  try {
+    const resp = await api('mes-config/');
+    mesesConfig = {};
+    (resp.configs || []).forEach(c => { mesesConfig[`${c.year}_${c.month}`] = c.habilitado; });
+  } catch { mesesConfig = {}; }
+}
+
+function getMonthState(year, month) {
+  const key = `${year}_${month}`;
+  // Override manual del admin
+  if (key in mesesConfig) return mesesConfig[key] ? 'editable' : 'closed';
+
+  const hoy = new Date(); hoy.setHours(0,0,0,0);
+  const diasEnMes     = new Date(year, month, 0).getDate();
+  const inicioVentana = new Date(year, month - 1, diasEnMes - 9);
+  const nextYear      = month === 12 ? year + 1 : year;
+  const nextMonth     = month === 12 ? 1 : month + 1;
+  const finVentana    = new Date(nextYear, nextMonth - 1, 10);
 
   if (hoy >= inicioVentana && hoy <= finVentana) return 'editable';
+
+  // Pre-carga: abierto mientras el mes anterior está en su propia ventana
+  // (ej: cuando estamos en la ventana de abril, mayo queda abierto para pre-cargar)
+  const prevY    = month === 1 ? year - 1 : year;
+  const prevM    = month === 1 ? 12 : month - 1;
+  const diasPrev = new Date(prevY, prevM, 0).getDate();
+  const iniPrev  = new Date(prevY, prevM - 1, diasPrev - 9);
+  const finPrev  = new Date(year, month - 1, 10);
+  if (hoy >= iniPrev && hoy <= finPrev) return 'open';
+
   if (hoy < inicioVentana) return 'upcoming';
   return 'closed';
 }
 
-function canEdit(year, month) { return getMonthState(year,month)==='editable'; }
+function canEdit(year, month) {
+  const st = getMonthState(year, month);
+  return st === 'editable' || st === 'open';
+}
 
 // ── Paso 1 ──────────────────────────────────────────────────────────────────
 let areaT1Pagina = 1;
@@ -398,6 +424,7 @@ function renderMeses() {
     const st = getMonthState(yearVista, m);
     const sel = mesSeleccionado?.year===yearVista && mesSeleccionado?.month===m;
     const color = {editable:'border-emerald-400 bg-emerald-50 text-emerald-800',
+                   open:'border-blue-400 bg-blue-50 text-blue-800',
                    upcoming:'border-amber-300 bg-amber-50 text-amber-700',
                    closed:'border-slate-200 bg-slate-50 text-slate-400'}[st];
     const selCls = sel ? 'ring-2 ring-blue-600 ring-offset-1' : '';
@@ -405,7 +432,7 @@ function renderMeses() {
               class="p-2 rounded-xl border-2 text-xs font-bold text-center transition ${color} ${selCls} cursor-pointer hover:scale-105">
               <div>${mes}</div>
               <div class="font-normal text-[10px] mt-0.5 opacity-70">
-                ${{editable:'Editable',upcoming:'Próximo',closed:'Cerrado'}[st]}</div>
+                ${{editable:'Editable',open:'Abierto',upcoming:'Próximo',closed:'Cerrado'}[st]}</div>
             </button>`;
   }).join('');
 }
@@ -558,8 +585,16 @@ function renderSidebar() {
             : 'background:#f8fafc;color:#334155;border:1px solid #e2e8f0'}"
           onmouseover="if(!${activo}) this.style.background='#eff6ff'"
           onmouseout="if(!${activo}) this.style.background='#f8fafc'">
-          <div class="font-bold leading-tight">${e.nombre}</div>
-          <div class="opacity-70">${e.documento}</div>
+          <div class="flex items-start justify-between gap-1">
+            <div class="min-w-0">
+              <div class="font-bold leading-tight truncate">${e.nombre}</div>
+              <div class="opacity-70">${e.documento}</div>
+            </div>
+            ${areas.length > 1 ? `<button onclick="event.stopPropagation();abrirModalMoverTurnos(${e.id},'${e.nombre.replace(/'/g,"\\'")}',${e.area})"
+              title="Cambiar área"
+              style="${activo ? 'background:rgba(255,255,255,0.2);color:white;border:1px solid rgba(255,255,255,0.4)' : 'background:#e0e7ff;color:#4338ca;border:1px solid #c7d2fe'}"
+              class="shrink-0 px-1.5 py-0.5 rounded font-bold hover:opacity-80 transition self-start">⇄</button>` : ''}
+          </div>
         </div>`;
       }).join('')
     : '<p class="text-slate-400 text-xs p-2">Sin resultados.</p>';
@@ -953,7 +988,7 @@ async function guardarMoverTurnos() {
 }
 
 // ── Init ──────────────────────────────────────────────────────────────────────
+cargarMesesConfig().then(() => renderMeses());
 cargarAreas();
-renderMeses();
 </script>
 {% endblock %}

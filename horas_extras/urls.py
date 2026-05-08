@@ -43,6 +43,7 @@ urlpatterns = [
     path('horas-extra/api/reporte-pdf/',                views.api_reporte_pdf,          name='api_reporte_pdf'),
     path('horas-extra/api/coordinadores/',              views.api_coordinadores,        name='api_coordinadores'),
     path('horas-extra/api/coordinadores/<int:pk>/',     views.api_coordinador_detail,   name='api_coordinador_detail'),
+    path('horas-extra/api/mes-config/',                 views.api_mes_config,           name='api_mes_config'),
 
     # ── Importar desde Nómina ─────────────────────────────────────────────────
     path('horas-extra/api/nomina-dependencias/',        views.api_nomina_dependencias,  name='api_nomina_dependencias'),
