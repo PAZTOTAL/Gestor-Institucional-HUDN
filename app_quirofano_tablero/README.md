@@ -2,6 +2,8 @@
 Sistema de información en tiempo casi real para familiares de pacientes quirúrgicos. Funciona como un tablero tipo aeropuerto: muestra el estado del proceso quirúrgico de cada paciente de forma simple y comprensible para personas sin formación médica. Los pacientes se identifican mediante un código o alias para proteger su privacidad. El sistema está diseñado para proyectarse en pantallas de TV o monitor en la sala de espera; los familiares no interactúan con el sistema, sino que reciben notificaciones automáticas vía SMS y WhatsApp cuando el estado de su familiar cambia. El personal que opera el sistema es mínimo: un Administrador y uno o más Funcionarios que gestionan el estado de los pacientes con la menor cantidad de pasos posible.
 
 ## LOG
+Abr/29/26: r1.14 : Added mp4 for quiro and remi.
+
 Abr/28/26: r1.13 : Preparing for deploying on win linux VM. Added secret. Fixed DB.
 
 Abr/17/26: r1.12 : Added telefono to paciente dialog. Added notifications by SMSs using twinlio.

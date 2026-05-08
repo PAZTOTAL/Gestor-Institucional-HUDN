@@ -18,7 +18,7 @@ Sistema web para el **Hospital Universitario Departamental de Nariño (HUDN)** q
 ## Estructura del proyecto
 
 ```
-app_crue_remisiones/
+hudn_crue_remisiones_app/
 ├── config/                          # Configuración del proyecto Django
 │   ├── __init__.py
 │   ├── asgi.py
@@ -74,7 +74,7 @@ app_crue_remisiones/
 
 ```bash
 git clone <url-del-repositorio>
-cd app_crue_remisiones
+cd hudn_crue_remisiones_app
 ```
 
 ### 2. Crear entorno virtual
