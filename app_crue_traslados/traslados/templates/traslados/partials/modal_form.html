@@ -1,0 +1,248 @@
+{# Partial HTMX: formulario modal de creación/edición de traslado #}
+
+{# ── Overlay del modal ───────────────────────────────────────────────────── #}
+<div
+	id="modal-overlay"
+	class="fixed inset-0 bg-black bg-opacity-50 z-40 flex items-center justify-center p-4"
+	x-data
+	@keydown.escape.window="document.getElementById('modal-overlay').remove()"
+>
+	<div
+		class="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-screen overflow-y-auto z-50"
+		@click.stop
+	>
+		{# ── Encabezado del modal ────────────────────────────────────────── #}
+		<div class="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+			<h2 class="text-lg font-bold text-blue-900">
+				{% if accion == 'editar' %}Editar Traslado{% else %}Nuevo Traslado{% endif %}
+			</h2>
+			<button
+				type="button"
+				onclick="document.getElementById('modal-overlay').remove()"
+				class="text-gray-400 hover:text-gray-600 transition-colors"
+				aria-label="Cerrar"
+			>
+				<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+				</svg>
+			</button>
+		</div>
+
+		{# ── Cuerpo del formulario ───────────────────────────────────────── #}
+		<form
+			{% if accion == 'editar' %}
+				hx-post="{% url 'traslado-editar' registro.pk %}"
+			{% else %}
+				hx-post="{% url 'traslado-nuevo' %}"
+			{% endif %}
+			hx-target="#contenedor-tabla"
+			hx-swap="innerHTML"
+			class="px-6 py-4 space-y-4"
+		>
+			{% csrf_token %}
+			<input type="hidden" name="mes" value="{{ mes }}">
+
+			{# ── Errores no asociados a campo ────────────────────────────── #}
+			{% if formulario.non_field_errors %}
+			<div class="bg-red-50 border border-red-200 rounded-md px-4 py-3">
+				{% for error in formulario.non_field_errors %}
+				<p class="text-sm text-red-700">{{ error }}</p>
+				{% endfor %}
+			</div>
+			{% endif %}
+
+			{# ── Fila: Fecha y Hora Reporte ──────────────────────────────── #}
+			<div class="grid grid-cols-2 gap-4">
+				<div>
+					<label for="{{ formulario.fecha.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+						Fecha <span class="text-red-500">*</span>
+					</label>
+					{{ formulario.fecha }}
+					{% if formulario.fecha.errors %}
+					<p class="mt-1 text-xs text-red-600">{{ formulario.fecha.errors|join:", " }}</p>
+					{% endif %}
+				</div>
+				<div>
+					<label for="{{ formulario.hora_reporte.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+						Hora Reporte <span class="text-red-500">*</span>
+					</label>
+					{{ formulario.hora_reporte }}
+					{% if formulario.hora_reporte.errors %}
+					<p class="mt-1 text-xs text-red-600">{{ formulario.hora_reporte.errors|join:", " }}</p>
+					{% endif %}
+				</div>
+			</div>
+
+			{# ── Fila: Hora Egreso y Hora Ingreso ────────────────────────── #}
+			<div class="grid grid-cols-2 gap-4">
+				<div>
+					<label for="{{ formulario.hora_egreso.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+						Hora de Egreso
+					</label>
+					{{ formulario.hora_egreso }}
+					{% if formulario.hora_egreso.errors %}
+					<p class="mt-1 text-xs text-red-600">{{ formulario.hora_egreso.errors|join:", " }}</p>
+					{% endif %}
+				</div>
+				<div>
+					<label for="{{ formulario.hora_ingreso.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+						Hora de Ingreso
+					</label>
+					{{ formulario.hora_ingreso }}
+					{% if formulario.hora_ingreso.errors %}
+					<p class="mt-1 text-xs text-red-600">{{ formulario.hora_ingreso.errors|join:", " }}</p>
+					{% endif %}
+				</div>
+			</div>
+
+			{# ── Nombre de Paciente ──────────────────────────────────────── #}
+			<div>
+				<label for="{{ formulario.nombre_paciente.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+					Nombre de Paciente <span class="text-red-500">*</span>
+				</label>
+				{{ formulario.nombre_paciente }}
+				{% if formulario.nombre_paciente.errors %}
+				<p class="mt-1 text-xs text-red-600">{{ formulario.nombre_paciente.errors|join:", " }}</p>
+				{% endif %}
+			</div>
+
+			{# ── Documento ───────────────────────────────────────────────── #}
+			<div>
+				<label for="{{ formulario.documento.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+					Documento <span class="text-red-500">*</span>
+				</label>
+				{{ formulario.documento }}
+				{% if formulario.documento.errors %}
+				<p class="mt-1 text-xs text-red-600">{{ formulario.documento.errors|join:", " }}</p>
+				{% endif %}
+			</div>
+
+			{# ── Fila: Servicio y Quien Reporta ──────────────────────────── #}
+			<div class="grid grid-cols-2 gap-4">
+				<div>
+					<label for="{{ formulario.servicio.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+						Servicio
+					</label>
+					{{ formulario.servicio }}
+					{% if formulario.servicio.errors %}
+					<p class="mt-1 text-xs text-red-600">{{ formulario.servicio.errors|join:", " }}</p>
+					{% endif %}
+				</div>
+				<div>
+					<label for="{{ formulario.quien_reporta.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+						Quien Reporta
+					</label>
+					{{ formulario.quien_reporta }}
+					{% if formulario.quien_reporta.errors %}
+					<p class="mt-1 text-xs text-red-600">{{ formulario.quien_reporta.errors|join:", " }}</p>
+					{% endif %}
+				</div>
+			</div>
+
+			{# ── Fila: Destino y Procedimiento ───────────────────────────── #}
+			<div class="grid grid-cols-2 gap-4">
+				<div>
+					<label for="{{ formulario.destino.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+						Destino
+					</label>
+					{{ formulario.destino }}
+					{% if formulario.destino.errors %}
+					<p class="mt-1 text-xs text-red-600">{{ formulario.destino.errors|join:", " }}</p>
+					{% endif %}
+				</div>
+				<div>
+					<label for="{{ formulario.procedimiento.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+						Procedimiento
+					</label>
+					{{ formulario.procedimiento }}
+					{% if formulario.procedimiento.errors %}
+					<p class="mt-1 text-xs text-red-600">{{ formulario.procedimiento.errors|join:", " }}</p>
+					{% endif %}
+				</div>
+			</div>
+
+			{# ── Fila: Médico y Conductor ─────────────────────────────────── #}
+			<div class="grid grid-cols-2 gap-4">
+				<div>
+					<label for="{{ formulario.medico.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+						Médico
+					</label>
+					{{ formulario.medico }}
+					{% if formulario.medico.errors %}
+					<p class="mt-1 text-xs text-red-600">{{ formulario.medico.errors|join:", " }}</p>
+					{% endif %}
+				</div>
+				<div>
+					<label for="{{ formulario.conductor.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+						Conductor
+					</label>
+					{{ formulario.conductor }}
+					{% if formulario.conductor.errors %}
+					<p class="mt-1 text-xs text-red-600">{{ formulario.conductor.errors|join:", " }}</p>
+					{% endif %}
+				</div>
+			</div>
+
+			{# ── Fila: Radio Operador y Ambulancia ───────────────────────── #}
+			<div class="grid grid-cols-2 gap-4">
+				<div>
+					<label for="{{ formulario.radio_operador.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+						Radio Operador
+					</label>
+					{{ formulario.radio_operador }}
+					{% if formulario.radio_operador.errors %}
+					<p class="mt-1 text-xs text-red-600">{{ formulario.radio_operador.errors|join:", " }}</p>
+					{% endif %}
+				</div>
+				<div>
+					<label for="{{ formulario.ambulancia.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+						Ambulancia de Traslado
+					</label>
+					{{ formulario.ambulancia }}
+					{% if formulario.ambulancia.errors %}
+					<p class="mt-1 text-xs text-red-600">{{ formulario.ambulancia.errors|join:", " }}</p>
+					{% endif %}
+				</div>
+			</div>
+
+			{# ── Observación ─────────────────────────────────────────────── #}
+			<div>
+				<label for="{{ formulario.observacion.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+					Observación
+				</label>
+				{{ formulario.observacion }}
+				{% if formulario.observacion.errors %}
+				<p class="mt-1 text-xs text-red-600">{{ formulario.observacion.errors|join:", " }}</p>
+				{% endif %}
+			</div>
+
+			{# ── Botones ─────────────────────────────────────────────────── #}
+			<div class="flex justify-end gap-3 pt-2 border-t border-gray-100">
+				<button
+					type="button"
+					onclick="document.getElementById('modal-overlay').remove()"
+					class="px-4 py-2 rounded-md text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 transition-colors"
+				>
+					Cancelar
+				</button>
+				<button
+					type="submit"
+					class="px-4 py-2 rounded-md text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 transition-colors"
+				>
+					Guardar
+				</button>
+			</div>
+
+		</form>
+	</div>
+</div>
+
+{# ── Script: cerrar modal al recibir evento HX-Trigger cerrarModal ───────── #}
+<script>
+	document.body.addEventListener ('htmx:afterSwap', function (evt) {
+		if (evt.detail.target && evt.detail.target.id === 'contenedor-tabla') {
+			var overlay = document.getElementById ('modal-overlay');
+			if (overlay) overlay.remove ();
+		}
+	});
+</script>

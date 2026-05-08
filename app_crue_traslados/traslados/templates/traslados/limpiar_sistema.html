@@ -1,0 +1,93 @@
+{% extends "traslados/base.html" %}
+{# Plantilla de limpieza anual: sugerencia de reportes y confirmación de acción irreversible #}
+
+{% block titulo %}Limpiar datos del sistema{% endblock %}
+
+{% block contenido %}
+<div class="min-h-screen bg-gray-100 flex items-center justify-center p-6">
+	<div class="w-full max-w-lg space-y-6">
+
+		{# ── Encabezado ──────────────────────────────────────────────────── #}
+		<div class="text-center">
+			<div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-red-100 mb-4">
+				<svg class="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+						d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+				</svg>
+			</div>
+			<h1 class="text-2xl font-bold text-gray-900">Limpiar datos del sistema</h1>
+			<p class="text-sm text-gray-500 mt-1">Solo disponible para el DIRECTOR</p>
+		</div>
+
+		{# ── Sugerencia: generar reportes antes de continuar ─────────────── #}
+		<div class="bg-amber-50 border border-amber-300 rounded-lg p-5">
+			<div class="flex items-start gap-3">
+				<svg class="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+						d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+				</svg>
+				<div>
+					<p class="text-sm font-semibold text-amber-800">Recomendación: genere los reportes antes de continuar</p>
+					<p class="text-sm text-amber-700 mt-1">
+						Los datos serán eliminados permanentemente. Le recomendamos descargar los reportes
+						del período actual antes de proceder con la limpieza.
+					</p>
+					<div class="flex flex-wrap gap-3 mt-3">
+						<a
+							href="{% url 'reporte-excel' %}"
+							class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium bg-amber-100 text-amber-800 hover:bg-amber-200 transition-colors border border-amber-300"
+						>
+							<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+									d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414A1 1 0 0119 9.414V19a2 2 0 01-2 2z"/>
+							</svg>
+							Descargar Excel
+						</a>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		{# ── Diálogo de confirmación ──────────────────────────────────────── #}
+		<div class="bg-white rounded-lg shadow-md border border-red-200 p-6">
+			<div class="flex items-start gap-3 mb-4">
+				<svg class="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+						d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+				</svg>
+				<div>
+					<p class="text-sm font-semibold text-red-700">Advertencia: acción irreversible</p>
+					<p class="text-sm text-gray-700 mt-1">
+						Esta acción <strong>eliminará todos los registros de traslados</strong> y
+						<strong>restablecerá el estado de todos los meses a ABIERTO</strong>.
+						Una vez ejecutada, <strong>no es posible deshacer esta operación</strong>.
+					</p>
+				</div>
+			</div>
+
+			<form method="post" action="{% url 'limpiar-sistema' %}">
+				{% csrf_token %}
+				<div class="flex flex-col sm:flex-row gap-3 mt-4">
+					<button
+						type="submit"
+						name="accion"
+						value="confirmar"
+						class="flex-1 px-4 py-2 rounded-md text-sm font-semibold bg-red-600 text-white hover:bg-red-700 transition-colors focus:outline-none focus:ring-2 focus:ring-red-500"
+					>
+						Sí, limpiar todos los datos
+					</button>
+					<button
+						type="submit"
+						name="accion"
+						value="cancelar"
+						class="flex-1 px-4 py-2 rounded-md text-sm font-semibold bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors border border-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400"
+					>
+						Cancelar
+					</button>
+				</div>
+			</form>
+		</div>
+
+	</div>
+</div>
+{% endblock %}

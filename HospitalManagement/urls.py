@@ -58,6 +58,7 @@ urlpatterns = [
     path('api/', include(pys_api_patterns)),
     path('inventarios/', include('inventarios.urls')),
     path('formatos-apps/', include('formatos_apps.urls')),
+    path('crue-remisiones/', include('crue_remisiones.urls', namespace='crue_remisiones')),
 ]
 
 
