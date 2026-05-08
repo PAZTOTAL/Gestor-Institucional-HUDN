@@ -95,14 +95,19 @@
     <!-- Spacer to push Salir to bottom -->
     <div class="sidebar-spacer"></div>
 
-    <!-- --- Sección 5: Salir (fijado al fondo) --- -->
+    <!-- --- Sección 5: Volver / Salir (fijado al fondo) --- -->
     <div class="sidebar-section sidebar-salir-section">
+      <hr class="sidebar-divider">
+      <a href="{% url 'home' %}" class="sidebar-menu-item sidebar-btn-salir w-100 d-flex align-items-center text-decoration-none">
+        <i class="bi bi-arrow-left-circle me-1 icon-salir"></i>
+        <span class="sidebar-text">Volver</span>
+      </a>
       <hr class="sidebar-divider">
       <form method="post" action="{% url 'crue_remisiones:logout' %}">
         {% csrf_token %}
         <button type="submit" class="sidebar-menu-item sidebar-btn-salir w-100">
           <i class="bi bi-box-arrow-right me-1 icon-salir"></i>
-          <span class="sidebar-text">Salir</span>
+          <span class="sidebar-text">Cerrar sesión</span>
         </button>
       </form>
     </div>

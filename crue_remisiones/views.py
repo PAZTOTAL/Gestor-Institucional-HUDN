@@ -1,6 +1,6 @@
 from datetime import date
 
-from django.contrib.auth import authenticate, login, update_session_auth_hash
+from django.contrib.auth import authenticate, login, logout, update_session_auth_hash
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.http import HttpResponse, JsonResponse
@@ -52,7 +52,8 @@ def login_view(request):
 
 
 def logout_view(request):
-    return redirect('home')
+    logout(request)
+    return redirect('login')
 
 
 @crue_required
