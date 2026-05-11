@@ -105,6 +105,7 @@ TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
         'DIRS': [
+            BASE_DIR / 'templates',
             BASE_DIR / 'defenjur_py' / 'templates',
             BASE_DIR / 'tercerizadas' / 'templates',
         ],
