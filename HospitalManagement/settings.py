@@ -97,6 +97,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'core.middleware.DatabaseCheckMiddleware',
+    'core.middleware.QueryResetMiddleware',
 ]
 
 ROOT_URLCONF = 'HospitalManagement.urls'

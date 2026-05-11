@@ -135,9 +135,10 @@ class PersonalPorAreaReportView(LoginRequiredMixin, TemplateView):
                     ISNULL(g.GASCODIGO, ISNULL(c.CCCODIGO, ISNULL(a.ARECODIGO, 'SIN-AREA'))) as area_code,
                     ISNULL(g.GASNOMBRE, ISNULL(c.CCNOMBRE, ISNULL(a.ARENOMBRE, 'SIN AREA ASIGNADA'))) as area_name
                 FROM NMEMPLEA e
-                LEFT JOIN GENARESER g ON RTRIM(LTRIM(e.GASCODIGO)) = RTRIM(LTRIM(g.GASCODIGO))
-                LEFT JOIN CTNCENCOS c ON RTRIM(LTRIM(e.GASCODIGO)) = RTRIM(LTRIM(c.CCCODIGO))
-                LEFT JOIN AFNAREAS a ON RTRIM(LTRIM(e.GASCODIGO)) = RTRIM(LTRIM(a.ARECODIGO))
+                LEFT JOIN GENARESER g ON e.GASCODIGO = g.GASCODIGO
+                LEFT JOIN CTNCENCOS c ON e.GASCODIGO = c.CCCODIGO
+                LEFT JOIN AFNAREAS a ON e.GASCODIGO = a.ARECODIGO
+                WHERE e.NEMESTADO = 1
             """
             cursor.execute(query_db)
             for row in cursor.fetchall():
@@ -224,10 +225,11 @@ class PersonalAreaDetailView(LoginRequiredMixin, TemplateView):
                     ISNULL(g.GASCODIGO, ISNULL(c.CCCODIGO, ISNULL(a.ARECODIGO, 'SIN-AREA'))) as area_code,
                     v.VINNOMBRE as vinculacion_db
                 FROM NMEMPLEA e
-                LEFT JOIN GENARESER g ON RTRIM(LTRIM(e.GASCODIGO)) = RTRIM(LTRIM(g.GASCODIGO))
-                LEFT JOIN CTNCENCOS c ON RTRIM(LTRIM(e.GASCODIGO)) = RTRIM(LTRIM(c.CCCODIGO))
-                LEFT JOIN AFNAREAS a ON RTRIM(LTRIM(e.GASCODIGO)) = RTRIM(LTRIM(a.ARECODIGO))
+                LEFT JOIN GENARESER g ON e.GASCODIGO = g.GASCODIGO
+                LEFT JOIN CTNCENCOS c ON e.GASCODIGO = c.CCCODIGO
+                LEFT JOIN AFNAREAS a ON e.GASCODIGO = a.ARECODIGO
                 LEFT JOIN NOMVINCULA v ON e.NEMTIPCON = v.VINCODIGO
+                WHERE e.NEMESTADO = 1
             """)
             for row in cursor.fetchall():
                 db_cedula = str(row[0]).strip().lstrip('0')
@@ -503,7 +505,7 @@ def get_master_excel_data():
             df.columns = [c.upper().strip() for c in df.columns]
             # Convertir a lista de dicts para fácil manejo
             data = df.to_dict('records')
-            cache.set(cache_key, data, 3600) # Cache por 1 hora
+            cache.set(cache_key, data, 28800) # Cache por 8 horas para máxima velocidad
         else:
             data = []
     return data

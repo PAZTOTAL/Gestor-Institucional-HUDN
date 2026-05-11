@@ -6,7 +6,7 @@ logger = logging.getLogger(__name__)
 
 # Rutas que no necesitan el check de BD
 _SKIP_PATHS = ('/login', '/logout', '/accounts/login', '/accounts/logout', '/admin/login',
-               '/static/', '/favicon')
+               '/static/', '/favicon', '/media/')
 
 _check_lock = threading.Lock()
 
@@ -108,6 +108,25 @@ class DatabaseCheckMiddleware:
         request.db_caidas = ", ".join(caidas) if caidas else None
 
         response = self.get_response(request)
+        return response
+
+class QueryResetMiddleware:
+    """
+    Limpia la lista de queries en modo DEBUG para evitar fugas de memoria
+    en sesiones de desarrollo largas (como la actual de 70h).
+    """
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        from django.db import reset_queries
+        from django.conf import settings
+        
+        response = self.get_response(request)
+        
+        if settings.DEBUG:
+            reset_queries()
+            
         return response
 
 class SecurityProtectionMiddleware:
