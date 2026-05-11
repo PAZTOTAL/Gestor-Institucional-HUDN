@@ -10,6 +10,7 @@ from core.mixins import AccessControlMixin
 from django.apps import apps
 from django.db import connections
 from django.http import JsonResponse
+from django.core.cache import cache
 from django.core.mail import send_mail
 from django.conf import settings
 from django.contrib import messages
@@ -251,6 +252,7 @@ class ConfigPerfilView(LoginRequiredMixin, TemplateView):
         perfil.color_fondo = request.POST.get('color_fondo', perfil.color_fondo)
         perfil.estilo_fondo = request.POST.get('estilo_fondo', perfil.estilo_fondo)
         perfil.save()
+        cache.delete(f'user_perfil_{request.user.pk}')
         return redirect('config_perfil')
 
 
