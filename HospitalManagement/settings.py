@@ -106,6 +106,7 @@ TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
         'DIRS': [
+            BASE_DIR / 'templates',
             BASE_DIR / 'defenjur_py' / 'templates',
             BASE_DIR / 'tercerizadas' / 'templates',
         ],
@@ -143,6 +144,7 @@ DATABASES = {
             'driver': 'ODBC Driver 17 for SQL Server',
             'timeout': 30,
             'connection_timeout': 5,
+            'unicode_results': True,
         },
     },
     'readonly': {
@@ -158,6 +160,7 @@ DATABASES = {
             'host_is_server': True,
             'timeout': 10,
             'connection_timeout': 5,
+            'unicode_results': True,
         },
     },
     'nexus': {
@@ -173,6 +176,7 @@ DATABASES = {
             'host_is_server': True,
             'timeout': 10,
             'connection_timeout': 5,
+            'unicode_results': True,
         },
     },
 }

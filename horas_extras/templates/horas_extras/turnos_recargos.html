@@ -315,8 +315,9 @@ let mesesConfig = {};
 async function cargarMesesConfig() {
   try {
     const resp = await api('mes-config/');
+    const data = await resp.json();
     mesesConfig = {};
-    (resp.configs || []).forEach(c => { mesesConfig[`${c.year}_${c.month}`] = c.habilitado; });
+    (data.configs || []).forEach(c => { mesesConfig[`${c.year}_${c.month}`] = c.habilitado; });
   } catch { mesesConfig = {}; }
 }
 

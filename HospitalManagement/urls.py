@@ -16,12 +16,17 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+from django.views.defaults import server_error, page_not_found, permission_denied
 
 from .api_views import (
     query_tercero, get_tercero_details, query_paciente_enhanced, 
     get_diagnostico_paciente, lookup_tercero_by_documento
 )
 from paz_y_salvo.urls import urlpatterns as pys_api_patterns, template_urlpatterns as pys_template_patterns
+
+handler500 = server_error
+handler404 = page_not_found
+handler403 = permission_denied
 
 urlpatterns = [
     path('admin/', admin.site.urls),
