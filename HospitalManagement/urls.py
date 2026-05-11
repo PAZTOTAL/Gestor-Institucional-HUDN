@@ -16,12 +16,15 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+from django.views.defaults import server_error
 
 from .api_views import (
     query_tercero, get_tercero_details, query_paciente_enhanced, 
     get_diagnostico_paciente, lookup_tercero_by_documento
 )
 from paz_y_salvo.urls import urlpatterns as pys_api_patterns, template_urlpatterns as pys_template_patterns
+
+handler500 = server_error
 
 urlpatterns = [
     path('admin/', admin.site.urls),
