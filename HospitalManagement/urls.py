@@ -59,6 +59,7 @@ urlpatterns = [
     path('inventarios/', include('inventarios.urls')),
     path('formatos-apps/', include('formatos_apps.urls')),
     path('crue-remisiones/', include('crue_remisiones.urls', namespace='crue_remisiones')),
+    path('georeferencia/', include('BasesGenerales.urls')),
 ]
 
 

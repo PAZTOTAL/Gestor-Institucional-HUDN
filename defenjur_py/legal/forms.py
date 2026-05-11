@@ -174,7 +174,7 @@ class AccionTutelaForm(PremiumModelForm):
             'fecha_respuesta', 'radicado_respuesta', 'medio_envio_respuesta',
             'estado_tutela', 'sentido_fallo',
             'requiere_cumplimiento', 'fecha_limite_cumplimiento', 'incidente_desacato',
-            'observaciones'
+            'observaciones', 'peticion_modelo', 'peticion_texto_aplicado'
         ]
         widgets = {
             'fecha_llegada': forms.DateInput(attrs={'type': 'date'}),

@@ -565,15 +565,19 @@ class TableDetailView(AccessControlMixin, TemplateView):
             child_model = None
             import re
             
-            # Caso 1: Modelos numerados (ej: Nivel 1 -> Nivel 2)
-            match = re.search(r'(\d+)$', model_name)
+            # Caso 1: Modelos numerados (ej: Geo01 -> Geo02, Organigrama01 -> Organigrama02)
+            match = re.search(r'(\d+)', model_name)
             if match:
                 current_num = int(match.group(1))
-                next_model_name = model_name.replace(str(current_num).zfill(len(match.group(1))), str(current_num + 1).zfill(len(match.group(1))))
-                try:
-                    child_model = apps.get_model(module_slug, next_model_name)
-                except LookupError:
-                    pass
+                next_num_str = str(current_num + 1).zfill(len(match.group(1)))
+                
+                # Buscamos en el registro de apps cualquier modelo que empiece con el prefijo + siguiente número
+                prefix = model_name[:match.start()]
+                for m_info in apps.get_app_config(module_slug).get_models():
+                    m_name = m_info.__name__
+                    if m_name.startswith(f"{prefix}{next_num_str}"):
+                        child_model = m_info
+                        break
             
             # Caso 2: Áreas de Formatos -> Formatos HUDN
             if not child_model and model_name == 'Formatos_Hudn_area':
@@ -585,11 +589,17 @@ class TableDetailView(AccessControlMixin, TemplateView):
             if child_model:
                 context['child_model_slug'] = child_model._meta.model_name
                 context['child_model_name'] = child_model._meta.verbose_name
+                
                 # Identificar el campo FK que apunta al modelo actual
+                # Priorizamos el campo que tenga un nombre similar al modelo padre o el primero que coincida
+                child_fk = None
                 for f in child_model._meta.get_fields():
                     if f.is_relation and f.related_model == model:
-                        context['child_fk_field'] = f.name
-                        break
+                        child_fk = f.name
+                        # Si el nombre del campo contiene el nombre del modelo padre, es casi seguro el correcto
+                        if model.__name__.lower() in f.name.lower():
+                            break
+                context['child_fk_field'] = child_fk
 
             # Simple pagination
             paginator = Paginator(queryset, effective_paginate_by)

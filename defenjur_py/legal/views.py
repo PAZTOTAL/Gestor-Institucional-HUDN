@@ -1552,6 +1552,7 @@ def generar_tutela_docx(request, pk):
             hechos_text += f"{p.hecho_referencia}: {p.tipo_respuesta}. {p.pronunciamiento}\n"
         
         context['{{HECHOS}}'] = hechos_text
+        context['{{PETICION}}'] = str(tutela.peticion_texto_aplicado or '')
 
         # Función de reemplazo robusta
         def apply_replacements(container):
