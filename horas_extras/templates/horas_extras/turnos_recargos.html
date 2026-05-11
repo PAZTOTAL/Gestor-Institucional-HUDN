@@ -271,6 +271,7 @@ const TURNOS_OPS = [
   {v:'vacaciones',   l:'V - Vacaciones'},
   {v:'licencia',     l:'LI - Licencia'},
   {v:'permiso',      l:'P - Permiso'},
+  {v:'incapacidad',  l:'INC - Incapacidad'},
 ];
 
 const TURNO_BADGE = {
@@ -282,6 +283,7 @@ const TURNO_BADGE = {
   vacaciones:{l:'V',bg:'#16a34a'},
   licencia:{l:'LI',bg:'#9333ea'},
   permiso:{l:'P',bg:'#0d9488'},
+  incapacidad:{l:'INC',bg:'#b45309'},
 };
 
 // Estado global
@@ -720,7 +722,7 @@ function _buildDayHtml(fecha, dia, esDom, esFest, especial, info, editable) {
   const selCls = editable
     ? 'w-full mt-auto border border-slate-300 rounded-lg px-1 py-1 text-xs bg-white focus:outline-none focus:border-blue-500 cursor-pointer'
     : 'w-full mt-auto border border-slate-200 rounded-lg px-1 py-1 text-xs bg-slate-50 opacity-50 cursor-not-allowed';
-  html += `<select onchange="cambiarTurno('${fecha}',this.value)" ${!editable?'disabled':''}
+  html += `<select data-fecha="${fecha}" onchange="cambiarTurno('${fecha}',this.value)" ${!editable?'disabled':''}
              class="${selCls}">${selOpts}</select>`;
   html += `<div id="saving-${fecha}" class="hidden text-[10px] text-blue-500 mt-0.5 text-center">guardando...</div>`;
 
@@ -839,7 +841,7 @@ function rerenderDay(fecha) {
 }
 
 function calcularHorasDia(turno, especial, hd, hn, sigEsp) {
-  if (turno==='libre' || turno==='vacaciones' || turno==='licencia' || turno==='permiso') return [0,0,0,0];
+  if (turno==='libre' || turno==='vacaciones' || turno==='licencia' || turno==='permiso' || turno==='incapacidad') return [0,0,0,0];
   if (turno==='por_horas') { return especial?[0,0,hd,hn]:[hd,hn,0,0]; }
   if (turno==='noche') {
     if (especial&&sigEsp)  return [0,0,1,11];
@@ -871,7 +873,7 @@ function actualizarResumen(year, month) {
   let hod=0, hon=0, hdf=0, hnf=0;
   keys.forEach(fecha => {
     const info = turnos[fecha];
-    if (info.turno==='libre' || info.turno==='vacaciones' || info.turno==='licencia' || info.turno==='permiso') return;
+    if (info.turno==='libre' || info.turno==='vacaciones' || info.turno==='licencia' || info.turno==='permiso' || info.turno==='incapacidad') return;
     const d = new Date(fecha+'T00:00:00');
     const esp = d.getDay()===0 || fecha in festivos;
     const next = new Date(d); next.setDate(next.getDate()+1);
@@ -986,6 +988,38 @@ async function guardarMoverTurnos() {
     btn.disabled = false; btn.textContent = 'Mover';
   }
 }
+
+// ── Navegación rápida en el calendario ────────────────────────────────────
+(function iniciarNavCalendario() {
+  const calDays = document.getElementById('cal-days');
+  if (!calDays) return;
+
+  // Click en cualquier parte del cuadro del día → abrir el dropdown
+  calDays.addEventListener('click', function(e) {
+    if (e.target.tagName === 'SELECT' || e.target.tagName === 'INPUT' || e.target.tagName === 'BUTTON') return;
+    const cell = e.target.closest('[id^="day-"]');
+    if (!cell) return;
+    const sel = cell.querySelector('select:not(:disabled)');
+    if (!sel) return;
+    sel.focus();
+    try { sel.showPicker(); } catch(_) {}
+  });
+
+  // Tab en un select de día → saltar al select del día siguiente (Shift+Tab = anterior)
+  calDays.addEventListener('keydown', function(e) {
+    if (e.key !== 'Tab') return;
+    const sel = e.target.closest('[id^="day-"] select');
+    if (!sel) return;
+    e.preventDefault();
+    const allSels = [...calDays.querySelectorAll('select:not(:disabled)')];
+    const idx = allSels.indexOf(sel);
+    const next = e.shiftKey ? allSels[idx - 1] : allSels[idx + 1];
+    if (next) {
+      next.focus();
+      next.closest('[id^="day-"]')?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    }
+  });
+})();
 
 // ── Init ──────────────────────────────────────────────────────────────────────
 cargarMesesConfig().then(() => renderMeses());

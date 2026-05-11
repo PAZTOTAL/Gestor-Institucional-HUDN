@@ -1,0 +1,30 @@
+{% load static %}
+
+    <!-- CSS propio de la aplicación -->
+    <link rel="stylesheet" href="{% static 'traslados/css/estilos.css' %}">
+
+		<div class="title-bar-top d-flex align-items-center justify-content-between">
+		  <!-- LEFT: Logo -->
+		  <div class="d-flex align-items-center">
+			<img src="{% static 'traslados/img/logos/logo_hudn-big.png' %}"
+				 alt="Logo HUDN"
+				 style="width:200px; height:60px;">
+		  </div>
+
+		  <!-- CENTER: Title -->
+		  <div class="text-center flex-grow-1">
+			<h1 class="text-lg font-bold text-blue-900 mr-4">
+			  REGISTRO DE SERVICIO DE TRASLADO DE PACIENTES
+			</h1>
+		  </div>
+
+		  <!-- RIGHT: Date + User -->
+		  <div class="text-end small">
+			<div>{{ fechaActual }}</div>
+			<div>
+			  <i class="bi bi-person me-1"></i>
+			  {{ request.user.get_full_name }}
+			</div>
+		  </div>
+		</div>
+

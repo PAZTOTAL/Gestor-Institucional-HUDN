@@ -21,7 +21,18 @@
       "Bash(Select-Object -Property FullName, PSIsContainer)",
       "Bash(Sort-Object FullName)",
       "Bash(Format-Table -AutoSize)",
-      "Bash(python manage.py makemigrations horas_extras --name=\"mes_config_recargos\")"
+      "Bash(python manage.py makemigrations horas_extras --name=\"mes_config_recargos\")",
+      "Bash(Get-ChildItem -Path \"D:\\\\Gestor-Institucional-HUDN\" -Directory)",
+      "Bash(Select-Object Name)",
+      "Bash(python *)",
+      "Bash(venv/Scripts/python.exe manage.py makemigrations crue_remisiones)",
+      "Bash(venv/Scripts/python.exe manage.py check crue_remisiones)",
+      "Bash(venv/Scripts/python.exe manage.py migrate crue_remisiones)",
+      "Bash(venv/Scripts/python.exe manage.py migrate crue_remisiones --fake)",
+      "Bash(venv/Scripts/python.exe manage.py check)",
+      "Bash(venv/Scripts/python.exe manage.py collectstatic --noinput)",
+      "Bash(nssm restart *)",
+      "Bash(nssm list *)"
     ]
   }
 }

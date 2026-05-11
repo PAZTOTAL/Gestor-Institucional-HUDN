@@ -52,6 +52,7 @@ TURNOS_HORAS = {
     'vacaciones':    (0,  0),   # sin horas laboradas
     'licencia':      (0,  0),   # sin horas laboradas
     'permiso':       (0,  0),   # sin horas laboradas
+    'incapacidad':   (0,  0),   # sin horas laboradas
 }
 
 TURNOS_LABEL = {
@@ -66,6 +67,7 @@ TURNOS_LABEL = {
     'vacaciones':    'V - Vacaciones',
     'licencia':      'LI - Licencia',
     'permiso':       'P - Permiso',
+    'incapacidad':   'INC - Incapacidad',
 }
 
 # Colores
@@ -111,7 +113,7 @@ def calcular_horas(turno, es_festivo, horas_diurnas=0, horas_nocturnas=0,
                  que ocurren ANTES de la medianoche (dentro del mes actual).
                  Las horas del día siguiente se calculan con calcular_spillover().
     """
-    if turno in ('libre', 'vacaciones', 'licencia', 'permiso'):
+    if turno in ('libre', 'vacaciones', 'licencia', 'permiso', 'incapacidad'):
         return 0, 0, 0, 0
 
     if turno == 'por_horas':

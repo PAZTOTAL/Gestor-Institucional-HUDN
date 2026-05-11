@@ -36,6 +36,12 @@
       Períodos
     </button>
     {% endif %}
+    {% if es_superusuario %}
+    <button onclick="setTab('usuarios')" id="tab-usuarios"
+      class="tab-btn px-5 py-2 rounded-lg font-bold text-sm transition text-slate-500 hover:text-slate-800">
+      Usuarios
+    </button>
+    {% endif %}
   </div>
 
   <!-- ── PESTAÑA ÁREAS ─────────────────────────────────────────────────────── -->
@@ -162,7 +168,75 @@
   </div>
   {% endif %}
 
+  {% if es_superusuario %}
+  <!-- ── PESTAÑA USUARIOS ──────────────────────────────────────────────────── -->
+  <div id="panel-usuarios" class="hidden">
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
+      <div class="flex items-start justify-between mb-5">
+        <div>
+          <h2 class="font-black text-slate-800 text-lg">Usuarios del Módulo</h2>
+          <p class="text-slate-400 text-xs mt-0.5">
+            Usuarios con acceso activo a Recargos/Turnos.
+            Para activar o desactivar el acceso a un usuario ve a
+            <span class="font-bold text-blue-600">Gestión → Permisos de usuario</span>.
+          </p>
+        </div>
+      </div>
+      <div id="usuarios-body">
+        <p class="text-slate-400 text-sm py-4">Cargando...</p>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
 </div>
+
+{% if es_superusuario %}
+<!-- ═══════════════ MODAL ROL USUARIO ═══════════════ -->
+<div id="modal-usuario-rol" class="fixed inset-0 z-50 flex items-center justify-center hidden">
+  <div class="absolute inset-0 bg-black/40" onclick="cerrarModalUsuario()"></div>
+  <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 p-6 z-10">
+    <h3 class="text-xl font-black text-slate-800 mb-1">Asignar rol en Recargos</h3>
+    <p id="modal-u-nombre" class="text-slate-500 text-sm mb-4"></p>
+    <div id="modal-u-error" class="hidden mb-3 px-4 py-2 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm"></div>
+    <div class="mb-4">
+      <label class="block text-sm font-semibold text-slate-700 mb-2">Rol *</label>
+      <div class="flex gap-3">
+        <label class="flex-1 flex items-center gap-2 p-3 rounded-xl border-2 cursor-pointer transition hover:border-blue-300" id="lbl-u-admin">
+          <input type="radio" name="u-rol" value="admin" onchange="onRolChange()" class="accent-blue-600">
+          <div>
+            <div class="font-bold text-slate-800 text-sm">Admin</div>
+            <div class="text-xs text-slate-500">Acceso total al módulo</div>
+          </div>
+        </label>
+        <label class="flex-1 flex items-center gap-2 p-3 rounded-xl border-2 cursor-pointer transition hover:border-blue-300" id="lbl-u-coord">
+          <input type="radio" name="u-rol" value="coordinador" onchange="onRolChange()" class="accent-blue-600">
+          <div>
+            <div class="font-bold text-slate-800 text-sm">Coordinador</div>
+            <div class="text-xs text-slate-500">Solo sus áreas asignadas</div>
+          </div>
+        </label>
+      </div>
+    </div>
+    <div id="u-areas-section" class="hidden mb-5">
+      <label class="block text-sm font-semibold text-slate-700 mb-2">Áreas asignadas</label>
+      <div id="u-areas-checkboxes"
+        class="max-h-44 overflow-y-auto border border-slate-200 rounded-xl p-3 space-y-2 text-sm"></div>
+    </div>
+    <div class="flex justify-end gap-3">
+      <button onclick="cerrarModalUsuario()"
+        class="px-5 py-2 rounded-xl border border-slate-200 text-slate-700 text-sm font-bold hover:bg-slate-50 transition">
+        Cancelar
+      </button>
+      <button onclick="guardarRolUsuario()" id="btn-guardar-u-rol"
+        style="background:#1e3a5f;color:white"
+        class="px-5 py-2 rounded-xl text-sm font-bold hover:opacity-90 transition">
+        Guardar
+      </button>
+    </div>
+  </div>
+</div>
+{% endif %}
 
 <!-- ═══════════════ MODAL ÁREA ═══════════════ -->
 <div id="modal-area" class="fixed inset-0 z-50 flex items-center justify-center hidden">
@@ -461,13 +535,14 @@ let areas      = [];
 let areasModal = [];   // copia independiente para el modal de coordinadores
 let empleados  = [];
 let coordsList = [];
-let editAreaId   = null;
-let editEmpId    = null;
-let editCoordId  = null;
+let editAreaId    = null;
+let editEmpId     = null;
+let editCoordId   = null;
+let editUsuarioId = null;
 
 // ── Tabs ───────────────────────────────────────────────────────────────────
 function setTab(tab) {
-  ['areas','empleados','coordinadores','periodos'].forEach(t => {
+  ['areas','empleados','coordinadores','periodos','usuarios'].forEach(t => {
     const panel = document.getElementById('panel-' + t);
     const btn   = document.getElementById('tab-' + t);
     if (!panel || !btn) return;
@@ -485,6 +560,7 @@ function setTab(tab) {
   if (tab === 'empleados')     cargarEmpleados();
   if (tab === 'coordinadores') cargarCoords();
   if (tab === 'periodos')      cargarConfigPeriodos();
+  if (tab === 'usuarios')      cargarUsuarios();
 }
 
 // ══════════════════════════════════════════════════════════════════════
@@ -1381,6 +1457,141 @@ async function guardarMover() {
     btn.disabled = false; btn.textContent = 'Mover';
   }
 }
+
+{% if es_superusuario %}
+// ══════════════════════════════════════════════════════════════════════
+// USUARIOS DEL MÓDULO
+// ══════════════════════════════════════════════════════════════════════
+async function cargarUsuarios() {
+  const el = document.getElementById('usuarios-body');
+  el.innerHTML = '<p class="text-slate-400 text-sm py-4">Cargando...</p>';
+  try {
+    const data = await api('usuarios-recargos/');
+    renderUsuarios(data);
+  } catch {
+    el.innerHTML = '<p class="text-red-500 text-sm py-4">Error al cargar usuarios.</p>';
+  }
+}
+
+const ROL_COLORS = {admin:'bg-violet-100 text-violet-800', coordinador:'bg-blue-100 text-blue-800'};
+const ROL_LABELS = {admin:'Admin', coordinador:'Coordinador'};
+
+function renderUsuarios(data) {
+  const el = document.getElementById('usuarios-body');
+  if (!data.length) {
+    el.innerHTML = '<p class="text-slate-400 text-sm py-4">No hay usuarios con acceso al módulo. Actívalos desde <strong>Gestión → Permisos de usuario</strong>.</p>';
+    return;
+  }
+  let html = `<div class="overflow-x-auto"><table class="w-full text-sm">
+    <thead><tr class="bg-slate-50 text-left">
+      <th class="px-4 py-2 font-bold text-slate-600">Usuario</th>
+      <th class="px-4 py-2 font-bold text-slate-600">Nombre</th>
+      <th class="px-4 py-2 font-bold text-slate-600">Rol en Recargos</th>
+      <th class="px-4 py-2 font-bold text-slate-600">Áreas asignadas</th>
+      <th class="px-4 py-2 font-bold text-slate-600">Acciones</th>
+    </tr></thead><tbody>`;
+  data.forEach(u => {
+    const rolCls   = ROL_COLORS[u.rol] || '';
+    const rolLabel = ROL_LABELS[u.rol] || '';
+    const areasHtml = u.areas.length
+      ? u.areas.map(a => `<span class="px-2 py-0.5 rounded-full text-xs font-bold bg-blue-100 text-blue-800 mr-1">${a.nombre}</span>`).join('')
+      : '<span class="text-slate-400 text-xs">—</span>';
+    const areasIds = JSON.stringify(u.areas.map(a => a.id));
+    const nombreEsc = u.nombre.replace(/'/g, "\\'");
+    html += `<tr class="border-t border-slate-100 hover:bg-slate-50">
+      <td class="px-4 py-2.5 text-slate-500 font-mono text-xs">${u.username}</td>
+      <td class="px-4 py-2.5 font-bold text-slate-800">${u.nombre}</td>
+      <td class="px-4 py-2.5">
+        ${u.rol
+          ? `<span class="px-2 py-0.5 rounded-full text-xs font-bold ${rolCls}">${rolLabel}</span>`
+          : '<span class="text-slate-400 text-xs italic">Sin rol</span>'}
+      </td>
+      <td class="px-4 py-2.5">${areasHtml}</td>
+      <td class="px-4 py-2.5">
+        <div class="flex gap-2">
+          <button onclick="abrirModalUsuario(${u.id},'${nombreEsc}','${u.rol||''}',${areasIds})"
+            class="px-3 py-1 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg text-xs font-bold transition">
+            ${u.rol ? 'Editar rol' : 'Asignar rol'}
+          </button>
+          ${u.rol ? `<button onclick="quitarRolUsuario(${u.id},'${nombreEsc}')"
+            class="px-3 py-1 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg text-xs font-bold transition">Quitar rol</button>` : ''}
+        </div>
+      </td>
+    </tr>`;
+  });
+  html += '</tbody></table></div>';
+  el.innerHTML = html;
+}
+
+async function abrirModalUsuario(id, nombre, rol, areasIds) {
+  editUsuarioId = id;
+  document.getElementById('modal-u-nombre').textContent = nombre;
+  document.getElementById('modal-u-error').classList.add('hidden');
+  document.querySelectorAll('input[name="u-rol"]').forEach(r => { r.checked = r.value === rol; });
+
+  if (!areasModal.length) {
+    const resp = await api('areas/?page_size=500&page=1');
+    areasModal = resp.results || [];
+  }
+
+  document.getElementById('u-areas-checkboxes').innerHTML = areasModal.map(a => {
+    const checked = areasIds.includes(a.id) ? 'checked' : '';
+    return `<label class="flex items-center gap-2 cursor-pointer hover:bg-slate-50 rounded-lg px-2 py-1">
+      <input type="checkbox" class="u-area-chk accent-blue-600" value="${a.id}" ${checked}>
+      <span class="text-slate-700 text-sm">${a.nombre}</span>
+    </label>`;
+  }).join('');
+
+  onRolChange();
+  document.getElementById('modal-usuario-rol').classList.remove('hidden');
+}
+
+function onRolChange() {
+  const rol = document.querySelector('input[name="u-rol"]:checked')?.value;
+  document.getElementById('u-areas-section').classList.toggle('hidden', rol !== 'coordinador');
+}
+
+function cerrarModalUsuario() {
+  document.getElementById('modal-usuario-rol').classList.add('hidden');
+  editUsuarioId = null;
+}
+
+async function guardarRolUsuario() {
+  const rol   = document.querySelector('input[name="u-rol"]:checked')?.value;
+  const errEl = document.getElementById('modal-u-error');
+  if (!rol) { errEl.textContent = 'Selecciona un rol'; errEl.classList.remove('hidden'); return; }
+  const areasSelec = [...document.querySelectorAll('.u-area-chk:checked')].map(cb => parseInt(cb.value));
+  if (rol === 'coordinador' && !areasSelec.length) {
+    errEl.textContent = 'Asigna al menos un área al coordinador';
+    errEl.classList.remove('hidden');
+    return;
+  }
+  errEl.classList.add('hidden');
+  const btn = document.getElementById('btn-guardar-u-rol');
+  btn.disabled = true; btn.textContent = 'Guardando...';
+  try {
+    await api(`usuarios-recargos/${editUsuarioId}/`, {
+      method: 'POST',
+      body: JSON.stringify({ rol, areas: areasSelec })
+    });
+    cerrarModalUsuario();
+    cargarUsuarios();
+  } catch(e) {
+    errEl.textContent = e.error || 'Error al guardar';
+    errEl.classList.remove('hidden');
+  } finally {
+    btn.disabled = false; btn.textContent = 'Guardar';
+  }
+}
+
+async function quitarRolUsuario(id, nombre) {
+  if (!confirm(`¿Quitar el rol de recargos a "${nombre}"?\n\nSeguirá teniendo acceso al módulo pero sin permisos especiales.`)) return;
+  try {
+    await api(`usuarios-recargos/${id}/`, { method: 'DELETE' });
+    cargarUsuarios();
+  } catch(e) { alert(e.error || 'Error al quitar el rol'); }
+}
+{% endif %}
 
 // ── Inicio ─────────────────────────────────────────────────────────────────
 cargarAreas();

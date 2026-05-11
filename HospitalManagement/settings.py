@@ -80,9 +80,9 @@ INSTALLED_APPS = [
     'paz_y_salvo',
     'inventarios',
     'formatos_apps',
-    # Cuando integre el código completo de UNIFICADOR-V1 en la raíz del repo, descomente:
     'meows',
     'trabajoparto',
+    'crue_remisiones',
 ]
 
 MIDDLEWARE = [
@@ -142,6 +142,7 @@ DATABASES = {
         'OPTIONS': {
             'driver': 'ODBC Driver 17 for SQL Server',
             'timeout': 30,
+            'connection_timeout': 5,
         },
     },
     'readonly': {
@@ -173,7 +174,7 @@ DATABASES = {
             'timeout': 10,
             'connection_timeout': 5,
         },
-    }
+    },
 }
 
 
