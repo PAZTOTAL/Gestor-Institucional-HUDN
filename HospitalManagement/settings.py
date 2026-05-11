@@ -139,11 +139,11 @@ DATABASES = {
         'PASSWORD': os.getenv('DB_DEFAULT_PASSWORD', 'ConsultasPantojaHUDN_2026$'), 
         'HOST': os.getenv('DB_DEFAULT_HOST', '172.20.100.209'),
         'PORT': os.getenv('DB_DEFAULT_PORT', ''),
-        'CONN_MAX_AGE': 600,
+        'CONN_MAX_AGE': 3600,  # Aumentado a 1 hora para evitar reconexiones constantes
         'OPTIONS': {
             'driver': 'ODBC Driver 17 for SQL Server',
-            'timeout': 30,
-            'connection_timeout': 5,
+            'timeout': 15,         # Reducido de 30 a 15 para fallar más rápido
+            'connection_timeout': 3, # Reducido de 5 a 3 para no colgar el hilo
             'unicode_results': True,
         },
     },
