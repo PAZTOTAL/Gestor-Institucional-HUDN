@@ -25,6 +25,40 @@ from django.core.files.base import ContentFile
 from django.http import JsonResponse
 from django.core.cache import cache
 
+# ============================================================================
+# IMPORTAR MODELOS
+# ============================================================================
+from unificador_v1.models.base import AtencionParto
+from unificador_v1.models.parto import (
+    AseguradoraParto as Aseguradora,
+    PacienteParto as Paciente,
+    FormularioParto as Formulario,
+    ItemParto as Item,
+    ParametroParto as Parametro,
+    FormularioItemParametroParto as FormularioItemParametro,
+    CampoParametroParto as CampoParametro,
+    MedicionParto as Medicion,
+    MedicionValorParto as MedicionValor,
+    HuellaParto as Huella
+)
+
+from unificador_v1.utils.aseguradora_parto import resolver_aseguradora_por_nombre
+from unificador_v1.serializers.parto import (
+    AseguradoraSerializer,
+    PacienteSerializer,
+    PacienteListSerializer,
+    FormularioSerializer,
+    FormularioCreateSerializer,
+    ItemSerializer,
+    ParametroSerializer,
+    CampoParametroSerializer,
+    FormularioItemParametroSerializer,
+    MedicionSerializer,
+    MedicionCreateSerializer,
+    MedicionValorSerializer,
+    PacienteCompletoSerializer,
+)
+
 logger = logging.getLogger(__name__)
 
 
@@ -101,38 +135,6 @@ def get_readonly_connection():
     connection = connections['readonly']
     connection.ensure_connection()
     return connection
-
-from unificador_v1.models.base import AtencionParto
-from unificador_v1.models.parto import (
-    AseguradoraParto as Aseguradora,
-    PacienteParto as Paciente,
-    FormularioParto as Formulario,
-    ItemParto as Item,
-    ParametroParto as Parametro,
-    FormularioItemParametroParto as FormularioItemParametro,
-    CampoParametroParto as CampoParametro,
-    MedicionParto as Medicion,
-    MedicionValorParto as MedicionValor,
-    HuellaParto as Huella
-)
-
-
-from unificador_v1.utils.aseguradora_parto import resolver_aseguradora_por_nombre
-from unificador_v1.serializers.parto import (
-    AseguradoraSerializer,
-    PacienteSerializer,
-    PacienteListSerializer,
-    FormularioSerializer,
-    FormularioCreateSerializer,
-    ItemSerializer,
-    ParametroSerializer,
-    CampoParametroSerializer,
-    FormularioItemParametroSerializer,
-    MedicionSerializer,
-    MedicionCreateSerializer,
-    MedicionValorSerializer,
-    PacienteCompletoSerializer,
-)
 
 
 class AseguradoraViewSet(viewsets.ModelViewSet):
@@ -1625,7 +1627,7 @@ class PacienteViewSet(viewsets.ModelViewSet):
                         paciente_data["aseguradora_id"] = ase.id
             
             # Bloqueo Master-Slave (Unificador)
-            if settings.DATABASE_RO_ENABLED or extras or request.query_params.get('atencion'):
+            if getattr(settings, 'DATABASE_RO_ENABLED', False) or extras or request.query_params.get('atencion'):
                 paciente_data["locked"] = True
 
             # Respaldar campos clínicos desde MEOWS para pacientes creados desde la card

@@ -611,9 +611,22 @@
 </div>
 
 <script src="{% static 'unificador_v1/js/paciente_unificado_cache.js' %}?v=1.1"></script>
+<!-- Forzar URL del backend para el módulo Parto y limpiar caché de base anterior -->
+<script>
+    window.AppConfig = window.AppConfig || {};
+    window.API_BASE_URL = window.location.origin + '/parto/api';
+    window.AppConfig.API_BASE_URL = window.API_BASE_URL;
+    window.AppConfig.API_BASE_URL_FORCED = true;
+    try {
+        localStorage.removeItem('clinico:last_api_base_url');
+    } catch (e) {
+        console.warn('No se pudo limpiar localStorage de la base API:', e);
+    }
+    console.log('🔧 Parto frontend forced API base:', window.API_BASE_URL);
+</script>
 <!-- Configuración de la aplicación (debe cargarse antes de main.js) -->
-<script src="{% static 'unificador_v1/parto/js/config.js' %}?v=1.1"></script>
-<script src="{% static 'unificador_v1/parto/js/main.js' %}?v=1.3"></script>
+<script src="{% static 'unificador_v1/parto/js/config.js' %}?v=1.3"></script>
+<script src="{% static 'unificador_v1/parto/js/main.js' %}?v=1.5"></script>
 <script>
 (function() {
   const docFromCard = "{{ documento|default:''|escapejs }}".trim();

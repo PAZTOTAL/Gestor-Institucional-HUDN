@@ -8,6 +8,9 @@ const HOST_FALLBACK = (window.location.hostname && window.location.hostname !== 
 const API_BASE_URL = (typeof AppConfig !== 'undefined' && AppConfig.API_BASE_URL)
     ? AppConfig.API_BASE_URL
     : `${window.location.origin}/api`;
+const FORCED_API_BASE_URL = (typeof window !== 'undefined' && window.API_BASE_URL)
+    ? normalizarBaseApi(window.API_BASE_URL)
+    : null;
 const API_BASE = API_BASE_URL; // Alias: usar en fetch(`${API_BASE}/pacientes/...`)
 const LAST_API_BASE_KEY = 'clinico:last_api_base_url';
 
@@ -18,33 +21,33 @@ function normalizarBaseApi(url) {
 function getApiBaseCandidates() {
     const origin = window.location.origin;
     const proto = window.location.protocol === 'https:' ? 'https:' : 'http:';
-    const remembered = localStorage.getItem(LAST_API_BASE_KEY);
     const candidates = [];
-    
-    // 1. Base recordada (si funcionó antes, es la más probable)
-    if (remembered) candidates.push(remembered);
+    const forcedBase = (typeof window !== 'undefined' && window.API_BASE_URL)
+        ? normalizarBaseApi(window.API_BASE_URL)
+        : null;
+    const appConfigBase = (typeof AppConfig !== 'undefined' && AppConfig.API_BASE_URL)
+        ? normalizarBaseApi(AppConfig.API_BASE_URL)
+        : null;
 
-    // 2. Si estamos en /parto/, priorizar /parto/api
+    if (forcedBase) {
+        console.log('🔧 Usando API base forzada para Parto:', forcedBase);
+        return [forcedBase];
+    }
+
+    const remembered = localStorage.getItem(LAST_API_BASE_KEY);
+    if (remembered) candidates.push(normalizarBaseApi(remembered));
+
     if (window.location.pathname.includes('/parto/')) {
         candidates.push(`${origin}/parto/api`);
-        // Fallback específico para entornos donde unificador es el prefijo
         candidates.push(`${origin}/unificador/parto/api`);
     }
-    
-    // 3. Si estamos en /unificador/, priorizar /unificador/api
+
     if (window.location.pathname.includes('/unificador/')) {
         candidates.push(`${origin}/unificador/api`);
     }
 
-    // 4. Base configurada en config.js
-    if (typeof AppConfig !== 'undefined' && AppConfig.API_BASE_URL) {
-        candidates.push(AppConfig.API_BASE_URL);
-    }
-    
-    // 4. Origen mismo (fallback común)
+    if (appConfigBase) candidates.push(appConfigBase);
     candidates.push(`${origin}/api`);
-    
-    // 5. Fallbacks locales
     candidates.push(`${proto}//localhost:8000/api`);
     candidates.push(`${proto}//127.0.0.1:8000/api`);
 
@@ -215,13 +218,22 @@ async function apiRequest(endpoint, method = 'GET', data = null) {
                 timeoutMs
             );
 
+            const contentType = String(response.headers.get('content-type') || '').toLowerCase();
+            const isHtml = contentType.includes('text/html') || contentType.includes('application/xhtml+xml');
+
             // Si es 404, es probable que esta base no tenga este endpoint.
             if (response.status === 404) {
                 console.warn(`🚩 404 en ${url}. Intentando siguiente candidato...`);
                 continue;
             }
 
-            // Si llegamos aquí, la base respondió algo distinto a 404
+            // Si el resultado viene en HTML y no es el endpoint API correcto, puede ser una página de error o login.
+            if (isHtml) {
+                console.warn(`🚩 Contenido HTML desde ${url} (base ${base}). Intentando siguiente candidato...`);
+                continue;
+            }
+
+            // Si llegamos aquí, la base respondió algo distinto a 404 y no devolvió HTML.
             console.log(`✅ Conexión establecida con base: ${base} (Status: ${response.status})`);
             localStorage.setItem(LAST_API_BASE_KEY, normalizarBaseApi(base));
             break;
