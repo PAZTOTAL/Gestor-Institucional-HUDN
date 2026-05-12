@@ -14,17 +14,21 @@ class RegistroDescargaCertificado(models.Model):
     def __str__(self):
         return f"{self.usuario.username} descargó el certificado de {self.cedula_consultada} el {self.fecha_descarga.strftime('%Y-%m-%d %H:%M')}"
 
-class SolicitudCertificadoWhatsapp(models.Model):
+class SolicitudCertificadoEmail(models.Model):
     usuario = models.ForeignKey(User, on_delete=models.CASCADE)
     cedula_consultada = models.CharField(max_length=20)
     nombre_empleado = models.CharField(max_length=255, blank=True, null=True)
-    telefono = models.CharField(max_length=20)
+    email_envio = models.EmailField(blank=True, null=True)
     fecha_solicitud = models.DateTimeField(auto_now_add=True)
     procesado = models.BooleanField(default=False)
 
+    class Meta:
+        verbose_name = "Solicitud de Certificado (Email)"
+        verbose_name_plural = "Solicitudes de Certificados (Email)"
+
     def __str__(self):
         status = "Procesado" if self.procesado else "Pendiente"
-        return f"[{status}] {self.usuario.username} -> {self.telefono} ({self.fecha_solicitud.strftime('%H:%M')})"
+        return f"[{status}] {self.usuario.username} -> {self.email_envio} ({self.fecha_solicitud.strftime('%H:%M')})"
 
 class DatosCertificadoDIAN(models.Model):
     anio_gravable = models.IntegerField(default=2025)

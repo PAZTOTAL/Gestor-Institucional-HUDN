@@ -28,6 +28,9 @@ handler500 = server_error
 handler404 = page_not_found
 handler403 = permission_denied
 
+from django.conf import settings
+from django.conf.urls.static import static
+
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/lookup-tercero/', query_tercero, name='api_lookup_tercero'),
@@ -55,9 +58,10 @@ urlpatterns = [
     path('organigrama/', include('A_00_Organigrama.urls')),
     path('visor-soportes/', include('visor_soportes.urls')),
     path('atencion/', include('unificador_v1.urls')),
-    path('fetal/', include('frecuenciafetal.urls')),
-    path('meows/', include('meows.urls')), 
-    path('parto/', include('trabajoparto.urls')),
+    path('unificador/', include('unificador_v1.urls')),
+    path('fetal/', include('unificador_v1.urls.fetal')),
+    path('meows/', include('unificador_v1.urls.meows')), 
+    path('parto/', include('unificador_v1.urls.parto')),
     path('tercerizadas/', include('tercerizadas.urls', namespace='tercerizadas')),
     path('paz-y-salvo/', include((pys_template_patterns, 'paz_y_salvo'), namespace='paz_y_salvo')),
     path('api/', include(pys_api_patterns)),
@@ -66,6 +70,11 @@ urlpatterns = [
     path('crue-remisiones/', include('crue_remisiones.urls', namespace='crue_remisiones')),
     path('georeferencia/', include('BasesGenerales.urls')),
 ]
+
+if settings.DEBUG:
+    from django.contrib.staticfiles.urls import staticfiles_urlpatterns
+    urlpatterns += staticfiles_urlpatterns()
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 
 

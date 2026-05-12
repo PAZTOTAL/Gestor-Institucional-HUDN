@@ -239,10 +239,10 @@
 
                         {% if child_model_slug and child_fk_field %}
                         <a href="{% url 'table_detail' module_slug child_model_slug %}?{{ child_fk_field }}={{ row.pk }}"
-                            class="ml-2 text-amber-600 hover:text-amber-800 transition-all p-1 bg-amber-50 rounded-lg border border-amber-200 hover:bg-amber-100 flex items-center gap-1 group" 
+                            class="px-2 py-1 bg-amber-100 text-amber-800 text-[10px] font-black rounded-lg border border-amber-200 hover:bg-amber-500 hover:text-white transition-all flex items-center gap-1 uppercase" 
                             title="Ver {{ child_model_name }}">
-                            <span class="text-[10px] font-black uppercase hidden group-hover:block ml-1">Abrir {{ child_model_name }}</span>
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                            Abrir {{ child_model_name }}
+                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M7 7l5 5-5 5M13 7l5 5-5 5"/>
                             </svg>
                         </a>

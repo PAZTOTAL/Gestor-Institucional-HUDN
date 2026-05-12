@@ -73,15 +73,12 @@ INSTALLED_APPS = [
     'trasplantes_donacion',
     'CertificadosDIAN',
     'horas_extras',
-    'frecuenciafetal',
     'certificados_laborales',
     'visor_soportes',
     'tercerizadas',
     'paz_y_salvo',
     'inventarios',
     'formatos_apps',
-    'meows',
-    'trabajoparto',
     'crue_remisiones',
 ]
 

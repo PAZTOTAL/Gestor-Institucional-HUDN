@@ -45,6 +45,14 @@ MEDIO_CONTROL_CHOICES = [
     ('OTROS', 'Otros'),
 ]
 
+MEDIO_ENVIO_CHOICES = [
+    ('CORREO_CERTIFICADO', 'Correo Certificado'),
+    ('CORREO_ELECTRONICO', 'Correo Electrónico'),
+    ('ENTREGA_PERSONAL', 'Entrega Personal / Notificación Física'),
+    ('PORTAL_WEB', 'Portal Web Judicial'),
+    ('OTROS', 'Otros'),
+]
+
 class ProcesoExtrajudicial(models.Model):
     demandante = models.CharField(max_length=255)
     demandado = models.CharField(max_length=255)
@@ -195,7 +203,10 @@ class DerechoPeticion(models.Model):
     fecha_vencimiento = models.DateTimeField('FECHA DE VENCIMIENTO', null=True, blank=True)
     fecha_respuesta_real = models.DateTimeField('FECHA DE RESPUESTA (RADICACIÓN)', null=True, blank=True)
     radicado_respuesta_salida = models.CharField('RADICADO DE RESPUESTA', max_length=255, null=True, blank=True)
-    medio_envio_respuesta = models.CharField('MEDIO DE ENVÍO', max_length=255, null=True, blank=True)
+    medio_envio_respuesta = models.CharField(
+        'MEDIO DE ENVÍO', max_length=255, null=True, blank=True,
+        choices=MEDIO_ENVIO_CHOICES
+    )
     
     ESTADOS_PETICION = [
         ('NUEVA', 'Nueva / Por Asignar'),
@@ -251,7 +262,10 @@ class AccionTutela(models.Model):
     vinculados = models.TextField('VINCULADOS', null=True, blank=True)
     fecha_respuesta = models.DateTimeField('FECHA DE RESPUESTA (RADICACIÓN)', null=True, blank=True)
     radicado_respuesta = models.CharField('RADICADO DE RESPUESTA', max_length=255, null=True, blank=True)
-    medio_envio_respuesta = models.CharField('MEDIO DE ENVÍO', max_length=255, null=True, blank=True)
+    medio_envio_respuesta = models.CharField(
+        'MEDIO DE ENVÍO', max_length=255, null=True, blank=True,
+        choices=MEDIO_ENVIO_CHOICES
+    )
     derechos_vulnerados = models.TextField('DERECHOS VULNERADOS', null=True, blank=True)
     pretensiones = models.TextField('PRETENSIONES', null=True, blank=True)
     
@@ -332,7 +346,10 @@ class IncidenteDesacato(models.Model):
     fecha_vencimiento = models.DateTimeField('FECHA DE VENCIMIENTO', null=True, blank=True)
     fecha_respuesta = models.DateTimeField('FECHA DE RESPUESTA (RADICACIÓN)', null=True, blank=True)
     radicado_respuesta = models.CharField('RADICADO DE RESPUESTA', max_length=100, null=True, blank=True)
-    medio_envio = models.CharField('MEDIO DE ENVÍO', max_length=100, null=True, blank=True)
+    medio_envio = models.CharField(
+        'MEDIO DE ENVÍO', max_length=100, null=True, blank=True,
+        choices=MEDIO_ENVIO_CHOICES
+    )
     observaciones = models.TextField('OBSERVACIONES DEL INCIDENTE', null=True, blank=True)
     fecha_registro = models.DateTimeField(auto_now_add=True)
     class Meta:

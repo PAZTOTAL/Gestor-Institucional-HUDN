@@ -68,10 +68,9 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 
-    'meows',
-    'frecuenciafetal',
-    'trabajoparto',
     'unificador_v1',
+    'rest_framework',
+    'drf_yasg',
 ]
 
 MIDDLEWARE = [
@@ -174,7 +173,6 @@ USE_TZ = True
 STATIC_URL = '/static/'
 STATICFILES_DIRS = [
     BASE_DIR / "static",
-    BASE_DIR / "trabajoparto/static",
 ]
 
 # Default primary key field type

@@ -12,7 +12,7 @@ from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
 from core.mixins import AccessControlMixin
 from django.conf import settings
-from .models import RegistroDescargaCertificado, SolicitudCertificadoWhatsapp, DatosCertificadoDIAN
+from .models import RegistroDescargaCertificado, SolicitudCertificadoEmail, DatosCertificadoDIAN
 from django.db import connections
 from django.contrib.auth.models import User
 from django.contrib.auth import login
@@ -186,18 +186,26 @@ def save_pdf_to_server(cedula, anio, request_user, request_ip):
         print(traceback.format_exc())
         return None, f"Error Técnico en la generación del PDF: {str(e)}"
 
-def solicitar_certificado_whatsapp(request):
+def solicitar_certificado_email(request):
     """
-    Registra una solicitud para envío por WhatsApp y retorna una página de éxito.
+    Registra una solicitud para envío por Correo Institucional y envía el PDF.
     """
     if not request.user.is_authenticated:
         return HttpResponse("No autorizado", status=401)
     
     cedula = request.GET.get('cedula', '').strip()
-    telefono = request.GET.get('telefono', '').strip()
+    if not cedula:
+        return HttpResponse("Falta Cédula", status=400)
+
+    # 1. Buscar email institucional
+    email_destino = find_institutional_email(request.user.username)
     
-    if not cedula or not telefono:
-        return HttpResponse("Falta Cédula o Teléfono", status=400)
+    if not email_destino:
+        # Fallback: intentar buscar por la cédula si el username no coincide
+        email_destino = find_institutional_email(cedula)
+    
+    if not email_destino:
+        return HttpResponse("No se encontró un correo institucional registrado para este usuario. Por favor contacte a Sistemas.", status=404)
 
     nombre_emp = "Funcionario"
     try:
@@ -208,57 +216,88 @@ def solicitar_certificado_whatsapp(request):
         pass
 
     try:
-        # Generar y guardar el PDF de una vez para que quede en el servidor
+        # 2. Generar y guardar el PDF
         filepath, error = save_pdf_to_server(cedula, 2025, request.user, get_client_ip(request))
         
-        SolicitudCertificadoWhatsapp.objects.create(
-            usuario=request.user,
-            cedula_consultada=cedula,
-            nombre_empleado=nombre_emp,
-            telefono=telefono
-        )
-        
-        # Retornar Vista de Éxito Premium (Limpia y moderna)
+        if error:
+            return HttpResponse(f"Error generando PDF: {error}", status=500)
+
+        # 3. Enviar Correo
+        try:
+            subject = f"Certificado de Ingresos y Retenciones 2025 - {nombre_emp}"
+            body = f"""
+            Cordial saludo, Sr(a). {nombre_emp}.
+            
+            Adjunto encontrará su Certificado de Ingresos y Retenciones para el año gravable 2025, 
+            generado a través del Gestor Institucional HUDN.
+            
+            Este es un correo automático, por favor no responda a este mensaje.
+            
+            Atentamente,
+            Oficina de Contabilidad
+            Hospital Universitario Departamental de Nariño E.S.E
+            """
+            
+            email = EmailMessage(
+                subject,
+                body,
+                settings.EMAIL_HOST_USER,
+                [email_destino],
+            )
+            
+            # Adjuntar el archivo
+            email.attach_file(filepath)
+            email.send()
+            
+            # 4. Registrar en DB
+            SolicitudCertificadoEmail.objects.create(
+                usuario=request.user,
+                cedula_consultada=cedula,
+                nombre_empleado=nombre_emp,
+                email_envio=email_destino,
+                procesado=True
+            )
+        except Exception as e:
+            return HttpResponse(f"Error enviando el correo: {str(e)}", status=500)
+
+        # Retornar Vista de Éxito Premium
         msg = f"""
         <html>
         <head>
-            <title>Solicitud Recibida</title>
+            <title>Certificado Enviado</title>
             <script src="https://cdn.tailwindcss.com"></script>
         </head>
-        <body class="bg-slate-50 flex items-center justify-center h-screen font-sans border-t-8 border-green-500">
+        <body class="bg-slate-50 flex items-center justify-center h-screen font-sans border-t-8 border-blue-600">
             <div class="bg-white p-12 rounded-[2.5rem] border border-slate-200 shadow-2xl max-w-lg w-full text-center">
-                <div class="w-20 h-20 bg-green-600 text-white rounded-2xl flex items-center justify-center mx-auto mb-8 shadow-xl">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <div class="w-20 h-20 bg-blue-600 text-white rounded-2xl flex items-center justify-center mx-auto mb-8 shadow-xl">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
                 </div>
                 
-                <h1 class="text-3xl font-black text-slate-800 uppercase tracking-tighter mb-4">Solicitud Registrada</h1>
+                <h1 class="text-3xl font-black text-slate-800 uppercase tracking-tighter mb-4">¡Certificado Enviado!</h1>
                 <p class="text-slate-500 text-lg font-medium leading-relaxed mb-8">
-                    Sr(a). {nombre_emp}, su certificado será enviado <br>
-                    <span class="text-green-600 font-black">en un lapso máximo de 16 horas.</span>
+                    Sr(a). {nombre_emp}, su certificado ha sido enviado exitosamente a:<br>
+                    <span class="text-blue-600 font-black underline">{email_destino}</span>
                 </p>
 
                 <p class="text-[11px] font-black text-slate-400 uppercase tracking-widest animate-pulse mb-6">
-                    Saliendo de la aplicación...
+                    Cerrando sesión segura...
                 </p>
 
                 <div class="h-1.5 bg-slate-100 rounded-full overflow-hidden mb-10">
-                    <div class="bg-green-600 h-full w-full origin-left animate-[progress_5s_linear_forwards]"></div>
+                    <div class="bg-blue-600 h-full w-full origin-left animate-[progress_5s_linear_forwards]"></div>
                 </div>
                 
                 <button onclick="cerrarVentana()" class="w-full py-5 bg-slate-900 text-white rounded-2xl font-black uppercase text-sm tracking-[0.2em] shadow-xl hover:bg-slate-800 active:scale-95 transition-all">
-                    Terminar Ahora
+                    Finalizar
                 </button>
             </div>
 
             <script>
                 function cerrarVentana() {{
-                    // Al ser abierta como popup por el dashboard, este window.close() es permitido.
                     window.close();
-                    self.close();
-                    // Fallback para navegadores antiguos
-                    window.open('', '_self', '').close();
+                    setTimeout(() => {{ window.location.href = '/'; }}, 500);
                 }}
-                setTimeout(cerrarVentana, 3000);
+                setTimeout(cerrarVentana, 5000);
             </script>
             <style>
                 @keyframes progress {{ from {{ transform: scaleX(0); }} to {{ transform: scaleX(1); }} }}
@@ -271,20 +310,20 @@ def solicitar_certificado_whatsapp(request):
     except Exception as e:
         return HttpResponse(f"Error Técnico: {str(e)}", status=500)
 
-class ListarSolicitudesWhatsappView(AccessControlMixin, ListView):
-    model = SolicitudCertificadoWhatsapp
+class ListarSolicitudesEmailView(AccessControlMixin, ListView):
+    model = SolicitudCertificadoEmail
     template_name = 'CertificadosDIAN/lista_solicitudes.html'
     context_object_name = 'solicitudes'
     permission_type = 'view'
 
     def get_queryset(self):
-        return SolicitudCertificadoWhatsapp.objects.all().order_by('-fecha_solicitud')
+        return SolicitudCertificadoEmail.objects.all().order_by('-fecha_solicitud')
 
-def marcar_procesado_whatsapp(request, pk):
+def marcar_procesado_email(request, pk):
     if not request.user.is_authenticated:
         return HttpResponse("No autorizado", status=401)
     
-    solicitud = get_object_or_404(SolicitudCertificadoWhatsapp, pk=pk)
+    solicitud = get_object_or_404(SolicitudCertificadoEmail, pk=pk)
     solicitud.procesado = True
     solicitud.save()
     return redirect('certificados_dian:lista_solicitudes')
