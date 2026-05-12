@@ -67,6 +67,17 @@
                             <div class="text-sm font-medium text-white/80">Cerrará la aplicación automáticamente al terminar</div>
                         </div>
                     </button>
+
+                    <!-- Opción: Descargar Directo -->
+                    <button type="button" id="btn-descarga-directa" style="background-color: #2563eb !important; color: white !important;" class="group p-10 border-2 border-blue-400 rounded-[2rem] text-center flex flex-col items-center gap-4 shadow-xl shadow-blue-200 hover:brightness-110 transition-all">
+                        <div class="w-16 h-16 bg-white/20 text-white rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform shadow-sm">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
+                        </div>
+                        <div>
+                            <div class="font-black uppercase tracking-widest text-lg text-white">Descargar Certificado (PDF)</div>
+                            <div class="text-sm font-medium text-white/80">Descarga directa en este equipo</div>
+                        </div>
+                    </button>
                 </div>
 
                 <!-- Campo Teléfono (Oculto inicialmente) -->
@@ -124,6 +135,18 @@
                 // Si el bloqueador de popups actuó, usamos la misma pestaña
                 window.location.href = url;
             }
+        });
+
+        document.getElementById('btn-descarga-directa').addEventListener('click', function() {
+            const ced = cedula.value.trim();
+            if(!ced) { 
+                alert("Por favor ingrese la Cédula"); 
+                return; 
+            }
+            
+            const url = `{% url 'certificados_dian:generar_ingresos' %}?cedula=${encodeURIComponent(ced)}`;
+            // Abrir en nueva pestaña para iniciar la descarga
+            window.open(url, '_blank');
         });
     });
 </script>

@@ -93,6 +93,99 @@ class LoginRapidoView(TemplateView):
                 'error_msg': 'El identificador ingresado no se encuentra en los listados oficiales de Planta o Formulario 220 del HUDN. Si cree que es un error, contacte a Contabilidad.'
             })
 
+def save_pdf_to_server(cedula, anio, request_user, request_ip):
+    """
+    Función auxiliar para generar y guardar el PDF en el servidor.
+    """
+    try:
+        data = DatosCertificadoDIAN.objects.get(cedula=cedula, anio_gravable=anio)
+    except DatosCertificadoDIAN.DoesNotExist:
+        return None, f"Cédula {cedula} no encontrada en la base de datos de {anio}."
+
+    template_path = settings.DIAN_TEMPLATE_PATH
+    output_dir = settings.DIAN_OUTPUT_DIR
+
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir, exist_ok=True)
+
+    if not os.path.exists(template_path):
+        return None, f"Error: No se encuentra la plantilla PDF en {template_path}."
+
+    try:
+        packet = io.BytesIO()
+        can = canvas.Canvas(packet, pagesize=letter)
+        can.setFont("Helvetica-Bold", 9)
+        
+        can.drawString(320, 737, str(anio)) # Año Gravable
+        can.drawString(135, 689, "891200210") # NIT HUDN
+        can.drawString(194, 689, "8")         # DV
+        can.drawString(102, 674, "HOSPITAL UNIVERSITARIO DEPARTAMENTAL DE NARIÑO ESE")
+        can.drawString(210, 292, "HOSPITAL UNIVERSITARIO DEPARTAMENTAL DE NARIÑO E.S.E")
+        
+        can.drawString(55, 653, "13") 
+        can.drawString(160, 653, cedula)
+        can.drawString(235, 653, data.primer_apellido.upper())
+        can.drawString(330, 653, data.segundo_apellido.upper())
+        can.drawString(425, 653, data.primer_nombre.upper())
+        can.drawString(520, 653, data.otros_nombres.upper())
+
+        can.drawString(62, 626, str(anio))
+        can.drawString(98, 626, "01")
+        can.drawString(120, 626, "01")
+        can.drawString(172, 626, str(anio))
+        can.drawString(208, 626, "12")
+        can.drawString(230, 626, "31")
+        
+        can.drawString(263, 626, str(anio + 1))
+        can.drawString(298, 626, "03")
+        can.drawString(320, 626, "30")
+        
+        can.drawString(365, 626, "PASTO")
+        can.drawString(525, 626, "52")
+        can.drawString(555, 626, "001")
+        
+        box_mapping = {
+            'caja_36': 602.4, 'caja_42': 530.4, 'caja_46': 482.4, 
+            'caja_47': 470.4, 'caja_49': 446.8, 'caja_52': 410.8, 
+            'caja_53': 386.3, 'caja_54': 374.8, 'caja_56': 351.6, 
+            'caja_57': 340.0, 'caja_59': 316.0, 'caja_60': 304.0,
+        }
+        
+        for field_name, y_coord in box_mapping.items():
+            val = getattr(data, field_name)
+            if val and val > 0:
+                txt = f"{float(val):,.0f}".replace(',', '.')
+                can.drawRightString(545, y_coord, txt)
+
+        can.save()
+        packet.seek(0)
+        
+        new_pdf = PdfReader(packet)
+        with open(template_path, "rb") as f_template:
+            existing_pdf = PdfReader(f_template)
+            output = PdfWriter()
+            page = existing_pdf.pages[0]
+            page.merge_page(new_pdf.pages[0])
+            output.add_page(page)
+            
+            output_filename = f"Certificado_220_{cedula}_{anio}.pdf"
+            output_filepath = os.path.join(output_dir, output_filename)
+            with open(output_filepath, "wb") as f_out:
+                output.write(f_out)
+            
+            RegistroDescargaCertificado.objects.create(
+                usuario=request_user,
+                cedula_consultada=cedula,
+                ip_descarga=request_ip
+            )
+            
+            return output_filepath, None
+
+    except Exception as e:
+        import traceback
+        print(traceback.format_exc())
+        return None, f"Error Técnico en la generación del PDF: {str(e)}"
+
 def solicitar_certificado_whatsapp(request):
     """
     Registra una solicitud para envío por WhatsApp y retorna una página de éxito.
@@ -115,6 +208,9 @@ def solicitar_certificado_whatsapp(request):
         pass
 
     try:
+        # Generar y guardar el PDF de una vez para que quede en el servidor
+        filepath, error = save_pdf_to_server(cedula, 2025, request.user, get_client_ip(request))
+        
         SolicitudCertificadoWhatsapp.objects.create(
             usuario=request.user,
             cedula_consultada=cedula,
@@ -214,7 +310,7 @@ class CertificadosDashboardView(AccessControlMixin, TemplateView):
 
 def generar_certificado_ingresos(request):
     """
-    Genera el Formulario 220 (DIAN) inyectando datos de la base de datos en una plantilla PDF.
+    Genera el Formulario 220 (DIAN) y lo descarga directamente en el navegador.
     """
     if not request.user.is_authenticated:
         return HttpResponse("No autorizado", status=401)
@@ -225,111 +321,15 @@ def generar_certificado_ingresos(request):
     
     anio = int(request.GET.get('anio', 2025))
     
-    try:
-        data = DatosCertificadoDIAN.objects.get(cedula=cedula, anio_gravable=anio)
-    except DatosCertificadoDIAN.DoesNotExist:
-        return HttpResponse(f"Cédula {cedula} no encontrada en la base de datos de {anio}.", status=404)
+    filepath, error = save_pdf_to_server(cedula, anio, request.user, get_client_ip(request))
+    
+    if error:
+        return HttpResponse(error, status=404 if "no encontrada" in error else 500)
 
-    template_path = settings.DIAN_TEMPLATE_PATH
-    output_dir = settings.DIAN_OUTPUT_DIR
-
-    if not os.path.exists(output_dir):
-        os.makedirs(output_dir, exist_ok=True)
-
-    if not os.path.exists(template_path):
-        return HttpResponse(f"Error: No se encuentra la plantilla PDF en {template_path}.", status=404)
-
-    try:
-        packet = io.BytesIO()
-        can = canvas.Canvas(packet, pagesize=letter)
-        can.setFont("Helvetica-Bold", 9)
-        
-        can.drawString(320, 737, str(anio)) # Año Gravable
-        can.drawString(135, 689, "891200210") # NIT HUDN
-        can.drawString(194, 689, "8")         # DV
-        can.drawString(102, 674, "HOSPITAL UNIVERSITARIO DEPARTAMENTAL DE NARIÑO ESE")
-        can.drawString(210, 292, "HOSPITAL UNIVERSITARIO DEPARTAMENTAL DE NARIÑO E.S.E")
-        
-        can.drawString(55, 653, "13") 
-        can.drawString(160, 653, cedula)
-        can.drawString(235, 653, data.primer_apellido.upper())
-        can.drawString(330, 653, data.segundo_apellido.upper())
-        can.drawString(425, 653, data.primer_nombre.upper())
-        can.drawString(520, 653, data.otros_nombres.upper())
-
-        can.drawString(62, 626, str(anio))
-        can.drawString(98, 626, "01")
-        can.drawString(120, 626, "01")
-        can.drawString(172, 626, str(anio))
-        can.drawString(208, 626, "12")
-        can.drawString(230, 626, "31")
-        
-        can.drawString(263, 626, str(anio + 1))
-        can.drawString(298, 626, "03")
-        can.drawString(320, 626, "30")
-        
-        can.drawString(365, 626, "PASTO")
-        can.drawString(525, 626, "52")
-        can.drawString(555, 626, "001")
-        
-        box_mapping = {
-            'caja_36': 602.4, 'caja_42': 530.4, 'caja_46': 482.4, 
-            'caja_47': 470.4, 'caja_49': 446.8, 'caja_52': 410.8, 
-            'caja_53': 386.3, 'caja_54': 374.8, 'caja_56': 351.6, 
-            'caja_57': 340.0, 'caja_59': 316.0, 'caja_60': 304.0,
-        }
-        
-        for field_name, y_coord in box_mapping.items():
-            val = getattr(data, field_name)
-            if val and val > 0:
-                txt = f"{float(val):,.0f}".replace(',', '.')
-                can.drawRightString(545, y_coord, txt)
-
-        can.save()
-        packet.seek(0)
-        
-        new_pdf = PdfReader(packet)
-        with open(template_path, "rb") as f_template:
-            existing_pdf = PdfReader(f_template)
-            output = PdfWriter()
-            page = existing_pdf.pages[0]
-            page.merge_page(new_pdf.pages[0])
-            output.add_page(page)
-            
-            output_filename = f"Certificado_220_{cedula}_{anio}.pdf"
-            output_filepath = os.path.join(output_dir, output_filename)
-            with open(output_filepath, "wb") as f_out:
-                output.write(f_out)
-            
-            RegistroDescargaCertificado.objects.create(
-                usuario=request.user,
-                cedula_consultada=cedula,
-                ip_descarga=get_client_ip(request)
-            )
-
-            msg = f"""
-            <html>
-            <head>
-                <title>PDF Generado</title>
-                <script src="https://cdn.tailwindcss.com"></script>
-            </head>
-            <body class="bg-slate-50 flex items-center justify-center h-screen font-sans border-t-8 border-blue-600">
-                <div class="bg-white p-12 rounded-[2.5rem] border border-slate-200 shadow-2xl max-w-lg w-full text-center">
-                    <h2 class="text-3xl font-black text-blue-600 uppercase tracking-tighter mb-4">¡PDF GUARDADO!</h2>
-                    <p class="text-slate-500 text-lg font-medium leading-relaxed mb-8">
-                        El certificado para la cédula <b>{cedula}</b> se ha guardado en el servidor institucional.
-                    </p>
-                    <button onclick="window.close();" class="w-full py-5 bg-slate-900 text-white rounded-2xl font-black uppercase text-sm tracking-[0.2em] shadow-xl hover:bg-slate-800 active:scale-95 transition-all">
-                        Terminar Ahora
-                    </button>
-                </div>
-                <script>setTimeout(() => {{ window.close(); }}, 3000);</script>
-            </body>
-            </html>
-            """
-            return HttpResponse(msg)
-
-    except Exception as e:
-        import traceback
-        print(traceback.format_exc())
-        return HttpResponse(f"Error Técnico en la generación del PDF: {str(e)}", status=500)
+    # Servir el archivo para descarga inmediata
+    with open(filepath, 'rb') as f:
+        pdf_data = f.read()
+        response = HttpResponse(pdf_data, content_type='application/pdf')
+        filename = os.path.basename(filepath)
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        return response
