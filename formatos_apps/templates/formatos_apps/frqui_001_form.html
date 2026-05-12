@@ -94,16 +94,16 @@
                 <table class="w-full text-left border-collapse">
                     <thead class="bg-slate-50 text-[10px] font-black text-slate-500 uppercase tracking-widest">
                         <tr>
-                            <th class="px-6 py-4">Ítem de Verificación</th>
-                            <th class="px-6 py-4 w-48 text-center">Estado (SI/NO/NA)</th>
-                            <th class="px-6 py-4">Observaciones</th>
+                            <th class="px-4 py-3">Ítem de Verificación</th>
+                            <th class="px-3 py-3 w-36 text-center">Estado (SI/NO/NA)</th>
+                            <th class="px-4 py-3">Observaciones</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-50">
                         {% with items="camilla_transporte confirma_identificacion cesarea_identificacion puntaje_aldrete puntaje_bromage escala_dolor condiciones_clinicas plan_tratamiento kardex_tarjetas paciente_comentado acceso_venoso herida_quirurgica tubos_drenes limpieza_piel" %}
                         {% for item in items.split %}
                         <tr class="hover:bg-slate-50/50 transition-colors">
-                            <td class="px-6 py-4 text-sm font-bold text-slate-600">
+                            <td class="px-4 py-2 text-sm font-bold text-slate-600">
                                 {% if item == 'camilla_transporte' %}1. Camilla de transporte disponible del servicio de hospitalización para el traslado del paciente postquirúrgico.
                                 {% elif item == 'confirma_identificacion' %}2. Confirma identificación con manilla y entrega rótulos doble marcación.
                                 {% elif item == 'cesarea_identificacion' %}3. En caso de cesárea verificar identificación materna con el Recién Nacido de acuerdo a protocolos.
@@ -120,14 +120,14 @@
                                 {% elif item == 'limpieza_piel' %}14. Limpieza e integridad de la piel
                                 {% endif %}
                             </td>
-                            <td class="px-6 py-4">
+                            <td class="px-3 py-2">
                                 <div class="flex justify-center">
                                     {% with field_status="form."|add:item|add:"_status" %}
                                         {{ form|get_form_field:field_status }}
                                     {% endwith %}
                                 </div>
                             </td>
-                            <td class="px-6 py-4">
+                            <td class="px-4 py-2">
                                 {% with field_obs="form."|add:item|add:"_obs" %}
                                     {{ form|get_form_field:field_obs }}
                                 {% endwith %}
@@ -136,8 +136,8 @@
                         {% endfor %}
                         {% endwith %}
                         <tr>
-                            <td class="px-6 py-4 text-sm font-bold text-slate-600">15. Cuidados especiales:</td>
-                            <td colspan="2" class="px-6 py-4">
+                            <td class="px-4 py-2 text-sm font-bold text-slate-600">15. Cuidados especiales:</td>
+                            <td colspan="2" class="px-4 py-2">
                                 {{ form.cuidados_especiales }}
                             </td>
                         </tr>
@@ -182,16 +182,16 @@
                 <table class="w-full text-left border-collapse">
                     <thead class="bg-slate-50 text-[10px] font-black text-slate-500 uppercase tracking-widest">
                         <tr>
-                            <th class="px-6 py-4">Ítem de Historia Clínica</th>
-                            <th class="px-6 py-4 w-48 text-center">Estado (SI/NO/NA)</th>
-                            <th class="px-6 py-4">Observaciones</th>
+                            <th class="px-4 py-3">Ítem de Historia Clínica</th>
+                            <th class="px-3 py-3 w-36 text-center">Estado (SI/NO/NA)</th>
+                            <th class="px-4 py-3">Observaciones</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-50">
                         {% with items="historia_descripcion historia_anestesia historia_escalas historia_formula historia_consentimiento historia_triple_tarjeta historia_lista_instrumentacion" %}
                         {% for item in items.split %}
                         <tr class="hover:bg-slate-50/50 transition-colors">
-                            <td class="px-6 py-4 text-sm font-bold text-slate-600">
+                            <td class="px-4 py-2 text-sm font-bold text-slate-600">
                                 {% if item == 'historia_descripcion' %}1. Descripción operatoria.
                                 {% elif item == 'historia_anestesia' %}2. Record de Anestesia.
                                 {% elif item == 'historia_escalas' %}3. Escala de ALDRETE / BROMAGE, ESCALA DEL DOLOR.
@@ -201,14 +201,14 @@
                                 {% elif item == 'historia_lista_instrumentacion' %}7. Lista de chequeo de Instrumentación Quirúrgica.
                                 {% endif %}
                             </td>
-                            <td class="px-6 py-4">
+                            <td class="px-3 py-2">
                                 <div class="flex justify-center">
                                     {% with field_status="form."|add:item|add:"_status" %}
                                         {{ form|get_form_field:field_status }}
                                     {% endwith %}
                                 </div>
                             </td>
-                            <td class="px-6 py-4">
+                            <td class="px-4 py-2">
                                 {% with field_obs="form."|add:item|add:"_obs" %}
                                     {{ form|get_form_field:field_obs }}
                                 {% endwith %}
@@ -258,16 +258,16 @@
                 <table class="w-full text-left border-collapse">
                     <thead class="bg-slate-50 text-[10px] font-black text-slate-500 uppercase tracking-widest">
                         <tr>
-                            <th class="px-6 py-4">Cuidados Generales</th>
-                            <th class="px-6 py-4 w-48 text-center">Estado (SI/NO/NA)</th>
-                            <th class="px-6 py-4">Observaciones</th>
+                            <th class="px-4 py-3">Cuidados Generales</th>
+                            <th class="px-3 py-3 w-36 text-center">Estado (SI/NO/NA)</th>
+                            <th class="px-4 py-3">Observaciones</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-50">
                         {% with items="amb_nombre_medico amb_fecha_control amb_formula_explicacion amb_cuidados_casa amb_instructivo_cuidados amb_recomendaciones_alarmas amb_rayos_x_otros amb_triple_tarjeta" %}
                         {% for item in items.split %}
                         <tr class="hover:bg-slate-50/50 transition-colors">
-                            <td class="px-6 py-4 text-sm font-bold text-slate-600">
+                            <td class="px-4 py-2 text-sm font-bold text-slate-600">
                                 {% if item == 'amb_nombre_medico' %}1. Informar el nombre del médico quien realizó la intervención.
                                 {% elif item == 'amb_fecha_control' %}2. Informar fecha y hora del control por consulta externa.
                                 {% elif item == 'amb_formula_explicacion' %}3. Entrega fórmula médica y explicar nombre de medicamentos, dosis, vía y hora de administración.
@@ -278,14 +278,14 @@
                                 {% elif item == 'amb_triple_tarjeta' %}8. Entregar Triple tarjeta.
                                 {% endif %}
                             </td>
-                            <td class="px-6 py-4">
+                            <td class="px-3 py-2">
                                 <div class="flex justify-center">
                                     {% with field_status="form."|add:item|add:"_status" %}
                                         {{ form|get_form_field:field_status }}
                                     {% endwith %}
                                 </div>
                             </td>
-                            <td class="px-6 py-4">
+                            <td class="px-4 py-2">
                                 {% with field_obs="form."|add:item|add:"_obs" %}
                                     {{ form|get_form_field:field_obs }}
                                 {% endwith %}
@@ -566,6 +566,10 @@
 </script>
 
 <style>
+    .radio-inline { display: flex; flex-direction: row; gap: 10px; padding: 0; margin: 0; }
+    .radio-inline > div { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
+    .radio-inline input[type="radio"] { margin: 0; width: auto; padding: 0; border: none; }
+    .radio-inline label { font-size: 11px; font-weight: 700; cursor: pointer; margin: 0; }
     input[type="text"], input[type="time"], textarea, select {
         width: 100%;
         padding: 0.75rem 1rem;
