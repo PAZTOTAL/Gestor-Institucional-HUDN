@@ -21,8 +21,6 @@ from .utils.report import (generar_planilla, generar_planilla_area,
                             EmpleadoInfo, MESES_ES, calcular_horas,
                             DIAS_ES, TURNOS_LABEL)
 from django.apps import apps
-import pandas as pd
-import os
 from django.core.cache import cache
 
 logger = logging.getLogger('horas_extras')
@@ -492,20 +490,21 @@ class PersonalTemporalGeneralListView(LoginRequiredMixin, TemplateView):
 # --- NUEVAS VISTAS BASADAS EN EXCEL (CONCILIACIÓN) ---
 
 def get_master_excel_data():
-    """Carga y cachea los datos del Excel maestro."""
+    """Retorna empleados desde TrabajadorRecargos con el mismo formato que el Excel original."""
     cache_key = 'th_master_excel_data'
     data = cache.get(cache_key)
     if data is None:
-        path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data', 'personal.xlsx')
-        if os.path.exists(path):
-            df = pd.read_excel(path)
-            # Normalizar columnas
-            df.columns = [c.upper().strip() for c in df.columns]
-            # Convertir a lista de dicts para fácil manejo
-            data = df.to_dict('records')
-            cache.set(cache_key, data, 3600) # Cache por 1 hora
-        else:
-            data = []
+        data = [
+            {
+                'CEDULA': t.documento,
+                'NOMBRE': t.nombre,
+                'VINCULACION': t.tipo.upper(),
+                'CARGO': t.cargo,
+                'AREA': t.area.nombre if t.area else '',
+            }
+            for t in TrabajadorRecargos.objects.select_related('area').all()
+        ]
+        cache.set(cache_key, data, 3600)
     return data
 
 class InformeConsistenciaExcelView(LoginRequiredMixin, TemplateView):

@@ -32,7 +32,9 @@
       "Bash(venv/Scripts/python.exe manage.py check)",
       "Bash(venv/Scripts/python.exe manage.py collectstatic --noinput)",
       "Bash(nssm restart *)",
-      "Bash(nssm list *)"
+      "Bash(nssm list *)",
+      "Bash(xargs grep -l \"def.*excel\\\\|def.*import.*excel\")",
+      "Bash(git log *)"
     ]
   }
 }
