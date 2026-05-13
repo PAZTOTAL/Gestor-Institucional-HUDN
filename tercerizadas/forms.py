@@ -20,6 +20,10 @@ class EmpresaForm(forms.ModelForm):
             'direccion': forms.TextInput(attrs={'class': 'form-control'}),
             'activa': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
             'observaciones': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'persona_cargo_hospital': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Nombre completo'}),
+            'cedula_persona_cargo': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Solo números'}),
+            'email_persona_cargo': forms.EmailInput(attrs={'class': 'form-control'}),
+            'firma_responsable': forms.HiddenInput(),
         }
 
 
@@ -51,6 +55,24 @@ class ActividadForm(forms.ModelForm):
 
 
 class ServidorForm(forms.ModelForm):
+
+    def __init__(self, *args, empresa_fija=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._empresa_fija = empresa_fija
+        if empresa_fija:
+            self.fields['empresa'].queryset = EmpresaTercerizada.objects.filter(pk=empresa_fija.pk)
+            self.fields['empresa'].widget.attrs['disabled'] = True
+            self.fields['empresa'].required = False
+            self.fields['contrato'].queryset = empresa_fija.contratos.filter(estado='ACTIVO')
+
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        if self._empresa_fija and not instance.empresa_id:
+            instance.empresa = self._empresa_fija
+        if commit:
+            instance.save()
+        return instance
+
     class Meta:
         model = ServidorTercerizado
         exclude = ['registrado_por', 'fecha_registro', 'modificado_por',

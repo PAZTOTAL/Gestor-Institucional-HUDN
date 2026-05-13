@@ -1,0 +1,130 @@
+{% load i18n %}
+{# Partial HTMX: tabla de registros de traslados #}
+
+{# ── Botón Adicionar (encima de la tabla) ────────────────────────────────── #}
+<div class="px-4 pt-4 pb-2 flex items-center justify-between">
+	<span class="text-sm text-gray-500">
+		{{ registros.count }} registro{{ registros.count|pluralize:"s" }} encontrado{{ registros.count|pluralize:"s" }}
+	</span>
+	<button
+		{% if mesCerrado %}
+			disabled
+			title="El mes está cerrado"
+			class="inline-flex items-center gap-1 px-3 py-1.5 rounded-md text-sm font-medium bg-gray-200 text-gray-400 cursor-not-allowed"
+		{% else %}
+			hx-get="{% url 'traslado-nuevo' %}?mes={{ mes }}"
+			hx-target="#modal-contenedor"
+			hx-swap="innerHTML"
+			class="inline-flex items-center gap-1 px-3 py-1.5 rounded-md text-sm font-medium bg-blue-600 text-white hover:bg-blue-700 transition-colors"
+		{% endif %}
+	>
+		<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+			<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+		</svg>
+		[+] Adicionar
+	</button>
+</div>
+
+{# ── Tabla ───────────────────────────────────────────────────────────────── #}
+<div class="overflow-x-auto">
+	<table class="min-w-full divide-y divide-gray-200 text-xs">
+		<thead class="bg-blue-900 text-white">
+			<tr>
+				<th class="px-3 py-2 text-left font-semibold uppercase tracking-wide whitespace-nowrap">Acciones</th>
+				<th class="px-3 py-2 text-left font-semibold uppercase tracking-wide whitespace-nowrap">Fecha</th>
+				<th class="px-3 py-2 text-left font-semibold uppercase tracking-wide whitespace-nowrap">Hora Reporte</th>
+				<th class="px-3 py-2 text-left font-semibold uppercase tracking-wide whitespace-nowrap">Hora de Egreso</th>
+				<th class="px-3 py-2 text-left font-semibold uppercase tracking-wide whitespace-nowrap">Hora de Ingreso</th>
+				<th class="px-3 py-2 text-left font-semibold uppercase tracking-wide whitespace-nowrap">Nombre de Paciente</th>
+				<th class="px-3 py-2 text-left font-semibold uppercase tracking-wide whitespace-nowrap">Documento</th>
+				<th class="px-3 py-2 text-left font-semibold uppercase tracking-wide whitespace-nowrap">Servicio</th>
+				<th class="px-3 py-2 text-left font-semibold uppercase tracking-wide whitespace-nowrap">Quien Reporta</th>
+				<th class="px-3 py-2 text-left font-semibold uppercase tracking-wide whitespace-nowrap">Destino</th>
+				<th class="px-3 py-2 text-left font-semibold uppercase tracking-wide whitespace-nowrap">Procedimiento</th>
+				<th class="px-3 py-2 text-left font-semibold uppercase tracking-wide whitespace-nowrap">Médico</th>
+				<th class="px-3 py-2 text-left font-semibold uppercase tracking-wide whitespace-nowrap">Conductor</th>
+				<th class="px-3 py-2 text-left font-semibold uppercase tracking-wide whitespace-nowrap">Radio Operador</th>
+				<th class="px-3 py-2 text-left font-semibold uppercase tracking-wide whitespace-nowrap">Ambulancia de Traslado</th>
+				<th class="px-3 py-2 text-left font-semibold uppercase tracking-wide whitespace-nowrap">Observación</th>
+			</tr>
+		</thead>
+		<tbody class="bg-white divide-y divide-gray-100" id="tabla-cuerpo">
+			{% for registro in registros %}
+			<tr
+				class="hover:bg-blue-50 transition-colors cursor-pointer"
+				data-mes-estado="{{ controlMes.estado|default:'ABIERTO' }}"
+				data-editar-url="{% url 'traslado-editar' registro.pk %}"
+			>
+				{# ── Columna de acciones ──────────────────────────────────── #}
+				<td class="px-3 py-2 whitespace-nowrap">
+					<div class="flex items-center gap-1">
+						{# Botón Editar #}
+						{% if mesCerrado %}
+						<button
+							disabled
+							title="El mes está cerrado"
+							class="bi bi-pencil px-2 py-1 rounded text-xs font-medium bg-gray-100 text-gray-400 cursor-not-allowed"
+						>
+						</button>
+						{% else %}
+						<button
+							hx-get="{% url 'traslado-editar' registro.pk %}"
+							hx-target="#modal-contenedor"
+							hx-swap="innerHTML"
+							class="bi bi-pencil-square px-2 py-1 rounded text-xs font-medium bg-amber-100 text-amber-700 hover:bg-amber-200 transition-colors"
+							title="Editar el registro"
+						>
+						</button>
+						{% endif %}
+
+						{# Botón Eliminar #}
+						{% if mesCerrado %}
+						<button
+							disabled
+							title="El mes está cerrado"
+							class="bi bi-trash px-2 py-1 rounded text-xs font-medium bg-gray-100 text-gray-400 cursor-not-allowed"
+						>
+						</button>
+						{% else %}
+						<button
+							hx-get="{% url 'traslado-confirmar-eliminar' registro.pk %}"
+							hx-target="#modal-contenedor"
+							hx-swap="innerHTML"
+							class="bi bi-trash-fill px-2 py-1 rounded text-xs font-medium bg-red-100 text-red-700 hover:bg-red-200 transition-colors"
+							title="Eliminar el registro"
+						>
+						</button>
+						{% endif %}
+					</div>
+				</td>
+
+				{# ── Columnas de datos ────────────────────────────────────── #}
+				<td class="px-3 py-2 whitespace-nowrap">{{ registro.fecha|date:"d/m/Y" }}</td>
+				<td class="px-3 py-2 whitespace-nowrap">{{ registro.hora_reporte|time:"H:i" }}</td>
+				<td class="px-3 py-2 whitespace-nowrap">{{ registro.hora_egreso|time:"H:i"|default:"—" }}</td>
+				<td class="px-3 py-2 whitespace-nowrap">{{ registro.hora_ingreso|time:"H:i"|default:"—" }}</td>
+				<td class="px-3 py-2">{{ registro.nombre_paciente }}</td>
+				<td class="px-3 py-2 whitespace-nowrap">{{ registro.documento }}</td>
+				<td class="px-3 py-2 whitespace-nowrap">{{ registro.servicio }}</td>
+				<td class="px-3 py-2 whitespace-nowrap">{{ registro.quien_reporta }}</td>
+				<td class="px-3 py-2 whitespace-nowrap">{{ registro.destino }}</td>
+				<td class="px-3 py-2">{{ registro.procedimiento }}</td>
+				<td class="px-3 py-2 whitespace-nowrap">{{ registro.medico }}</td>
+				<td class="px-3 py-2 whitespace-nowrap">{{ registro.conductor }}</td>
+				<td class="px-3 py-2 whitespace-nowrap">{{ registro.radio_operador }}</td>
+				<td class="px-3 py-2 whitespace-nowrap">{{ registro.ambulancia }}</td>
+				<td class="px-3 py-2">{{ registro.observacion|default:"—" }}</td>
+			</tr>
+			{% empty %}
+			<tr>
+				<td colspan="16" class="px-6 py-12 text-center text-gray-400 text-sm">
+					No hay registros para el período seleccionado.
+				</td>
+			</tr>
+			{% endfor %}
+		</tbody>
+	</table>
+</div>
+
+{# ── Contenedor del modal (se inyecta aquí via HTMX) ────────────────────── #}
+<div id="modal-contenedor"></div>

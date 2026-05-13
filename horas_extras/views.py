@@ -135,9 +135,10 @@ class PersonalPorAreaReportView(LoginRequiredMixin, TemplateView):
                     ISNULL(g.GASCODIGO, ISNULL(c.CCCODIGO, ISNULL(a.ARECODIGO, 'SIN-AREA'))) as area_code,
                     ISNULL(g.GASNOMBRE, ISNULL(c.CCNOMBRE, ISNULL(a.ARENOMBRE, 'SIN AREA ASIGNADA'))) as area_name
                 FROM NMEMPLEA e
-                LEFT JOIN GENARESER g ON RTRIM(LTRIM(e.GASCODIGO)) = RTRIM(LTRIM(g.GASCODIGO))
-                LEFT JOIN CTNCENCOS c ON RTRIM(LTRIM(e.GASCODIGO)) = RTRIM(LTRIM(c.CCCODIGO))
-                LEFT JOIN AFNAREAS a ON RTRIM(LTRIM(e.GASCODIGO)) = RTRIM(LTRIM(a.ARECODIGO))
+                LEFT JOIN GENARESER g ON e.GASCODIGO = g.GASCODIGO
+                LEFT JOIN CTNCENCOS c ON e.GASCODIGO = c.CCCODIGO
+                LEFT JOIN AFNAREAS a ON e.GASCODIGO = a.ARECODIGO
+                WHERE e.NEMESTADO = 1
             """
             cursor.execute(query_db)
             for row in cursor.fetchall():
@@ -224,10 +225,11 @@ class PersonalAreaDetailView(LoginRequiredMixin, TemplateView):
                     ISNULL(g.GASCODIGO, ISNULL(c.CCCODIGO, ISNULL(a.ARECODIGO, 'SIN-AREA'))) as area_code,
                     v.VINNOMBRE as vinculacion_db
                 FROM NMEMPLEA e
-                LEFT JOIN GENARESER g ON RTRIM(LTRIM(e.GASCODIGO)) = RTRIM(LTRIM(g.GASCODIGO))
-                LEFT JOIN CTNCENCOS c ON RTRIM(LTRIM(e.GASCODIGO)) = RTRIM(LTRIM(c.CCCODIGO))
-                LEFT JOIN AFNAREAS a ON RTRIM(LTRIM(e.GASCODIGO)) = RTRIM(LTRIM(a.ARECODIGO))
+                LEFT JOIN GENARESER g ON e.GASCODIGO = g.GASCODIGO
+                LEFT JOIN CTNCENCOS c ON e.GASCODIGO = c.CCCODIGO
+                LEFT JOIN AFNAREAS a ON e.GASCODIGO = a.ARECODIGO
                 LEFT JOIN NOMVINCULA v ON e.NEMTIPCON = v.VINCODIGO
+                WHERE e.NEMESTADO = 1
             """)
             for row in cursor.fetchall():
                 db_cedula = str(row[0]).strip().lstrip('0')
@@ -503,7 +505,7 @@ def get_master_excel_data():
             df.columns = [c.upper().strip() for c in df.columns]
             # Convertir a lista de dicts para fácil manejo
             data = df.to_dict('records')
-            cache.set(cache_key, data, 3600) # Cache por 1 hora
+            cache.set(cache_key, data, 28800) # Cache por 8 horas para máxima velocidad
         else:
             data = []
     return data
@@ -799,7 +801,8 @@ class ConfiguracionRecargosView(LoginRequiredMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        ctx['es_admin'] = _es_admin_recargos(self.request.user)
+        ctx['es_admin']        = _es_admin_recargos(self.request.user)
+        ctx['es_superusuario'] = self.request.user.is_superuser
         return ctx
 
 
@@ -1204,6 +1207,78 @@ def api_reporte_area_xlsx(request):
 # ── API: Coordinadores ────────────────────────────────────────────────────────
 
 @login_required
+@require_http_methods(['GET'])
+def api_usuarios_recargos(request):
+    """Lista usuarios con acceso a horas_extras y su PerfilRecargos. Solo superusuarios."""
+    if not request.user.is_superuser:
+        return JsonResponse({'error': 'Solo superusuarios'}, status=403)
+
+    # Evitamos importar PermisoApp directamente (usuarios importa de horas_extras → circular)
+    usuarios = (
+        User.objects
+        .filter(permisos_app__app_label='horas_extras', permisos_app__permitido=True)
+        .select_related('perfil_recargos')
+        .order_by('first_name', 'last_name', 'username')
+    )
+    data = []
+    for u in usuarios:
+        try:
+            p = u.perfil_recargos
+            rol   = p.rol
+            areas = [{'id': a.id, 'nombre': a.nombre} for a in p.areas.all()]
+        except PerfilRecargos.DoesNotExist:
+            rol   = None
+            areas = []
+        data.append({
+            'id':       u.id,
+            'username': u.username,
+            'nombre':   u.get_full_name() or u.username,
+            'email':    u.email,
+            'rol':      rol,
+            'areas':    areas,
+        })
+    return JsonResponse(data, safe=False)
+
+
+@login_required
+@require_http_methods(['POST', 'DELETE'])
+def api_usuario_recargos_detail(request, pk):
+    """Crea/actualiza o elimina el PerfilRecargos de un usuario. Solo superusuarios."""
+    if not request.user.is_superuser:
+        return JsonResponse({'error': 'Solo superusuarios'}, status=403)
+
+    target = get_object_or_404(User, pk=pk)
+
+    if request.method == 'DELETE':
+        PerfilRecargos.objects.filter(user=target).delete()
+        cache.delete(f'perfil_recargos_{target.pk}')
+        return JsonResponse({'ok': True})
+
+    body = json.loads(request.body)
+    rol  = body.get('rol')
+    if rol not in ('admin', 'coordinador'):
+        return JsonResponse({'error': 'rol debe ser admin o coordinador'}, status=400)
+
+    perfil, _ = PerfilRecargos.objects.update_or_create(
+        user=target, defaults={'rol': rol}
+    )
+    if rol == 'coordinador':
+        areas_ids = body.get('areas', [])
+        perfil.areas.set(AreaRecargos.objects.filter(id__in=areas_ids))
+    else:
+        perfil.areas.clear()
+
+    cache.delete(f'perfil_recargos_{target.pk}')
+    return JsonResponse({
+        'ok':    True,
+        'id':    target.id,
+        'nombre': target.get_full_name() or target.username,
+        'rol':   perfil.rol,
+        'areas': [{'id': a.id, 'nombre': a.nombre} for a in perfil.areas.all()],
+    })
+
+
+@login_required
 @require_http_methods(['GET', 'POST'])
 def api_coordinadores(request):
     if not _es_admin_recargos(request.user):
@@ -1274,7 +1349,7 @@ def api_reporte_pdf(request):
     obs_map = {
         o.empleado_id: o.observacion
         for o in ObservacionMensualRecargos.objects.filter(
-            empleado_id__in=list(trabajadores.values_list('id', flat=True)),
+            empleado_id__in=[t.id for t in trabajadores],
             year=year, month=month
         )
     }

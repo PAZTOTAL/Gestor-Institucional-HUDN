@@ -1,7 +1,7 @@
 from django.urls import path
 from .views import (
-    CustomLoginView, CustomLogoutView, RegistroView, PanelUsuariosView, 
-    GestionPermisosView, ConfigPerfilView, lookup_tercero_por_cedula,
+    CustomLoginView, CustomLogoutView, RegistroView, PanelUsuariosView,
+    GestionPermisosView, ConfigPerfilView, MisDatosView, lookup_tercero_por_cedula,
     PasswordResetRequestView, PasswordResetVerifyView, PasswordResetConfirmView
 )
 
@@ -13,6 +13,7 @@ urlpatterns = [
     path('gestion/', PanelUsuariosView.as_view(), name='gestion_usuarios'),
     path('permisos/<int:pk>/', GestionPermisosView.as_view(), name='gestion_permisos'),
     path('configuracion/apariencia/', ConfigPerfilView.as_view(), name='config_perfil'),
+    path('mis-datos/', MisDatosView.as_view(), name='mis_datos'),
     
     # Recuperación de Contraseña
     path('password-reset/', PasswordResetRequestView.as_view(), name='password_reset_request'),

@@ -29,7 +29,10 @@ class FRQUI_001_Form(forms.ModelForm):
         # Aplicar clases uniformes y widgets de radio para SI/NO/NA
         for field_name, field in self.fields.items():
             if field_name.endswith('_status'):
-                field.widget = forms.RadioSelect(choices=FRQUI_001_Model.SI_NO_NA_CHOICES)
+                field.widget = forms.RadioSelect(
+                    choices=FRQUI_001_Model.SI_NO_NA_CHOICES,
+                    attrs={'class': 'radio-inline'}
+                )
                 field.initial = 'NA'
             
             # Clase base para todos los inputs

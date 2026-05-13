@@ -22,6 +22,11 @@ RUN curl -fsSL https://packages.microsoft.com/keys/microsoft.asc | \
     && ACCEPT_EULA=Y apt-get install -y msodbcsql17 \
     && rm -rf /var/lib/apt/lists/*
 
+# Locale UTF-8 para soporte de ñ, tildes y caracteres especiales
+ENV LANG=C.UTF-8 \
+    LC_ALL=C.UTF-8 \
+    PYTHONIOENCODING=utf-8
+
 WORKDIR /app
 
 # Instalar dependencias Python (usa archivo limpio sin paquetes Windows)

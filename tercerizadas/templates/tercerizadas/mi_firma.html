@@ -1,0 +1,168 @@
+{% extends "tercerizadas/base.html" %}
+{% block title %}Mi Firma Electrónica — Tercerizadas | HUDN{% endblock %}
+{% block breadcrumb %} / <strong>Mi Firma Electrónica</strong>{% endblock %}
+
+{% block content %}
+<header style="margin-bottom:1.5rem;">
+    <h1 style="margin:0;font-size:1.5rem;font-weight:800;color:#1a2332;">
+        <i data-lucide="pen-tool" style="width:22px;vertical-align:middle;color:var(--terc-primary);"></i>
+        Mi Firma Electrónica
+    </h1>
+    <p style="margin:0.3rem 0 0;color:#6c757d;font-size:0.88rem;">
+        Esta firma será utilizada como firma oficial en las aplicaciones institucionales del HUDN.
+    </p>
+</header>
+
+<div style="max-width:640px;">
+
+    {% if firma_actual %}
+    <div class="terc-card" style="margin-bottom:1.25rem;border-left:4px solid var(--terc-success);">
+        <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;">
+            <div style="width:56px;height:56px;border-radius:10px;border:2px solid #d1fae5;background:#f0fdf4;
+                        display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden;">
+                <img src="{{ firma_actual.firma_data }}" style="max-height:48px;max-width:48px;object-fit:contain;">
+            </div>
+            <div style="flex:1;">
+                <div style="font-weight:700;font-size:0.9rem;color:#065f46;">Firma registrada y activa</div>
+                <div style="font-size:0.78rem;color:#6c757d;">Registrada el {{ firma_actual.fecha_registro|date:"d/m/Y \a \l\a\s H:i" }}</div>
+            </div>
+            <span class="status-pill activo">Activa</span>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="terc-card">
+        <div class="form-section-title">
+            <i data-lucide="edit-3" style="width:16px;"></i>
+            {% if firma_actual %}Actualizar{% else %}Registrar{% endif %} Firma
+        </div>
+        <p style="font-size:0.83rem;color:#64748b;margin-bottom:1.25rem;">
+            Dibuje su firma dentro del área punteada. Use un trazo claro y firme.<br>
+            En dispositivos táctiles, utilice el dedo o lápiz digital.
+        </p>
+
+        <div style="position:relative;background:#f8fafc;border-radius:12px;border:2px dashed #cbd5e1;overflow:hidden;height:240px;margin-bottom:1rem;" id="canvas-wrapper">
+            <canvas id="firma-canvas" style="position:absolute;inset:0;width:100%;height:100%;cursor:crosshair;touch-action:none;"></canvas>
+            <button id="btn-limpiar" type="button"
+                    style="position:absolute;bottom:12px;right:12px;background:#fff;border:1.5px solid #e2e8f0;
+                           border-radius:8px;padding:0.4rem 0.75rem;cursor:pointer;font-size:0.78rem;
+                           font-weight:600;color:#64748b;display:flex;align-items:center;gap:0.35rem;
+                           box-shadow:0 2px 6px rgba(0,0,0,0.08);transition:all 0.15s;"
+                    onmouseover="this.style.borderColor='#f43f5e';this.style.color='#f43f5e';"
+                    onmouseout="this.style.borderColor='#e2e8f0';this.style.color='#64748b';">
+                <i data-lucide="eraser" style="width:14px;"></i> Limpiar
+            </button>
+        </div>
+
+        <button id="btn-guardar" type="button" class="btn-terc btn-terc-primary" style="width:100%;justify-content:center;padding:0.75rem;">
+            <i data-lucide="save" style="width:18px;"></i>
+            <span id="btn-texto">Guardar Firma Electrónica</span>
+        </button>
+    </div>
+
+    <div style="margin-top:0.75rem;background:#fef3c7;border:1px solid #fcd34d;border-radius:10px;padding:0.85rem 1rem;font-size:0.8rem;color:#92400e;display:flex;gap:0.5rem;">
+        <i data-lucide="alert-triangle" style="width:16px;flex-shrink:0;margin-top:1px;"></i>
+        <span>La firma registrada aquí podrá ser utilizada automáticamente en documentos institucionales que requieran su rúbrica digital.</span>
+    </div>
+</div>
+
+<div id="toast-firma" style="position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%);
+     background:#1e293b;color:#fff;padding:0.7rem 1.4rem;border-radius:10px;
+     font-size:0.85rem;font-weight:600;box-shadow:0 4px 20px rgba(0,0,0,0.25);
+     display:none;z-index:9999;"></div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function() {
+    const canvas = document.getElementById('firma-canvas');
+    const ctx = canvas.getContext('2d');
+    let dibujando = false;
+    let tieneFirma = false;
+
+    function ajustarTamano() {
+        const wrapper = document.getElementById('canvas-wrapper');
+        canvas.width  = wrapper.clientWidth;
+        canvas.height = wrapper.clientHeight;
+        ctx.lineWidth   = 3;
+        ctx.lineCap     = 'round';
+        ctx.lineJoin    = 'round';
+        ctx.strokeStyle = '#0f172a';
+    }
+    window.addEventListener('resize', ajustarTamano);
+    ajustarTamano();
+
+    function getPosicion(e) {
+        const rect = canvas.getBoundingClientRect();
+        const src  = e.touches ? e.touches[0] : e;
+        return { x: src.clientX - rect.left, y: src.clientY - rect.top };
+    }
+
+    const iniciar = (e) => {
+        dibujando = true; tieneFirma = true;
+        const p = getPosicion(e);
+        ctx.beginPath(); ctx.moveTo(p.x, p.y);
+        e.preventDefault();
+    };
+    const mover = (e) => {
+        if (!dibujando) return;
+        const p = getPosicion(e);
+        ctx.lineTo(p.x, p.y); ctx.stroke();
+        e.preventDefault();
+    };
+    const terminar = () => { if (dibujando) { ctx.closePath(); dibujando = false; } };
+
+    canvas.addEventListener('mousedown',  iniciar);
+    canvas.addEventListener('mousemove',  mover);
+    window.addEventListener('mouseup',    terminar);
+    canvas.addEventListener('touchstart', iniciar, { passive: false });
+    canvas.addEventListener('touchmove',  mover,   { passive: false });
+    canvas.addEventListener('touchend',   terminar);
+
+    document.getElementById('btn-limpiar').addEventListener('click', () => {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        tieneFirma = false;
+    });
+
+    function mostrarToast(msg, ok) {
+        const t = document.getElementById('toast-firma');
+        t.textContent = msg;
+        t.style.background = ok ? '#065f46' : '#991b1b';
+        t.style.display = 'block';
+        setTimeout(() => { t.style.display = 'none'; }, 3500);
+    }
+
+    document.getElementById('btn-guardar').addEventListener('click', async () => {
+        if (!tieneFirma) { mostrarToast('Dibuje su firma antes de guardar.', false); return; }
+
+        const btn    = document.getElementById('btn-guardar');
+        const texto  = document.getElementById('btn-texto');
+        btn.disabled = true;
+        texto.textContent = 'Guardando…';
+
+        try {
+            const resp = await fetch('', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: JSON.stringify({ firma_base64: canvas.toDataURL('image/png') })
+            });
+            const data = await resp.json();
+            if (resp.ok) {
+                mostrarToast('Firma guardada correctamente.', true);
+                setTimeout(() => location.reload(), 2200);
+            } else {
+                throw new Error(data.message || 'Error al guardar');
+            }
+        } catch (err) {
+            mostrarToast('Error: ' + err.message, false);
+            btn.disabled = false;
+            texto.textContent = 'Guardar Firma Electrónica';
+        }
+    });
+})();
+</script>
+{% endblock %}

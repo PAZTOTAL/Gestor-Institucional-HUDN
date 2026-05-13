@@ -10,6 +10,7 @@ from core.mixins import AccessControlMixin
 from django.apps import apps
 from django.db import connections
 from django.http import JsonResponse
+from django.core.cache import cache
 from django.core.mail import send_mail
 from django.conf import settings
 from django.contrib import messages
@@ -251,7 +252,56 @@ class ConfigPerfilView(LoginRequiredMixin, TemplateView):
         perfil.color_fondo = request.POST.get('color_fondo', perfil.color_fondo)
         perfil.estilo_fondo = request.POST.get('estilo_fondo', perfil.estilo_fondo)
         perfil.save()
+        cache.delete(f'user_perfil_{request.user.pk}')
         return redirect('config_perfil')
+
+
+class MisDatosView(LoginRequiredMixin, TemplateView):
+    template_name = 'usuarios/mis_datos.html'
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx['perfil'], _ = PerfilUsuario.objects.get_or_create(user=self.request.user)
+        return ctx
+
+    def post(self, request, *args, **kwargs):
+        perfil, _ = PerfilUsuario.objects.get_or_create(user=request.user)
+        user = request.user
+
+        # Datos personales
+        user.first_name = request.POST.get('first_name', user.first_name).strip()
+        user.last_name = request.POST.get('last_name', user.last_name).strip()
+        user.email = request.POST.get('email', user.email).strip()
+        user.save()
+
+        perfil.telefono = request.POST.get('telefono', perfil.telefono or '').strip()
+        perfil.direccion = request.POST.get('direccion', perfil.direccion or '').strip()
+        perfil.save()
+
+        # Cambio de contraseña (solo si se llenó el campo actual)
+        password_actual = request.POST.get('password_actual', '').strip()
+        if password_actual:
+            from django.contrib.auth import update_session_auth_hash
+            if user.check_password(password_actual):
+                nueva = request.POST.get('password_nueva', '').strip()
+                confirma = request.POST.get('password_confirma', '').strip()
+                if nueva and nueva == confirma and len(nueva) >= 8:
+                    user.set_password(nueva)
+                    user.save()
+                    update_session_auth_hash(request, user)
+                    messages.success(request, 'Contraseña actualizada correctamente.')
+                elif nueva != confirma:
+                    messages.error(request, 'Las contraseñas nuevas no coinciden.')
+                elif len(nueva) < 8:
+                    messages.error(request, 'La contraseña debe tener al menos 8 caracteres.')
+            else:
+                messages.error(request, 'La contraseña actual es incorrecta.')
+
+        if not messages.get_messages(request):
+            messages.success(request, 'Datos actualizados correctamente.')
+
+        return redirect('mis_datos')
+
 
 def lookup_tercero_por_cedula(request):
     cedula = request.GET.get('cedula', '').strip()

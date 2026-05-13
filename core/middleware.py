@@ -6,7 +6,7 @@ logger = logging.getLogger(__name__)
 
 # Rutas que no necesitan el check de BD
 _SKIP_PATHS = ('/login', '/logout', '/accounts/login', '/accounts/logout', '/admin/login',
-               '/static/', '/favicon')
+               '/static/', '/favicon', '/media/')
 
 _check_lock = threading.Lock()
 
@@ -110,6 +110,25 @@ class DatabaseCheckMiddleware:
         response = self.get_response(request)
         return response
 
+class QueryResetMiddleware:
+    """
+    Limpia la lista de queries en modo DEBUG para evitar fugas de memoria
+    en sesiones de desarrollo largas (como la actual de 70h).
+    """
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        from django.db import reset_queries
+        from django.conf import settings
+        
+        response = self.get_response(request)
+        
+        if settings.DEBUG:
+            reset_queries()
+            
+        return response
+
 class SecurityProtectionMiddleware:
     """
     Middleware para protección adicional contra ataques comunes:
@@ -124,31 +143,34 @@ class SecurityProtectionMiddleware:
             'acunetix', 'metasploit', 'zaproxy', 'nessus', 'w3af'
         ]
 
-    # Rutas exentas de rate limit (estáticos, media, favicon)
-    _SKIP_RATE = ('/static/', '/media/', '/favicon')
+    # Rutas exentas de rate limit (estáticos, media, favicon, fuentes)
+    _SKIP_RATE = ('/static/', '/media/', '/favicon', '/fonts/', '/js/', '/css/', '/img/')
 
     def __call__(self, request):
         path = request.path
+        
+        # 0. Saltar validaciones pesadas para archivos de recursos y assets (Velocidad)
+        if any(path.startswith(p) for p in self._SKIP_RATE):
+            return self.get_response(request)
 
-        # 1. Verificar User-Agent
+        # 1. Verificar User-Agent (Seguridad)
         user_agent = request.META.get('HTTP_USER_AGENT', '').lower()
         if any(agent in user_agent for agent in self._blocked_agents):
             logger.warning(f"Bloqueado User-Agent sospechoso: {user_agent} desde {request.META.get('REMOTE_ADDR')}")
             from django.http import HttpResponseForbidden
             return HttpResponseForbidden("Acceso denegado por políticas de seguridad.")
 
-        # 2. Rate Limiting — solo rutas de aplicación, no archivos estáticos
-        if not any(path.startswith(p) for p in self._SKIP_RATE):
-            ip = request.META.get('REMOTE_ADDR')
-            cache_key = f'ratelimit_{ip}'
-            requests_count = cache.get(cache_key, 0)
+        # 2. Rate Limiting — solo para peticiones de aplicación
+        ip = request.META.get('REMOTE_ADDR')
+        cache_key = f'ratelimit_{ip}'
+        requests_count = cache.get(cache_key, 0)
 
-            if requests_count > 200:
-                logger.warning(f"Rate Limit excedido para IP: {ip}")
-                from django.http import HttpResponse
-                return HttpResponse("Demasiadas peticiones. Por favor, espere un minuto.", status=429)
+        if requests_count > 200:
+            logger.warning(f"Rate Limit excedido para IP: {ip}")
+            from django.http import HttpResponse
+            return HttpResponse("Demasiadas peticiones. Por favor, espere un minuto.", status=429)
 
-            cache.set(cache_key, requests_count + 1, 60)
+        cache.set(cache_key, requests_count + 1, 60)
 
         # 3. Filtro básico de inyección en URLs (XSS/SQLi simple)
         path_lower = path.lower()

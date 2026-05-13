@@ -24,13 +24,14 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('login/', RedirectView.as_view(url='/', permanent=False)),
     path('accounts/login/', RedirectView.as_view(url='/', permanent=False)),
-    path('api/', include('trabajoparto.api_urls')),
+    path('api/', include('unificador_v1.urls.parto')), # Redirigido a unificador_v1
 
     # Módulos con prefijos explícitos (evita conflictos de rutas)
-    path('meows/', include('meows.urls')),
-    path('fetal/', include('frecuenciafetal.urls')),
-    path('parto/', include('trabajoparto.urls')),
-    path('atencion/', include('unificador_v1.urls')),
+    # Módulos con prefijos explícitos (Consolidados en unificador_v1)
+    path('meows/', include('unificador_v1.urls.meows')),
+    path('fetal/', include('unificador_v1.urls.fetal')),
+    path('parto/', include('unificador_v1.urls.parto')),
+    path('atencion/', include('unificador_v1.urls.base')),
 
     # Raíz: ÚNICA ruta que captura / → redirige a /atencion/1/
     path('', home, name='home'),

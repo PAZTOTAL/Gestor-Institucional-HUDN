@@ -64,7 +64,7 @@ Variables: is_panel (bool), atencion_id, documento, current_module (meows|fetal|
 
     <!-- Navegación de Módulos Clínicos -->
     <div class="sidebar-module">
-        <a href="/atencion/sala-de-partos/" class="sidebar-module-header" style="text-decoration: none; color: inherit;">
+        <a href="/unificador/sala-de-partos/" class="sidebar-module-header" style="text-decoration: none; color: inherit;">
             <div class="icon-container">
                 <i data-lucide="layers" class="nav-icon"></i>
             </div>
@@ -180,12 +180,12 @@ Variables: is_panel (bool), atencion_id, documento, current_module (meows|fetal|
 
         try {
             // Buscamos al paciente/atención
-            const response = await fetch(`/atencion/api/datos-paciente-unificado/?num_identificacion=${cedula}`);
+            const response = await fetch(`/unificador/api/datos-paciente-unificado/?num_identificacion=${cedula}`);
             const data = await response.json();
 
             if (data.ok && data.atencion_id) {
                 // Redirigimos al panel de atención encontrado
-                window.location.href = `/atencion/${data.atencion_id}/`;
+                window.location.href = `/unificador/${data.atencion_id}/`;
             } else {
                 alert("Paciente no encontrado en el sistema.");
             }
@@ -195,6 +195,7 @@ Variables: is_panel (bool), atencion_id, documento, current_module (meows|fetal|
         }
     }
 </script>
+
 
 
 
