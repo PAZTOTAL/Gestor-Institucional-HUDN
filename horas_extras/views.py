@@ -133,9 +133,10 @@ class PersonalPorAreaReportView(LoginRequiredMixin, TemplateView):
                     ISNULL(g.GASCODIGO, ISNULL(c.CCCODIGO, ISNULL(a.ARECODIGO, 'SIN-AREA'))) as area_code,
                     ISNULL(g.GASNOMBRE, ISNULL(c.CCNOMBRE, ISNULL(a.ARENOMBRE, 'SIN AREA ASIGNADA'))) as area_name
                 FROM NMEMPLEA e
-                LEFT JOIN GENARESER g ON RTRIM(LTRIM(e.GASCODIGO)) = RTRIM(LTRIM(g.GASCODIGO))
-                LEFT JOIN CTNCENCOS c ON RTRIM(LTRIM(e.GASCODIGO)) = RTRIM(LTRIM(c.CCCODIGO))
-                LEFT JOIN AFNAREAS a ON RTRIM(LTRIM(e.GASCODIGO)) = RTRIM(LTRIM(a.ARECODIGO))
+                LEFT JOIN GENARESER g ON e.GASCODIGO = g.GASCODIGO
+                LEFT JOIN CTNCENCOS c ON e.GASCODIGO = c.CCCODIGO
+                LEFT JOIN AFNAREAS a ON e.GASCODIGO = a.ARECODIGO
+                WHERE e.NEMESTADO = 1
             """
             cursor.execute(query_db)
             for row in cursor.fetchall():
@@ -222,10 +223,11 @@ class PersonalAreaDetailView(LoginRequiredMixin, TemplateView):
                     ISNULL(g.GASCODIGO, ISNULL(c.CCCODIGO, ISNULL(a.ARECODIGO, 'SIN-AREA'))) as area_code,
                     v.VINNOMBRE as vinculacion_db
                 FROM NMEMPLEA e
-                LEFT JOIN GENARESER g ON RTRIM(LTRIM(e.GASCODIGO)) = RTRIM(LTRIM(g.GASCODIGO))
-                LEFT JOIN CTNCENCOS c ON RTRIM(LTRIM(e.GASCODIGO)) = RTRIM(LTRIM(c.CCCODIGO))
-                LEFT JOIN AFNAREAS a ON RTRIM(LTRIM(e.GASCODIGO)) = RTRIM(LTRIM(a.ARECODIGO))
+                LEFT JOIN GENARESER g ON e.GASCODIGO = g.GASCODIGO
+                LEFT JOIN CTNCENCOS c ON e.GASCODIGO = c.CCCODIGO
+                LEFT JOIN AFNAREAS a ON e.GASCODIGO = a.ARECODIGO
                 LEFT JOIN NOMVINCULA v ON e.NEMTIPCON = v.VINCODIGO
+                WHERE e.NEMESTADO = 1
             """)
             for row in cursor.fetchall():
                 db_cedula = str(row[0]).strip().lstrip('0')
@@ -494,6 +496,7 @@ def get_master_excel_data():
     cache_key = 'th_master_excel_data'
     data = cache.get(cache_key)
     if data is None:
+<<<<<<< HEAD
         data = [
             {
                 'CEDULA': t.documento,
@@ -505,6 +508,18 @@ def get_master_excel_data():
             for t in TrabajadorRecargos.objects.select_related('area').all()
         ]
         cache.set(cache_key, data, 3600)
+=======
+        path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data', 'personal.xlsx')
+        if os.path.exists(path):
+            df = pd.read_excel(path)
+            # Normalizar columnas
+            df.columns = [c.upper().strip() for c in df.columns]
+            # Convertir a lista de dicts para fácil manejo
+            data = df.to_dict('records')
+            cache.set(cache_key, data, 28800) # Cache por 8 horas para máxima velocidad
+        else:
+            data = []
+>>>>>>> 8f7da6dbb874296f276fa48f1cf3a061f339fb6e
     return data
 
 class InformeConsistenciaExcelView(LoginRequiredMixin, TemplateView):

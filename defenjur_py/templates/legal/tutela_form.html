@@ -285,15 +285,51 @@
             
             // Insertar botón disparador antes del contenedor de desacato
             const $btnRespTutela = $(`
-                <div class="form-group" style="grid-column: 1 / -1; margin-bottom: 1rem; display: flex; gap: 1rem; align-items: center;">
-                    <button type="button" id="btn-toggle-resp-tutela" class="btn-premium" style="background: rgba(16, 185, 129, 0.1); border: 1px solid #10b981; color: #10b981; width: auto;">
-                        <i data-lucide="message-square"></i> Cargar Respuesta de Tutela (Hechos)
-                    </button>
-                    <button type="button" class="btn-premium" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #94a3b8; width: auto; cursor: not-allowed; opacity: 0.6;" title="Primero debe guardar la tutela para generar el documento">
-                        <i data-lucide="file-text"></i> Generar Documento (.docx)
-                    </button>
+                <div class="form-group" style="grid-column: 1 / -1; margin-bottom: 1rem; display: flex; flex-direction: column; gap: 1rem;">
+                    <div style="display: flex; gap: 1rem; align-items: center;">
+                        <button type="button" id="btn-toggle-resp-tutela" class="btn-premium" style="background: rgba(16, 185, 129, 0.1); border: 1px solid #10b981; color: #10b981; width: auto;">
+                            <i data-lucide="message-square"></i> Cargar Respuesta de Tutela (Hechos)
+                        </button>
+                        <button type="button" class="btn-premium" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #94a3b8; width: auto; cursor: not-allowed; opacity: 0.6;" title="Primero debe guardar la tutela para generar el documento">
+                            <i data-lucide="file-text"></i> Generar Documento (.docx)
+                        </button>
+                    </div>
+
+                    <!-- NUEVA SECCIÓN: TIPOS DE PETICIONES / EXCEPCIONES -->
+                    <div id="peticiones-master-container" style="background: rgba(99, 102, 241, 0.05); padding: 1.5rem; border-radius: 12px; border: 1px solid rgba(99, 102, 241, 0.2);">
+                        <h4 style="margin-top: 0; color: #6366f1; display: flex; align-items: center; gap: 8px; font-size: 0.9rem;">
+                            <i data-lucide="gavel" style="width: 18px;"></i> Tipos de Peticiones para Defensoría Jurídica
+                        </h4>
+                        <p style="font-size: 0.8rem; color: #94a3b8; margin-bottom: 1rem;">Selecciona una excepción predefinida para anexar al modelo:</p>
+                        
+                        <div style="display: flex; gap: 0.8rem; flex-wrap: wrap; margin-bottom: 1.5rem;">
+                            <button type="button" class="btn-peticion-opt" data-peticion="inexistencia_falta" style="background: rgba(99, 102, 241, 0.1); border: 1px solid #6366f1; color: #f8fafc; padding: 0.6rem 1rem; border-radius: 8px; cursor: pointer; font-size: 0.85rem; transition: all 0.2s;">
+                                1) Inexistencia y Falta Legitimación
+                            </button>
+                            <button type="button" class="btn-peticion-opt" data-peticion="inexistencia" style="background: rgba(99, 102, 241, 0.1); border: 1px solid #6366f1; color: #f8fafc; padding: 0.6rem 1rem; border-radius: 8px; cursor: pointer; font-size: 0.85rem; transition: all 0.2s;">
+                                2) Inexistencia
+                            </button>
+                            <button type="button" class="btn-peticion-opt" data-peticion="falta_legitima" style="background: rgba(99, 102, 241, 0.1); border: 1px solid #6366f1; color: #f8fafc; padding: 0.6rem 1rem; border-radius: 8px; cursor: pointer; font-size: 0.85rem; transition: all 0.2s;">
+                                3) Falta Legitimación
+                            </button>
+                        </div>
+
+                        <div class="form-group full-width" style="margin-bottom: 0;">
+                            <label style="color: #6366f1; font-weight: bold; margin-bottom: 0.8rem; display: block;">Fundamento de la Excepción Seleccionada:</label>
+                            <textarea name="peticion_texto_aplicado" id="texto-peticion-preview" rows="6" class="premium-input" placeholder="El texto legal aparecerá aquí..." style="background: #0f172a !important; border: 2px solid #6366f1 !important; color: #ffffff !important; font-size: 1rem; line-height: 1.6; padding: 1.2rem; border-radius: 12px; box-shadow: inset 0 2px 10px rgba(0,0,0,0.5);"></textarea>
+                            <input type="hidden" name="peticion_modelo" id="id_peticion_modelo">
+                        </div>
+                    </div>
                 </div>
             `);
+
+            // Lógica de inyección de textos legales
+            const textosLegales = {
+                'inexistencia_falta': "FUNDAMENTO: INEXISTENCIA Y FALTA DE LEGITIMACIÓN EN LA CAUSA POR PASIVA.\n\nSe evidencia de manera clara que la entidad Hospital Universitario Departamental de Nariño (HUDN) no tiene relación causal con los hechos narrados por el accionante, careciendo de legitimidad en la causa por pasiva. La pretensión no es atribuible a nuestra institución, toda vez que...",
+                'inexistencia': "FUNDAMENTO: INEXISTENCIA DEL HECHO VULNERADOR.\n\nSe procede a declarar la inexistencia del hecho vulnerador, puesto que los servicios/insumos solicitados por el accionante ya han sido plenamente autorizados y/o entregados según consta en los registros de auditoría médica adjuntos, operando así la carencia actual de objeto por hecho superado.",
+                'falta_legitima': "FUNDAMENTO: FALTA DE LEGITIMACIÓN EN LA CAUSA POR PASIVA.\n\nLa presente acción de tutela debe ser dirigida contra la EPS y/o el Ente Territorial correspondiente, ya que el HUDN es un prestador de servicios y no tiene la competencia legal ni administrativa para autorizar servicios por fuera de su portafolio o red asignada."
+            };
+
             const $pretensionesGroup = $('[name="pretensiones"]').closest('.form-group');
             if ($pretensionesGroup.length) {
                 $pretensionesGroup.before($btnRespTutela);
@@ -302,6 +338,25 @@
                 $chkDesacato.closest('.form-group').before($btnRespTutela);
                 $btnRespTutela.after($respTutelaContainer);
             }
+
+            // Manejador de clics en botones de petición
+            $('.btn-peticion-opt').on('click', function() {
+                const tipo = $(this).data('peticion');
+                const texto = textosLegales[tipo];
+                
+                // Resaltar botón seleccionado
+                $('.btn-peticion-opt').css({'background': 'rgba(99, 102, 241, 0.1)', 'border-color': '#6366f1'});
+                $(this).css({'background': '#6366f1', 'border-color': '#f8fafc'});
+
+                // Cargar texto
+                $('#texto-peticion-preview').val(texto);
+                $('#id_peticion_modelo').val(tipo);
+                
+                // Notificación visual
+                const $label = $(this).parent().prevAll('label').first();
+                $label.text('Fundamento de la Excepción (Cargado con éxito)');
+                setTimeout(() => { if(window.lucide) window.lucide.createIcons(); }, 100);
+            });
 
             $btnRespTutela.find('#btn-toggle-resp-tutela').on('click', function() {
                 $respTutelaContainer.slideToggle(300);

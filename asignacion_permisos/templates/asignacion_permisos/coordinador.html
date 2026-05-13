@@ -1,0 +1,663 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mis Firmas — APC HUDN</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700;9..40,800;9..40,900&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #f8fafc;
+      --white: #ffffff;
+      --border: #e2e8f0;
+      --text: #0f172a;
+      --muted: #64748b;
+      --light: #94a3b8;
+      --teal: #0f766e;
+      --teal-light: #f0fdfa;
+      --blue: #0369a1;
+      --blue-light: #f0f9ff;
+      --green: #16a34a;
+      --green-light: #f0fdf4;
+      --radius: 14px;
+      --shadow: 0 1px 4px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.06);
+    }
+    body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+    /* ── Header ── */
+    .header {
+      background: var(--white);
+      border-bottom: 1px solid var(--border);
+      padding: 0 28px;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      box-shadow: 0 1px 8px rgba(0,0,0,0.06);
+    }
+    .header-left { display: flex; align-items: center; gap: 14px; }
+    .header-right { display: flex; align-items: center; gap: 12px; }
+    .avatar {
+      width: 34px; height: 34px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--blue), #0284c7);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px; font-weight: 800; color: #fff; flex-shrink: 0;
+    }
+    .back-link {
+      font-size: 12px; color: var(--muted); text-decoration: none;
+      padding: 6px 12px; border: 1.5px solid var(--border); border-radius: 8px;
+      font-weight: 600; transition: background 0.15s;
+    }
+    .back-link:hover { background: var(--bg); }
+
+    /* ── Layout ── */
+    .main { max-width: 900px; margin: 0 auto; padding: 32px 16px 64px; }
+
+    /* ── Welcome ── */
+    .welcome {
+      background: linear-gradient(135deg, var(--blue) 0%, #0284c7 100%);
+      border-radius: var(--radius);
+      padding: 24px 28px;
+      margin-bottom: 24px;
+      color: #fff;
+    }
+    .welcome-title { font-size: 22px; font-weight: 900; margin-bottom: 4px; }
+    .welcome-sub { font-size: 13px; opacity: 0.8; font-weight: 500; }
+    .area-badges { margin-top: 12px; display: flex; flex-wrap: wrap; gap: 6px; }
+    .area-badge {
+      background: rgba(255,255,255,0.18); border: 1px solid rgba(255,255,255,0.3);
+      border-radius: 99px; padding: 3px 12px; font-size: 11.5px; font-weight: 700;
+    }
+
+    /* ── Cards ── */
+    .card {
+      background: var(--white); border-radius: var(--radius);
+      box-shadow: var(--shadow); padding: 22px 26px; margin-bottom: 16px;
+    }
+    .card-title {
+      font-size: 13px; font-weight: 800; color: var(--blue);
+      text-transform: uppercase; letter-spacing: 0.5px;
+      margin-bottom: 18px; display: flex; align-items: center; gap: 8px;
+    }
+    .card-title-green { color: var(--green); }
+
+    /* ── Firma Module ── */
+    .firma-section { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: start; }
+    @media(max-width: 640px) { .firma-section { grid-template-columns: 1fr; } }
+    .firma-saved {
+      border: 1.5px solid #86efac; border-radius: 12px;
+      padding: 14px; background: var(--green-light); text-align: center;
+    }
+    .firma-saved img { max-height: 72px; max-width: 100%; border-radius: 6px; }
+    .firma-saved-label { font-size: 11px; font-weight: 700; color: var(--green); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.4px; }
+    .firma-empty {
+      border: 1.5px dashed var(--border); border-radius: 12px;
+      padding: 20px; background: #fafafa; text-align: center;
+      color: var(--light); font-size: 12px;
+    }
+    canvas#padFirma {
+      display: block; width: 100%; border: 2px dashed var(--blue);
+      border-radius: 10px; cursor: crosshair; touch-action: none;
+      background: #fafafa;
+    }
+    .pad-actions { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+
+    /* ── Buttons ── */
+    .btn {
+      padding: 9px 18px; border-radius: 10px; font-size: 12.5px;
+      font-weight: 700; cursor: pointer; border: none; font-family: inherit;
+      transition: all 0.15s; display: inline-flex; align-items: center; gap: 6px;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, var(--blue), #0284c7);
+      color: #fff; box-shadow: 0 3px 10px rgba(3,105,161,0.25);
+    }
+    .btn-primary:hover { opacity: 0.9; }
+    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-ghost {
+      background: transparent; color: var(--muted);
+      border: 1.5px solid var(--border); padding: 7px 13px; font-size: 11.5px;
+    }
+    .btn-ghost:hover { background: var(--bg); }
+    .btn-firmar {
+      background: linear-gradient(135deg, var(--teal), #0d9488);
+      color: #fff; box-shadow: 0 3px 10px rgba(15,118,110,0.25);
+      width: 100%; justify-content: center; padding: 11px; font-size: 13px;
+      margin-top: 18px; border-radius: 10px;
+    }
+    .btn-firmar:hover { opacity: 0.9; }
+    .btn-firmar:disabled { opacity: 0.45; cursor: not-allowed; }
+
+    /* ── Solicitud cards ── */
+    .sol-card {
+      border: 1.5px solid var(--border); border-radius: 12px;
+      overflow: hidden; margin-bottom: 14px; transition: border-color 0.15s;
+    }
+    .sol-card:hover { border-color: #bae6fd; }
+    .sol-header {
+      background: var(--blue-light); padding: 14px 18px;
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+      border-bottom: 1px solid #e0f2fe;
+    }
+    .sol-nombre { font-size: 15px; font-weight: 800; color: var(--text); }
+    .sol-meta { font-size: 11px; color: var(--muted); margin-top: 2px; display: flex; gap: 10px; flex-wrap: wrap; }
+    .sol-badge {
+      background: #fef3c7; color: #92400e; border: 1px solid #fde68a;
+      padding: 2px 10px; border-radius: 99px; font-size: 10.5px; font-weight: 700;
+      flex-shrink: 0;
+    }
+    .sol-body { padding: 18px; }
+
+    /* ── Info grid ── */
+    .sec-label {
+      font-size: 10.5px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.6px;
+      color: var(--teal); border-bottom: 1.5px solid #ccfbf1;
+      padding-bottom: 5px; margin: 16px 0 10px;
+    }
+    .sec-label:first-child { margin-top: 0; }
+    .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 16px; }
+    @media(max-width:500px){ .info-grid { grid-template-columns: 1fr; } }
+    .info-item { }
+    .info-lbl { font-size: 10.5px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.3px; }
+    .info-val { font-size: 13px; font-weight: 600; color: var(--text); margin-top: 1px; }
+    .perm-chip {
+      display: inline-block; margin: 2px 3px; padding: 3px 10px;
+      background: var(--teal-light); color: #065f46; border: 1px solid #6ee7b7;
+      border-radius: 99px; font-size: 11px; font-weight: 700;
+    }
+
+    /* ── Firma funcionario preview ── */
+    .firma-func-preview {
+      border: 1px solid var(--border); border-radius: 8px;
+      padding: 8px; display: inline-block; background: #fafafa;
+    }
+    .firma-func-preview img { max-height: 50px; display: block; }
+
+    /* ── Firmadas ── */
+    .firmada-row {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 11px 0; border-bottom: 1px solid #f1f5f9; gap: 12px;
+    }
+    .firmada-row:last-child { border-bottom: none; }
+    .badge-done {
+      background: var(--green-light); color: var(--green); border: 1px solid #86efac;
+      padding: 2px 9px; border-radius: 99px; font-size: 10.5px; font-weight: 700;
+    }
+
+    /* ── Alertas inline ── */
+    .inline-msg {
+      padding: 9px 13px; border-radius: 9px; font-size: 12px; font-weight: 600;
+      margin-top: 8px; display: none;
+    }
+    .msg-error { background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; }
+    .msg-ok { background: var(--green-light); border: 1px solid #86efac; color: var(--green); }
+    .msg-info { background: #fffbeb; border: 1px solid #fde68a; color: #92400e; }
+
+    /* ── No pending ── */
+    .empty-state {
+      text-align: center; padding: 44px 20px; color: var(--light);
+    }
+    .empty-icon {
+      width: 56px; height: 56px; margin: 0 auto 14px;
+      background: var(--green-light); border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .counter-badge {
+      background: #fef3c7; color: #92400e; border: 1px solid #fde68a;
+      padding: 1px 9px; border-radius: 99px; font-size: 11px; font-weight: 700;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ══ Header ══════════════════════════════════════════════════════════════ -->
+<header class="header">
+  <div class="header-left">
+    <img src="{% static 'logos-hudn/logo-hudn-colores-vertical.png' %}" alt="HUDN"
+         style="height:34px;object-fit:contain;" onerror="this.style.display='none'">
+    <div style="width:1px;height:24px;background:var(--border);"></div>
+    <div>
+      <div style="font-size:12px;font-weight:800;color:var(--blue);">Asignación de Permisos y Claves</div>
+      <div style="font-size:10px;color:var(--light);font-weight:500;">FRSGI-002 · Panel Coordinador</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <div class="avatar">{{ avatar }}</div>
+    <div style="display:flex;flex-direction:column;">
+      <span style="font-size:12px;font-weight:700;color:var(--text);">{{ nombre }}</span>
+      <span style="font-size:10px;color:var(--blue);font-weight:600;">Coordinador de Área</span>
+    </div>
+    <a href="{% url 'asignacion_permisos:apc_landing' %}" class="back-link">← Inicio</a>
+  </div>
+</header>
+
+<!-- ══ Main ════════════════════════════════════════════════════════════════ -->
+<div class="main">
+
+  <!-- Bienvenida -->
+  <div class="welcome">
+    <div class="welcome-title">Bienvenido/a, {{ coord.nombre }}</div>
+    <div class="welcome-sub">Coordinador(a) de Área — revisa y firma las solicitudes de asignación de permisos y claves</div>
+    {% if coord.areas %}
+    <div class="area-badges">
+      {% for area in coord.areas.split|join:',' %}{% endfor %}
+      {% with areas=coord.areas %}
+      <span class="area-badge">{{ areas }}</span>
+      {% endwith %}
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- ══ Módulo de Firma ══════════════════════════════════════════════════ -->
+  <div class="card">
+    <div class="card-title">
+      <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/>
+      </svg>
+      Mi Firma
+    </div>
+
+    <div class="firma-section">
+      <!-- Columna izquierda: canvas -->
+      <div>
+        <p style="font-size:12px;color:var(--muted);margin-bottom:10px;">
+          Dibuja tu firma con el ratón o carga una imagen. Esta firma se usará al aprobar las solicitudes.
+        </p>
+        <canvas id="padFirma" width="500" height="140"></canvas>
+        <div class="pad-actions">
+          <button class="btn btn-ghost" onclick="clearPad()">Limpiar</button>
+          <label class="btn btn-ghost" style="cursor:pointer;">
+            Cargar imagen
+            <input type="file" accept="image/*" onchange="loadImagen(event)" style="display:none;">
+          </label>
+          <button class="btn btn-primary" onclick="guardarFirma()">Guardar firma</button>
+        </div>
+        <div id="firmaMsg" class="inline-msg"></div>
+      </div>
+
+      <!-- Columna derecha: firma guardada -->
+      <div>
+        <p style="font-size:12px;color:var(--muted);margin-bottom:10px;">Firma guardada actualmente:</p>
+        <div id="firmaGuardadaBox">
+          {% if coord.firma_imagen %}
+          <div class="firma-saved">
+            <div class="firma-saved-label">✓ Firma registrada</div>
+            <img src="{{ coord.firma_imagen }}" alt="Firma del coordinador" id="firmaGuardadaImg">
+          </div>
+          {% else %}
+          <div class="firma-empty">
+            <svg width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" style="margin:0 auto 6px;display:block;opacity:0.4;">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536M7 17H4v-3L13.232 4.768a2.5 2.5 0 013.536 3.536L7 17z"/>
+            </svg>
+            Aún no has guardado tu firma.<br>Dibuja o carga una imagen y presiona <strong>Guardar firma</strong>.
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ Firmas Pendientes ════════════════════════════════════════════════ -->
+  <div class="card">
+    <div class="card-title">
+      <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+      </svg>
+      Pendientes de firma
+      {% if pendientes %}
+      <span class="counter-badge">{{ pendientes|length }}</span>
+      {% endif %}
+    </div>
+
+    {% if not coord.firma_imagen %}
+    <div class="inline-msg msg-info" style="display:block;margin-bottom:16px;">
+      Guarda tu firma en el módulo de arriba para poder firmar las solicitudes.
+    </div>
+    {% endif %}
+
+    {% if pendientes %}
+      {% for firma in pendientes %}
+      {% with s=firma.solicitud %}
+      <div class="sol-card" id="sol-{{ firma.id }}">
+
+        <!-- Encabezado tarjeta -->
+        <div class="sol-header">
+          <div>
+            <div class="sol-nombre">{{ s.nombres_apellidos }}</div>
+            <div class="sol-meta">
+              <span>C.C. {{ s.num_identificacion }}</span>
+              <span>·</span>
+              <span>{{ s.cargo_funcionario }}</span>
+              <span>·</span>
+              <span>{{ s.area_servicios }}</span>
+              <span>·</span>
+              <span>Solicitud #{{ s.id }}</span>
+            </div>
+          </div>
+          <span class="sol-badge">Pendiente</span>
+        </div>
+
+        <!-- Cuerpo -->
+        <div class="sol-body">
+
+          <!-- Sección 1 -->
+          <div class="sec-label">Sección 1 · Datos Personales</div>
+          <div class="info-grid">
+            <div class="info-item">
+              <div class="info-lbl">Fecha diligenciamiento</div>
+              <div class="info-val">{{ s.fecha_diligenciamiento }}</div>
+            </div>
+            <div class="info-item">
+              <div class="info-lbl">Lugar de expedición</div>
+              <div class="info-val">{{ s.lugar_expedicion }}</div>
+            </div>
+            <div class="info-item">
+              <div class="info-lbl">Dirección residencia</div>
+              <div class="info-val">{{ s.direccion_residencia }}</div>
+            </div>
+            <div class="info-item">
+              <div class="info-lbl">Teléfono celular</div>
+              <div class="info-val">{{ s.tel_celular }}</div>
+            </div>
+            <div class="info-item">
+              <div class="info-lbl">Correo personal</div>
+              <div class="info-val">{{ s.correo_personal }}</div>
+            </div>
+            {% if s.tel_fijo %}
+            <div class="info-item">
+              <div class="info-lbl">Teléfono fijo</div>
+              <div class="info-val">{{ s.tel_fijo }}</div>
+            </div>
+            {% endif %}
+          </div>
+
+          <!-- Sección 2 -->
+          <div class="sec-label">Sección 2 · Datos de Vinculación</div>
+          <div class="info-grid">
+            <div class="info-item">
+              <div class="info-lbl">Tipo de vinculación</div>
+              <div class="info-val">{{ s.get_tipo_vinculacion_display }}</div>
+            </div>
+            <div class="info-item">
+              <div class="info-lbl">Período</div>
+              <div class="info-val">{{ s.periodo_inicio }} — {{ s.periodo_fin }}</div>
+            </div>
+            <div class="info-item">
+              <div class="info-lbl">Cargo</div>
+              <div class="info-val">{{ s.cargo_funcionario }}</div>
+            </div>
+            {% if s.numero_contrato %}
+            <div class="info-item">
+              <div class="info-lbl">Número de contrato</div>
+              <div class="info-val">{{ s.numero_contrato }}</div>
+            </div>
+            {% endif %}
+            {% if s.num_registro_tarjeta %}
+            <div class="info-item">
+              <div class="info-lbl">N° Registro / Tarjeta</div>
+              <div class="info-val">{{ s.num_registro_tarjeta }}</div>
+            </div>
+            {% endif %}
+            {% if s.nombre_empresa_contratista %}
+            <div class="info-item">
+              <div class="info-lbl">Empresa contratista</div>
+              <div class="info-val">{{ s.nombre_empresa_contratista }}</div>
+            </div>
+            {% endif %}
+          </div>
+
+          <!-- Sección 3 -->
+          <div class="sec-label">Sección 3 · Permisos y Accesos Solicitados</div>
+          <div style="margin-top:4px;">
+            {% for p in s.permisos_solicitados.all %}
+            <span class="perm-chip">{{ p.permiso_etiqueta|default:p.permiso_clave }}</span>
+            {% empty %}
+            <span style="font-size:12px;color:var(--light);">Ninguno registrado</span>
+            {% endfor %}
+          </div>
+
+          <!-- Sección 4 -->
+          {% if s.fecha_entrenamiento %}
+          <div class="sec-label">Sección 4 · Entrenamiento</div>
+          <div class="info-grid">
+            <div class="info-item">
+              <div class="info-lbl">Fecha entrenamiento</div>
+              <div class="info-val">{{ s.fecha_entrenamiento }}</div>
+            </div>
+            {% if s.responsable_entrenamiento %}
+            <div class="info-item">
+              <div class="info-lbl">Responsable</div>
+              <div class="info-val">{{ s.responsable_entrenamiento }}</div>
+            </div>
+            {% endif %}
+          </div>
+          {% endif %}
+
+          <!-- Firma del funcionario -->
+          {% if s.firma_funcionario %}
+          <div class="sec-label">Firma del Funcionario</div>
+          <div class="firma-func-preview">
+            <img src="{{ s.firma_funcionario }}" alt="Firma funcionario">
+          </div>
+          {% endif %}
+
+          <!-- Botón firmar -->
+          <button class="btn btn-firmar" id="btnFirmar-{{ firma.id }}"
+                  onclick="firmarSolicitud('{{ firma.token_firma|default:'' }}', {{ firma.id }})"
+                  {% if not coord.firma_imagen %}disabled{% endif %}>
+            <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+            </svg>
+            Firmar
+          </button>
+          <div id="firmaErrMsg-{{ firma.id }}" class="inline-msg msg-error"></div>
+
+        </div>
+      </div>
+      {% endwith %}
+      {% endfor %}
+
+    {% else %}
+    <div class="empty-state">
+      <div class="empty-icon">
+        <svg width="26" height="26" fill="none" viewBox="0 0 24 24" stroke="#16a34a" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+        </svg>
+      </div>
+      <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:4px;">Todo al día</div>
+      <div style="font-size:12px;">No tienes solicitudes pendientes de firma.</div>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- ══ Firmadas recientes ═══════════════════════════════════════════════ -->
+  {% if firmadas %}
+  <div class="card">
+    <div class="card-title card-title-green">
+      <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+      </svg>
+      Firmadas recientemente
+    </div>
+    {% for firma in firmadas %}
+    <div class="firmada-row">
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:13px;font-weight:700;">{{ firma.solicitud.nombres_apellidos }}</div>
+        <div style="font-size:11px;color:var(--muted);display:flex;gap:10px;flex-wrap:wrap;margin-top:2px;">
+          <span>{{ firma.solicitud.area_servicios }}</span>
+          <span>·</span>
+          <span>Solicitud #{{ firma.solicitud.id }}</span>
+          <span>·</span>
+          <span>{{ firma.fecha_firma|date:"d/m/Y H:i" }}</span>
+        </div>
+      </div>
+      <span class="badge-done">Firmada</span>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+</div><!-- /main -->
+
+<script>
+const CSRF = '{{ csrf_token }}';
+const COORD_FIRMA = '{{ coord.firma_imagen|escapejs }}';
+const API = '/api/apc';
+let coordFirmaActual = COORD_FIRMA;
+
+// ── Canvas pad ───────────────────────────────────────────────────────────────
+const pad = document.getElementById('padFirma');
+const ctx = pad.getContext('2d');
+ctx.strokeStyle = '#0f172a';
+ctx.lineWidth = 2;
+ctx.lineCap = 'round';
+let drawing = false, lx = 0, ly = 0;
+
+function getPos(e) {
+  const r = pad.getBoundingClientRect();
+  return [(e.clientX - r.left) * (pad.width / r.width),
+          (e.clientY - r.top)  * (pad.height / r.height)];
+}
+function drawLine(e) {
+  const [x, y] = getPos(e);
+  ctx.beginPath(); ctx.moveTo(lx, ly); ctx.lineTo(x, y); ctx.stroke();
+  [lx, ly] = [x, y];
+}
+pad.addEventListener('mousedown',  e => { drawing = true; [lx, ly] = getPos(e); });
+pad.addEventListener('mousemove',  e => { if (drawing) drawLine(e); });
+pad.addEventListener('mouseup',    () => { drawing = false; ctx.beginPath(); });
+pad.addEventListener('mouseleave', () => { drawing = false; ctx.beginPath(); });
+pad.addEventListener('touchstart', e => { e.preventDefault(); drawing = true; [lx, ly] = getPos(e.touches[0]); }, {passive:false});
+pad.addEventListener('touchmove',  e => { e.preventDefault(); if (drawing) drawLine(e.touches[0]); }, {passive:false});
+pad.addEventListener('touchend',   () => { drawing = false; ctx.beginPath(); });
+
+function clearPad() { ctx.clearRect(0, 0, pad.width, pad.height); }
+
+function loadImagen(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const img = new Image();
+    img.onload = () => {
+      ctx.clearRect(0, 0, pad.width, pad.height);
+      const r = Math.min(pad.width / img.width, pad.height / img.height);
+      ctx.drawImage(img, (pad.width - img.width * r) / 2, (pad.height - img.height * r) / 2, img.width * r, img.height * r);
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function isPadBlank() {
+  return !ctx.getImageData(0, 0, pad.width, pad.height).data.some(c => c !== 0);
+}
+
+// ── Guardar firma del coordinador ────────────────────────────────────────────
+async function guardarFirma() {
+  if (isPadBlank()) {
+    showMsg('firmaMsg', 'error', 'Dibuja o carga una imagen primero.');
+    return;
+  }
+  const firma_imagen = pad.toDataURL('image/png');
+  const resp = await fetch('{% url "asignacion_permisos:apc_coord_guardar_firma" %}', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
+    body: JSON.stringify({ firma_imagen }),
+  });
+  const data = await resp.json();
+  if (resp.ok) {
+    coordFirmaActual = firma_imagen;
+    showMsg('firmaMsg', 'ok', 'Firma guardada correctamente.');
+    // Actualizar preview
+    document.getElementById('firmaGuardadaBox').innerHTML = `
+      <div class="firma-saved">
+        <div class="firma-saved-label">✓ Firma registrada</div>
+        <img src="${firma_imagen}" alt="Firma del coordinador" style="max-height:72px;max-width:100%;border-radius:6px;">
+      </div>`;
+    // Habilitar botones de firma
+    document.querySelectorAll('.btn-firmar').forEach(b => b.disabled = false);
+    // Ocultar aviso sin firma
+    const aviso = document.querySelector('.inline-msg.msg-info');
+    if (aviso) aviso.style.display = 'none';
+  } else {
+    showMsg('firmaMsg', 'error', data.detail || 'Error al guardar.');
+  }
+}
+
+// ── Firmar solicitud ─────────────────────────────────────────────────────────
+async function firmarSolicitud(token, firmaId) {
+  if (!coordFirmaActual) {
+    const el = document.getElementById('firmaErrMsg-' + firmaId);
+    mostrarMsgEl(el, 'error', 'Primero guarda tu firma en el módulo de arriba.');
+    return;
+  }
+  if (!token) {
+    const el = document.getElementById('firmaErrMsg-' + firmaId);
+    mostrarMsgEl(el, 'error', 'Esta firma no tiene enlace válido. Contacta al administrador.');
+    return;
+  }
+
+  const btn = document.getElementById('btnFirmar-' + firmaId);
+  btn.disabled = true;
+  btn.innerHTML = '<span>Firmando...</span>';
+
+  const resp = await fetch(API + '/firmar/submit', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ token, firma_imagen: coordFirmaActual }),
+  });
+  const data = await resp.json();
+
+  if (resp.ok) {
+    const card = document.getElementById('sol-' + firmaId);
+    card.style.transition = 'opacity 0.4s';
+    card.style.opacity = '0';
+    setTimeout(() => {
+      card.remove();
+      // Si no quedan pendientes, mostrar empty state
+      const pendBox = card.closest('.card');
+      const remaining = pendBox ? pendBox.querySelectorAll('.sol-card').length : 1;
+      if (remaining === 0) {
+        const titleEl = pendBox.querySelector('.card-title');
+        pendBox.innerHTML = (titleEl ? titleEl.outerHTML : '') + `
+          <div class="empty-state">
+            <div class="empty-icon">
+              <svg width="26" height="26" fill="none" viewBox="0 0 24 24" stroke="#16a34a" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+              </svg>
+            </div>
+            <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:4px;">Todo al día</div>
+            <div style="font-size:12px;">No tienes solicitudes pendientes de firma.</div>
+          </div>`;
+      }
+    }, 420);
+  } else {
+    btn.disabled = false;
+    btn.innerHTML = '<svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg> Firmar';
+    const el = document.getElementById('firmaErrMsg-' + firmaId);
+    mostrarMsgEl(el, 'error', data.detail || 'Error al firmar. Intenta de nuevo.');
+  }
+}
+
+function showMsg(id, tipo, txt) {
+  const el = document.getElementById(id);
+  el.className = 'inline-msg ' + (tipo === 'ok' ? 'msg-ok' : tipo === 'info' ? 'msg-info' : 'msg-error');
+  el.textContent = txt;
+  el.style.display = 'block';
+  if (tipo === 'ok') setTimeout(() => { el.style.display = 'none'; }, 3500);
+}
+
+function mostrarMsgEl(el, tipo, txt) {
+  el.className = 'inline-msg ' + (tipo === 'ok' ? 'msg-ok' : 'msg-error');
+  el.textContent = txt;
+  el.style.display = 'block';
+}
+</script>
+</body>
+</html>

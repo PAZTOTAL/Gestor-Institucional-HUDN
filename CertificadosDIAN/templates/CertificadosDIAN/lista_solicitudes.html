@@ -1,137 +1,276 @@
 {% extends 'core/base.html' %}
 {% load static %}
 
-{% block title %}Solicitudes de Certificados - WhatsApp{% endblock %}
+{% block title %}Solicitudes de Certificados DIAN{% endblock %}
 
 {% block content %}
-<div class="max-w-6xl mx-auto py-10 space-y-8 animate-in fade-in slide-in-from-bottom-6 duration-700">
-    <!-- Header Premium -->
-    <div class="bg-white rounded-[2rem] p-10 border border-slate-100 shadow-2xl relative overflow-hidden group">
-        <div class="absolute -top-24 -right-24 w-64 h-64 bg-green-500/5 rounded-full blur-3xl group-hover:bg-green-500/10 transition-all duration-1000"></div>
-        
-        <!-- Iframe invisible para disparar la descarga -->
-        <iframe id="download_frame" style="display:none;"></iframe>
+<div class="max-w-7xl mx-auto py-8 space-y-6 animate-in fade-in duration-500">
 
-        <script>
-            function smartSend(cedula, telefono) {
-                // 1. Disparar la descarga del PDF en el mismo navegador
-                const downloadUrl = `{% url 'certificados_dian:generar_ingresos' %}?cedula=${cedula}&anio=2025`;
-                document.getElementById('download_frame').src = downloadUrl;
-
-                // 2. Abrir el chat de WhatsApp en una nueva pestaña (del mismo navegador)
-                const text = "Hola, adjunto envío su Certificado de Ingresos y Retenciones 2025.";
-                const wpUrl = `https://web.whatsapp.com/send?phone=57${telefono}&text=${encodeURIComponent(text)}`;
-                
-                // Pequeño delay para asegurar que el comando de descarga se procese
-                setTimeout(() => {
-                    window.open(wpUrl, '_blank');
-                }, 500);
-            }
-        </script>
-
-        <div class="relative flex flex-col md:flex-row md:items-center justify-between gap-6">
+    <!-- Header -->
+    <div class="bg-white rounded-[2rem] p-8 border border-slate-100 shadow-2xl relative overflow-hidden">
+        <div class="absolute -top-20 -right-20 w-56 h-56 bg-green-500/5 rounded-full blur-3xl"></div>
+        <div class="relative flex flex-col sm:flex-row sm:items-center justify-between gap-5">
             <div>
-                <a href="{% url 'home' %}?section=varios" class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-slate-100 text-slate-600 text-[10px] font-black uppercase tracking-widest mb-6 hover:bg-slate-800 hover:text-white transition-all shadow-sm border border-slate-200">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
-                    Regresar a Varios
+                <a href="{% url 'certificados_dian:dashboard' %}"
+                   class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-slate-100 text-slate-600 text-[10px] font-black uppercase tracking-widest mb-4 hover:bg-slate-800 hover:text-white transition-all">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="m15 18-6-6 6-6"/></svg>
+                    Volver
                 </a>
-                <h1 class="text-4xl md:text-5xl font-black text-slate-900 tracking-tight leading-tight">
-                    Solicitudes <span class="bg-clip-text text-transparent bg-gradient-to-r from-green-600 to-emerald-600">WhatsApp</span>
+                <h1 class="text-2xl font-black text-slate-900 uppercase tracking-tight">
+                    Solicitudes de Certificados
                 </h1>
-                <p class="text-slate-500 font-medium text-lg mt-2">Gestión de trámites Formulario 220 - Vigencia 2025</p>
+                <p class="text-slate-500 text-sm font-medium mt-1">
+                    Formulario 220 · Solo Administradores
+                </p>
             </div>
-            <div class="flex items-center gap-4 bg-slate-50 p-6 rounded-[2rem] border border-slate-100">
-                <div class="text-right">
-                    <div class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total Trámites</div>
-                    <div class="text-3xl font-black text-slate-900">{{ solicitudes.count }}</div>
+            <!-- Contadores -->
+            <div class="flex gap-4 flex-shrink-0">
+                <div class="text-center bg-slate-50 rounded-2xl px-6 py-4 border border-slate-100">
+                    <div class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total descargas</div>
+                    <div class="text-3xl font-black text-slate-900">{{ total }}</div>
                 </div>
-                <div class="w-12 h-12 rounded-2xl bg-green-600 text-white flex items-center justify-center shadow-lg">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 1 1-7.6-11.7 8.38 8.38 0 0 1 3.8.9L21 3z"/></svg>
+                <div class="text-center bg-green-50 rounded-2xl px-6 py-4 border border-green-100">
+                    <div class="text-[10px] font-black text-green-600 uppercase tracking-widest">Enviados WA</div>
+                    <div class="text-3xl font-black text-green-700">{{ total_wp }}</div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Filtros y Tabla -->
-    <div class="bg-white rounded-[2rem] border border-slate-100 shadow-2xl overflow-hidden min-h-[400px]">
-        <div class="p-8">
-            <div class="overflow-x-auto">
-                <table class="w-full text-left">
-                    <thead>
-                        <tr class="border-b border-slate-100">
-                            <th class="px-4 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Usuario Solicitó</th>
-                            <th class="px-4 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Nombre Empleado</th>
-                            <th class="px-4 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Cédula</th>
-                            <th class="px-4 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">WhatsApp</th>
-                            <th class="px-4 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Fecha/Hora</th>
-                            <th class="px-4 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Estado</th>
-                            <th class="px-4 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Acción</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-slate-50 text-sm">
-                        {% for sol in solicitudes %}
-                        <tr class="hover:bg-slate-50/50 transition-colors group">
-                            <td class="px-4 py-5 font-bold text-slate-900 text-xs">
-                                {{ sol.usuario.username }}
-                            </td>
-                            <td class="px-4 py-5 font-black text-blue-600 uppercase tracking-tighter text-xs">
-                                {{ sol.nombre_empleado|default:"No registrado" }}
-                            </td>
-                            <td class="px-4 py-5 font-black text-slate-600 tracking-wider">
-                                {{ sol.cedula_consultada }}
-                            </td>
-                            <td class="px-4 py-5 font-black text-slate-400 tracking-wider">
-                                {{ sol.telefono }}
-                            </td>
-                            <td class="px-4 py-5 text-slate-500 font-medium">
-                                {{ sol.fecha_solicitud|date:"d/m/Y" }} <br>
-                                <span class="font-black text-slate-900">{{ sol.fecha_solicitud|date:"H:i" }}</span>
-                            </td>
-                            <td class="px-4 py-5">
-                                {% if sol.procesado %}
-                                <span class="px-3 py-1 bg-blue-100 text-blue-600 rounded-lg text-[10px] font-black uppercase">Enviado</span>
-                                {% else %}
-                                <span class="px-3 py-1 bg-amber-100 text-amber-600 rounded-lg text-[10px] font-black uppercase">Pendiente</span>
-                                {% endif %}
-                            </td>
-                            <td class="px-4 py-5 text-right flex justify-end items-center gap-3">
-                                <!-- Botón 1: Descargar PDF -->
-                                <a href="{% url 'certificados_dian:generar_ingresos' %}?cedula={{ sol.cedula_consultada }}" target="_blank" class="p-3 bg-slate-100 text-slate-600 hover:bg-slate-800 hover:text-white rounded-2xl transition-all shadow-sm" title="Descargar PDF">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>
-                                </a>
+    <!-- Filtros -->
+    <form method="get" class="bg-white rounded-2xl border border-slate-100 shadow-md p-5 flex flex-wrap gap-3 items-end">
+        <div class="flex-1 min-w-[200px]">
+            <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Buscar</label>
+            <input type="text" name="q" value="{{ q }}" placeholder="Cédula, nombre o usuario…"
+                   class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all">
+        </div>
+        <div class="min-w-[120px]">
+            <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Año</label>
+            <input type="number" name="anio" value="{{ anio_filtro }}" placeholder="2025" min="2020" max="2099"
+                   class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold outline-none focus:border-blue-500 transition-all">
+        </div>
+        <div class="min-w-[160px]">
+            <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">WhatsApp</label>
+            <select name="wp" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold outline-none focus:border-green-500 transition-all">
+                <option value="">Todos</option>
+                <option value="si" {% if wp_filtro == 'si' %}selected{% endif %}>✅ Enviados</option>
+                <option value="no" {% if wp_filtro == 'no' %}selected{% endif %}>⏳ Sin enviar</option>
+            </select>
+        </div>
+        <div class="flex gap-2">
+            <button type="submit" class="px-5 py-2.5 bg-blue-600 text-white rounded-xl text-xs font-black uppercase tracking-widest hover:bg-blue-700 transition-all shadow-md">
+                Filtrar
+            </button>
+            {% if q or anio_filtro or wp_filtro %}
+            <a href="{% url 'certificados_dian:lista_solicitudes' %}" class="px-5 py-2.5 bg-slate-100 text-slate-600 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-slate-200 transition-all">
+                Limpiar
+            </a>
+            {% endif %}
+        </div>
+    </form>
 
-                                <!-- Botón 2: Abrir Chat de WhatsApp Manual -->
-                                <a href="https://web.whatsapp.com/send?phone=57{{ sol.telefono }}&text=Hola Sr(a). {{ sol.nombre_empleado|default:'Funcionario' }}, adjunto envío su Certificado DIAN 2025." 
-                                   target="_blank"
-                                   class="flex items-center gap-2 px-5 py-3 bg-green-600 text-white rounded-2xl font-black text-xs hover:bg-green-700 hover:scale-105 transition-all shadow-lg active:scale-95">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 1 1-7.6-11.7 8.38 8.38 0 0 1 3.8.9L21 3z"/></svg>
-                                    ABRIR CHAT
-                                </a>
-
-                                {% if not sol.procesado %}
-                                <!-- Botón 3: Marcar -->
-                                <a href="{% url 'certificados_dian:marcar_procesado' sol.pk %}" class="p-3 bg-slate-50 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-2xl transition-all border border-slate-100" title="Marcar como Enviado">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                                </a>
-                                {% endif %}
-                            </td>
-                        </tr>
-                        {% empty %}
-                        <tr>
-                            <td colspan="6" class="px-4 py-20 text-center">
-                                <div class="flex flex-col items-center">
-                                    <div class="w-16 h-16 bg-slate-50 text-slate-300 rounded-full flex items-center justify-center mb-4">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="20" x="2" y="2" rx="2" ry="2"/><path d="M12 8v8"/><path d="M8 12h8"/></svg>
-                                    </div>
-                                    <p class="text-slate-500 font-bold">No hay solicitudes pendientes en este momento.</p>
+    <!-- Tabla -->
+    <div class="bg-white rounded-2xl border border-slate-100 shadow-md overflow-hidden">
+        {% if registros %}
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead>
+                    <tr class="bg-gradient-to-r from-slate-800 to-slate-900 text-white">
+                        <th class="px-5 py-4 text-left text-[10px] font-black uppercase tracking-widest rounded-tl-2xl">Fecha / Hora</th>
+                        <th class="px-5 py-4 text-left text-[10px] font-black uppercase tracking-widest">Usuario que descargó</th>
+                        <th class="px-5 py-4 text-left text-[10px] font-black uppercase tracking-widest">Empleado</th>
+                        <th class="px-5 py-4 text-left text-[10px] font-black uppercase tracking-widest">Cédula</th>
+                        <th class="px-5 py-4 text-center text-[10px] font-black uppercase tracking-widest">Año</th>
+                        <th class="px-5 py-4 text-center text-[10px] font-black uppercase tracking-widest">IP</th>
+                        <th class="px-5 py-4 text-center text-[10px] font-black uppercase tracking-widest rounded-tr-2xl">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-50">
+                    {% for reg in registros %}
+                    <tr class="hover:bg-slate-50/60 transition-colors" id="row-{{ reg.pk }}">
+                        <td class="px-5 py-4 whitespace-nowrap">
+                            <div class="font-black text-slate-800 text-xs">{{ reg.fecha_descarga|date:"d/m/Y" }}</div>
+                            <div class="text-slate-400 text-[11px] font-semibold">{{ reg.fecha_descarga|date:"H:i:s" }}</div>
+                        </td>
+                        <td class="px-5 py-4">
+                            <div class="flex items-center gap-2.5">
+                                <div class="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-black text-xs flex-shrink-0">
+                                    {{ reg.usuario.first_name|slice:":1"|default:reg.usuario.username|slice:":1"|upper }}
                                 </div>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+                                <div>
+                                    <div class="font-black text-slate-800 text-xs leading-tight">{{ reg.usuario.get_full_name|default:reg.usuario.username }}</div>
+                                    <div class="text-slate-400 text-[11px]">{{ reg.usuario.username }}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="px-5 py-4">
+                            <div class="font-semibold text-slate-700 text-xs">{{ reg.nombre_empleado|default:"—" }}</div>
+                        </td>
+                        <td class="px-5 py-4 font-mono font-bold text-slate-600 text-xs">{{ reg.cedula_consultada }}</td>
+                        <td class="px-5 py-4 text-center">
+                            <span class="inline-block px-3 py-1 bg-blue-100 text-blue-700 text-[11px] font-black rounded-lg">{{ reg.anio_gravable }}</span>
+                        </td>
+                        <td class="px-5 py-4 text-center font-mono text-slate-400 text-[11px]">{{ reg.ip_descarga|default:"—" }}</td>
+                        <td class="px-5 py-4">
+                            <div class="flex items-center justify-center gap-2">
+                                <!-- Descargar PDF -->
+                                <a href="{% url 'certificados_dian:generar_ingresos' %}?cedula={{ reg.cedula_consultada }}&anio={{ reg.anio_gravable }}"
+                                   target="_blank"
+                                   class="p-2.5 bg-slate-100 text-slate-600 hover:bg-slate-800 hover:text-white rounded-xl transition-all"
+                                   title="Descargar PDF">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
+                                </a>
+
+                                <!-- Botón WhatsApp -->
+                                {% if reg.enviado_whatsapp %}
+                                <div class="flex items-center gap-1.5 px-3 py-2 bg-green-100 text-green-700 rounded-xl text-[10px] font-black"
+                                     title="Enviado el {{ reg.fecha_whatsapp|date:'d/m/Y H:i' }} al {{ reg.telefono_whatsapp }}">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
+                                    Enviado
+                                </div>
+                                {% else %}
+                                <button type="button"
+                                        onclick="abrirModalWA({{ reg.pk }}, '{{ reg.nombre_empleado|default:reg.cedula_consultada|escapejs }}', '{{ reg.cedula_consultada }}', {{ reg.anio_gravable }})"
+                                        class="flex items-center gap-1.5 px-3 py-2 bg-green-600 text-white rounded-xl text-[10px] font-black hover:bg-green-700 transition-all shadow-md shadow-green-500/20"
+                                        title="Enviar por WhatsApp">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
+                                    WhatsApp
+                                </button>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Paginación -->
+        {% if is_paginated %}
+        <div class="flex items-center justify-between px-5 py-4 border-t border-slate-100">
+            <span class="text-xs text-slate-400 font-semibold">Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span>
+            <div class="flex gap-2">
+                {% if page_obj.has_previous %}
+                <a href="?page={{ page_obj.previous_page_number }}&q={{ q }}&anio={{ anio_filtro }}&wp={{ wp_filtro }}"
+                   class="px-4 py-2 bg-slate-100 text-slate-600 rounded-xl text-xs font-black hover:bg-slate-200 transition-all">← Anterior</a>
+                {% endif %}
+                {% if page_obj.has_next %}
+                <a href="?page={{ page_obj.next_page_number }}&q={{ q }}&anio={{ anio_filtro }}&wp={{ wp_filtro }}"
+                   class="px-4 py-2 bg-blue-600 text-white rounded-xl text-xs font-black hover:bg-blue-700 transition-all">Siguiente →</a>
+                {% endif %}
             </div>
+        </div>
+        {% endif %}
+
+        {% else %}
+        <div class="text-center py-16">
+            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" stroke-width="1.5" class="mx-auto mb-4"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            <p class="text-slate-400 font-black text-sm uppercase tracking-widest">Sin registros</p>
+            {% if q or anio_filtro or wp_filtro %}
+            <p class="text-slate-300 text-xs mt-1">Pruebe ajustando los filtros.</p>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- ══ Modal WhatsApp ══ -->
+<div id="modal-wa" class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 hidden p-4">
+    <div class="bg-white rounded-3xl shadow-2xl w-full max-w-md p-8 space-y-6 animate-in zoom-in-95 duration-200">
+
+        <div class="flex items-center gap-4">
+            <div class="w-14 h-14 bg-green-600 rounded-2xl flex items-center justify-center shadow-lg flex-shrink-0">
+                <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
+            </div>
+            <div>
+                <h2 class="text-xl font-black text-slate-900 uppercase tracking-tight">Enviar por WhatsApp</h2>
+                <p class="text-slate-500 text-sm font-medium" id="wa-nombre">—</p>
+            </div>
+        </div>
+
+        <div class="space-y-2">
+            <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                Número de WhatsApp (con indicativo)
+            </label>
+            <div class="flex gap-2">
+                <span class="flex items-center px-4 bg-slate-100 border border-slate-200 rounded-xl text-sm font-black text-slate-500 select-none">+57</span>
+                <input type="tel" id="wa-telefono" placeholder="3001234567" maxlength="10"
+                       class="flex-1 px-4 py-3 bg-slate-50 border-2 border-slate-200 rounded-xl text-lg font-black text-slate-900 outline-none focus:border-green-500 focus:ring-4 focus:ring-green-500/10 transition-all tracking-widest">
+            </div>
+            <p class="text-[11px] text-slate-400 font-semibold">Solo el número, sin el +57. Ej: 3001234567</p>
+        </div>
+
+        <div class="bg-slate-50 rounded-2xl p-4 border border-slate-200">
+            <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Mensaje que se enviará</p>
+            <p class="text-sm text-slate-700 font-medium leading-relaxed" id="wa-preview">—</p>
+        </div>
+
+        <div class="flex gap-3">
+            <button type="button" onclick="cerrarModalWA()"
+                    class="flex-1 py-3 bg-slate-100 text-slate-600 rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-slate-200 transition-all">
+                Cancelar
+            </button>
+            <button type="button" id="btn-abrir-wa"
+                    class="flex-1 py-3 bg-green-600 text-white rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-green-700 transition-all shadow-lg shadow-green-500/25 flex items-center justify-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
+                Abrir WhatsApp
+            </button>
         </div>
     </div>
 </div>
+
+<script>
+const CSRF = '{{ csrf_token }}';
+let _pkActivo = null;
+
+function abrirModalWA(pk, nombre, cedula, anio) {
+    _pkActivo = pk;
+    document.getElementById('wa-nombre').textContent = nombre + ' · CC ' + cedula;
+    document.getElementById('wa-telefono').value = '';
+    const msg = `Estimado(a) *${nombre}*, su *Certificado de Ingresos y Retenciones ${anio}* (Formulario 220) ya está disponible. Ingrese al Gestor Institucional HUDN para descargarlo: {{ request.scheme }}://{{ request.get_host }}/certificados-dian/`;
+    document.getElementById('wa-preview').textContent = msg;
+    document.getElementById('modal-wa').classList.remove('hidden');
+    setTimeout(() => document.getElementById('wa-telefono').focus(), 100);
+}
+
+function cerrarModalWA() {
+    document.getElementById('modal-wa').classList.add('hidden');
+    _pkActivo = null;
+}
+
+document.getElementById('modal-wa').addEventListener('click', function(e) {
+    if (e.target === this) cerrarModalWA();
+});
+
+document.getElementById('btn-abrir-wa').addEventListener('click', async function() {
+    const tel = document.getElementById('wa-telefono').value.replace(/\D/g, '').trim();
+    if (!tel || tel.length < 7) {
+        document.getElementById('wa-telefono').focus();
+        document.getElementById('wa-telefono').style.borderColor = '#ef4444';
+        return;
+    }
+    document.getElementById('wa-telefono').style.borderColor = '';
+
+    const nombre = document.getElementById('wa-nombre').textContent;
+    const msg    = document.getElementById('wa-preview').textContent;
+    const waUrl  = `https://wa.me/57${tel}?text=${encodeURIComponent(msg)}`;
+
+    // Registrar en BD
+    try {
+        await fetch(`/certificados-dian/solicitudes/whatsapp/${_pkActivo}/`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
+            body: JSON.stringify({ telefono: '57' + tel })
+        });
+        // Actualizar fila en la tabla
+        const btn = document.querySelector(`#row-${_pkActivo} button[onclick*="abrirModalWA"]`);
+        if (btn) {
+            btn.outerHTML = `<div class="flex items-center gap-1.5 px-3 py-2 bg-green-100 text-green-700 rounded-xl text-[10px] font-black"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>Enviado</div>`;
+        }
+    } catch(e) { console.warn('No se pudo registrar el envío WA', e); }
+
+    cerrarModalWA();
+    window.open(waUrl, '_blank');
+});
+</script>
 {% endblock %}

@@ -19,18 +19,18 @@
 <form method="post" enctype="multipart/form-data" id="formServidor">
     {% csrf_token %}
 
-    <!-- ── Sección: Documento con búsqueda AJAX ── -->
+    <!-- ══ 1. Identificación ══ -->
     <div class="form-section">
         <div class="form-section-title">
             <i data-lucide="id-card" style="width:16px;"></i> Identificación
         </div>
-        <div class="form-grid">
+        <div class="fg3">
             <div class="form-group">
-                <label class="form-label" for="{{ form.tipo_documento.id_for_label }}">Tipo de Documento *</label>
+                <label class="form-label">Tipo de Documento <span style="color:#f43f5e;">*</span></label>
                 {{ form.tipo_documento }}
             </div>
-            <div class="form-group">
-                <label class="form-label" for="id_numero_documento">Número de Documento *</label>
+            <div class="form-group col-2">
+                <label class="form-label">Número de Documento <span style="color:#f43f5e;">*</span></label>
                 <div class="doc-search-wrapper">
                     {{ form.numero_documento }}
                     <div class="doc-search-spinner" id="docSpinner">
@@ -44,14 +44,15 @@
         </div>
     </div>
 
-    <!-- ── Sección: Datos Personales ── -->
+    <!-- ══ 2. Datos Personales ══ -->
     <div class="form-section">
         <div class="form-section-title">
             <i data-lucide="user" style="width:16px;"></i> Datos Personales
         </div>
-        <div class="form-grid">
+        <!-- Fila 1: Nombres -->
+        <div class="fg3 mb-row">
             <div class="form-group">
-                <label class="form-label">Primer Nombre *</label>
+                <label class="form-label">Primer Nombre <span style="color:#f43f5e;">*</span></label>
                 {{ form.primer_nombre }}
             </div>
             <div class="form-group">
@@ -59,13 +60,25 @@
                 {{ form.segundo_nombre }}
             </div>
             <div class="form-group">
-                <label class="form-label">Primer Apellido *</label>
+                <!-- spacer -->
+            </div>
+        </div>
+        <!-- Fila 2: Apellidos -->
+        <div class="fg3 mb-row">
+            <div class="form-group">
+                <label class="form-label">Primer Apellido <span style="color:#f43f5e;">*</span></label>
                 {{ form.primer_apellido }}
             </div>
             <div class="form-group">
                 <label class="form-label">Segundo Apellido</label>
                 {{ form.segundo_apellido }}
             </div>
+            <div class="form-group">
+                <!-- spacer -->
+            </div>
+        </div>
+        <!-- Fila 3: Fecha nac + Sexo + Grupo -->
+        <div class="fg3 mb-row">
             <div class="form-group">
                 <label class="form-label">Fecha de Nacimiento</label>
                 {{ form.fecha_nacimiento }}
@@ -78,23 +91,26 @@
                 <label class="form-label">Grupo Sanguíneo</label>
                 {{ form.grupo_sanguineo }}
             </div>
+        </div>
+        <!-- Fila 4: Teléfono + Correo -->
+        <div class="fg3">
             <div class="form-group">
                 <label class="form-label">Teléfono</label>
                 {{ form.telefono }}
             </div>
-            <div class="form-group">
+            <div class="form-group col-2">
                 <label class="form-label">Correo Electrónico</label>
                 {{ form.email }}
             </div>
         </div>
     </div>
 
-    <!-- ── Sección: Lugar de Nacimiento ── -->
+    <!-- ══ 3. Lugar de Nacimiento ══ -->
     <div class="form-section">
         <div class="form-section-title">
             <i data-lucide="map-pin" style="width:16px;"></i> Lugar de Nacimiento
         </div>
-        <div class="form-grid">
+        <div class="fg3">
             <div class="form-group">
                 <label class="form-label">País</label>
                 {{ form.pais_nacimiento }}
@@ -110,14 +126,14 @@
         </div>
     </div>
 
-    <!-- ── Sección: Residencia ── -->
+    <!-- ══ 4. Residencia ══ -->
     <div class="form-section">
         <div class="form-section-title">
             <i data-lucide="home" style="width:16px;"></i> Residencia
         </div>
-        <div class="form-grid">
-            <div class="form-group" style="grid-column:span 2;">
-                <label class="form-label">Dirección de Residencia</label>
+        <div class="fg3">
+            <div class="form-group col-2">
+                <label class="form-label">Dirección</label>
                 {{ form.direccion_residencia }}
             </div>
             <div class="form-group">
@@ -127,60 +143,71 @@
         </div>
     </div>
 
-    <!-- ── Sección: Empresa ── -->
+    <!-- ══ 5. Empresa y Contrato ══ -->
     <div class="form-section">
         <div class="form-section-title">
             <i data-lucide="building-2" style="width:16px;"></i> Empresa y Contrato
         </div>
-        <div class="form-grid">
+        <!-- Fila 1: Empresa + Contrato -->
+        <div class="fg3 mb-row">
             <div class="form-group">
-                <label class="form-label">Empresa *</label>
+                <label class="form-label">Empresa <span style="color:#f43f5e;">*</span></label>
                 {{ form.empresa }}
+                {% if empresa_admin %}
+                <span style="font-size:0.75rem;color:#0284c7;">
+                    <i data-lucide="lock" style="width:12px;vertical-align:middle;"></i>
+                    Asignada a su empresa
+                </span>
+                {% endif %}
             </div>
-            <div class="form-group">
+            <div class="form-group col-2">
                 <label class="form-label">Contrato</label>
                 {{ form.contrato }}
             </div>
+        </div>
+        <!-- Fila 2: Fechas + Activo -->
+        <div class="fg3">
             <div class="form-group">
-                <label class="form-label">Fecha de Ingreso *</label>
+                <label class="form-label">Fecha de Ingreso <span style="color:#f43f5e;">*</span></label>
                 {{ form.fecha_ingreso }}
             </div>
             <div class="form-group">
                 <label class="form-label">Fecha de Retiro</label>
                 {{ form.fecha_retiro }}
             </div>
-            <div class="form-group" style="justify-content:center;padding-top:1.5rem;">
-                <label class="form-check">
+            <div class="form-group" style="justify-content:flex-end;padding-bottom:0.4rem;">
+                <label class="form-check" style="gap:0.65rem;cursor:pointer;margin-top:auto;">
                     {{ form.activo_hospital }}
-                    <span class="form-label" style="margin:0;">Activo en el Hospital</span>
+                    <span class="form-label" style="margin:0;font-size:0.9rem;">Activo en el Hospital</span>
                 </label>
             </div>
         </div>
     </div>
 
-    <!-- ── Sección: Documentos ── -->
+    <!-- ══ 6. Foto y Documento ══ -->
     <div class="form-section">
         <div class="form-section-title">
             <i data-lucide="camera" style="width:16px;"></i> Foto y Documento
         </div>
-        <div class="form-grid">
+        <div class="fg2">
             <div class="form-group">
                 <label class="form-label">Foto del Servidor</label>
-                <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;">
+                <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;margin-bottom:0.5rem;">
                     {% if servidor.foto %}
                     <img src="{{ servidor.foto.url }}" id="fotoPreview" class="foto-preview" style="display:block;">
                     {% else %}
                     <img id="fotoPreview" class="foto-preview">
                     {% endif %}
-                    {{ form.foto }}
                 </div>
+                {{ form.foto }}
             </div>
             <div class="form-group">
                 <label class="form-label">Documento de Identidad (PDF)</label>
                 {% if servidor.documento_pdf %}
                 <div style="margin-bottom:0.5rem;">
-                    <a href="{{ servidor.documento_pdf.url }}" target="_blank" class="btn-terc btn-terc-outline" style="font-size:0.78rem;padding:0.3rem 0.7rem;">
-                        <i data-lucide="file-text"></i> Ver actual
+                    <a href="{{ servidor.documento_pdf.url }}" target="_blank"
+                       class="btn-terc btn-terc-outline" style="font-size:0.78rem;padding:0.3rem 0.7rem;">
+                        <i data-lucide="file-text"></i> Ver documento actual
                     </a>
                 </div>
                 {% endif %}
@@ -189,7 +216,7 @@
         </div>
     </div>
 
-    <!-- ── Errores globales ── -->
+    <!-- ── Errores ── -->
     {% if form.errors %}
     <div style="background:#fee2e2;border:1.5px solid #fca5a5;border-radius:10px;padding:1rem;margin-bottom:1rem;">
         <strong style="color:#b91c1c;">Por favor corrija los siguientes errores:</strong>
@@ -218,10 +245,10 @@
 {% block extra_js %}
 <script>
 const AJAX_URL = "{% url 'tercerizadas:buscar_dinamica' %}";
-const CSRF = "{{ csrf_token }}";
+const CSRF     = "{{ csrf_token }}";
 
 // ── Preview foto ──
-document.getElementById('id_foto')?.addEventListener('change', function(e){
+document.getElementById('id_foto')?.addEventListener('change', function (e) {
     const file = e.target.files[0];
     if (!file) return;
     const reader = new FileReader();
@@ -235,27 +262,27 @@ document.getElementById('id_foto')?.addEventListener('change', function(e){
 
 // ── Búsqueda AJAX en GENTERCER ──
 let searchTimer = null;
-const docInput  = document.getElementById('id_numero_documento');
-const spinner   = document.getElementById('docSpinner');
-const badge     = document.getElementById('badgeDinamica');
+const docInput = document.getElementById('id_numero_documento');
+const spinner  = document.getElementById('docSpinner');
+const badge    = document.getElementById('badgeDinamica');
 
 function setBadge(encontrado) {
     badge.style.display = 'flex';
     if (encontrado) {
         badge.innerHTML = `<span class="badge-dinamica found" style="display:inline-flex;">
             <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
-            ✅ Registrado en Dinámica — datos importados automáticamente
+            Registrado en Dinámica — datos importados automáticamente
         </span>`;
     } else {
         badge.innerHTML = `<span class="badge-dinamica not-found" style="display:inline-flex;">
             <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-            ⚠️ No encontrado en Dinámica — ingrese los datos manualmente
+            No encontrado en Dinámica — ingrese los datos manualmente
         </span>`;
     }
 }
 
 if (docInput) {
-    docInput.addEventListener('input', function() {
+    docInput.addEventListener('input', function () {
         const val = this.value.trim();
         clearTimeout(searchTimer);
         badge.style.display = 'none';
@@ -264,7 +291,7 @@ if (docInput) {
         searchTimer = setTimeout(() => {
             spinner.style.display = 'block';
             fetch(`${AJAX_URL}?documento=${encodeURIComponent(val)}`, {
-                headers: {'X-CSRFToken': CSRF}
+                headers: { 'X-CSRFToken': CSRF }
             })
             .then(r => r.json())
             .then(data => {
@@ -278,8 +305,9 @@ if (docInput) {
                     if (sn && !sn.value) sn.value = data.segundo_nombre || '';
                     if (fa && !fa.value) fa.value = data.primer_apellido || '';
                     if (sa && !sa.value) sa.value = data.segundo_apellido || '';
-                    // Resaltar campos auto-llenados
-                    [fn,sn,fa,sa].forEach(f => { if (f) { f.style.borderColor='#10b981'; f.style.background='#f0fdf4'; } });
+                    [fn, sn, fa, sa].forEach(f => {
+                        if (f) { f.style.borderColor = '#10b981'; f.style.background = '#f0fdf4'; }
+                    });
                     setBadge(true);
                 } else {
                     setBadge(false);

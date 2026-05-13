@@ -1,0 +1,1005 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Solicitud de Asignación de Permisos y Claves — HUDN</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,600;9..40,700;9..40,800&display=swap" rel="stylesheet">
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0;}
+    body{font-family:'DM Sans','Segoe UI',sans-serif;background:#f0fdfa;min-height:100vh;color:#0f172a;}
+    .form-card{background:#fff;border-radius:18px;box-shadow:0 8px 40px rgba(0,0,0,0.09);overflow:hidden;max-width:820px;margin:0 auto;}
+    .form-header{background:linear-gradient(135deg,#0f766e,#0d9488);padding:24px 32px;color:#fff;}
+    .section-title{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#0f766e;margin:18px 0 10px;padding:6px 0;border-bottom:2px solid #ccfbf1;}
+    .field-group{display:grid;gap:14px;margin-bottom:6px;}
+    .field-group.cols-2{grid-template-columns:1fr 1fr;}
+    .field-group.cols-3{grid-template-columns:1fr 1fr 1fr;}
+    label{font-size:12px;font-weight:700;color:#374151;display:block;margin-bottom:4px;}
+    label .req{color:#ef4444;margin-left:2px;}
+    input[type=text],input[type=email],input[type=tel],input[type=date],input[type=time],select,textarea{
+      width:100%;padding:9px 12px;border:1.5px solid #d1d5db;border-radius:9px;
+      font-size:13px;font-family:inherit;color:#111;background:#f9fafb;
+      transition:border-color 0.2s,box-shadow 0.2s;outline:none;
+    }
+    input:focus,select:focus,textarea:focus{border-color:#0d9488;box-shadow:0 0 0 3px rgba(13,148,136,0.15);background:#fff;}
+    input.prefilled{background:#f0fdfa;border-color:#99f6e4;}
+    .radio-group{display:flex;flex-wrap:wrap;gap:10px;}
+    .radio-pill input[type=radio]{display:none;}
+    .radio-pill label{
+      padding:7px 14px;border:1.5px solid #d1d5db;border-radius:99px;
+      font-size:12px;font-weight:600;cursor:pointer;background:#f9fafb;color:#374151;
+      transition:all 0.15s;
+    }
+    .radio-pill input:checked+label{background:#0f766e;border-color:#0f766e;color:#fff;}
+    .checkbox-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px;margin-top:8px;}
+    .checkbox-item{display:flex;align-items:center;gap:8px;padding:8px 12px;border:1.5px solid #e5e7eb;border-radius:10px;cursor:pointer;transition:all 0.15s;}
+    .checkbox-item:hover{border-color:#0d9488;background:#f0fdfa;}
+    .checkbox-item input[type=checkbox]{width:16px;height:16px;accent-color:#0f766e;flex-shrink:0;}
+    .checkbox-item.disabled{opacity:0.4;pointer-events:none;background:#f3f4f6;}
+    .checkbox-item.checked{border-color:#0d9488;background:#f0fdfa;}
+    .step-bar{display:flex;gap:6px;padding:18px 32px;background:#f8fafc;border-bottom:1px solid #e2e8f0;}
+    .step-item{flex:1;text-align:center;}
+    .step-dot{width:28px;height:28px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;border:2px solid #d1d5db;color:#94a3b8;background:#fff;margin-bottom:4px;transition:all 0.2s;}
+    .step-item.active .step-dot{background:#0f766e;border-color:#0f766e;color:#fff;}
+    .step-item.done .step-dot{background:#ccfbf1;border-color:#0d9488;color:#0f766e;}
+    .step-label{font-size:10px;font-weight:600;color:#94a3b8;line-height:1.2;}
+    .step-item.active .step-label{color:#0f766e;}
+    .step-item.done .step-label{color:#0d9488;}
+    .step-content{padding:24px 32px;}
+    .nav-btns{display:flex;justify-content:space-between;align-items:center;padding:16px 32px;border-top:1px solid #e2e8f0;gap:12px;}
+    .btn{padding:10px 24px;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;border:none;transition:all 0.15s;font-family:inherit;}
+    .btn-prev{background:#f1f5f9;color:#475569;border:1.5px solid #e2e8f0;}
+    .btn-prev:hover{background:#e2e8f0;}
+    .btn-next{background:linear-gradient(135deg,#0f766e,#0d9488);color:#fff;box-shadow:0 4px 12px rgba(15,118,110,0.3);}
+    .btn-next:hover{opacity:0.9;}
+    .btn-submit{background:linear-gradient(135deg,#065f46,#0f766e);color:#fff;padding:12px 32px;box-shadow:0 4px 14px rgba(6,95,70,0.35);}
+    .btn-submit:hover{opacity:0.9;}
+    .alert{padding:11px 14px;border-radius:10px;font-size:12.5px;font-weight:600;margin-bottom:12px;}
+    .alert-error{background:#fef2f2;border:1px solid #fecaca;color:#991b1b;}
+    .alert-success{background:#f0fdf4;border:1px solid #86efac;color:#166534;}
+    .search-btn{padding:9px 14px;background:#0f766e;color:#fff;border:none;border-radius:9px;cursor:pointer;font-size:12px;font-weight:700;white-space:nowrap;transition:opacity 0.15s;}
+    .search-btn:hover{opacity:0.85;}
+    #signature-canvas{border:2px dashed #0d9488;border-radius:12px;cursor:crosshair;touch-action:none;background:#fafafa;display:block;width:100%;}
+    .cargo-opt{padding:9px 14px;cursor:pointer;font-size:13px;border-bottom:1px solid #f1f5f9;color:#0f172a;transition:background 0.1s;}
+    .cargo-opt:last-child{border-bottom:none;}
+    .cargo-opt:hover{background:#f0fdfa;color:#0f766e;}
+    .cargo-opt strong{color:#0f766e;}
+    .declaration-box{background:#f0fdf4;border:1.5px solid #86efac;border-radius:12px;padding:14px 18px;font-size:12px;color:#065f46;line-height:1.6;margin:10px 0;}
+    @media(max-width:640px){
+      .field-group.cols-2,.field-group.cols-3{grid-template-columns:1fr;}
+      .step-label{display:none;}
+      .step-content,.nav-btns,.form-header{padding-left:16px;padding-right:16px;}
+    }
+  </style>
+</head>
+<body style="padding:24px 12px 48px;">
+
+  <!-- Encabezado página -->
+  <div style="max-width:820px;margin:0 auto 20px;display:flex;align-items:center;gap:14px;">
+    <img src="{% static 'logos-hudn/logo-hudn-colores-vertical.png' %}" alt="HUDN"
+         style="height:48px;object-fit:contain;" onerror="this.style.display='none'">
+    <div>
+      <div style="font-size:13px;font-weight:800;color:#0f766e;">Hospital Universitario Departamental de Nariño E.S.E.</div>
+      <div style="font-size:11px;color:#94a3b8;font-weight:500;">Módulo Asignación de Permisos y Claves — FRSGI-002</div>
+    </div>
+    <a href="{% url 'home' %}" style="margin-left:auto;text-decoration:none;font-size:12px;color:#64748b;font-weight:600;display:flex;align-items:center;gap:5px;">
+      <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+      Inicio
+    </a>
+  </div>
+
+  <div class="form-card">
+
+    <!-- Header del formulario -->
+    <div class="form-header">
+      <h1 style="font-size:18px;font-weight:900;margin-bottom:4px;">Solicitud de Asignación de Permisos y Claves</h1>
+      <p style="font-size:12px;opacity:0.8;">Complete todos los campos marcados con * · FRSGI-002 Ver. 06</p>
+    </div>
+
+    <!-- Barra de pasos -->
+    <div class="step-bar" id="stepBar">
+      <div class="step-item active" data-step="1">
+        <div class="step-dot">1</div>
+        <div class="step-label">Datos<br>Personales</div>
+      </div>
+      <div class="step-item" data-step="2">
+        <div class="step-dot">2</div>
+        <div class="step-label">Vinculación</div>
+      </div>
+      <div class="step-item" data-step="3">
+        <div class="step-dot">3</div>
+        <div class="step-label">Permisos</div>
+      </div>
+      <div class="step-item" data-step="4">
+        <div class="step-dot">4</div>
+        <div class="step-label">Entrenamiento</div>
+      </div>
+      <div class="step-item" data-step="5">
+        <div class="step-dot">5</div>
+        <div class="step-label">Firma</div>
+      </div>
+    </div>
+
+    <!-- Mensajes globales -->
+    <div id="globalMsg" style="margin:0 32px;display:none;"></div>
+
+    <!-- PASO 1: Datos personales -->
+    <div class="step-content" id="step1">
+      <div id="buscarMsg" style="display:none;"></div>
+
+      <div class="field-group cols-2" style="margin-bottom:12px;">
+        <div>
+          <label>Fecha de diligenciamiento <span class="req">*</span></label>
+          <input type="date" id="fechaDilig" required>
+        </div>
+        <div></div>
+      </div>
+
+      <div class="section-title">Sección 1 · Datos Personales</div>
+
+      <div class="field-group cols-2">
+        <div>
+          <label>Número de identificación <span class="req">*</span></label>
+          <div style="display:flex;gap:8px;">
+            <input type="text" id="numId" placeholder="Solo números" pattern="[0-9]+" required style="flex:1;">
+            <button type="button" class="search-btn" onclick="buscarFuncionario()">Buscar</button>
+          </div>
+        </div>
+        <div>
+          <label>Lugar de expedición <span class="req">*</span></label>
+          <input type="text" id="lugarExp" placeholder="Ciudad de expedición" required>
+        </div>
+      </div>
+
+      <div class="field-group" style="margin-top:12px;">
+        <div>
+          <label>Nombres y apellidos completos <span class="req">*</span></label>
+          <input type="text" id="nombresAp" placeholder="Nombre completo" required>
+        </div>
+      </div>
+
+      <div class="field-group cols-2" style="margin-top:12px;">
+        <div>
+          <label>Dirección de residencia <span class="req">*</span></label>
+          <input type="text" id="direccion" placeholder="Dirección completa" required>
+        </div>
+        <div>
+          <label>Tel. Celular <span class="req">*</span></label>
+          <input type="tel" id="telCelular" placeholder="3XX XXX XXXX" required>
+        </div>
+      </div>
+
+      <div class="field-group cols-2" style="margin-top:12px;">
+        <div>
+          <label>Correo electrónico personal <span class="req">*</span></label>
+          <input type="email" id="correoPersonal" placeholder="correo@ejemplo.com" required>
+        </div>
+        <div>
+          <label>Tel. Fijo <span style="font-size:11px;color:#94a3b8;">(opcional)</span></label>
+          <input type="tel" id="telFijo" placeholder="6XX XXX XXXX">
+        </div>
+      </div>
+    </div>
+
+    <!-- PASO 2: Datos de vinculación -->
+    <div class="step-content" id="step2" style="display:none;">
+      <div class="section-title">Sección 2 · Datos de Vinculación</div>
+
+      <div>
+        <label>Tipo de vinculación <span class="req">*</span></label>
+        <div class="radio-group" id="tipoVincGroup">
+          <div class="radio-pill">
+            <input type="radio" name="tipoVinc" id="tv_pp" value="planta_permanente">
+            <label for="tv_pp">Planta Permanente</label>
+          </div>
+          <div class="radio-pill">
+            <input type="radio" name="tipoVinc" id="tv_pt" value="planta_temporal">
+            <label for="tv_pt">Planta Temporal</label>
+          </div>
+          <div class="radio-pill">
+            <input type="radio" name="tipoVinc" id="tv_ops" value="ops">
+            <label for="tv_ops">OPS</label>
+          </div>
+          <div class="radio-pill">
+            <input type="radio" name="tipoVinc" id="tv_tc" value="tercerizado">
+            <label for="tv_tc">Tercerizado(a)/Contratista</label>
+          </div>
+        </div>
+      </div>
+
+      <div class="field-group cols-2" style="margin-top:14px;">
+        <div>
+          <label>Período de vinculación — Fecha inicial <span class="req">*</span></label>
+          <input type="date" id="periodoInicio" required>
+        </div>
+        <div>
+          <label>Período de vinculación — Fecha final <span class="req">*</span></label>
+          <input type="date" id="periodoFin" required>
+        </div>
+      </div>
+
+      <div class="field-group" style="margin-top:14px;">
+        <div>
+          <label>Área de servicios <span class="req">*</span></label>
+          <select id="areaServicios" required>
+            <option value="">Seleccione un área...</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="field-group" style="margin-top:14px;">
+        <div>
+          <label>Cargo del funcionario(a) <span class="req">*</span></label>
+          <div style="position:relative;">
+            <input type="text" id="cargoFunc" placeholder="Escriba para buscar o ingrese el cargo" required autocomplete="off">
+            <div id="cargoDropdown" style="display:none;position:absolute;top:100%;left:0;right:0;z-index:50;
+                 background:#fff;border:1.5px solid #0d9488;border-top:none;
+                 border-radius:0 0 10px 10px;box-shadow:0 6px 18px rgba(0,0,0,0.1);
+                 max-height:220px;overflow-y:auto;"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="field-group" style="margin-top:14px;">
+        <div>
+          <label>Número de contrato:</label>
+          <input type="text" id="numContrato" placeholder="Ingrese el número de contrato">
+          <p style="font-size:11px;color:#64748b;margin-top:5px;">Si no tienes el Número de contratación, diríjase a Contratación.</p>
+        </div>
+      </div>
+
+      <div class="field-group" style="margin-top:14px;">
+        <div>
+          <label>Número de registro (médico o enfermería) o tarjeta profesional</label>
+          <input type="text" id="numRegistro" placeholder="Opcional">
+        </div>
+      </div>
+
+      <!-- Campos empresa contratista (solo si es tercerizado) -->
+      <div id="contraSection" style="display:none;margin-top:14px;padding:14px;background:#fef9c3;border:1px solid #fde68a;border-radius:12px;">
+        <div style="font-size:12px;font-weight:700;color:#92400e;margin-bottom:12px;">Datos empresa contratista</div>
+        <input type="hidden" id="empresaTercId">
+        <div class="field-group">
+          <div>
+            <label>Empresa contratista <span class="req">*</span></label>
+            <select id="nomEmpresa">
+              <option value="">Cargando empresas...</option>
+            </select>
+          </div>
+        </div>
+        <div class="field-group cols-2" style="margin-top:10px;">
+          <div>
+            <label>Dirección empresa contratista</label>
+            <input type="text" id="dirEmpresa" placeholder="Dirección" readonly style="background:#f9fafb;">
+          </div>
+          <div>
+            <label>Teléfono empresa contratista</label>
+            <input type="tel" id="telEmpresa" placeholder="Teléfono" readonly style="background:#f9fafb;">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PASO 3: Permisos y accesos -->
+    <div class="step-content" id="step3" style="display:none;">
+      <div class="section-title">Sección 3 · Permisos y Accesos Solicitados</div>
+      <p style="font-size:12px;color:#64748b;margin-bottom:12px;">Seleccione todos los permisos que necesita. Si es contratista/tercerizado, el carnet físico no está disponible.</p>
+      <div class="checkbox-grid" id="permisosGrid">
+        <div style="color:#94a3b8;font-size:12px;">Cargando permisos...</div>
+      </div>
+
+      <!-- Sección carnet: aparece al marcar carnet o tarjeta con chip -->
+      <div id="carnetSection" style="display:none;margin-top:20px;padding:18px;background:#f0fdf4;border:1.5px solid #86efac;border-radius:14px;">
+        <div style="font-size:12px;font-weight:800;color:#065f46;margin-bottom:14px;display:flex;align-items:center;gap:6px;">
+          <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M16 3v4M8 3v4M2 10h20"/></svg>
+          Datos para elaboración de Carnet
+        </div>
+
+        <div class="field-group cols-2">
+          <div>
+            <label>Tipo de sangre <span class="req">*</span></label>
+            <select id="tipoSangre">
+              <option value="">Seleccione...</option>
+              <option>A+</option><option>A-</option>
+              <option>B+</option><option>B-</option>
+              <option>AB+</option><option>AB-</option>
+              <option>O+</option><option>O-</option>
+            </select>
+          </div>
+          <div>
+            <label style="margin-bottom:4px;">Período de contrato</label>
+            <div style="padding:9px 12px;background:#e0f2fe;border:1.5px solid #7dd3fc;border-radius:9px;font-size:12px;color:#0369a1;font-weight:600;" id="carnetPeriodo">
+              — (complete la sección 2 primero)
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-top:14px;">
+          <label>Foto para carnet <span class="req">*</span><span style="font-size:11px;font-weight:400;color:#64748b;margin-left:6px;">(fondo blanco o azul · cara visible · sin gafas)</span></label>
+          <div style="margin-top:8px;display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap;">
+            <div style="flex-shrink:0;">
+              <div id="carnetFotoPreview" style="width:120px;height:150px;border:2px dashed #0d9488;border-radius:10px;background:#f8fafc;display:flex;align-items:center;justify-content:center;overflow:hidden;">
+                <span style="font-size:11px;color:#94a3b8;text-align:center;padding:8px;">Sin foto</span>
+              </div>
+            </div>
+            <div style="flex:1;min-width:180px;">
+              <label class="btn btn-prev" style="cursor:pointer;display:inline-flex;align-items:center;gap:6px;font-size:12px;padding:8px 14px;margin-bottom:8px;">
+                📷 Seleccionar foto
+                <input type="file" id="carnetFotoInput" accept="image/*" onchange="cargarFotoCarnet(event)" style="display:none;">
+              </label>
+              <p style="font-size:11px;color:#64748b;line-height:1.5;margin:0;">
+                • Fondo blanco o azul<br>
+                • Cara centrada y visible<br>
+                • Sin gafas oscuras ni accesorios<br>
+                • JPG, PNG — máx. 5 MB
+              </p>
+            </div>
+          </div>
+          <input type="hidden" id="carnetFotoB64">
+        </div>
+      </div>
+    </div>
+
+    <!-- PASO 4: Entrenamiento -->
+    <div class="step-content" id="step4" style="display:none;">
+      <div class="section-title">Sección 4 · Registro de Actividades de Entrenamiento en los Sistemas de Información</div>
+
+      <div class="field-group cols-3">
+        <div>
+          <label>Fecha de entrenamiento</label>
+          <input type="date" id="fechaEntrena">
+        </div>
+        <div>
+          <label>Hora de inicio</label>
+          <input type="time" id="horaInicio">
+        </div>
+        <div>
+          <label>Hora de finalización</label>
+          <input type="time" id="horaFin">
+        </div>
+      </div>
+
+      <div class="field-group" style="margin-top:14px;">
+        <div>
+          <label>Responsable de entrenamiento</label>
+          <input type="text" id="respEntrena" placeholder="Nombre del responsable">
+        </div>
+      </div>
+
+      <div style="margin-top:14px;">
+        <label style="margin-bottom:8px;">Entrenamiento en:</label>
+        <div style="display:flex;flex-wrap:wrap;gap:12px;">
+          <label style="display:flex;align-items:center;gap:7px;font-size:13px;font-weight:600;cursor:pointer;">
+            <input type="checkbox" id="entDgh" style="width:16px;height:16px;accent-color:#0f766e;"> DGH
+          </label>
+          <label style="display:flex;align-items:center;gap:7px;font-size:13px;font-weight:600;cursor:pointer;">
+            <input type="checkbox" id="entCorreo" style="width:16px;height:16px;accent-color:#0f766e;"> Correo Institucional
+          </label>
+          <label style="display:flex;align-items:center;gap:7px;font-size:13px;font-weight:600;cursor:pointer;">
+            <input type="checkbox" id="entAplic" style="width:16px;height:16px;accent-color:#0f766e;"> Aplicativos HUDN
+          </label>
+          <label style="display:flex;align-items:center;gap:7px;font-size:13px;font-weight:600;cursor:pointer;">
+            <input type="checkbox" id="entIntra" style="width:16px;height:16px;accent-color:#0f766e;"> Intranet
+          </label>
+        </div>
+      </div>
+
+      <div class="declaration-box" style="margin-top:18px;">
+        <strong>Acuerdo de Confidencialidad</strong><br>
+        Declaro de manera libre, expresa, inequívoca e informada que, conozco el ACUERDO INDIVIDUAL DE CONFIDENCIALIDAD DE LA INFORMACIÓN FRSG1-001 y que mediante la firma de este documento confirmo y acepto mi responsabilidad para los fines pertinentes.
+      </div>
+      <label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:10px;border:1.5px solid #e5e7eb;border-radius:10px;background:#f9fafb;margin-top:8px;">
+        <input type="checkbox" id="aceptoConf" style="width:18px;height:18px;accent-color:#0f766e;">
+        <span style="font-size:13px;font-weight:600;color:#0f172a;">Acepto el Acuerdo de Confidencialidad <span class="req">*</span></span>
+      </label>
+    </div>
+
+    <!-- PASO 5: Firma -->
+    <div class="step-content" id="step5" style="display:none;">
+      <div class="section-title">Firma del Solicitante</div>
+      <p style="font-size:12px;color:#64748b;margin-bottom:14px;">Dibuje su firma con el mouse o dedo, o cargue una imagen de su firma.</p>
+
+      <div style="position:relative;">
+        <canvas id="signature-canvas" width="700" height="180"></canvas>
+      </div>
+
+      <div style="display:flex;gap:10px;margin-top:10px;flex-wrap:wrap;">
+        <button type="button" onclick="clearSignature()" class="btn btn-prev" style="font-size:12px;padding:7px 16px;">
+          Limpiar firma
+        </button>
+        <label class="btn btn-prev" style="font-size:12px;padding:7px 16px;cursor:pointer;">
+          📎 Cargar imagen de firma
+          <input type="file" accept="image/*" onchange="loadSignatureImage(event)" style="display:none;">
+        </label>
+      </div>
+
+      <div id="firmaPreview" style="display:none;margin-top:10px;">
+        <img id="firmaImg" style="max-height:80px;border:1px solid #e2e8f0;border-radius:8px;padding:4px;">
+      </div>
+
+      <div style="margin-top:20px;padding:14px;background:#f0fdfa;border:1px solid #99f6e4;border-radius:12px;font-size:12px;color:#065f46;font-weight:600;">
+        <strong>Resumen de su solicitud:</strong><br>
+        <span id="resumenText"></span>
+      </div>
+    </div>
+
+    <!-- Botones de navegación -->
+    <div class="nav-btns">
+      <button class="btn btn-prev" id="btnPrev" onclick="prevStep()" style="display:none;">
+        ← Anterior
+      </button>
+      <div style="flex:1;"></div>
+      <button class="btn btn-next" id="btnNext" onclick="nextStep()">
+        Siguiente →
+      </button>
+      <button class="btn btn-submit" id="btnSubmit" onclick="submitForm()" style="display:none;">
+        ✓ Enviar Solicitud
+      </button>
+    </div>
+
+  </div><!-- /form-card -->
+
+<script>
+const PREFILL = {{ prefill_json|safe }};
+const API_BASE = '/api/apc';
+let currentStep = 1;
+const TOTAL_STEPS = 5;
+let permisosData = [];
+let esTercerizado = false;
+
+// ── Inicialización ───────────────────────────────────────────────────────────
+
+document.addEventListener('DOMContentLoaded', () => {
+  // Fecha de hoy por defecto
+  document.getElementById('fechaDilig').value = new Date().toISOString().split('T')[0];
+
+  // Autocomplete de cargo
+  initCargoAutocomplete();
+
+  // Pre-llenar si hay datos del login
+  if (PREFILL.nombre) {
+    document.getElementById('nombresAp').value = PREFILL.nombre;
+    document.getElementById('nombresAp').classList.add('prefilled');
+  }
+
+  // Cargar áreas
+  cargarAreas();
+
+  // Cargar permisos
+  cargarPermisos();
+
+  // Escuchar cambio de tipo vinculación
+  document.querySelectorAll('[name=tipoVinc]').forEach(r => {
+    r.addEventListener('change', () => {
+      esTercerizado = r.value === 'tercerizado';
+      document.getElementById('contraSection').style.display = esTercerizado ? 'block' : 'none';
+      if (esTercerizado) cargarEmpresasTercerizadas();
+      actualizarPermisosGrid();
+    });
+  });
+
+  // Actualizar período de carnet cuando cambian las fechas
+  ['periodoInicio', 'periodoFin'].forEach(id => {
+    document.getElementById(id).addEventListener('change', actualizarSeccionCarnet);
+  });
+
+  // Inicializar canvas
+  initCanvas();
+  updateStepUI();
+});
+
+function cargarAreas() {
+  fetch(API_BASE + '/areas')
+    .then(r => r.json())
+    .then(data => {
+      const sel = document.getElementById('areaServicios');
+      data.forEach(a => {
+        const opt = document.createElement('option');
+        opt.value = a.nombre;
+        opt.textContent = a.nombre;
+        sel.appendChild(opt);
+      });
+    })
+    .catch(() => {});
+}
+
+let _empresasTerc = [];
+let _empresasTercCargadas = false;
+
+function cargarEmpresasTercerizadas() {
+  if (_empresasTercCargadas) return;
+  fetch(API_BASE + '/tercerizadas/empresas')
+    .then(r => r.json())
+    .then(data => {
+      _empresasTerc = data;
+      _empresasTercCargadas = true;
+      const sel = document.getElementById('nomEmpresa');
+      sel.innerHTML = '<option value="">Seleccione empresa...</option>';
+      data.forEach(e => {
+        const opt = document.createElement('option');
+        opt.value = e.razon_social;
+        opt.dataset.id = e.id;
+        opt.dataset.dir = e.direccion || '';
+        opt.dataset.tel = e.telefono || '';
+        sel.appendChild(opt);
+      });
+    })
+    .catch(() => {
+      document.getElementById('nomEmpresa').innerHTML =
+        '<option value="">Error cargando empresas</option>';
+    });
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  document.getElementById('nomEmpresa').addEventListener('change', function() {
+    const opt = this.options[this.selectedIndex];
+    document.getElementById('dirEmpresa').value = opt.dataset.dir || '';
+    document.getElementById('telEmpresa').value = opt.dataset.tel || '';
+    document.getElementById('empresaTercId').value = opt.dataset.id || '';
+  });
+});
+
+function cargarPermisos() {
+  fetch(API_BASE + '/config/permisos')
+    .then(r => r.json())
+    .then(data => {
+      permisosData = data;
+      actualizarPermisosGrid();
+    })
+    .catch(() => {
+      document.getElementById('permisosGrid').innerHTML =
+        '<p style="color:#ef4444;font-size:12px;">Error cargando permisos. Recargue la página.</p>';
+    });
+}
+
+const _CLAVES_CARNET = new Set(['carnet', 'tarjeta_chip']);
+
+function actualizarPermisosGrid() {
+  const grid = document.getElementById('permisosGrid');
+  grid.innerHTML = '';
+  permisosData.forEach(p => {
+    const noDisp = esTercerizado && !p.disponible_tercerizado;
+    const div = document.createElement('label');
+    div.className = 'checkbox-item' + (noDisp ? ' disabled' : '');
+    div.innerHTML = `
+      <input type="checkbox" name="permiso" value="${p.clave}" ${noDisp ? 'disabled' : ''}>
+      <span style="font-size:12px;font-weight:600;">${p.etiqueta}</span>
+    `;
+    const cb = div.querySelector('input');
+    cb.addEventListener('change', e => {
+      div.classList.toggle('checked', e.target.checked);
+      if (_CLAVES_CARNET.has(p.clave)) actualizarSeccionCarnet();
+    });
+    grid.appendChild(div);
+  });
+  actualizarSeccionCarnet();
+}
+
+function actualizarSeccionCarnet() {
+  const alguno = [...document.querySelectorAll('[name=permiso]:checked')]
+    .some(cb => _CLAVES_CARNET.has(cb.value));
+  document.getElementById('carnetSection').style.display = alguno ? 'block' : 'none';
+  if (alguno) {
+    const ini = document.getElementById('periodoInicio').value;
+    const fin = document.getElementById('periodoFin').value;
+    document.getElementById('carnetPeriodo').textContent =
+      ini && fin ? `${ini} al ${fin}` : '— (complete la sección 2 primero)';
+  }
+}
+
+function cargarFotoCarnet(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  if (file.size > 5 * 1024 * 1024) {
+    alert('La imagen no puede superar 5 MB.');
+    event.target.value = '';
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = e => {
+    const b64 = e.target.result;
+    document.getElementById('carnetFotoB64').value = b64;
+    const preview = document.getElementById('carnetFotoPreview');
+    preview.innerHTML = `<img src="${b64}" style="width:100%;height:100%;object-fit:cover;">`;
+  };
+  reader.readAsDataURL(file);
+}
+
+// ── Autocomplete de cargo ────────────────────────────────────────────────────
+
+let _cargoTimer = null;
+let _cargosActuales = [];
+
+function initCargoAutocomplete() {
+  const input = document.getElementById('cargoFunc');
+  const dropdown = document.getElementById('cargoDropdown');
+
+  input.addEventListener('input', () => {
+    clearTimeout(_cargoTimer);
+    const q = input.value.trim();
+    if (q.length < 2) { ocultarCargoDropdown(); return; }
+    _cargoTimer = setTimeout(() => fetchCargos(q), 280);
+  });
+
+  input.addEventListener('keydown', e => {
+    if (e.key === 'Escape') ocultarCargoDropdown();
+    if (e.key === 'ArrowDown') {
+      const opts = dropdown.querySelectorAll('.cargo-opt');
+      if (opts.length) { e.preventDefault(); opts[0].focus(); }
+    }
+  });
+
+  dropdown.addEventListener('keydown', e => {
+    const opts = [...dropdown.querySelectorAll('.cargo-opt')];
+    const idx = opts.indexOf(document.activeElement);
+    if (e.key === 'ArrowDown' && idx < opts.length - 1) { e.preventDefault(); opts[idx+1].focus(); }
+    if (e.key === 'ArrowUp') { e.preventDefault(); idx > 0 ? opts[idx-1].focus() : input.focus(); }
+    if (e.key === 'Enter' && idx >= 0) { e.preventDefault(); seleccionarCargo(_cargosActuales[idx]); }
+    if (e.key === 'Escape') { ocultarCargoDropdown(); input.focus(); }
+  });
+
+  document.addEventListener('click', e => {
+    if (!input.contains(e.target) && !dropdown.contains(e.target)) ocultarCargoDropdown();
+  });
+}
+
+async function fetchCargos(q) {
+  try {
+    const resp = await fetch(API_BASE + '/cargos/buscar?q=' + encodeURIComponent(q));
+    const data = await resp.json();
+    mostrarCargoDropdown(data, q);
+  } catch (e) { ocultarCargoDropdown(); }
+}
+
+function resaltarTexto(texto, q) {
+  const idx = texto.toLowerCase().indexOf(q.toLowerCase());
+  if (idx === -1) return texto;
+  return texto.slice(0, idx)
+    + '<strong>' + texto.slice(idx, idx + q.length) + '</strong>'
+    + texto.slice(idx + q.length);
+}
+
+function mostrarCargoDropdown(cargos, q) {
+  _cargosActuales = cargos;
+  const dropdown = document.getElementById('cargoDropdown');
+  if (!cargos.length) { ocultarCargoDropdown(); return; }
+
+  dropdown.innerHTML = cargos.map((c, i) =>
+    `<div class="cargo-opt" tabindex="0" data-idx="${i}">${resaltarTexto(c, q)}</div>`
+  ).join('');
+
+  dropdown.querySelectorAll('.cargo-opt').forEach(el => {
+    el.addEventListener('click', () => seleccionarCargo(_cargosActuales[parseInt(el.dataset.idx)]));
+  });
+
+  dropdown.style.display = 'block';
+}
+
+function seleccionarCargo(cargo) {
+  document.getElementById('cargoFunc').value = cargo;
+  document.getElementById('cargoFunc').classList.add('prefilled');
+  ocultarCargoDropdown();
+}
+
+function ocultarCargoDropdown() {
+  document.getElementById('cargoDropdown').style.display = 'none';
+}
+
+// ── Búsqueda de funcionario ──────────────────────────────────────────────────
+
+function buscarFuncionario() {
+  const cedula = document.getElementById('numId').value.trim();
+  if (!cedula || !/^\d+$/.test(cedula)) {
+    mostrarMsg('buscarMsg', 'error', 'Ingrese un número de identificación válido.');
+    return;
+  }
+  mostrarMsg('buscarMsg', 'info', 'Buscando...');
+  fetch(API_BASE + '/funcionario/buscar?cedula=' + cedula)
+    .then(r => r.json())
+    .then(data => {
+      if (!data.found) {
+        mostrarMsg('buscarMsg', 'error', 'No se encontraron datos para esta identificación.');
+        return;
+      }
+      ocultarMsg('buscarMsg');
+      setField('nombresAp', data.nombre);
+      if (data.cargo) seleccionarCargo(data.cargo);  // usa el autocomplete para poner el cargo
+      const sel = document.getElementById('areaServicios');
+      for (let i = 0; i < sel.options.length; i++) {
+        if (sel.options[i].value === data.area) {
+          sel.selectedIndex = i;
+          break;
+        }
+      }
+      mostrarMsg('buscarMsg', 'success', '✓ Datos encontrados y cargados automáticamente.');
+    })
+    .catch(() => mostrarMsg('buscarMsg', 'error', 'Error al buscar datos.'));
+}
+
+function setField(id, val) {
+  if (val) {
+    const el = document.getElementById(id);
+    el.value = val;
+    el.classList.add('prefilled');
+  }
+}
+
+// ── Navegación de pasos ──────────────────────────────────────────────────────
+
+function prevStep() {
+  if (currentStep > 1) {
+    currentStep--;
+    updateStepUI();
+  }
+}
+
+function nextStep() {
+  if (!validateCurrentStep()) return;
+  if (currentStep < TOTAL_STEPS) {
+    if (currentStep === TOTAL_STEPS - 1) buildResumen();
+    currentStep++;
+    updateStepUI();
+  }
+}
+
+function updateStepUI() {
+  for (let i = 1; i <= TOTAL_STEPS; i++) {
+    document.getElementById('step' + i).style.display = i === currentStep ? 'block' : 'none';
+    const item = document.querySelector('[data-step="' + i + '"]');
+    item.className = 'step-item' + (i === currentStep ? ' active' : (i < currentStep ? ' done' : ''));
+    const dot = item.querySelector('.step-dot');
+    dot.textContent = i < currentStep ? '✓' : i;
+  }
+  document.getElementById('btnPrev').style.display = currentStep > 1 ? 'block' : 'none';
+  document.getElementById('btnNext').style.display = currentStep < TOTAL_STEPS ? 'block' : 'none';
+  document.getElementById('btnSubmit').style.display = currentStep === TOTAL_STEPS ? 'block' : 'none';
+}
+
+function validateCurrentStep() {
+  ocultarMsg('globalMsg');
+  if (currentStep === 1) {
+    if (!v('fechaDilig') || !v('numId') || !v('lugarExp') || !v('nombresAp') ||
+        !v('direccion') || !v('telCelular') || !v('correoPersonal')) {
+      showGlobal('error', 'Complete todos los campos obligatorios de esta sección.');
+      return false;
+    }
+    if (!/^\d+$/.test(g('numId'))) {
+      showGlobal('error', 'El número de identificación debe contener solo dígitos.');
+      return false;
+    }
+  }
+  if (currentStep === 2) {
+    const tipoVinc = document.querySelector('[name=tipoVinc]:checked');
+    if (!tipoVinc) { showGlobal('error', 'Seleccione el tipo de vinculación.'); return false; }
+    if (!v('periodoInicio') || !v('periodoFin') || !v('areaServicios') || !v('cargoFunc')) {
+      showGlobal('error', 'Complete todos los campos obligatorios de esta sección.'); return false;
+    }
+  }
+  if (currentStep === 3) {
+    const carnetVisible = document.getElementById('carnetSection').style.display !== 'none';
+    if (carnetVisible) {
+      if (!document.getElementById('tipoSangre').value) {
+        showGlobal('error', 'Seleccione el tipo de sangre para el carnet.');
+        return false;
+      }
+      if (!document.getElementById('carnetFotoB64').value) {
+        showGlobal('error', 'Debe subir una foto para el carnet.');
+        return false;
+      }
+    }
+  }
+  if (currentStep === 4) {
+    if (!document.getElementById('aceptoConf').checked) {
+      showGlobal('error', 'Debe aceptar el Acuerdo de Confidencialidad para continuar.');
+      return false;
+    }
+  }
+  return true;
+}
+
+function v(id) { return document.getElementById(id).value.trim(); }
+function g(id) { return document.getElementById(id).value.trim(); }
+
+function buildResumen() {
+  const permisos = [...document.querySelectorAll('[name=permiso]:checked')]
+    .map(cb => cb.closest('label') ? cb.closest('label').querySelector('span').textContent : cb.value);
+  const nombre = g('nombresAp');
+  const area = g('areaServicios');
+  const tipoVinc = document.querySelector('[name=tipoVinc]:checked');
+  document.getElementById('resumenText').innerHTML =
+    `<br>• <b>Nombre:</b> ${nombre}<br>• <b>Cédula:</b> ${g('numId')}<br>• <b>Área:</b> ${area}<br>` +
+    `• <b>Vinculación:</b> ${tipoVinc ? tipoVinc.closest('.radio-pill').querySelector('label').textContent : ''}<br>` +
+    `• <b>Permisos:</b> ${permisos.length > 0 ? permisos.join(', ') : 'Ninguno seleccionado'}`;
+}
+
+// ── Firma con canvas ─────────────────────────────────────────────────────────
+
+let canvas, ctx, drawing = false, lastX = 0, lastY = 0;
+
+function initCanvas() {
+  canvas = document.getElementById('signature-canvas');
+  ctx = canvas.getContext('2d');
+  ctx.strokeStyle = '#0f172a';
+  ctx.lineWidth = 2;
+  ctx.lineCap = 'round';
+
+  canvas.addEventListener('mousedown', e => { drawing = true; [lastX, lastY] = getPos(e); });
+  canvas.addEventListener('mousemove', e => { if (drawing) draw(e); });
+  canvas.addEventListener('mouseup', () => { drawing = false; ctx.beginPath(); });
+  canvas.addEventListener('mouseleave', () => { drawing = false; ctx.beginPath(); });
+  canvas.addEventListener('touchstart', e => { e.preventDefault(); drawing = true; [lastX, lastY] = getPos(e.touches[0]); });
+  canvas.addEventListener('touchmove', e => { e.preventDefault(); if (drawing) draw(e.touches[0]); });
+  canvas.addEventListener('touchend', () => { drawing = false; ctx.beginPath(); });
+}
+
+function getPos(e) {
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = canvas.width / rect.width;
+  const scaleY = canvas.height / rect.height;
+  return [(e.clientX - rect.left) * scaleX, (e.clientY - rect.top) * scaleY];
+}
+
+function draw(e) {
+  const [x, y] = getPos(e);
+  ctx.beginPath();
+  ctx.moveTo(lastX, lastY);
+  ctx.lineTo(x, y);
+  ctx.stroke();
+  [lastX, lastY] = [x, y];
+}
+
+function clearSignature() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  document.getElementById('firmaPreview').style.display = 'none';
+  document.getElementById('firmaImg').src = '';
+}
+
+function loadSignatureImage(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const img = new Image();
+    img.onload = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const ratio = Math.min(canvas.width / img.width, canvas.height / img.height);
+      const w = img.width * ratio;
+      const h = img.height * ratio;
+      ctx.drawImage(img, (canvas.width - w) / 2, (canvas.height - h) / 2, w, h);
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function getSignatureBase64() {
+  return canvas.toDataURL('image/png');
+}
+
+function isCanvasBlank() {
+  const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+  return !data.some(c => c !== 0);
+}
+
+// ── Envío del formulario ─────────────────────────────────────────────────────
+
+async function submitForm() {
+  if (isCanvasBlank()) {
+    showGlobal('error', 'Por favor, dibuje o cargue su firma antes de enviar.');
+    return;
+  }
+
+  const tipoVinc = document.querySelector('[name=tipoVinc]:checked');
+  const permisos = [...document.querySelectorAll('[name=permiso]:checked')].map(cb => cb.value);
+  const firmaB64 = getSignatureBase64();
+
+  const payload = {
+    fecha_diligenciamiento: g('fechaDilig'),
+    num_identificacion: g('numId'),
+    lugar_expedicion: g('lugarExp'),
+    nombres_apellidos: g('nombresAp'),
+    direccion_residencia: g('direccion'),
+    tel_celular: g('telCelular'),
+    correo_personal: g('correoPersonal'),
+    tel_fijo: g('telFijo'),
+    tipo_vinculacion: tipoVinc ? tipoVinc.value : '',
+    periodo_inicio: g('periodoInicio'),
+    periodo_fin: g('periodoFin'),
+    area_servicios: g('areaServicios'),
+    cargo_funcionario: g('cargoFunc'),
+    numero_contrato: g('numContrato') || '',
+    num_registro_tarjeta: g('numRegistro'),
+    nombre_empresa_contratista: g('nomEmpresa') || '',
+    direccion_empresa_contratista: g('dirEmpresa') || '',
+    tel_empresa_contratista: g('telEmpresa') || '',
+    empresa_tercerizada_id: parseInt(document.getElementById('empresaTercId').value) || null,
+    fecha_entrenamiento: g('fechaEntrena') || null,
+    hora_inicio_entrenamiento: g('horaInicio') || null,
+    hora_fin_entrenamiento: g('horaFin') || null,
+    responsable_entrenamiento: g('respEntrena'),
+    entrenamiento_dgh: document.getElementById('entDgh').checked,
+    entrenamiento_correo: document.getElementById('entCorreo').checked,
+    entrenamiento_aplicativos: document.getElementById('entAplic').checked,
+    entrenamiento_intranet: document.getElementById('entIntra').checked,
+    acepto_confidencialidad: document.getElementById('aceptoConf').checked,
+    firma_funcionario: firmaB64,
+    permisos: permisos,
+    foto_carnet: document.getElementById('carnetFotoB64').value || '',
+    tipo_sangre: document.getElementById('tipoSangre').value || '',
+    creado_por: '{{ request.user.username|default:"" }}',
+  };
+
+  const btn = document.getElementById('btnSubmit');
+  btn.disabled = true;
+  btn.textContent = 'Enviando...';
+
+  try {
+    const resp = await fetch(API_BASE + '/solicitudes/crear', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json', 'X-CSRFToken': getCsrf()},
+      body: JSON.stringify(payload),
+    });
+    const data = await resp.json();
+
+    if (resp.ok) {
+      // Ocultar form y mostrar éxito
+      document.querySelector('.form-card').innerHTML = `
+        <div style="padding:60px 32px;text-align:center;">
+          <div style="width:70px;height:70px;background:#f0fdf4;border:3px solid #86efac;border-radius:50%;
+                      display:inline-flex;align-items:center;justify-content:center;margin-bottom:20px;">
+            <svg width="36" height="36" fill="none" viewBox="0 0 24 24" stroke="#16a34a" stroke-width="2.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+            </svg>
+          </div>
+          <h2 style="font-size:22px;font-weight:900;color:#15803d;margin-bottom:10px;">¡Solicitud Enviada!</h2>
+          <p style="font-size:14px;color:#475569;line-height:1.6;max-width:440px;margin:0 auto 24px;">
+            ${data.mensaje || 'Su solicitud fue enviada. Los responsables recibirán un correo para firmar el documento.'}
+          </p>
+          <a href="{% url 'home' %}" style="display:inline-block;padding:12px 28px;background:#0f766e;color:#fff;border-radius:10px;text-decoration:none;font-weight:700;font-size:14px;">
+            Volver al Inicio
+          </a>
+        </div>
+      `;
+    } else {
+      showGlobal('error', data.detail || 'Error al enviar la solicitud. Verifique los datos.');
+      btn.disabled = false;
+      btn.textContent = '✓ Enviar Solicitud';
+    }
+  } catch (e) {
+    showGlobal('error', 'Error de conexión. Intente nuevamente.');
+    btn.disabled = false;
+    btn.textContent = '✓ Enviar Solicitud';
+  }
+}
+
+// ── Utilidades ───────────────────────────────────────────────────────────────
+
+function mostrarMsg(id, tipo, texto) {
+  const el = document.getElementById(id);
+  const bg = tipo === 'error' ? '#fef2f2' : tipo === 'success' ? '#f0fdf4' : '#f0f9ff';
+  const border = tipo === 'error' ? '#fecaca' : tipo === 'success' ? '#86efac' : '#bae6fd';
+  const color = tipo === 'error' ? '#991b1b' : tipo === 'success' ? '#166534' : '#0369a1';
+  el.className = 'alert';
+  el.style.cssText = `background:${bg};border:1px solid ${border};color:${color};padding:10px 14px;border-radius:10px;font-size:12.5px;font-weight:600;margin-bottom:10px;`;
+  el.textContent = texto;
+  el.style.display = 'block';
+}
+
+function ocultarMsg(id) {
+  const el = document.getElementById(id);
+  if (el) el.style.display = 'none';
+}
+
+function showGlobal(tipo, texto) {
+  mostrarMsg('globalMsg', tipo, texto);
+  document.getElementById('globalMsg').scrollIntoView({behavior:'smooth'});
+}
+
+function getCsrf() {
+  const m = document.cookie.match(/csrftoken=([^;]+)/);
+  return m ? m[1] : '';
+}
+</script>
+</body>
+</html>

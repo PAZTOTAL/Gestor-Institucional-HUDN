@@ -316,18 +316,20 @@
             </button>
             <h2 class="text-2xl font-black text-orange-900 uppercase">FORMATOS HUDN</h2>
         </div>
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {% for module in nav_varios %}
             {% if permisos_apps_global == 'ALL' or module.slug in permisos_apps_global %}
-            <a href="{{ module.url }}" class="glass-card module-card p-5 flex flex-col items-center text-center">
-                <div class="module-icon vari-icon mb-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none"
+            <a href="{{ module.url }}" class="glass-card p-4 flex flex-col items-center text-center border-b-4 border-orange-400 hover:border-orange-600 transition-all hover:-translate-y-1 group relative overflow-hidden">
+                <div class="absolute top-0 right-0 w-16 h-16 bg-orange-500/5 -mr-8 -mt-8 rounded-full group-hover:scale-150 transition-transform duration-500"></div>
+                <div class="w-12 h-12 bg-orange-100 rounded-2xl flex items-center justify-center mb-3 text-orange-600 group-hover:bg-orange-600 group-hover:text-white transition-all shadow-sm">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
                         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="{{ module.icon|default:'M12 2L2 7l10 5 10-5-10-5z M2 17l10 5 10-5 M2 12l10 5 10-5' }}"></path>
+                        <path d="{{ module.icon|default:'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z' }}"></path>
                     </svg>
                 </div>
-                <h3 class="text-lg font-bold mb-1 text-black">{{ module.name }}</h3>
-                <p class="text-blue-900 text-sm font-medium">{{ module.description }}</p>
+                <h3 class="text-xs font-black mb-1 text-orange-950 uppercase tracking-tight group-hover:text-orange-700 transition-colors leading-tight">{{ module.name }}</h3>
+                <p class="text-[10px] text-slate-400 font-bold leading-tight line-clamp-2">{{ module.description }}</p>
+                <div class="mt-2 text-[8px] text-orange-600 font-black opacity-0 group-hover:opacity-100 transition-opacity uppercase tracking-widest">Abrir</div>
             </a>
             {% endif %}
             {% endfor %}

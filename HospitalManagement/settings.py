@@ -73,15 +73,13 @@ INSTALLED_APPS = [
     'trasplantes_donacion',
     'CertificadosDIAN',
     'horas_extras',
-    'frecuenciafetal',
     'certificados_laborales',
     'visor_soportes',
     'tercerizadas',
     'paz_y_salvo',
+    'asignacion_permisos',
     'inventarios',
     'formatos_apps',
-    'meows',
-    'trabajoparto',
     'crue_remisiones',
 ]
 
@@ -97,6 +95,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'core.middleware.DatabaseCheckMiddleware',
+    'core.middleware.QueryResetMiddleware',
 ]
 
 ROOT_URLCONF = 'HospitalManagement.urls'
@@ -138,11 +137,11 @@ DATABASES = {
         'PASSWORD': os.getenv('DB_DEFAULT_PASSWORD', 'ConsultasPantojaHUDN_2026$'), 
         'HOST': os.getenv('DB_DEFAULT_HOST', '172.20.100.209'),
         'PORT': os.getenv('DB_DEFAULT_PORT', ''),
-        'CONN_MAX_AGE': 600,
+        'CONN_MAX_AGE': 3600,  # Aumentado a 1 hora para evitar reconexiones constantes
         'OPTIONS': {
             'driver': 'ODBC Driver 17 for SQL Server',
-            'timeout': 30,
-            'connection_timeout': 5,
+            'timeout': 15,         # Reducido de 30 a 15 para fallar más rápido
+            'connection_timeout': 3, # Reducido de 5 a 3 para no colgar el hilo
             'unicode_results': True,
         },
     },
@@ -276,7 +275,7 @@ DATA_UPLOAD_MAX_NUMBER_FIELDS = 10000
 # DIAN Certificates Configuration
 # 1. Origen de datos (Plantilla y Excel)
 DIAN_EXCEL_PATH = os.path.join(BASE_DIR, 'CertificadoIngresos2025.xlsm')
-DIAN_TEMPLATE_PATH = os.path.join(BASE_DIR, 'CertificadosDIAN', 'templates', 'CertificadosDIAN', 'Formulario_220_2026_Calibracion.pdf')
+DIAN_TEMPLATE_PATH = os.path.join(BASE_DIR, 'media', 'certificados_dian', 'Formulario_220_2026.pdf')
 
 # 2. Destino de los PDF generados
 DIAN_OUTPUT_DIR = os.path.join(BASE_DIR.parent, 'Dian2025')

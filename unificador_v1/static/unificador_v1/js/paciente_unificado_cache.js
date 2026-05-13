@@ -47,10 +47,13 @@
     async function fetchUnificado(doc) {
         var d = String(doc || '').trim();
         if (!d) return null;
+        var urlParams = new URLSearchParams(global.location.search);
+        var atencion = urlParams.get('atencion');
         var url =
             global.location.origin +
-            '/atencion/api/datos-paciente-unificado/?num_identificacion=' +
+            '/unificador/api/datos-paciente-unificado/?num_identificacion=' +
             encodeURIComponent(d) +
+            (atencion ? '&atencion=' + encodeURIComponent(atencion) : '') +
             '&_=' +
             now();
         var controller = new AbortController();

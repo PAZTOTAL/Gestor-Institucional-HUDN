@@ -1,0 +1,391 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Firmar — Asignación de Permisos y Claves HUDN</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,600;9..40,700;9..40,800&display=swap" rel="stylesheet">
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0;}
+    body{font-family:'DM Sans','Segoe UI',sans-serif;background:#f0fdfa;min-height:100vh;color:#0f172a;}
+    .container{max-width:860px;margin:0 auto;padding:24px 16px 60px;}
+    .card{background:#fff;border-radius:18px;box-shadow:0 8px 40px rgba(0,0,0,0.09);overflow:hidden;margin-bottom:20px;}
+    /* ── Encabezado del formato ── */
+    .formato-header{display:grid;grid-template-columns:80px 1fr 180px 200px 80px;border:1.5px solid #334155;border-radius:8px;overflow:hidden;margin-bottom:20px;font-size:11px;}
+    .fmt-cell{border-right:1px solid #334155;padding:6px 8px;}
+    .fmt-cell:last-child{border-right:none;}
+    .fmt-cell.center{text-align:center;display:flex;align-items:center;justify-content:center;flex-direction:column;}
+    .fmt-title{background:#0f172a;color:#fff;font-weight:800;font-size:13px;text-align:center;display:flex;align-items:center;justify-content:center;padding:8px;}
+    .fmt-row{display:grid;grid-template-columns:120px 1fr;font-size:10.5px;border-top:1px solid #334155;}
+    .fmt-row:first-child{border-top:none;}
+    .fmt-key{font-weight:700;padding:3px 6px;background:#f8fafc;border-right:1px solid #334155;}
+    .fmt-val{padding:3px 6px;font-weight:600;}
+    /* ── Secciones del formulario ── */
+    .sec-title{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:#0f766e;
+               padding:6px 0;border-bottom:2px solid #ccfbf1;margin:14px 0 10px;}
+    .info-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+    .info-item{font-size:12px;}
+    .info-label{font-weight:700;color:#64748b;font-size:10.5px;text-transform:uppercase;letter-spacing:0.3px;}
+    .info-value{color:#0f172a;font-weight:600;margin-top:1px;}
+    .perm-chip{display:inline-block;margin:3px;padding:4px 10px;background:#f0fdf4;
+               color:#065f46;border-radius:99px;font-size:11.5px;font-weight:700;
+               border:1px solid #86efac;}
+    /* ── Firmas ── */
+    .firmas-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-top:16px;}
+    .firma-box{border:1.5px solid #e2e8f0;border-radius:12px;padding:14px;text-align:center;
+               background:#f8fafc;}
+    .firma-box.active{border-color:#0d9488;background:#f0fdfa;box-shadow:0 2px 12px rgba(13,148,136,0.15);}
+    .firma-box.done{border-color:#86efac;background:#f0fdf4;}
+    .firma-box-label{font-size:10.5px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.3px;margin-bottom:8px;}
+    .firma-box-nombre{font-size:12.5px;font-weight:700;color:#0f172a;margin-bottom:8px;}
+    .firma-img{max-width:100%;max-height:50px;border:1px dashed #d1d5db;border-radius:6px;padding:2px;}
+    .firma-pending{font-size:11px;color:#94a3b8;font-style:italic;}
+    canvas#pad{border:2px dashed #0d9488;border-radius:10px;cursor:crosshair;touch-action:none;background:#fafafa;width:100%;display:block;}
+    .btn{padding:10px 22px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;border:none;font-family:inherit;transition:all 0.15s;}
+    .btn-primary{background:linear-gradient(135deg,#0f766e,#0d9488);color:#fff;box-shadow:0 3px 10px rgba(15,118,110,0.3);}
+    .btn-secondary{background:#f1f5f9;color:#475569;border:1.5px solid #e2e8f0;}
+    .alert{padding:12px 16px;border-radius:10px;font-size:13px;font-weight:600;margin-bottom:16px;}
+    .alert-error{background:#fef2f2;border:1px solid #fecaca;color:#991b1b;}
+    .alert-success{background:#f0fdf4;border:1px solid #86efac;color:#166534;}
+    @media(max-width:640px){
+      .firmas-grid{grid-template-columns:1fr 1fr;}
+      .info-grid{grid-template-columns:1fr;}
+      .formato-header{grid-template-columns:1fr;display:block;}
+      .fmt-cell{border-right:none;border-bottom:1px solid #334155;}
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <!-- Logo y título -->
+  <div style="display:flex;align-items:center;gap:14px;margin-bottom:20px;">
+    <img src="{% static 'logos-hudn/logo-hudn-colores-vertical.png' %}" alt="HUDN"
+         style="height:48px;object-fit:contain;" onerror="this.style.display='none'">
+    <div>
+      <div style="font-size:13px;font-weight:800;color:#0f766e;">Hospital Universitario Departamental de Nariño E.S.E.</div>
+      <div style="font-size:11px;color:#94a3b8;font-weight:500;">Módulo Asignación de Permisos y Claves</div>
+    </div>
+  </div>
+
+  {% if error %}
+  <div class="alert alert-error">
+    <strong>Error:</strong> {{ error }} — Este enlace no es válido o ha expirado.
+    Comuníquese con el responsable del sistema para solicitar un nuevo enlace.
+  </div>
+  {% else %}
+
+  <div id="loadingMsg" style="text-align:center;padding:40px;color:#64748b;font-size:14px;font-weight:600;">
+    Cargando formulario...
+  </div>
+  <div id="mainContent" style="display:none;">
+
+    <!-- ── Encabezado oficial del formato ── -->
+    <div id="headerFormato" class="card" style="padding:12px 16px;">
+      <!-- Se construye con JS -->
+    </div>
+
+    <!-- ── Datos del formulario ── -->
+    <div class="card" style="padding:20px 24px;" id="datosCard">
+      <div id="datosContent">Cargando datos...</div>
+    </div>
+
+    <!-- ── Panel de firma ── -->
+    <div class="card" style="padding:20px 24px;" id="firmaPanel">
+      <h3 style="font-size:15px;font-weight:800;color:#0f766e;margin-bottom:14px;">
+        Su Firma — <span id="tipoFirmaLabel"></span>
+      </h3>
+      <p style="font-size:12px;color:#64748b;margin-bottom:14px;">
+        Dibuje su firma con el mouse o dedo para aprobar esta solicitud.
+      </p>
+      <canvas id="pad" width="700" height="160"></canvas>
+      <div style="display:flex;gap:10px;margin-top:10px;flex-wrap:wrap;">
+        <button class="btn btn-secondary" onclick="clearPad()" style="font-size:12px;padding:7px 14px;">Limpiar</button>
+        <label class="btn btn-secondary" style="font-size:12px;padding:7px 14px;cursor:pointer;">
+          📎 Cargar imagen
+          <input type="file" accept="image/*" onchange="loadPadImage(event)" style="display:none;">
+        </label>
+      </div>
+      <div style="margin-top:16px;" id="firmaActions">
+        <button class="btn btn-primary" onclick="submitFirma()" id="btnFirmar">
+          ✓ Confirmar y Firmar
+        </button>
+      </div>
+      <div id="firmaMsg" style="display:none;margin-top:12px;"></div>
+    </div>
+
+    <!-- ── Estado de todas las firmas ── -->
+    <div class="card" style="padding:20px 24px;">
+      <div class="sec-title">Estado de Firmas</div>
+      <div class="firmas-grid" id="firmasEstadoGrid"></div>
+    </div>
+
+  </div><!-- /mainContent -->
+  {% endif %}
+
+</div>
+
+<script>
+const TOKEN = '{{ token|escapejs }}';
+const ENCABEZADO = {{ encabezado_json|safe }};
+const API_BASE = '/api/apc';
+
+let firmaDatos = null;
+let pad, padCtx, drawing = false, lastX = 0, lastY = 0;
+
+{% if not error %}
+document.addEventListener('DOMContentLoaded', () => {
+  cargarFirma();
+  initPad();
+});
+{% endif %}
+
+async function cargarFirma() {
+  try {
+    const resp = await fetch(API_BASE + '/firmar?token=' + encodeURIComponent(TOKEN));
+    const data = await resp.json();
+
+    if (!resp.ok) {
+      document.getElementById('loadingMsg').innerHTML =
+        `<div class="alert alert-error">${data.detail || 'Error al cargar la solicitud.'}</div>`;
+      return;
+    }
+
+    firmaDatos = data;
+    document.getElementById('loadingMsg').style.display = 'none';
+    document.getElementById('mainContent').style.display = 'block';
+
+    renderEncabezado();
+    renderDatos(data);
+    document.getElementById('tipoFirmaLabel').textContent = data.tipo_firma_label;
+    renderFirmasEstado(data.firmas_estado);
+
+  } catch (e) {
+    document.getElementById('loadingMsg').innerHTML =
+      '<div class="alert alert-error">Error de conexión. Recargue la página.</div>';
+  }
+}
+
+function renderEncabezado() {
+  const enc = ENCABEZADO;
+  const logoSrc = '{% static "logos-hudn/logo-hudn-colores-vertical.png" %}';
+  document.getElementById('headerFormato').innerHTML = `
+    <div class="formato-header">
+      <div class="fmt-cell center">
+        <img src="${logoSrc}" alt="HUDN" style="height:50px;object-fit:contain;" onerror="this.style.display='none'">
+      </div>
+      <div class="fmt-cell fmt-title" style="font-size:14px;">${enc.titulo}</div>
+      <div class="fmt-cell" style="padding:0;">
+        <div class="fmt-row"><span class="fmt-key">Código:</span><span class="fmt-val">${enc.codigo}</span></div>
+        <div class="fmt-row"><span class="fmt-key">Versión:</span><span class="fmt-val">${enc.version}</span></div>
+      </div>
+      <div class="fmt-cell" style="padding:0;">
+        <div class="fmt-row"><span class="fmt-key">Fecha elaboración:</span><span class="fmt-val">${enc.fecha_elaboracion}</span></div>
+        <div class="fmt-row"><span class="fmt-key">Fecha actualización:</span><span class="fmt-val">${enc.fecha_actualizacion}</span></div>
+        <div class="fmt-row"><span class="fmt-key">Hoja:</span><span class="fmt-val">${enc.hoja}</span></div>
+      </div>
+      <div class="fmt-cell center">
+        <img src="${logoSrc}" alt="HUDN" style="height:50px;object-fit:contain;" onerror="this.style.display='none'">
+      </div>
+    </div>
+    <div style="text-align:center;font-size:11px;color:#64748b;font-weight:600;">
+      Hospital Universitario Departamental de Nariño E.S.E. · ${enc.titulo}
+    </div>
+  `;
+}
+
+const VINC_LABELS = {
+  planta_permanente: 'Planta Permanente', planta_temporal: 'Planta Temporal',
+  ops: 'OPS', tercerizado: 'Tercerizado(a)/Contratista'
+};
+
+function renderDatos(data) {
+  const s = data.solicitud;
+  const permisos = (s.permisos || []).map(p =>
+    `<span class="perm-chip">${p}</span>`
+  ).join('');
+
+  document.getElementById('datosContent').innerHTML = `
+    <div class="sec-title">Sección 1 · Datos Personales</div>
+    <div class="info-grid">
+      <div class="info-item"><div class="info-label">Fecha diligenciamiento</div><div class="info-value">${s.fecha_diligenciamiento}</div></div>
+      <div class="info-item"><div class="info-label">Número de identificación</div><div class="info-value">${s.num_identificacion}</div></div>
+      <div class="info-item"><div class="info-label">Lugar de expedición</div><div class="info-value">${s.lugar_expedicion}</div></div>
+      <div class="info-item"><div class="info-label">Nombres y apellidos</div><div class="info-value">${s.nombres_apellidos}</div></div>
+      <div class="info-item"><div class="info-label">Dirección residencia</div><div class="info-value">${s.direccion_residencia}</div></div>
+      <div class="info-item"><div class="info-label">Tel. Celular</div><div class="info-value">${s.tel_celular}</div></div>
+      <div class="info-item"><div class="info-label">Correo personal</div><div class="info-value">${s.correo_personal}</div></div>
+      ${s.tel_fijo ? `<div class="info-item"><div class="info-label">Tel. Fijo</div><div class="info-value">${s.tel_fijo}</div></div>` : ''}
+    </div>
+    <div class="sec-title">Sección 2 · Datos de Vinculación</div>
+    <div class="info-grid">
+      <div class="info-item"><div class="info-label">Tipo de vinculación</div><div class="info-value">${VINC_LABELS[s.tipo_vinculacion] || s.tipo_vinculacion}</div></div>
+      <div class="info-item"><div class="info-label">Período</div><div class="info-value">${s.periodo_inicio} — ${s.periodo_fin}</div></div>
+      <div class="info-item"><div class="info-label">Área de servicios</div><div class="info-value">${s.area_servicios}</div></div>
+      <div class="info-item"><div class="info-label">Cargo</div><div class="info-value">${s.cargo_funcionario}</div></div>
+      ${s.num_registro_tarjeta ? `<div class="info-item"><div class="info-label">N° Registro/Tarjeta</div><div class="info-value">${s.num_registro_tarjeta}</div></div>` : ''}
+      ${s.nombre_empresa_contratista ? `<div class="info-item"><div class="info-label">Empresa contratista</div><div class="info-value">${s.nombre_empresa_contratista}</div></div>` : ''}
+    </div>
+    <div class="sec-title">Sección 3 · Permisos y Accesos Solicitados</div>
+    <div style="margin-top:6px;">${permisos || '<span style="color:#94a3b8;font-size:12px;">Ninguno registrado</span>'}</div>
+    <div class="sec-title">Sección 4 · Entrenamiento</div>
+    <div class="info-grid">
+      ${s.fecha_entrenamiento ? `<div class="info-item"><div class="info-label">Fecha entrenamiento</div><div class="info-value">${s.fecha_entrenamiento}</div></div>` : ''}
+      ${s.responsable_entrenamiento ? `<div class="info-item"><div class="info-label">Responsable</div><div class="info-value">${s.responsable_entrenamiento}</div></div>` : ''}
+      <div class="info-item"><div class="info-label">Entrenamiento en</div><div class="info-value">
+        ${[s.entrenamiento_dgh && 'DGH', s.entrenamiento_correo && 'Correo Institucional',
+           s.entrenamiento_aplicativos && 'Aplicativos HUDN', s.entrenamiento_intranet && 'Intranet']
+          .filter(Boolean).join(', ') || 'No especificado'}
+      </div></div>
+    </div>
+    <div class="sec-title">Firma del Funcionario</div>
+    ${s.firma_funcionario ? `<img src="${s.firma_funcionario}" style="max-height:60px;border:1px solid #e2e8f0;border-radius:8px;padding:4px;">` : '<span style="color:#94a3b8;font-size:12px;">Sin firma</span>'}
+  `;
+}
+
+function renderFirmasEstado(firmas) {
+  const TIPOS = {
+    coordinador_area: 'Coordinador de Área',
+    resp_contratista: 'Responsable Contratista',
+    funcionario: 'Funcionario',
+    coord_talento_humano: 'Coord. Talento Humano',
+    coord_gestion_info: 'Coord. Gestión Info',
+  };
+  const grid = document.getElementById('firmasEstadoGrid');
+  grid.innerHTML = firmas.map(f => {
+    const done = f.firmado;
+    const isActive = !done && f.tipo_firma === (firmaDatos ? firmaDatos.tipo_firma : '');
+    return `
+      <div class="firma-box ${done ? 'done' : isActive ? 'active' : ''}">
+        <div class="firma-box-label">${TIPOS[f.tipo_firma] || f.tipo_firma}</div>
+        <div class="firma-box-nombre">${f.nombre_firmante || '—'}</div>
+        ${done && f.firma_imagen
+          ? `<img src="${f.firma_imagen}" class="firma-img" alt="firma">`
+          : done
+          ? `<div style="font-size:11px;color:#16a34a;font-weight:700;">✓ Firmado</div>`
+          : `<div class="firma-pending">Pendiente</div>`}
+        ${f.fecha_firma ? `<div style="font-size:10px;color:#94a3b8;margin-top:4px;">${f.fecha_firma.split('T')[0]}</div>` : ''}
+      </div>
+    `;
+  }).join('');
+}
+
+// ── Canvas pad ───────────────────────────────────────────────────────────────
+
+function initPad() {
+  pad = document.getElementById('pad');
+  padCtx = pad.getContext('2d');
+  padCtx.strokeStyle = '#0f172a';
+  padCtx.lineWidth = 2;
+  padCtx.lineCap = 'round';
+
+  pad.addEventListener('mousedown', e => { drawing=true; [lastX,lastY]=getPos(e); });
+  pad.addEventListener('mousemove', e => { if(drawing) drawLine(e); });
+  pad.addEventListener('mouseup', () => { drawing=false; padCtx.beginPath(); });
+  pad.addEventListener('mouseleave', () => { drawing=false; padCtx.beginPath(); });
+  pad.addEventListener('touchstart', e => { e.preventDefault(); drawing=true; [lastX,lastY]=getPos(e.touches[0]); });
+  pad.addEventListener('touchmove', e => { e.preventDefault(); if(drawing) drawLine(e.touches[0]); });
+  pad.addEventListener('touchend', () => { drawing=false; padCtx.beginPath(); });
+}
+
+function getPos(e) {
+  const r = pad.getBoundingClientRect();
+  return [(e.clientX - r.left) * (pad.width/r.width), (e.clientY - r.top) * (pad.height/r.height)];
+}
+
+function drawLine(e) {
+  const [x,y] = getPos(e);
+  padCtx.beginPath();
+  padCtx.moveTo(lastX,lastY);
+  padCtx.lineTo(x,y);
+  padCtx.stroke();
+  [lastX,lastY] = [x,y];
+}
+
+function clearPad() {
+  padCtx.clearRect(0,0,pad.width,pad.height);
+}
+
+function loadPadImage(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const img = new Image();
+    img.onload = () => {
+      padCtx.clearRect(0,0,pad.width,pad.height);
+      const r = Math.min(pad.width/img.width, pad.height/img.height);
+      padCtx.drawImage(img, (pad.width-img.width*r)/2, (pad.height-img.height*r)/2, img.width*r, img.height*r);
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function isPadBlank() {
+  return !padCtx.getImageData(0,0,pad.width,pad.height).data.some(c=>c!==0);
+}
+
+// ── Submit firma ─────────────────────────────────────────────────────────────
+
+async function submitFirma() {
+  if (isPadBlank()) {
+    showMsg('firmaMsg', 'error', 'Por favor dibuje o cargue su firma antes de confirmar.');
+    return;
+  }
+
+  const btn = document.getElementById('btnFirmar');
+  btn.disabled = true;
+  btn.textContent = 'Procesando...';
+
+  try {
+    const resp = await fetch(API_BASE + '/firmar/submit', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        token: TOKEN,
+        firma_imagen: pad.toDataURL('image/png'),
+      }),
+    });
+    const data = await resp.json();
+
+    if (resp.ok) {
+      document.getElementById('firmaPanel').innerHTML = `
+        <div style="text-align:center;padding:32px;">
+          <div style="width:60px;height:60px;background:#f0fdf4;border:3px solid #86efac;border-radius:50%;
+                      display:inline-flex;align-items:center;justify-content:center;margin-bottom:16px;">
+            <svg width="30" height="30" fill="none" viewBox="0 0 24 24" stroke="#16a34a" stroke-width="2.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+            </svg>
+          </div>
+          <h3 style="font-size:18px;font-weight:900;color:#15803d;margin-bottom:8px;">¡Firma Registrada!</h3>
+          <p style="font-size:13px;color:#475569;">${data.mensaje || 'Su firma ha sido registrada correctamente.'}</p>
+        </div>
+      `;
+      setTimeout(() => cargarFirma(), 1500);
+    } else {
+      showMsg('firmaMsg', 'error', data.detail || 'Error al registrar la firma.');
+      btn.disabled = false;
+      btn.textContent = '✓ Confirmar y Firmar';
+    }
+  } catch(e) {
+    showMsg('firmaMsg', 'error', 'Error de conexión. Intente nuevamente.');
+    btn.disabled = false;
+    btn.textContent = '✓ Confirmar y Firmar';
+  }
+}
+
+function showMsg(id, tipo, txt) {
+  const el = document.getElementById(id);
+  const bg = tipo==='error' ? '#fef2f2' : '#f0fdf4';
+  const border = tipo==='error' ? '#fecaca' : '#86efac';
+  const color = tipo==='error' ? '#991b1b' : '#166534';
+  el.className = 'alert';
+  el.style.cssText = `background:${bg};border:1px solid ${border};color:${color};padding:10px 14px;border-radius:10px;font-size:12.5px;font-weight:600;`;
+  el.textContent = txt;
+  el.style.display = 'block';
+}
+</script>
+</body>
+</html>

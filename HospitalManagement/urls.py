@@ -23,10 +23,14 @@ from .api_views import (
     get_diagnostico_paciente, lookup_tercero_by_documento
 )
 from paz_y_salvo.urls import urlpatterns as pys_api_patterns, template_urlpatterns as pys_template_patterns
+from asignacion_permisos.urls import urlpatterns as apc_api_patterns, template_urlpatterns as apc_template_patterns
 
 handler500 = server_error
 handler404 = page_not_found
 handler403 = permission_denied
+
+from django.conf import settings
+from django.conf.urls.static import static
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -55,16 +59,25 @@ urlpatterns = [
     path('organigrama/', include('A_00_Organigrama.urls')),
     path('visor-soportes/', include('visor_soportes.urls')),
     path('atencion/', include('unificador_v1.urls')),
-    path('fetal/', include('frecuenciafetal.urls')),
-    path('meows/', include('meows.urls')), 
-    path('parto/', include('trabajoparto.urls')),
+    path('unificador/', include('unificador_v1.urls')),
+    path('fetal/', include('unificador_v1.urls.fetal')),
+    path('meows/', include('unificador_v1.urls.meows')), 
+    path('parto/', include('unificador_v1.urls.parto')),
     path('tercerizadas/', include('tercerizadas.urls', namespace='tercerizadas')),
     path('paz-y-salvo/', include((pys_template_patterns, 'paz_y_salvo'), namespace='paz_y_salvo')),
     path('api/', include(pys_api_patterns)),
+    path('asignacion-permisos/', include((apc_template_patterns, 'asignacion_permisos'), namespace='asignacion_permisos')),
+    path('api/apc/', include(apc_api_patterns)),
     path('inventarios/', include('inventarios.urls')),
     path('formatos-apps/', include('formatos_apps.urls')),
     path('crue-remisiones/', include('crue_remisiones.urls', namespace='crue_remisiones')),
+    path('georeferencia/', include('BasesGenerales.urls')),
 ]
+
+if settings.DEBUG:
+    from django.contrib.staticfiles.urls import staticfiles_urlpatterns
+    urlpatterns += staticfiles_urlpatterns()
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 
 

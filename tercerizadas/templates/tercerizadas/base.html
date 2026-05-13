@@ -189,7 +189,21 @@
             border-bottom: 2px solid rgba(14,165,233,0.15);
             display: flex; align-items: center; gap: 0.5rem;
         }
+        /* Grids fijos — evitan columnas flotantes */
         .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; }
+        .fg1 { display: grid; grid-template-columns: 1fr; gap: 1rem; }
+        .fg2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; }
+        .fg3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
+        .fg4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; }
+        .col-1 { grid-column: span 1; }
+        .col-2 { grid-column: span 2; }
+        .col-3 { grid-column: span 3; }
+        .col-4 { grid-column: span 4; }
+        .mb-row { margin-bottom: 1rem; }
+        @media (max-width: 680px) {
+            .fg2, .fg3, .fg4 { grid-template-columns: 1fr; }
+            .col-2, .col-3, .col-4 { grid-column: span 1; }
+        }
         .form-group { display: flex; flex-direction: column; gap: 0.35rem; }
         .form-label { font-size: 0.8rem; font-weight: 600; color: #475569; }
         .form-control, .form-select {
@@ -360,12 +374,21 @@
                        class="nav-sub {% if request.resolver_match.url_name == 'lista_empresas' %}active{% endif %}">
                        Lista de Empresas
                     </a>
+                    {% if es_admin_global %}
                     <a href="{% url 'tercerizadas:crear_empresa' %}"
                        class="nav-sub {% if request.resolver_match.url_name == 'crear_empresa' %}active{% endif %}">
                        + Nueva Empresa
                     </a>
+                    {% endif %}
                 </div>
             </details>
+
+            {% if empresa_admin %}
+            <a href="{% url 'tercerizadas:mi_firma' %}"
+               class="nav-item {% if request.resolver_match.url_name == 'mi_firma' %}active{% endif %}">
+                <i data-lucide="pen-tool"></i> Mi Firma Electrónica
+            </a>
+            {% endif %}
 
             <form action="{% url 'logout' %}" method="post" style="margin:0;">
                 {% csrf_token %}
