@@ -1,7 +1,8 @@
 from django.contrib import admin
 from .models import (
     EmpresaTercerizada, ContratoTercerizado, ActividadTercerizado,
-    ServidorTercerizado, AsignacionOrganigrama, AfiliacionSeguridad
+    ServidorTercerizado, AsignacionOrganigrama, AfiliacionSeguridad,
+    AdministradorTercerizada
 )
 
 
@@ -60,3 +61,11 @@ class AsignacionAdmin(admin.ModelAdmin):
 class AfiliacionAdmin(admin.ModelAdmin):
     list_display = ['servidor', 'tipo', 'nombre_entidad', 'vigente', 'fecha_vencimiento']
     list_filter = ['tipo', 'vigente']
+
+
+@admin.register(AdministradorTercerizada)
+class AdministradorTercerizedaAdmin(admin.ModelAdmin):
+    list_display  = ['user', 'empresa', 'activo', 'fecha_asignacion']
+    list_filter   = ['activo', 'empresa']
+    search_fields = ['user__username', 'user__first_name', 'user__last_name', 'empresa__razon_social']
+    autocomplete_fields = ['empresa']

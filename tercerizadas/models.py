@@ -21,6 +21,24 @@ class EmpresaTercerizada(models.Model):
     direccion = models.CharField('Dirección', max_length=300, blank=True, null=True)
     activa = models.BooleanField('Activa', default=True)
     observaciones = models.TextField('Observaciones', blank=True, null=True)
+
+    # — Persona a cargo dentro del Hospital —
+    persona_cargo_hospital = models.CharField(
+        'Persona a cargo (Hospital)', max_length=200, blank=True, null=True,
+        help_text='Nombre del funcionario HUDN responsable de esta empresa'
+    )
+    cedula_persona_cargo = models.CharField(
+        'Cédula', max_length=20, blank=True, null=True,
+        validators=[only_digits]
+    )
+    email_persona_cargo = models.EmailField(
+        'Correo de la persona a cargo', blank=True, null=True
+    )
+    firma_responsable = models.TextField(
+        'Firma del responsable', blank=True, null=True,
+        help_text='Base64 de la firma del responsable'
+    )
+
     registrado_por = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.PROTECT,
         related_name='empresas_registradas', verbose_name='Registrado por'
@@ -319,3 +337,28 @@ class AfiliacionSeguridad(models.Model):
 
     def __str__(self):
         return f"{self.get_tipo_display()} — {self.nombre_entidad} ({self.servidor})"
+
+
+# ─────────────────────────────────────────────
+# 7. ADMINISTRADOR DE TERCERIZADA
+# ─────────────────────────────────────────────
+class AdministradorTercerizada(models.Model):
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE,
+        related_name='admin_tercerizada', verbose_name='Usuario'
+    )
+    empresa = models.ForeignKey(
+        EmpresaTercerizada, on_delete=models.CASCADE,
+        related_name='administradores', verbose_name='Empresa'
+    )
+    activo = models.BooleanField('Activo', default=True)
+    fecha_asignacion = models.DateTimeField('Fecha de Asignación', auto_now_add=True)
+
+    class Meta:
+        db_table = 'terc_administrador_tercerizada'
+        verbose_name = 'Administrador de Tercerizada'
+        verbose_name_plural = 'Administradores de Tercerizadas'
+
+    def __str__(self):
+        nombre = self.user.get_full_name() or self.user.username
+        return f"{nombre} → {self.empresa.razon_social}"

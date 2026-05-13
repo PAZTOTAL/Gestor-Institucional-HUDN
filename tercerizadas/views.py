@@ -14,6 +14,18 @@ from .forms import (
     EmpresaForm, ContratoForm, ActividadForm,
     ServidorForm, AsignacionForm, AfiliacionForm
 )
+from .permisos import (
+    es_admin_global, get_admin_tercerizada, get_empresa_del_admin,
+    solo_admin_global, acceso_tercerizada
+)
+
+
+def _ctx_rol(request):
+    """Contexto de rol reutilizable para todos los templates."""
+    return {
+        'es_admin_global': es_admin_global(request.user),
+        'empresa_admin': get_empresa_del_admin(request.user),
+    }
 
 
 # ══════════════════════════════════════════════════════════════
@@ -21,7 +33,6 @@ from .forms import (
 # ══════════════════════════════════════════════════════════════
 @login_required
 def buscar_en_dinamica(request):
-    """Endpoint AJAX: busca un número de documento en GENTERCER."""
     num_doc = request.GET.get('documento', '').strip()
     if not num_doc:
         return JsonResponse({'encontrado': False, 'error': 'Número vacío'})
@@ -49,23 +60,39 @@ def buscar_en_dinamica(request):
 # ══════════════════════════════════════════════════════════════
 @login_required
 def dashboard(request):
-    total_servidores = ServidorTercerizado.objects.count()
-    activos = ServidorTercerizado.objects.filter(activo_hospital=True).count()
+    empresa_admin = get_empresa_del_admin(request.user)
+    admin_global = es_admin_global(request.user)
+
+    base_qs = ServidorTercerizado.objects
+    if not admin_global and empresa_admin:
+        base_qs = base_qs.filter(empresa=empresa_admin)
+
+    total_servidores = base_qs.count()
+    activos = base_qs.filter(activo_hospital=True).count()
     inactivos = total_servidores - activos
-    total_empresas = EmpresaTercerizada.objects.filter(activa=True).count()
-    en_dinamica = ServidorTercerizado.objects.filter(en_dinamica=True).count()
-    sin_dinamica = ServidorTercerizado.objects.filter(en_dinamica=False).count()
+    en_dinamica = base_qs.filter(en_dinamica=True).count()
+    sin_dinamica = base_qs.filter(en_dinamica=False).count()
 
-    # Últimos 5 registrados
-    ultimos = ServidorTercerizado.objects.select_related('empresa').order_by('-fecha_registro')[:5]
+    if admin_global:
+        total_empresas = EmpresaTercerizada.objects.filter(activa=True).count()
+    else:
+        total_empresas = 1 if empresa_admin else 0
 
-    # Distribución por empresa
-    por_empresa = (
-        EmpresaTercerizada.objects
-        .filter(activa=True)
-        .annotate(total=Count('servidores'))
-        .order_by('-total')[:6]
-    )
+    ultimos = base_qs.select_related('empresa').order_by('-fecha_registro')[:5]
+
+    if admin_global:
+        por_empresa = (
+            EmpresaTercerizada.objects
+            .filter(activa=True)
+            .annotate(total=Count('servidores'))
+            .order_by('-total')[:6]
+        )
+    else:
+        por_empresa = (
+            EmpresaTercerizada.objects
+            .filter(pk=empresa_admin.pk) if empresa_admin else
+            EmpresaTercerizada.objects.none()
+        )
 
     context = {
         'total_servidores': total_servidores,
@@ -77,6 +104,7 @@ def dashboard(request):
         'ultimos': ultimos,
         'por_empresa': por_empresa,
         'page_title': 'Tercerizadas — Dashboard',
+        **_ctx_rol(request),
     }
     return render(request, 'tercerizadas/dashboard.html', context)
 
@@ -95,6 +123,15 @@ def lista_servidores(request):
         'empresa', 'tipo_documento', 'sexo'
     ).order_by('primer_apellido', 'primer_nombre')
 
+    # Restringir al admin de tercerizada
+    admin_global = es_admin_global(request.user)
+    empresa_admin = get_empresa_del_admin(request.user)
+    if not admin_global:
+        if empresa_admin:
+            qs = qs.filter(empresa=empresa_admin)
+        else:
+            qs = qs.none()
+
     if q:
         qs = qs.filter(
             Q(numero_documento__icontains=q) |
@@ -102,7 +139,7 @@ def lista_servidores(request):
             Q(primer_apellido__icontains=q) |
             Q(segundo_apellido__icontains=q)
         )
-    if empresa_id:
+    if empresa_id and admin_global:
         qs = qs.filter(empresa_id=empresa_id)
     if estado == 'activo':
         qs = qs.filter(activo_hospital=True)
@@ -113,7 +150,11 @@ def lista_servidores(request):
     elif dinamica == 'no':
         qs = qs.filter(en_dinamica=False)
 
-    empresas = EmpresaTercerizada.objects.filter(activa=True).order_by('razon_social')
+    if admin_global:
+        empresas = EmpresaTercerizada.objects.filter(activa=True).order_by('razon_social')
+    else:
+        empresas = EmpresaTercerizada.objects.filter(pk=empresa_admin.pk) if empresa_admin else EmpresaTercerizada.objects.none()
+
     context = {
         'servidores': qs,
         'empresas': empresas,
@@ -123,6 +164,7 @@ def lista_servidores(request):
         'dinamica': dinamica,
         'total': qs.count(),
         'page_title': 'Servidores Tercerizados',
+        **_ctx_rol(request),
     }
     return render(request, 'tercerizadas/lista_servidores.html', context)
 
@@ -137,6 +179,15 @@ def detalle_servidor(request, pk):
         ),
         pk=pk
     )
+
+    # Admin tercerizada solo puede ver servidores de su empresa
+    admin_global = es_admin_global(request.user)
+    if not admin_global:
+        empresa_admin = get_empresa_del_admin(request.user)
+        if not empresa_admin or servidor.empresa_id != empresa_admin.pk:
+            messages.error(request, 'No tiene acceso a este servidor.')
+            return redirect('tercerizadas:lista_servidores')
+
     asignaciones = servidor.asignaciones.select_related(
         'organigrama_nivel1', 'organigrama_nivel2', 'organigrama_nivel3',
         'organigrama_nivel4', 'actividad', 'verificado_por'
@@ -148,17 +199,24 @@ def detalle_servidor(request, pk):
         'asignaciones': asignaciones,
         'afiliaciones': afiliaciones,
         'page_title': f'{servidor.nombre_completo}',
+        **_ctx_rol(request),
     })
 
 
 @login_required
 def crear_servidor(request):
+    admin_global = es_admin_global(request.user)
+    empresa_fija = None if admin_global else get_empresa_del_admin(request.user)
+
+    if not admin_global and not empresa_fija:
+        messages.error(request, 'No tiene una empresa asignada para registrar servidores.')
+        return redirect('tercerizadas:dashboard')
+
     if request.method == 'POST':
-        form = ServidorForm(request.POST, request.FILES)
+        form = ServidorForm(request.POST, request.FILES, empresa_fija=empresa_fija)
         if form.is_valid():
             servidor = form.save(commit=False)
             servidor.registrado_por = request.user
-            # Verificar si existe en Dinámica
             try:
                 from consultas_externas.models import Gentercer
                 existe = Gentercer.objects.using('readonly').filter(
@@ -170,37 +228,49 @@ def crear_servidor(request):
             except Exception:
                 servidor.en_dinamica = False
             servidor.save()
-            messages.success(request, f'✅ Servidor {servidor.nombre_completo} registrado correctamente.')
+            messages.success(request, f'Servidor {servidor.nombre_completo} registrado correctamente.')
             return redirect('tercerizadas:detalle_servidor', pk=servidor.pk)
     else:
-        form = ServidorForm()
+        form = ServidorForm(empresa_fija=empresa_fija)
 
     return render(request, 'tercerizadas/form_servidor.html', {
         'form': form,
         'titulo': 'Registrar Servidor',
         'page_title': 'Nuevo Servidor',
+        **_ctx_rol(request),
     })
 
 
 @login_required
 def editar_servidor(request, pk):
     servidor = get_object_or_404(ServidorTercerizado, pk=pk)
+
+    admin_global = es_admin_global(request.user)
+    empresa_fija = None
+    if not admin_global:
+        empresa_admin = get_empresa_del_admin(request.user)
+        if not empresa_admin or servidor.empresa_id != empresa_admin.pk:
+            messages.error(request, 'No puede editar servidores de otra empresa.')
+            return redirect('tercerizadas:lista_servidores')
+        empresa_fija = empresa_admin
+
     if request.method == 'POST':
-        form = ServidorForm(request.POST, request.FILES, instance=servidor)
+        form = ServidorForm(request.POST, request.FILES, instance=servidor, empresa_fija=empresa_fija)
         if form.is_valid():
             srv = form.save(commit=False)
             srv.modificado_por = request.user
             srv.save()
-            messages.success(request, '✅ Servidor actualizado correctamente.')
+            messages.success(request, 'Servidor actualizado correctamente.')
             return redirect('tercerizadas:detalle_servidor', pk=srv.pk)
     else:
-        form = ServidorForm(instance=servidor)
+        form = ServidorForm(instance=servidor, empresa_fija=empresa_fija)
 
     return render(request, 'tercerizadas/form_servidor.html', {
         'form': form,
         'servidor': servidor,
         'titulo': 'Editar Servidor',
         'page_title': f'Editar: {servidor.nombre_completo}',
+        **_ctx_rol(request),
     })
 
 
@@ -210,20 +280,33 @@ def editar_servidor(request, pk):
 @login_required
 def lista_empresas(request):
     q = request.GET.get('q', '').strip()
-    qs = EmpresaTercerizada.objects.annotate(
-        total_servidores=Count('servidores')
-    ).order_by('razon_social')
-    if q:
-        qs = qs.filter(Q(nit__icontains=q) | Q(razon_social__icontains=q))
+    admin_global = es_admin_global(request.user)
+
+    if admin_global:
+        qs = EmpresaTercerizada.objects.annotate(
+            total_servidores=Count('servidores')
+        ).order_by('razon_social')
+        if q:
+            qs = qs.filter(Q(nit__icontains=q) | Q(razon_social__icontains=q))
+    else:
+        empresa_admin = get_empresa_del_admin(request.user)
+        if not empresa_admin:
+            messages.info(request, 'No tiene una empresa tercerizada asignada.')
+            return redirect('tercerizadas:dashboard')
+        qs = EmpresaTercerizada.objects.filter(pk=empresa_admin.pk).annotate(
+            total_servidores=Count('servidores')
+        )
 
     return render(request, 'tercerizadas/lista_empresas.html', {
         'empresas': qs,
         'q': q,
         'page_title': 'Empresas Tercerizadas',
+        **_ctx_rol(request),
     })
 
 
 @login_required
+@solo_admin_global
 def crear_empresa(request):
     if request.method == 'POST':
         form = EmpresaForm(request.POST)
@@ -231,7 +314,7 @@ def crear_empresa(request):
             empresa = form.save(commit=False)
             empresa.registrado_por = request.user
             empresa.save()
-            messages.success(request, f'✅ Empresa {empresa.razon_social} registrada.')
+            messages.success(request, f'Empresa {empresa.razon_social} registrada.')
             return redirect('tercerizadas:lista_empresas')
     else:
         form = EmpresaForm()
@@ -239,25 +322,76 @@ def crear_empresa(request):
         'form': form,
         'titulo': 'Nueva Empresa',
         'page_title': 'Nueva Empresa',
+        **_ctx_rol(request),
     })
 
 
 @login_required
 def editar_empresa(request, pk):
     empresa = get_object_or_404(EmpresaTercerizada, pk=pk)
+    admin_global = es_admin_global(request.user)
+
+    if not admin_global:
+        admin = get_admin_tercerizada(request.user)
+        if not admin or admin.empresa_id != empresa.pk:
+            messages.error(request, 'Solo puede editar los datos de su propia empresa.')
+            return redirect('tercerizadas:lista_empresas')
+
     if request.method == 'POST':
         form = EmpresaForm(request.POST, instance=empresa)
         if form.is_valid():
             form.save()
-            messages.success(request, '✅ Empresa actualizada.')
+            messages.success(request, 'Empresa actualizada.')
             return redirect('tercerizadas:lista_empresas')
     else:
         form = EmpresaForm(instance=empresa)
+
+    # Firma del administrador de esta empresa (solo para admin de tercerizada)
+    firma_admin = None
+    if not admin_global:
+        try:
+            from consentimientos.models import FirmaFuncionario
+            firma_admin = FirmaFuncionario.objects.filter(user=request.user, activo=True).first()
+        except Exception:
+            pass
+
     return render(request, 'tercerizadas/form_empresa.html', {
         'form': form,
         'empresa': empresa,
         'titulo': 'Editar Empresa',
         'page_title': f'Editar: {empresa.razon_social}',
+        'firma_admin': firma_admin,
+        **_ctx_rol(request),
+    })
+
+
+# ══════════════════════════════════════════════════════════════
+# FIRMA ELECTRÓNICA DEL ADMINISTRADOR
+# ══════════════════════════════════════════════════════════════
+@login_required
+@acceso_tercerizada
+def mi_firma(request):
+    from consentimientos.models import FirmaFuncionario
+    firma_actual = FirmaFuncionario.objects.filter(user=request.user, activo=True).first()
+
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            firma_b64 = data.get('firma_base64', '').strip()
+            if not firma_b64:
+                return JsonResponse({'status': 'error', 'message': 'No se recibió la firma.'}, status=400)
+            FirmaFuncionario.objects.update_or_create(
+                user=request.user,
+                defaults={'firma_data': firma_b64, 'activo': True}
+            )
+            return JsonResponse({'status': 'ok', 'message': 'Firma registrada correctamente.'})
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+
+    return render(request, 'tercerizadas/mi_firma.html', {
+        'firma_actual': firma_actual,
+        'page_title': 'Mi Firma Electrónica',
+        **_ctx_rol(request),
     })
 
 
@@ -267,13 +401,21 @@ def editar_empresa(request, pk):
 @login_required
 def agregar_asignacion(request, servidor_pk):
     servidor = get_object_or_404(ServidorTercerizado, pk=servidor_pk)
+
+    admin_global = es_admin_global(request.user)
+    if not admin_global:
+        empresa_admin = get_empresa_del_admin(request.user)
+        if not empresa_admin or servidor.empresa_id != empresa_admin.pk:
+            messages.error(request, 'No puede modificar servidores de otra empresa.')
+            return redirect('tercerizadas:lista_servidores')
+
     if request.method == 'POST':
         form = AsignacionForm(request.POST)
         if form.is_valid():
             asig = form.save(commit=False)
             asig.servidor = servidor
             asig.save()
-            messages.success(request, '✅ Área asignada correctamente.')
+            messages.success(request, 'Área asignada correctamente.')
             return redirect('tercerizadas:detalle_servidor', pk=servidor_pk)
     else:
         form = AsignacionForm()
@@ -281,19 +423,28 @@ def agregar_asignacion(request, servidor_pk):
         'form': form,
         'servidor': servidor,
         'page_title': 'Asignar Área',
+        **_ctx_rol(request),
     })
 
 
 @login_required
 def agregar_afiliacion(request, servidor_pk):
     servidor = get_object_or_404(ServidorTercerizado, pk=servidor_pk)
+
+    admin_global = es_admin_global(request.user)
+    if not admin_global:
+        empresa_admin = get_empresa_del_admin(request.user)
+        if not empresa_admin or servidor.empresa_id != empresa_admin.pk:
+            messages.error(request, 'No puede modificar servidores de otra empresa.')
+            return redirect('tercerizadas:lista_servidores')
+
     if request.method == 'POST':
         form = AfiliacionForm(request.POST, request.FILES)
         if form.is_valid():
             afil = form.save(commit=False)
             afil.servidor = servidor
             afil.save()
-            messages.success(request, '✅ Afiliación registrada.')
+            messages.success(request, 'Afiliación registrada.')
             return redirect('tercerizadas:detalle_servidor', pk=servidor_pk)
     else:
         form = AfiliacionForm()
@@ -301,4 +452,5 @@ def agregar_afiliacion(request, servidor_pk):
         'form': form,
         'servidor': servidor,
         'page_title': 'Registrar Afiliación',
+        **_ctx_rol(request),
     })

@@ -315,7 +315,7 @@
                     .btn-parametro.tiene-datos .status-indicator { background-color: #10b981 !important; }
                 </style>
                 {% for item in items %}
-                    {% for parametro in item.parametros.all %}
+                    {% for parametro in item.parametros_parto.all %}
                     <div class="modal-parametro" id="modal-parametro-{{ parametro.id }}" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 1000; justify-content: center; align-items: center; backdrop-filter: blur(2px);">
                     <div class="modal-content" style="background: #fff; padding: 0; border-radius: 12px; width: 95%; max-width: 500px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); overflow: hidden; animation: modalFadeIn 0.3s ease;">
                         <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; background: #2563eb; color: white; padding: 15px 20px;">
@@ -324,9 +324,9 @@
                         </div>
                         <div class="modal-body" style="padding: 20px;">
                                 <div class="cell-inputs" style="display: flex; flex-direction: column; gap: 15px;">
-                                    {% for campo in parametro.campos.all %}
+                                    {% for campo in parametro.campos_parto.all %}
                                     <div class="input-group" style="display: flex; flex-direction: column; gap: 8px;">
-                                        {% if parametro.campos.count > 1 %}
+                                        {% if parametro.campos_parto.count > 1 %}
                                         <label class="field-label" style="font-weight: 600; font-size: 0.95em; color: #475569;">{{ campo.nombre }}</label>
                                         {% endif %}
                                         {% if parametro.id == 1 and campo.id == 1 %}

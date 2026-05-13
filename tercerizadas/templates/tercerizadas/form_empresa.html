@@ -5,6 +5,45 @@
  / <strong>{{ titulo }}</strong>
 {% endblock %}
 
+{% block extra_css %}
+<style>
+    /* ── Firma ── */
+    .firma-tabs { display: flex; gap: 0; margin-bottom: 0; }
+    .firma-tab {
+        flex: 1; padding: 0.55rem; text-align: center;
+        font-size: 0.82rem; font-weight: 600; cursor: pointer;
+        border: 1.5px solid #e2e8f0; background: #f8fafc; color: #64748b;
+        transition: all 0.15s;
+    }
+    .firma-tab:first-child { border-radius: 8px 0 0 0; }
+    .firma-tab:last-child  { border-radius: 0 8px 0 0; border-left: none; }
+    .firma-tab.active { background: var(--terc-primary); color: #fff; border-color: var(--terc-primary); }
+    .firma-panel {
+        border: 1.5px solid #e2e8f0; border-top: none;
+        border-radius: 0 0 10px 10px;
+        background: #f8fafc; padding: 1rem;
+        display: none;
+    }
+    .firma-panel.active { display: block; }
+
+    #canvas-firma-empresa {
+        width: 100%; height: 180px;
+        cursor: crosshair; touch-action: none;
+        display: block;
+        border-radius: 6px; background: #fff;
+        border: 1.5px solid #e2e8f0;
+    }
+    .firma-preview-box {
+        width: 100%; height: 80px;
+        border: 2px solid #d1fae5; border-radius: 8px;
+        background: #f0fdf4;
+        display: flex; align-items: center; justify-content: center;
+        overflow: hidden; margin-top: 0.75rem;
+    }
+    .firma-preview-box img { max-height: 70px; max-width: 100%; object-fit: contain; }
+</style>
+{% endblock %}
+
 {% block content %}
 <header style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;flex-wrap:wrap;gap:1rem;">
     <h1 style="margin:0;font-size:1.4rem;font-weight:800;color:#1a2332;">{{ titulo }}</h1>
@@ -13,56 +52,296 @@
     </a>
 </header>
 
-<form method="post" enctype="multipart/form-data">
+<form method="post" enctype="multipart/form-data" id="form-empresa">
     {% csrf_token %}
+    {{ form.firma_responsable }}
+
+    <!-- ══ Sección 1: Datos de la Empresa ══ -->
     <div class="form-section">
         <div class="form-section-title">
             <i data-lucide="building-2" style="width:16px;"></i> Datos de la Empresa
         </div>
-        <div class="form-grid">
+
+        <!-- Fila 1: NIT + Razón Social -->
+        <div class="fg3" style="margin-bottom:1rem;">
             <div class="form-group">
-                <label class="form-label">NIT *</label>{{ form.nit }}
+                <label class="form-label">NIT <span style="color:#f43f5e;">*</span></label>
+                {{ form.nit }}
             </div>
-            <div class="form-group" style="grid-column:span 2;">
-                <label class="form-label">Razón Social *</label>{{ form.razon_social }}
+            <div class="form-group col-2">
+                <label class="form-label">Razón Social <span style="color:#f43f5e;">*</span></label>
+                {{ form.razon_social }}
             </div>
+        </div>
+
+        <!-- Fila 2: Tipo Servicio + Teléfono + Correo empresa -->
+        <div class="fg3" style="margin-bottom:1rem;">
             <div class="form-group">
-                <label class="form-label">Representante Legal</label>{{ form.representante_legal }}
-            </div>
-            <div class="form-group">
-                <label class="form-label">Tipo de Servicio *</label>{{ form.tipo_servicio }}
-            </div>
-            <div class="form-group">
-                <label class="form-label">Teléfono</label>{{ form.telefono }}
-            </div>
-            <div class="form-group">
-                <label class="form-label">Correo</label>{{ form.email }}
-            </div>
-            <div class="form-group" style="grid-column:span 2;">
-                <label class="form-label">Dirección</label>{{ form.direccion }}
-            </div>
-            <div class="form-group" style="grid-column:span 2;">
-                <label class="form-label">Observaciones</label>{{ form.observaciones }}
+                <label class="form-label">Tipo de Servicio <span style="color:#f43f5e;">*</span></label>
+                {{ form.tipo_servicio }}
             </div>
             <div class="form-group">
-                <label class="form-check">
+                <label class="form-label">Teléfono</label>
+                {{ form.telefono }}
+            </div>
+            <div class="form-group">
+                <label class="form-label">Correo de la empresa</label>
+                {{ form.email }}
+            </div>
+        </div>
+
+        <!-- Fila 3: Representante Legal + Dirección -->
+        <div class="fg3" style="margin-bottom:1rem;">
+            <div class="form-group">
+                <label class="form-label">Representante Legal</label>
+                {{ form.representante_legal }}
+            </div>
+            <div class="form-group col-2">
+                <label class="form-label">Dirección</label>
+                {{ form.direccion }}
+            </div>
+        </div>
+
+        <!-- Fila 4: Observaciones + Activa -->
+        <div class="fg3">
+            <div class="form-group col-2">
+                <label class="form-label">Observaciones</label>
+                {{ form.observaciones }}
+            </div>
+            <div class="form-group" style="justify-content:center;padding-top:1.5rem;">
+                <label class="form-check" style="gap:0.65rem;cursor:pointer;">
                     {{ form.activa }}
-                    <span class="form-label" style="margin:0;">Empresa Activa</span>
+                    <span class="form-label" style="margin:0;font-size:0.9rem;">Empresa Activa</span>
                 </label>
             </div>
         </div>
     </div>
+
+    <!-- ══ Sección 2: Persona a cargo en el Hospital ══ -->
+    <div class="form-section">
+        <div class="form-section-title">
+            <i data-lucide="user-check" style="width:16px;"></i> Persona a cargo dentro del Hospital
+        </div>
+
+        <!-- Fila 1: Nombre + Cédula -->
+        <div class="fg3" style="margin-bottom:1rem;">
+            <div class="form-group col-2">
+                <label class="form-label">Nombre completo</label>
+                {{ form.persona_cargo_hospital }}
+            </div>
+            <div class="form-group">
+                <label class="form-label">Cédula</label>
+                {{ form.cedula_persona_cargo }}
+            </div>
+        </div>
+
+        <!-- Fila 2: Correo -->
+        <div class="fg3">
+            <div class="form-group col-2">
+                <label class="form-label">Correo electrónico</label>
+                {{ form.email_persona_cargo }}
+            </div>
+        </div>
+    </div>
+
+    <!-- ══ Sección 3: Firma del Responsable ══ -->
+    <div class="form-section">
+        <div class="form-section-title">
+            <i data-lucide="pen-tool" style="width:16px;"></i> Firma del Responsable
+        </div>
+        <p style="font-size:0.82rem;color:#64748b;margin-bottom:1rem;">
+            Dibuje la firma en el área o cargue una imagen de la firma.
+        </p>
+
+        <div style="max-width:560px;">
+            <!-- Tabs -->
+            <div class="firma-tabs">
+                <div class="firma-tab active" id="tab-canvas" onclick="cambiarTab('canvas')">
+                    <i data-lucide="pen-line" style="width:14px;vertical-align:middle;margin-right:0.3rem;"></i>
+                    Dibujar con el ratón
+                </div>
+                <div class="firma-tab" id="tab-upload" onclick="cambiarTab('upload')">
+                    <i data-lucide="upload" style="width:14px;vertical-align:middle;margin-right:0.3rem;"></i>
+                    Cargar imagen
+                </div>
+            </div>
+
+            <!-- Panel canvas -->
+            <div class="firma-panel active" id="panel-canvas">
+                <canvas id="canvas-firma-empresa"></canvas>
+                <div style="display:flex;justify-content:flex-end;margin-top:0.5rem;">
+                    <button type="button" id="btn-limpiar-firma"
+                            style="background:#fff;border:1.5px solid #e2e8f0;border-radius:7px;
+                                   padding:0.35rem 0.75rem;cursor:pointer;font-size:0.78rem;
+                                   font-weight:600;color:#64748b;display:flex;align-items:center;gap:0.35rem;">
+                        <i data-lucide="eraser" style="width:13px;"></i> Limpiar
+                    </button>
+                </div>
+            </div>
+
+            <!-- Panel upload -->
+            <div class="firma-panel" id="panel-upload">
+                <label style="display:block;margin-bottom:0.5rem;font-size:0.82rem;color:#475569;font-weight:600;">
+                    Seleccione imagen (PNG, JPG)
+                </label>
+                <input type="file" id="firma-upload-input" accept="image/png,image/jpeg,image/gif"
+                       class="form-control" style="margin-bottom:0.5rem;">
+            </div>
+
+            <!-- Vista previa firma actual / nueva -->
+            <div id="firma-preview-wrapper" style="display:none;" class="firma-preview-box">
+                <img id="firma-preview-img" src="" alt="Vista previa de la firma">
+            </div>
+
+            {% if empresa and empresa.firma_responsable %}
+            <div style="margin-top:0.75rem;display:flex;align-items:center;gap:0.75rem;font-size:0.8rem;color:#065f46;
+                        background:#f0fdf4;border:1px solid #d1fae5;border-radius:8px;padding:0.6rem 0.85rem;">
+                <i data-lucide="check-circle" style="width:16px;flex-shrink:0;"></i>
+                <span>Ya tiene una firma registrada — al guardar, la nueva reemplazará la anterior.</span>
+                <div class="firma-preview-box" style="width:80px;height:44px;margin:0;flex-shrink:0;">
+                    <img src="{{ empresa.firma_responsable }}" style="max-height:40px;">
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
     {% if form.errors %}
     <div style="background:#fee2e2;border:1.5px solid #fca5a5;border-radius:10px;padding:1rem;margin-bottom:1rem;">
         <strong style="color:#b91c1c;">Corrija los errores:</strong>
         <ul style="margin:0.5rem 0 0;color:#991b1b;font-size:0.85rem;">
-            {% for field,errors in form.errors.items %}{% for e in errors %}<li>{{ field }}: {{ e }}</li>{% endfor %}{% endfor %}
+            {% for field, errors in form.errors.items %}{% for e in errors %}<li>{{ field }}: {{ e }}</li>{% endfor %}{% endfor %}
         </ul>
     </div>
     {% endif %}
-    <div style="display:flex;gap:0.75rem;justify-content:flex-end;">
-        <a href="{% url 'tercerizadas:lista_empresas' %}" class="btn-terc btn-terc-outline"><i data-lucide="x"></i> Cancelar</a>
-        <button type="submit" class="btn-terc btn-terc-primary"><i data-lucide="save"></i> {% if empresa %}Guardar Cambios{% else %}Registrar Empresa{% endif %}</button>
+
+    <div style="display:flex;gap:0.75rem;justify-content:flex-end;margin-top:0.5rem;">
+        <a href="{% url 'tercerizadas:lista_empresas' %}" class="btn-terc btn-terc-outline">
+            <i data-lucide="x"></i> Cancelar
+        </a>
+        <button type="submit" class="btn-terc btn-terc-primary">
+            <i data-lucide="save"></i> {% if empresa %}Guardar Cambios{% else %}Registrar Empresa{% endif %}
+        </button>
     </div>
 </form>
+
+{% if empresa and empresa_admin %}
+<div class="form-section" style="margin-top:1.25rem;">
+    <div class="form-section-title">
+        <i data-lucide="shield-check" style="width:16px;"></i> Firma del Administrador (su cuenta)
+    </div>
+    {% if firma_admin %}
+    <div style="display:flex;align-items:center;gap:1.25rem;flex-wrap:wrap;">
+        <div style="width:120px;height:64px;border-radius:10px;border:2px solid #d1fae5;
+                    background:#f0fdf4;display:flex;align-items:center;justify-content:center;
+                    overflow:hidden;flex-shrink:0;padding:0.25rem;">
+            <img src="{{ firma_admin.firma_data }}" style="max-height:56px;max-width:112px;object-fit:contain;">
+        </div>
+        <div style="flex:1;">
+            <div style="font-weight:700;font-size:0.9rem;color:#065f46;margin-bottom:0.2rem;">Firma registrada y activa</div>
+            <div style="font-size:0.78rem;color:#6c757d;">Registrada el {{ firma_admin.fecha_registro|date:"d/m/Y \a \l\a\s H:i" }}</div>
+            <div style="margin-top:0.65rem;">
+                <a href="{% url 'tercerizadas:mi_firma' %}" class="btn-terc btn-terc-outline" style="padding:0.35rem 0.85rem;font-size:0.8rem;">
+                    <i data-lucide="refresh-cw" style="width:14px;"></i> Actualizar
+                </a>
+            </div>
+        </div>
+        <span class="status-pill activo" style="flex-shrink:0;">Activa</span>
+    </div>
+    {% else %}
+    <div style="display:flex;align-items:center;gap:1rem;padding:0.75rem;background:#fef9ec;border-radius:10px;border:1.5px dashed #fcd34d;">
+        <i data-lucide="alert-triangle" style="width:22px;color:#d97706;flex-shrink:0;"></i>
+        <div style="flex:1;">
+            <div style="font-weight:700;font-size:0.88rem;color:#92400e;">Sin firma registrada</div>
+            <div style="font-size:0.78rem;color:#b45309;">Registre su firma para que pueda ser utilizada en documentos institucionales.</div>
+        </div>
+        <a href="{% url 'tercerizadas:mi_firma' %}" class="btn-terc btn-terc-primary" style="flex-shrink:0;padding:0.45rem 1rem;font-size:0.82rem;">
+            <i data-lucide="pen-tool" style="width:14px;"></i> Registrar Firma
+        </a>
+    </div>
+    {% endif %}
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+    /* ── Tabs ── */
+    function cambiarTab(tab) {
+        document.getElementById('tab-canvas').classList.toggle('active', tab === 'canvas');
+        document.getElementById('tab-upload').classList.toggle('active', tab === 'upload');
+        document.getElementById('panel-canvas').classList.toggle('active', tab === 'canvas');
+        document.getElementById('panel-upload').classList.toggle('active', tab === 'upload');
+    }
+    window.cambiarTab = cambiarTab;
+
+    /* ── Canvas ── */
+    const canvas = document.getElementById('canvas-firma-empresa');
+    const ctx = canvas.getContext('2d');
+    let dibujando = false, tieneFirmaCanvas = false;
+
+    function ajustarCanvas() {
+        const ancho = canvas.parentElement.clientWidth - 2;
+        canvas.width  = ancho;
+        canvas.height = 180;
+        ctx.lineWidth   = 2.5;
+        ctx.lineCap     = 'round';
+        ctx.lineJoin    = 'round';
+        ctx.strokeStyle = '#0f172a';
+    }
+    window.addEventListener('resize', ajustarCanvas);
+    ajustarCanvas();
+
+    function pos(e) {
+        const r = canvas.getBoundingClientRect();
+        const s = e.touches ? e.touches[0] : e;
+        return { x: s.clientX - r.left, y: s.clientY - r.top };
+    }
+    canvas.addEventListener('mousedown',  e => { dibujando = true; tieneFirmaCanvas = true; const p = pos(e); ctx.beginPath(); ctx.moveTo(p.x, p.y); e.preventDefault(); });
+    canvas.addEventListener('mousemove',  e => { if (!dibujando) return; const p = pos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); e.preventDefault(); });
+    window.addEventListener('mouseup',    () => { if (dibujando) { ctx.closePath(); dibujando = false; actualizarPreview(canvas.toDataURL('image/png')); } });
+    canvas.addEventListener('touchstart', e => { dibujando = true; tieneFirmaCanvas = true; const p = pos(e); ctx.beginPath(); ctx.moveTo(p.x, p.y); e.preventDefault(); }, {passive:false});
+    canvas.addEventListener('touchmove',  e => { if (!dibujando) return; const p = pos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); e.preventDefault(); }, {passive:false});
+    canvas.addEventListener('touchend',   () => { if (dibujando) { ctx.closePath(); dibujando = false; actualizarPreview(canvas.toDataURL('image/png')); } });
+
+    document.getElementById('btn-limpiar-firma').addEventListener('click', () => {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        tieneFirmaCanvas = false;
+        document.getElementById('firma-preview-wrapper').style.display = 'none';
+        document.getElementById('id_firma_responsable').value = '';
+    });
+
+    /* ── Upload ── */
+    document.getElementById('firma-upload-input').addEventListener('change', function () {
+        const file = this.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = e => actualizarPreview(e.target.result);
+        reader.readAsDataURL(file);
+    });
+
+    /* ── Preview + hidden field ── */
+    function actualizarPreview(dataUrl) {
+        const wrapper = document.getElementById('firma-preview-wrapper');
+        const img     = document.getElementById('firma-preview-img');
+        img.src = dataUrl;
+        wrapper.style.display = 'flex';
+        document.getElementById('id_firma_responsable').value = dataUrl;
+    }
+
+    /* ── Al enviar: si canvas tiene trazo, volcar base64 ── */
+    document.getElementById('form-empresa').addEventListener('submit', function () {
+        const hidden = document.getElementById('id_firma_responsable');
+        if (tieneFirmaCanvas && !hidden.value) {
+            hidden.value = canvas.toDataURL('image/png');
+        }
+    });
+
+    /* ── Pre-cargar firma existente si hay ── */
+    {% if empresa and empresa.firma_responsable %}
+    actualizarPreview('{{ empresa.firma_responsable|escapejs }}');
+    {% endif %}
+})();
+</script>
 {% endblock %}

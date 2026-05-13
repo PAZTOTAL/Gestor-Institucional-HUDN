@@ -4,15 +4,22 @@ from django.contrib.auth.models import User
 class RegistroDescargaCertificado(models.Model):
     usuario = models.ForeignKey(User, on_delete=models.CASCADE)
     cedula_consultada = models.CharField(max_length=20)
+    nombre_empleado = models.CharField('Nombre del empleado', max_length=255, blank=True, null=True)
+    anio_gravable = models.IntegerField('Año gravable', default=2025)
     fecha_descarga = models.DateTimeField(auto_now_add=True)
     ip_descarga = models.GenericIPAddressField(null=True, blank=True)
+    user_agent = models.TextField('Navegador / Dispositivo', blank=True, null=True)
+    enviado_whatsapp = models.BooleanField('Enviado por WhatsApp', default=False)
+    telefono_whatsapp = models.CharField('Teléfono WhatsApp', max_length=20, blank=True, null=True)
+    fecha_whatsapp = models.DateTimeField('Fecha envío WhatsApp', blank=True, null=True)
 
     class Meta:
         verbose_name = "Registro de Descarga"
         verbose_name_plural = "Registros de Descargas"
+        ordering = ['-fecha_descarga']
 
     def __str__(self):
-        return f"{self.usuario.username} descargó el certificado de {self.cedula_consultada} el {self.fecha_descarga.strftime('%Y-%m-%d %H:%M')}"
+        return f"{self.usuario.username} → {self.cedula_consultada} ({self.anio_gravable}) — {self.fecha_descarga.strftime('%Y-%m-%d %H:%M')}"
 
 class SolicitudCertificadoEmail(models.Model):
     usuario = models.ForeignKey(User, on_delete=models.CASCADE)

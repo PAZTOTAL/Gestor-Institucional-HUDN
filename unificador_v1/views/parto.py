@@ -75,12 +75,12 @@ def parto_home(request):
             FormularioItemParametro.objects
             .filter(formulario=formulario)
             .select_related("item", "parametro")
-            .prefetch_related("parametro__campos")
+            .prefetch_related("parametro__campos_parto")
         )
 
         data_items = []
         for relacion in relaciones:
-            opciones = relacion.parametro.campos.all()
+            opciones = relacion.parametro.campos_parto.all()
             data_items.append({
                 "item": relacion.item,
                 "parametro": relacion.parametro,
@@ -102,7 +102,7 @@ def parto_home(request):
             })
 
     # Items con parámetros y campos para modales dinámicos (selects con opciones)
-    items = Item.objects.prefetch_related('parametros__campos').all().order_by('id')
+    items = Item.objects.prefetch_related('parametros_parto__campos_parto').all().order_by('id')
 
     context = {
         "atencion_id": atencion_id,
@@ -2108,7 +2108,7 @@ def vista_impresion_formulario(request, formulario_id):
     formulario = get_object_or_404(Formulario.objects.select_related('paciente', 'aseguradora'), id=formulario_id)
     
     # Obtener items, parámetros y campos
-    items = Item.objects.prefetch_related('parametros__campos').all().order_by('id')
+    items = Item.objects.prefetch_related('parametros_parto__campos_parto').all().order_by('id')
     
     # Obtener todas las mediciones del formulario
     mediciones_qs = Medicion.objects.filter(formulario=formulario).prefetch_related('valores__campo')
@@ -2269,8 +2269,8 @@ def preview_pdf_paciente(request, paciente_id):
     formularios = Formulario.objects.filter(paciente=paciente).select_related(
         'aseguradora'
     ).prefetch_related(
-        'parametros_formulario__item',
-        'parametros_formulario__parametro__campos'
+        'parametros_formulario_parto__item',
+        'parametros_formulario_parto__parametro__campos_parto'
     )
     
     # Preparar datos para mostrar
@@ -2287,7 +2287,7 @@ def preview_pdf_paciente(request, paciente_id):
     for formulario in formularios:
         # Obtener items únicos
         items_dict = {}
-        for fip in formulario.parametros_formulario.select_related('item', 'parametro').prefetch_related('parametro__campos').all():
+        for fip in formulario.parametros_formulario_parto.select_related('item', 'parametro').prefetch_related('parametro__campos_parto').all():
             item = fip.item
             if item.id not in items_dict:
                 items_dict[item.id] = {'item': item, 'parametros': []}
@@ -2301,7 +2301,7 @@ def preview_pdf_paciente(request, paciente_id):
             
             for parametro in item_data['parametros']:
                 campos_data = []
-                campos = parametro.campos.all()
+                campos = parametro.campos_parto.all()
                 
                 for campo in campos:
                     valor = MedicionValor.objects.filter(
@@ -2372,8 +2372,8 @@ def generar_pdf_paciente(request, paciente_id):
     formularios = Formulario.objects.filter(paciente=paciente).select_related(
         'aseguradora'
     ).prefetch_related(
-        'parametros_formulario__item',
-        'parametros_formulario__parametro__campos'
+        'parametros_formulario_parto__item',
+        'parametros_formulario_parto__parametro__campos_parto'
     )
     
     response = HttpResponse(content_type='application/pdf')
@@ -2465,7 +2465,7 @@ def generar_pdf_paciente(request, paciente_id):
         
         # Obtener items únicos a través de parametros_formulario
         items_dict = {}
-        for fip in formulario.parametros_formulario.select_related('item', 'parametro').prefetch_related('parametro__campos').all():
+        for fip in formulario.parametros_formulario_parto.select_related('item', 'parametro').prefetch_related('parametro__campos_parto').all():
             item = fip.item
             if item.id not in items_dict:
                 items_dict[item.id] = {'item': item, 'parametros': []}
@@ -2485,7 +2485,7 @@ def generar_pdf_paciente(request, paciente_id):
                 y -= 15
                 
                 # ===== CAMPOS / VALORES =====
-                campos = parametro.campos.all()
+                campos = parametro.campos_parto.all()
                 for campo in campos:
                     valor = MedicionValor.objects.filter(
                         medicion__formulario=formulario,

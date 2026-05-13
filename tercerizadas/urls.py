@@ -24,4 +24,7 @@ urlpatterns = [
     # Asignaciones y Afiliaciones
     path('servidores/<int:servidor_pk>/asignacion/', views.agregar_asignacion, name='agregar_asignacion'),
     path('servidores/<int:servidor_pk>/afiliacion/', views.agregar_afiliacion, name='agregar_afiliacion'),
+
+    # Firma electrónica del administrador
+    path('mi-firma/', views.mi_firma, name='mi_firma'),
 ]
