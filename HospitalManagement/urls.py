@@ -22,6 +22,7 @@ from .api_views import (
     get_diagnostico_paciente, lookup_tercero_by_documento
 )
 from paz_y_salvo.urls import urlpatterns as pys_api_patterns, template_urlpatterns as pys_template_patterns
+from asignacion_permisos.urls import urlpatterns as apc_api_patterns, template_urlpatterns as apc_template_patterns
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -56,6 +57,8 @@ urlpatterns = [
     path('tercerizadas/', include('tercerizadas.urls', namespace='tercerizadas')),
     path('paz-y-salvo/', include((pys_template_patterns, 'paz_y_salvo'), namespace='paz_y_salvo')),
     path('api/', include(pys_api_patterns)),
+    path('asignacion-permisos/', include((apc_template_patterns, 'asignacion_permisos'), namespace='asignacion_permisos')),
+    path('api/apc/', include(apc_api_patterns)),
     path('inventarios/', include('inventarios.urls')),
     path('formatos-apps/', include('formatos_apps.urls')),
 ]

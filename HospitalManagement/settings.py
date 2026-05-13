@@ -78,6 +78,7 @@ INSTALLED_APPS = [
     'visor_soportes',
     'tercerizadas',
     'paz_y_salvo',
+    'asignacion_permisos',
     'inventarios',
     'formatos_apps',
     # Cuando integre el código completo de UNIFICADOR-V1 en la raíz del repo, descomente:

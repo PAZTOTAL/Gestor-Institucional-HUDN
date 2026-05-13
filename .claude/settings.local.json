@@ -21,7 +21,11 @@
       "Bash(Select-Object -Property FullName, PSIsContainer)",
       "Bash(Sort-Object FullName)",
       "Bash(Format-Table -AutoSize)",
-      "Bash(python manage.py makemigrations horas_extras --name=\"mes_config_recargos\")"
+      "Bash(python manage.py makemigrations horas_extras --name=\"mes_config_recargos\")",
+      "Bash(python manage.py check asignacion_permisos)",
+      "Bash(python manage.py check)",
+      "Bash(python manage.py makemigrations asignacion_permisos)",
+      "Bash(python manage.py migrate asignacion_permisos)"
     ]
   }
 }

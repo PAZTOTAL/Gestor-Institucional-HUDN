@@ -1,0 +1,1070 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin — Asignación de Permisos y Claves HUDN</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,600;9..40,700;9..40,800&display=swap" rel="stylesheet">
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0;}
+    body{font-family:'DM Sans','Segoe UI',sans-serif;background:#f0fdfa;min-height:100vh;color:#0f172a;}
+    .sidebar{width:240px;background:#fff;border-right:1px solid #e2e8f0;min-height:100vh;position:fixed;top:0;left:0;display:flex;flex-direction:column;z-index:100;overflow-y:auto;}
+    .main{margin-left:240px;padding:24px;min-height:100vh;}
+    .nav-item{display:flex;align-items:center;gap:10px;padding:9px 20px;cursor:pointer;font-size:13px;font-weight:600;color:#475569;transition:all 0.15s;border-left:3px solid transparent;}
+    .nav-item:hover{background:#f0fdfa;color:#0f766e;}
+    .nav-item.active{background:#f0fdfa;color:#0f766e;border-left-color:#0f766e;}
+    .nav-section{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:#94a3b8;padding:10px 20px 4px;}
+    .tab{display:none;}.tab.active{display:block;}
+    .card{background:#fff;border-radius:14px;box-shadow:0 2px 16px rgba(0,0,0,0.06);padding:20px 24px;margin-bottom:16px;}
+    .page-title{font-size:20px;font-weight:900;color:#0f172a;margin-bottom:4px;}
+    .page-sub{font-size:12px;color:#64748b;margin-bottom:20px;}
+    .btn{padding:8px 16px;border-radius:9px;font-size:12px;font-weight:700;cursor:pointer;border:none;font-family:inherit;transition:all 0.15s;display:inline-flex;align-items:center;gap:5px;}
+    .btn-primary{background:linear-gradient(135deg,#0f766e,#0d9488);color:#fff;box-shadow:0 3px 10px rgba(15,118,110,0.25);}
+    .btn-primary:hover{opacity:0.9;}
+    .btn-secondary{background:#f1f5f9;color:#475569;border:1.5px solid #e2e8f0;}
+    .btn-danger{background:#fef2f2;color:#dc2626;border:1.5px solid #fecaca;}
+    .btn-warn{background:#fffbeb;color:#d97706;border:1.5px solid #fde68a;}
+    .btn-success{background:#f0fdf4;color:#16a34a;border:1.5px solid #86efac;}
+    table{width:100%;border-collapse:collapse;}
+    th{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:#94a3b8;padding:9px 12px;border-bottom:2px solid #e2e8f0;text-align:left;}
+    td{padding:9px 12px;font-size:12.5px;border-bottom:1px solid #f1f5f9;vertical-align:middle;}
+    tr:last-child td{border-bottom:none;}
+    tr:hover td{background:#f8fafc;}
+    .badge{padding:2px 9px;border-radius:99px;font-size:10.5px;font-weight:700;display:inline-block;}
+    .badge-ok{background:#f0fdf4;color:#16a34a;border:1px solid #86efac;}
+    .badge-warn{background:#fef9c3;color:#854d0e;border:1px solid #fde68a;}
+    .badge-error{background:#fef2f2;color:#dc2626;border:1px solid #fecaca;}
+    .badge-blue{background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;}
+    .field{margin-bottom:12px;}
+    .field label{font-size:11.5px;font-weight:700;color:#374151;display:block;margin-bottom:3px;}
+    .field input,.field select,.field textarea{width:100%;padding:8px 11px;border:1.5px solid #d1d5db;border-radius:9px;font-size:13px;font-family:inherit;outline:none;}
+    .field input:focus,.field select:focus,.field textarea:focus{border-color:#0d9488;box-shadow:0 0 0 3px rgba(13,148,136,0.12);}
+    .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:200;align-items:center;justify-content:center;}
+    .modal-overlay.show{display:flex;}
+    .modal{background:#fff;border-radius:16px;padding:22px;max-width:460px;width:100%;margin:16px;max-height:90vh;overflow-y:auto;}
+    .modal-title{font-size:15px;font-weight:800;margin-bottom:14px;color:#0f172a;}
+    .empty-state{text-align:center;padding:36px;color:#94a3b8;font-size:13px;}
+    .avatar-sm{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,#0f766e,#0d9488);display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#fff;flex-shrink:0;}
+    /* Sub-tabs del formulario */
+    .sub-tabs{display:flex;gap:0;border-bottom:2px solid #e2e8f0;margin-bottom:20px;flex-wrap:wrap;}
+    .sub-tab{padding:8px 16px;font-size:12px;font-weight:700;color:#64748b;cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px;transition:all 0.15s;white-space:nowrap;}
+    .sub-tab:hover{color:#0f766e;}
+    .sub-tab.active{color:#0f766e;border-bottom-color:#0f766e;}
+    .sub-content{display:none;}.sub-content.active{display:block;}
+    .form-row{display:flex;align-items:center;gap:10px;padding:9px 12px;border-bottom:1px solid #f1f5f9;transition:background 0.1s;}
+    .form-row:hover{background:#f8fafc;}
+    .form-row:last-child{border-bottom:none;}
+  </style>
+</head>
+<body>
+
+<div class="sidebar">
+  <div style="padding:14px 20px;border-bottom:1px solid #e2e8f0;display:flex;align-items:center;gap:8px;">
+    <img src="{% static 'logos-hudn/logo-hudn-colores-vertical.png' %}" alt="HUDN"
+         style="height:32px;object-fit:contain;" onerror="this.style.display='none'">
+    <div>
+      <div style="font-size:11px;font-weight:800;color:#0f766e;">APC Admin</div>
+      <div style="font-size:10px;color:#94a3b8;">FRSGI-002</div>
+    </div>
+  </div>
+
+  <div style="padding:10px 16px;background:#f0fdfa;border-bottom:1px solid #e2e8f0;display:flex;align-items:center;gap:8px;">
+    <div class="avatar-sm">{{ avatar }}</div>
+    <div>
+      <div style="font-size:12px;font-weight:700;color:#0f172a;">{{ nombre }}</div>
+      <div style="font-size:10px;color:#0f766e;font-weight:600;">Administrador</div>
+    </div>
+  </div>
+
+  <nav style="flex:1;padding:8px 0;">
+    <div class="nav-section">Gestión</div>
+    <div class="nav-item active" data-tab="solicitudes" onclick="showTab('solicitudes')">
+      <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+      Solicitudes
+    </div>
+
+    <div class="nav-section">Formulario</div>
+    <div class="nav-item" data-tab="formulario" onclick="showTab('formulario')">
+      <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+      Editar Formulario
+    </div>
+    <div class="nav-item" data-tab="preview" onclick="showTab('preview')">
+      <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+      Vista Previa
+    </div>
+
+    <div class="nav-section">Firmantes</div>
+    <div class="nav-item" data-tab="coords" onclick="showTab('coords')">
+      <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
+      Coordinadores de Área
+    </div>
+    <div class="nav-item" data-tab="fijos" onclick="showTab('fijos')">
+      <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      Firmantes Fijos
+    </div>
+    <div class="nav-item" data-tab="destinatarios" onclick="showTab('destinatarios')">
+      <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+      Destinatarios por Rol
+    </div>
+
+    <div class="nav-section">Acceso</div>
+    <div class="nav-item" data-tab="listaBlanca" onclick="showTab('listaBlanca')">
+      <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+      Lista Blanca Admin
+    </div>
+  </nav>
+
+  <div style="padding:12px 16px;border-top:1px solid #e2e8f0;">
+    <a href="{% url 'asignacion_permisos:apc_logout' %}"
+       style="font-size:12px;color:#64748b;font-weight:600;text-decoration:none;display:flex;align-items:center;gap:6px;">
+      <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+      Cerrar Sesión
+    </a>
+  </div>
+</div>
+
+<div class="main">
+
+  <!-- SOLICITUDES -->
+  <div class="tab active" id="tab-solicitudes">
+    <div class="page-title">Solicitudes</div>
+    <div class="page-sub">Historial de solicitudes de asignación de permisos y claves</div>
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px;">
+        <input id="solSearch" type="text" placeholder="Buscar por nombre o cédula..." oninput="filterSols()"
+               style="padding:7px 11px;border:1.5px solid #d1d5db;border-radius:9px;font-size:13px;width:260px;outline:none;">
+        <button class="btn btn-secondary" onclick="loadSolicitudes()">↻ Recargar</button>
+      </div>
+      <div id="solTable"><div class="empty-state">Cargando...</div></div>
+    </div>
+  </div>
+
+  <!-- FORMULARIO (todas las secciones) -->
+  <div class="tab" id="tab-formulario">
+    <div class="page-title">Editar Formulario</div>
+    <div class="page-sub">Configure el encabezado, campos, permisos y mensaje del formato FRSGI-002</div>
+
+    <div class="sub-tabs">
+      <div class="sub-tab active" data-sec="sec0" onclick="showSec('sec0')">Encabezado</div>
+      <div class="sub-tab" data-sec="sec1" onclick="showSec('sec1')">Sección 1 · Datos Personales</div>
+      <div class="sub-tab" data-sec="sec2" onclick="showSec('sec2')">Sección 2 · Vinculación</div>
+      <div class="sub-tab" data-sec="sec3" onclick="showSec('sec3')">Sección 3 · Permisos</div>
+      <div class="sub-tab" data-sec="sec4" onclick="showSec('sec4')">Sección 4 · Entrenamiento</div>
+      <div class="sub-tab" data-sec="sec5" onclick="showSec('sec5')">Sección 5 · Mensaje</div>
+    </div>
+
+    <!-- SEC 0: Encabezado -->
+    <div class="sub-content active card" id="sub-sec0">
+      <div id="encForm"><div class="empty-state">Cargando...</div></div>
+    </div>
+
+    <!-- SEC 1: Datos Personales (campos fijos, solo editar etiqueta) -->
+    <div class="sub-content card" id="sub-sec1">
+      <p style="font-size:12px;color:#64748b;margin-bottom:14px;">Edita el nombre visible de cada campo. Los campos son fijos del formulario.</p>
+      <div id="campos1"><div class="empty-state">Cargando...</div></div>
+    </div>
+
+    <!-- SEC 2: Datos de Vinculación -->
+    <div class="sub-content card" id="sub-sec2">
+      <p style="font-size:12px;color:#64748b;margin-bottom:14px;">Edita el nombre visible de cada campo o las opciones de tipo de vinculación.</p>
+      <div id="campos2"><div class="empty-state">Cargando...</div></div>
+    </div>
+
+    <!-- SEC 3: Permisos y Accesos (CRUD completo) -->
+    <div class="sub-content card" id="sub-sec3">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+        <p style="font-size:12px;color:#64748b;">Gestiona los permisos disponibles en el formulario. Los cambios se reflejan en los roles de destinatarios.</p>
+        <button class="btn btn-primary" onclick="openNewPerm()">+ Agregar</button>
+      </div>
+      <div id="permTable3"><div class="empty-state">Cargando...</div></div>
+    </div>
+
+    <!-- SEC 4: Entrenamiento -->
+    <div class="sub-content card" id="sub-sec4">
+      <p style="font-size:12px;color:#64748b;margin-bottom:14px;">Edita el nombre visible de cada campo de la sección de entrenamiento.</p>
+      <div id="campos4"><div class="empty-state">Cargando...</div></div>
+    </div>
+
+    <!-- SEC 5: Mensaje de confidencialidad -->
+    <div class="sub-content card" id="sub-sec5">
+      <p style="font-size:12px;color:#64748b;margin-bottom:14px;">Texto del acuerdo de confidencialidad que aparece antes de la firma del solicitante.</p>
+      <div class="field">
+        <label>Texto del mensaje / acuerdo de confidencialidad</label>
+        <textarea id="txtMensaje" rows="5" style="resize:vertical;"></textarea>
+      </div>
+      <button class="btn btn-primary" onclick="saveMensaje()">Guardar mensaje</button>
+      <div id="msgMensaje" style="display:none;margin-top:10px;"></div>
+    </div>
+  </div>
+
+  <!-- VISTA PREVIA -->
+  <div class="tab" id="tab-preview">
+    <div class="page-title">Vista Previa del Formato</div>
+    <div class="page-sub">Así ven el documento los firmantes — FRSGI-002</div>
+    <div class="card" id="previewCard">
+      <div style="text-align:center;padding:24px;">
+        <button class="btn btn-primary" onclick="loadPreview()">
+          <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          Cargar Vista Previa
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- COORDINADORES (desde horas_extras, gmail y usuario dinámica editables) -->
+  <div class="tab" id="tab-coords">
+    <div class="page-title">Coordinadores de Área</div>
+    <div class="page-sub">Lista de coordinadores registrados en el sistema. Puede editar el Gmail y el Usuario de Dinámica de cada coordinador.</div>
+    <div class="card">
+      <div id="coordTable"><div class="empty-state">Cargando...</div></div>
+    </div>
+  </div>
+
+  <!-- FIRMANTES FIJOS -->
+  <div class="tab" id="tab-fijos">
+    <div class="page-title">Firmantes Fijos</div>
+    <div class="page-sub">Coordinadores de Talento Humano y Gestión de Información.</div>
+    <div class="card"><div id="fijosContent"><div class="empty-state">Cargando...</div></div></div>
+  </div>
+
+  <!-- DESTINATARIOS -->
+  <div class="tab" id="tab-destinatarios">
+    <div class="page-title">Destinatarios por Permiso</div>
+    <div class="page-sub">Cuando se apruebe una solicitud con el permiso X, el formato se envía a estas personas. Cada persona puede tener varios permisos asignados.</div>
+    <div class="card">
+      <div style="display:flex;justify-content:flex-end;gap:8px;margin-bottom:14px;flex-wrap:wrap;">
+        <button class="btn btn-primary" onclick="openNewDest()">+ Agregar persona</button>
+      </div>
+      <div id="destTable"><div class="empty-state">Cargando...</div></div>
+    </div>
+  </div>
+
+  <!-- LISTA BLANCA -->
+  <div class="tab" id="tab-listaBlanca">
+    <div class="page-title">Lista Blanca de Administradores</div>
+    <div class="page-sub">Usuarios con acceso a este panel de administración.</div>
+    <div class="card">
+      <div style="display:flex;justify-content:flex-end;margin-bottom:14px;">
+        <button class="btn btn-primary" onclick="openNewLB()">+ Agregar admin</button>
+      </div>
+      <div id="lbTable"><div class="empty-state">Cargando...</div></div>
+    </div>
+  </div>
+
+</div><!-- /main -->
+
+<!-- ── Modales ──────────────────────────────────────────────────────────────── -->
+
+<!-- Modal Coordinador (editar gmail y usuario dinámica) -->
+<div class="modal-overlay" id="coordModal" onclick="if(event.target===this)closeModal('coordModal')">
+  <div class="modal">
+    <div class="modal-title">Editar Coordinador de Área</div>
+    <div id="coordModalMsg" style="display:none;"></div>
+    <div style="padding:10px;background:#f0fdfa;border-radius:10px;margin-bottom:14px;">
+      <div style="font-size:12px;font-weight:700;color:#0f172a;" id="coordModalNombre"></div>
+      <div style="font-size:11px;color:#64748b;margin-top:2px;" id="coordModalAreas"></div>
+    </div>
+    <div class="field"><label>Gmail</label><input type="email" id="coordGmail" placeholder="coordinador@gmail.com"></div>
+    <div class="field"><label>Usuario de Dinámica</label><input type="text" id="coordUsuarioDinamica" placeholder="Ej: jperez" autocomplete="off" style="text-transform:lowercase;"></div>
+    <input type="hidden" id="coordId">
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px;">
+      <button class="btn btn-secondary" onclick="closeModal('coordModal')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveCoordGmail()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Permiso Config -->
+<div class="modal-overlay" id="permModal" onclick="if(event.target===this)closeModal('permModal')">
+  <div class="modal">
+    <div class="modal-title" id="permModalTitle">Permiso / Acceso</div>
+    <div id="permModalMsg" style="display:none;"></div>
+    <div class="field"><label>Clave (sin espacios) *</label><input type="text" id="permClave" placeholder="ej: usuario_dgh"></div>
+    <div class="field"><label>Etiqueta visible *</label><input type="text" id="permEtiqueta" placeholder="ej: Usuario DGH"></div>
+    <div class="field"><label>Orden</label><input type="number" id="permOrden" value="99" min="1"></div>
+    <div class="field">
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+        <input type="checkbox" id="permTercerizado" checked style="width:15px;height:15px;accent-color:#0f766e;">
+        Disponible para tercerizado/contratista
+      </label>
+    </div>
+    <input type="hidden" id="permId">
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px;">
+      <button class="btn btn-secondary" onclick="closeModal('permModal')">Cancelar</button>
+      <button class="btn btn-primary" onclick="savePerm()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal editar campo (secciones 1, 2, 4) -->
+<div class="modal-overlay" id="campoModal" onclick="if(event.target===this)closeModal('campoModal')">
+  <div class="modal">
+    <div class="modal-title">Editar etiqueta del campo</div>
+    <div id="campoModalMsg" style="display:none;"></div>
+    <div style="font-size:11px;color:#94a3b8;margin-bottom:10px;padding:6px 10px;background:#f8fafc;border-radius:8px;">
+      Campo: <strong id="campoClaveLabel"></strong>
+    </div>
+    <div class="field"><label>Etiqueta visible *</label><input type="text" id="campoEtiqueta"></div>
+    <input type="hidden" id="campoId">
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px;">
+      <button class="btn btn-secondary" onclick="closeModal('campoModal')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveCampo()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Agregar Destinatario (persona nueva con múltiples permisos) -->
+<div class="modal-overlay" id="destModal" onclick="if(event.target===this)closeModal('destModal')">
+  <div class="modal" style="max-width:500px;">
+    <div class="modal-title">Agregar Destinatario</div>
+    <div id="destModalMsg" style="display:none;"></div>
+    <div class="field"><label>Nombre completo *</label><input type="text" id="destNombre" placeholder="Ej: Juan Pérez"></div>
+    <div class="field"><label>Email *</label><input type="email" id="destEmail" placeholder="correo@ejemplo.com"></div>
+    <div class="field">
+      <label>Permisos asignados *</label>
+      <div id="destPermisosCheckboxes" style="border:1.5px solid #d1d5db;border-radius:9px;padding:10px;max-height:200px;overflow-y:auto;">
+        <div style="font-size:12px;color:#94a3b8;">Cargando permisos...</div>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px;">
+      <button class="btn btn-secondary" onclick="closeModal('destModal')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveNewDest()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Editar permisos de un destinatario existente -->
+<div class="modal-overlay" id="destEditModal" onclick="if(event.target===this)closeModal('destEditModal')">
+  <div class="modal" style="max-width:500px;">
+    <div class="modal-title">Editar Permisos del Destinatario</div>
+    <div id="destEditMsg" style="display:none;"></div>
+    <div style="padding:10px;background:#f0fdfa;border-radius:10px;margin-bottom:14px;">
+      <div style="font-size:13px;font-weight:700;color:#0f172a;" id="destEditNombre"></div>
+      <div style="font-size:11px;color:#64748b;margin-top:2px;" id="destEditEmail"></div>
+    </div>
+    <div>
+      <div style="font-size:11.5px;font-weight:700;color:#374151;margin-bottom:8px;">Permisos actuales</div>
+      <div id="destEditPermisosTags" style="margin-bottom:14px;display:flex;flex-wrap:wrap;gap:6px;"></div>
+    </div>
+    <div class="field">
+      <label>Agregar permiso</label>
+      <div style="display:flex;gap:8px;">
+        <select id="destEditAddSelect" style="flex:1;padding:8px 11px;border:1.5px solid #d1d5db;border-radius:9px;font-size:13px;font-family:inherit;outline:none;">
+          <option value="">Seleccione permiso...</option>
+        </select>
+        <button class="btn btn-success" onclick="addPermisoDest()">+ Agregar</button>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px;">
+      <button class="btn btn-secondary" onclick="closeModal('destEditModal')">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Lista Blanca -->
+<div class="modal-overlay" id="lbModal" onclick="if(event.target===this)closeModal('lbModal')">
+  <div class="modal">
+    <div class="modal-title">Administrador APC</div>
+    <div id="lbModalMsg" style="display:none;"></div>
+    <div class="field"><label>Usuario (usunombre) *</label><input type="text" id="lbUser"></div>
+    <div class="field"><label>Email *</label><input type="email" id="lbEmail"></div>
+    <div class="field"><label>Nombre completo *</label><input type="text" id="lbNombre"></div>
+    <input type="hidden" id="lbId">
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px;">
+      <button class="btn btn-secondary" onclick="closeModal('lbModal')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveLb()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal detalle solicitud -->
+<div class="modal-overlay" id="detalleModal" onclick="if(event.target===this)closeModal('detalleModal')">
+  <div class="modal" style="max-width:620px;max-height:85vh;overflow-y:auto;">
+    <div class="modal-title">Detalle de Solicitud</div>
+    <div id="detalleContent"></div>
+    <div style="text-align:right;margin-top:14px;">
+      <button class="btn btn-secondary" onclick="closeModal('detalleModal')">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const TOKEN = '{{ apc_token|escapejs }}';
+const API = '/api/apc';
+let _solsData = [], _coordsData = [], _permisosData = [], _destsData = [], _lbData = [];
+
+function H(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function headers(){ return {'Content-Type':'application/json','Authorization':'Bearer '+TOKEN}; }
+
+// ── Navegación principal ──────────────────────────────────────────────────────
+
+const TAB_LOADERS = {
+  solicitudes: loadSolicitudes, coords: loadCoords, fijos: loadFijos,
+  destinatarios: loadDestinatarios, listaBlanca: loadLB,
+  formulario: loadFormulario, preview: loadPreview,
+};
+
+function showTab(name) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+  document.querySelector(`[data-tab="${name}"]`).classList.add('active');
+  if (TAB_LOADERS[name]) TAB_LOADERS[name]();
+}
+
+// ── Sub-tabs del formulario ───────────────────────────────────────────────────
+
+function showSec(secId) {
+  document.querySelectorAll('.sub-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.sub-content').forEach(c => c.classList.remove('active'));
+  document.querySelector(`[data-sec="${secId}"]`).classList.add('active');
+  document.getElementById('sub-'+secId).classList.add('active');
+}
+
+function loadFormulario() {
+  loadEncabezado();
+  loadCampos(1, 'campos1');
+  loadCampos(2, 'campos2');
+  loadPermisos();
+  loadCampos(4, 'campos4');
+  loadMensaje();
+}
+
+// ── Solicitudes ───────────────────────────────────────────────────────────────
+
+async function loadSolicitudes() {
+  const resp = await fetch(API+'/solicitudes', {headers:headers()});
+  if (!resp.ok) { document.getElementById('solTable').innerHTML='<div class="empty-state">Error cargando solicitudes.</div>'; return; }
+  _solsData = await resp.json();
+  renderSols(_solsData);
+}
+
+function filterSols() {
+  const q = document.getElementById('solSearch').value.toLowerCase();
+  renderSols(_solsData.filter(s => s.nombres_apellidos.toLowerCase().includes(q) || s.num_identificacion.includes(q)));
+}
+
+const ESTADOS = { EN_TRAMITE:['badge-warn','En Trámite'], COMPLETADO:['badge-ok','Completado'], RECHAZADO:['badge-error','Rechazado'] };
+
+function renderSols(sols) {
+  if (!sols.length) { document.getElementById('solTable').innerHTML='<div class="empty-state">Sin solicitudes.</div>'; return; }
+  const rows = sols.map((s,i) => {
+    const [bc,bl] = ESTADOS[s.estado]||['badge-blue',s.estado];
+    const fd = s.firmas.filter(f=>f.firmado).length;
+    return `<tr>
+      <td><div style="font-weight:700;">${H(s.nombres_apellidos)}</div><div style="font-size:11px;color:#94a3b8;">C.C. ${H(s.num_identificacion)}</div></td>
+      <td><div style="font-size:12px;">${H(s.area_servicios)}</div><div style="font-size:11px;color:#94a3b8;">${H(s.tipo_vinculacion_label)}</div></td>
+      <td><span class="badge ${bc}">${bl}</span></td>
+      <td style="font-size:12px;">${fd}/${s.firmas.length} firmas</td>
+      <td style="font-size:11px;color:#94a3b8;">${s.fecha_creacion.split('T')[0]}</td>
+      <td><button class="btn btn-secondary" style="padding:4px 10px;font-size:11px;" onclick="verSol(${i})">Ver</button></td>
+    </tr>`;
+  }).join('');
+  document.getElementById('solTable').innerHTML=`<table><thead><tr><th>Solicitante</th><th>Área/Tipo</th><th>Estado</th><th>Firmas</th><th>Fecha</th><th></th></tr></thead><tbody>${rows}</tbody></table>`;
+}
+
+function verSol(idx) {
+  const s = _solsData[idx];
+  const perms = (s.permisos||[]).join(', ')||'Ninguno';
+  const firmasHtml = (s.firmas||[]).map(f=>`<tr>
+    <td style="font-size:12px;">${H(f.tipo_label)}</td>
+    <td style="font-size:12px;">${H(f.nombre)}</td>
+    <td><span class="badge ${f.firmado?'badge-ok':'badge-warn'}">${f.firmado?'Firmado':'Pendiente'}</span></td>
+    <td style="font-size:11px;color:#94a3b8;">${f.fecha?f.fecha.split('T')[0]:''}</td>
+  </tr>`).join('');
+  const tieneCarnet = (s.permisos||[]).some(p => p === 'carnet' || p === 'tarjeta_chip');
+  const carnetHtml = tieneCarnet ? `
+    <div style="margin-bottom:12px;padding:12px;background:#f0fdf4;border:1px solid #86efac;border-radius:10px;">
+      <div style="font-size:11px;font-weight:800;color:#065f46;text-transform:uppercase;margin-bottom:8px;">Datos de Carnet</div>
+      <div style="display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap;">
+        ${s.foto_carnet ? `<img src="${s.foto_carnet}" style="width:80px;height:100px;object-fit:cover;border-radius:6px;border:1px solid #86efac;">` : '<div style="width:80px;height:100px;background:#e5e7eb;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:10px;color:#94a3b8;">Sin foto</div>'}
+        <div>
+          <div style="font-size:11px;color:#64748b;font-weight:700;">Tipo de sangre</div>
+          <div style="font-size:14px;font-weight:800;color:#0f172a;margin-bottom:6px;">${H(s.tipo_sangre||'—')}</div>
+          <div style="font-size:11px;color:#64748b;font-weight:700;">Período</div>
+          <div style="font-size:12px;color:#0f172a;">${H(s.periodo_inicio||'')} al ${H(s.periodo_fin||'')}</div>
+        </div>
+      </div>
+    </div>` : '';
+
+  document.getElementById('detalleContent').innerHTML=`
+    <div style="font-size:14px;font-weight:800;margin-bottom:4px;">${H(s.nombres_apellidos)}</div>
+    <div style="font-size:12px;color:#64748b;margin-bottom:12px;">C.C. ${H(s.num_identificacion)} · ${H(s.area_servicios)} · ${H(s.tipo_vinculacion_label)}</div>
+    <div style="font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;margin-bottom:4px;">Permisos solicitados</div>
+    <div style="font-size:12px;margin-bottom:12px;">${H(perms)}</div>
+    ${carnetHtml}
+    <div style="font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;margin-bottom:4px;">Firmas</div>
+    <table><thead><tr><th>Tipo</th><th>Firmante</th><th>Estado</th><th>Fecha</th></tr></thead><tbody>${firmasHtml}</tbody></table>`;
+  openModal('detalleModal');
+}
+
+// ── Encabezado (Sección 0) ────────────────────────────────────────────────────
+
+async function loadEncabezado() {
+  const resp = await fetch(API+'/admin/encabezado', {headers:headers()});
+  const d = await resp.json();
+  document.getElementById('encForm').innerHTML = `
+    <div id="encMsg" style="display:none;"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+      ${['titulo','codigo','version','fecha_elaboracion','fecha_actualizacion','hoja'].map(k=>`
+        <div class="field" ${k==='titulo'?'style="grid-column:1/-1"':''}>
+          <label>${k.replace(/_/g,' ').replace(/\b\w/g,c=>c.toUpperCase())}</label>
+          <input type="text" id="enc_${k}" value="${H(d[k]||'')}">
+        </div>`).join('')}
+    </div>
+    <button class="btn btn-primary" style="margin-top:6px;" onclick="saveEncabezado()">Guardar encabezado</button>
+  `;
+}
+
+async function saveEncabezado() {
+  const body = {};
+  ['titulo','codigo','version','fecha_elaboracion','fecha_actualizacion','hoja'].forEach(k => {
+    body[k] = document.getElementById('enc_'+k).value.trim();
+  });
+  const r = await fetch(API+'/admin/encabezado',{method:'PATCH',headers:headers(),body:JSON.stringify(body)});
+  showInlineMsg('encMsg', r.ok ? 'success' : 'error', r.ok ? 'Encabezado guardado.' : 'Error al guardar.');
+}
+
+// ── Campos secciones 1, 2, 4 ─────────────────────────────────────────────────
+
+let _camposData = {};
+
+async function loadCampos(seccion, containerId) {
+  const resp = await fetch(API+`/admin/campos?seccion=${seccion}`, {headers:headers()});
+  const data = await resp.json();
+  _camposData[seccion] = data;
+  const rows = data.map(c => `
+    <div class="form-row">
+      <div style="flex:1;">
+        <div style="font-size:12px;font-weight:700;color:#0f172a;">${H(c.etiqueta)}</div>
+        <div style="font-size:10.5px;color:#94a3b8;margin-top:1px;">${H(c.campo_clave)}</div>
+      </div>
+      <div style="display:flex;gap:6px;align-items:center;">
+        <span class="badge ${c.activo?'badge-ok':'badge-error'}">${c.activo?'Visible':'Oculto'}</span>
+        <button class="btn btn-secondary" style="padding:4px 10px;font-size:11px;" onclick="editCampo(${seccion},${c.id})">Editar</button>
+        <button class="btn ${c.activo?'btn-warn':'btn-success'}" style="padding:4px 10px;font-size:11px;" onclick="toggleCampo(${seccion},${c.id},${!c.activo})">
+          ${c.activo?'Ocultar':'Mostrar'}
+        </button>
+      </div>
+    </div>`).join('');
+  document.getElementById(containerId).innerHTML = rows || '<div class="empty-state">Sin campos.</div>';
+}
+
+function editCampo(seccion, id) {
+  const c = _camposData[seccion]?.find(x=>x.id===id);
+  if (!c) return;
+  openModal('campoModal');
+  document.getElementById('campoId').value = id;
+  document.getElementById('campoClaveLabel').textContent = c.campo_clave;
+  document.getElementById('campoEtiqueta').value = c.etiqueta;
+  document.getElementById('campoModal')._seccion = seccion;
+}
+
+async function saveCampo() {
+  const id = document.getElementById('campoId').value;
+  const seccion = document.getElementById('campoModal')._seccion;
+  const body = { etiqueta: document.getElementById('campoEtiqueta').value.trim() };
+  const r = await fetch(API+'/admin/campos/'+id, {method:'PATCH',headers:headers(),body:JSON.stringify(body)});
+  if (r.ok) {
+    closeModal('campoModal');
+    loadCampos(seccion, 'campos'+seccion);
+  } else {
+    const d = await r.json();
+    showModalMsg('campoModalMsg','error', d.detail||'Error.');
+  }
+}
+
+async function toggleCampo(seccion, id, nuevoEstado) {
+  await fetch(API+'/admin/campos/'+id, {method:'PATCH',headers:headers(),body:JSON.stringify({activo:nuevoEstado})});
+  loadCampos(seccion, 'campos'+seccion);
+}
+
+// ── Mensaje confidencialidad (Sección 5) ──────────────────────────────────────
+
+async function loadMensaje() {
+  const resp = await fetch(API+'/admin/encabezado', {headers:headers()});
+  const d = await resp.json();
+  document.getElementById('txtMensaje').value = d.texto_mensaje || '';
+}
+
+async function saveMensaje() {
+  const body = { texto_mensaje: document.getElementById('txtMensaje').value.trim() };
+  const r = await fetch(API+'/admin/encabezado',{method:'PATCH',headers:headers(),body:JSON.stringify(body)});
+  showInlineMsg('msgMensaje', r.ok?'success':'error', r.ok?'Mensaje guardado.':'Error al guardar.');
+}
+
+// ── Permisos Sección 3 ────────────────────────────────────────────────────────
+
+async function loadPermisos() {
+  if (!PermisoAccesoConfig_exists()) {
+    const resp = await fetch(API+'/admin/permisos-config', {headers:headers()});
+    _permisosData = await resp.json();
+  } else {
+    const resp = await fetch(API+'/admin/permisos-config', {headers:headers()});
+    _permisosData = await resp.json();
+  }
+  renderPermisos();
+}
+
+function PermisoAccesoConfig_exists() { return false; } // siempre recarga
+
+function renderPermisos() {
+  if (!_permisosData.length) {
+    document.getElementById('permTable3').innerHTML = '<div class="empty-state">Sin permisos configurados. Haga clic en "+ Agregar".</div>';
+    return;
+  }
+  const rows = _permisosData.map((p,i) => `<tr>
+    <td style="font-weight:700;font-size:12px;">${H(p.etiqueta)}</td>
+    <td style="font-size:11px;color:#94a3b8;">${H(p.clave)}</td>
+    <td style="text-align:center;">${p.orden}</td>
+    <td><span class="badge ${p.disponible_tercerizado?'badge-ok':'badge-warn'}">${p.disponible_tercerizado?'Sí':'No'}</span></td>
+    <td><span class="badge ${p.activo?'badge-ok':'badge-error'}">${p.activo?'Activo':'Inactivo'}</span></td>
+    <td>
+      <div style="display:flex;gap:5px;flex-wrap:wrap;">
+        <button class="btn btn-secondary" style="padding:4px 10px;font-size:11px;" onclick="editPerm(${i})">Editar</button>
+        <button class="btn ${p.activo?'btn-warn':'btn-success'}" style="padding:4px 10px;font-size:11px;" onclick="togglePerm(${p.id},${!p.activo})">
+          ${p.activo?'Desactivar':'Activar'}
+        </button>
+        <button class="btn btn-danger" style="padding:4px 10px;font-size:11px;" onclick="delPerm(${p.id})">Eliminar</button>
+      </div>
+    </td>
+  </tr>`).join('');
+  document.getElementById('permTable3').innerHTML=`
+    <table><thead><tr><th>Etiqueta</th><th>Clave</th><th>Orden</th><th>Tercerizado</th><th>Estado</th><th>Acciones</th></tr></thead>
+    <tbody>${rows}</tbody></table>`;
+}
+
+function openNewPerm() {
+  openModal('permModal');
+  document.getElementById('permModalTitle').textContent = 'Nuevo Permiso';
+  document.getElementById('permClave').value = '';
+  document.getElementById('permEtiqueta').value = '';
+  document.getElementById('permOrden').value = '99';
+  document.getElementById('permTercerizado').checked = true;
+}
+
+function editPerm(idx) {
+  const p = _permisosData[idx];
+  openModal('permModal');
+  document.getElementById('permModalTitle').textContent = 'Editar Permiso';
+  document.getElementById('permId').value = p.id;
+  document.getElementById('permClave').value = p.clave;
+  document.getElementById('permEtiqueta').value = p.etiqueta;
+  document.getElementById('permOrden').value = p.orden;
+  document.getElementById('permTercerizado').checked = p.disponible_tercerizado;
+}
+
+async function savePerm() {
+  const id = document.getElementById('permId').value;
+  const body = {
+    clave: document.getElementById('permClave').value.trim(),
+    etiqueta: document.getElementById('permEtiqueta').value.trim(),
+    orden: parseInt(document.getElementById('permOrden').value)||99,
+    disponible_tercerizado: document.getElementById('permTercerizado').checked,
+  };
+  const url = id ? API+'/admin/permisos-config/'+id : API+'/admin/permisos-config';
+  const r = await fetch(url, {method:id?'PATCH':'POST', headers:headers(), body:JSON.stringify(body)});
+  const d = await r.json();
+  if (r.ok) { closeModal('permModal'); loadPermisos(); }
+  else showModalMsg('permModalMsg','error', d.detail||'Error.');
+}
+
+async function togglePerm(id, nuevoEstado) {
+  await fetch(API+'/admin/permisos-config/'+id, {method:'PATCH',headers:headers(),body:JSON.stringify({activo:nuevoEstado})});
+  loadPermisos();
+}
+
+async function delPerm(id) {
+  if (!confirm('¿Eliminar este permiso? Afectará las solicitudes futuras.')) return;
+  await fetch(API+'/admin/permisos-config/'+id, {method:'DELETE',headers:headers()});
+  loadPermisos();
+}
+
+// ── Coordinadores desde horas_extras (solo gmail editable) ────────────────────
+
+async function loadCoords() {
+  const resp = await fetch(API+'/admin/coordinadores-recargos', {headers:headers()});
+  if (!resp.ok) { document.getElementById('coordTable').innerHTML='<div class="empty-state">Error al cargar coordinadores.</div>'; return; }
+  _coordsData = await resp.json();
+  renderCoords();
+}
+
+function renderCoords() {
+  if (!_coordsData.length) { document.getElementById('coordTable').innerHTML='<div class="empty-state">No hay coordinadores registrados en el sistema.</div>'; return; }
+  const rows = _coordsData.map((c,i) => {
+    const areasStr = c.areas ? H(c.areas) : '<span style="color:#94a3b8;font-style:italic;">Sin área asignada</span>';
+    const gmailBadge = c.gmail
+      ? `<span style="font-size:12px;">${H(c.gmail)}</span>`
+      : `<span style="color:#94a3b8;font-style:italic;font-size:12px;">Sin gmail</span>`;
+    const usuarioBadge = c.usuario_dinamica
+      ? `<span class="badge badge-blue" style="font-size:11px;">${H(c.usuario_dinamica)}</span>`
+      : `<span style="color:#94a3b8;font-style:italic;font-size:12px;">Sin usuario</span>`;
+    return `<tr>
+      <td style="font-weight:700;font-size:13px;">${H(c.nombre)}</td>
+      <td style="font-size:12px;">${areasStr}</td>
+      <td>${gmailBadge}</td>
+      <td>${usuarioBadge}</td>
+      <td>
+        <button class="btn btn-secondary" style="padding:4px 10px;font-size:11px;" onclick="editCoordGmail(${i})">Editar</button>
+      </td>
+    </tr>`;
+  }).join('');
+  document.getElementById('coordTable').innerHTML=`
+    <p style="font-size:12px;color:#64748b;margin-bottom:12px;">Nombre y área provienen del sistema de turnos. El Gmail y el Usuario de Dinámica son editables.</p>
+    <table><thead><tr><th>Coordinador</th><th>Área(s)</th><th>Gmail</th><th>Usuario Dinámica</th><th>Acción</th></tr></thead><tbody>${rows}</tbody></table>`;
+}
+
+function editCoordGmail(idx) {
+  const c = _coordsData[idx];
+  openModal('coordModal');  // abre primero (limpia hidden inputs)
+  document.getElementById('coordId').value = c.id;  // luego asigna el ID
+  document.getElementById('coordGmail').value = c.gmail || '';
+  document.getElementById('coordUsuarioDinamica').value = c.usuario_dinamica || '';
+  document.getElementById('coordModalNombre').textContent = c.nombre;
+  document.getElementById('coordModalAreas').textContent = c.areas ? 'Área(s): ' + c.areas : 'Sin área asignada';
+  document.getElementById('coordModalMsg').style.display = 'none';
+}
+
+async function saveCoordGmail() {
+  const id = document.getElementById('coordId').value;
+  const gmail = document.getElementById('coordGmail').value.trim();
+  const usuario_dinamica = document.getElementById('coordUsuarioDinamica').value.trim().toLowerCase();
+  console.log('[APC] saveCoordGmail id=', id, 'gmail=', gmail, 'usuario_dinamica=', usuario_dinamica);
+  if (!id) {
+    showModalMsg('coordModalMsg','error','ID no encontrado — cierre y abra el modal de nuevo.');
+    return;
+  }
+  const url = API+'/admin/coordinadores-recargos/'+id;
+  console.log('[APC] PATCH', url);
+  const r = await fetch(url, {method:'PATCH', headers:headers(), body:JSON.stringify({gmail, usuario_dinamica})});
+  console.log('[APC] respuesta status=', r.status);
+  if (r.ok) {
+    closeModal('coordModal');
+    loadCoords();
+  } else {
+    let detail = `Error HTTP ${r.status}`;
+    try { const d = await r.json(); detail = d.detail || detail; } catch(_){}
+    showModalMsg('coordModalMsg','error', detail);
+  }
+}
+
+// ── Firmantes Fijos ───────────────────────────────────────────────────────────
+
+async function loadFijos() {
+  const resp = await fetch(API+'/admin/firmantes-fijos', {headers:headers()});
+  const data = await resp.json();
+  const ROLES = [{rol:'coord_talento_humano',label:'Coordinador Talento Humano'},{rol:'coord_gestion_info',label:'Coordinador Gestión de Información'}];
+  document.getElementById('fijosContent').innerHTML = ROLES.map(r => {
+    const f = data.find(d=>d.rol===r.rol)||{};
+    return `<div style="margin-bottom:18px;padding:16px;border:1.5px solid #e2e8f0;border-radius:12px;">
+      <div style="font-weight:800;color:#0f766e;margin-bottom:12px;font-size:13px;">${r.label}</div>
+      <div class="field"><label>Nombre</label><input type="text" id="fijo_nom_${r.rol}" value="${H(f.nombre||'')}"></div>
+      <div class="field"><label>Email</label><input type="email" id="fijo_email_${r.rol}" value="${H(f.email||'')}"></div>
+      <button class="btn btn-primary" onclick="saveFijo('${r.rol}',${f.id||'null'})">Guardar</button>
+      <span id="fijoMsg_${r.rol}" style="display:none;margin-left:8px;font-size:12px;"></span>
+    </div>`;
+  }).join('');
+}
+
+async function saveFijo(rol, id) {
+  const body = { rol, nombre: document.getElementById('fijo_nom_'+rol).value.trim(), email: document.getElementById('fijo_email_'+rol).value.trim() };
+  const url = id ? API+'/admin/firmantes-fijos/'+id : API+'/admin/firmantes-fijos';
+  const r = await fetch(url, {method:id?'PATCH':'POST', headers:headers(), body:JSON.stringify(body)});
+  const el = document.getElementById('fijoMsg_'+rol);
+  el.style.display = 'inline';
+  el.style.color = r.ok ? '#16a34a' : '#dc2626';
+  el.textContent = r.ok ? '✓ Guardado' : 'Error';
+  if (r.ok) loadFijos();
+}
+
+// ── Destinatarios (agrupados por persona, multi-permiso) ──────────────────────
+
+let _permisosCache = [];
+
+async function ensurePermisosCache() {
+  if (_permisosCache.length) return;
+  const resp = await fetch(API+'/config/permisos');
+  _permisosCache = await resp.json();
+}
+
+async function loadDestinatarios() {
+  await ensurePermisosCache();
+  const resp = await fetch(API+'/admin/destinatarios', {headers:headers()});
+  _destsData = await resp.json();
+  renderDests();
+}
+
+function _agruparDests(data) {
+  const map = {};
+  data.forEach(d => {
+    const key = d.email.toLowerCase().trim();
+    if (!map[key]) map[key] = { nombre: d.nombre, email: d.email, filas: [] };
+    map[key].filas.push(d);
+  });
+  return Object.values(map);
+}
+
+function renderDests() {
+  if (!_destsData.length) { document.getElementById('destTable').innerHTML='<div class="empty-state">Sin destinatarios.</div>'; return; }
+  const grupos = _agruparDests(_destsData);
+  const claveToLabel = {};
+  _permisosCache.forEach(p => { claveToLabel[p.clave] = p.etiqueta; });
+
+  const rows = grupos.map(g => {
+    const tags = g.filas.map(f =>
+      `<span style="display:inline-flex;align-items:center;gap:4px;margin:2px;padding:3px 9px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:99px;font-size:11px;font-weight:700;color:#1d4ed8;">
+        ${H(claveToLabel[f.permiso_clave] || f.permiso_clave)}
+      </span>`
+    ).join('');
+    const emailEnc = encodeURIComponent(g.email);
+    return `<tr>
+      <td style="font-weight:700;">${H(g.nombre)}</td>
+      <td style="font-size:12px;color:#64748b;">${H(g.email)}</td>
+      <td style="max-width:300px;">${tags}</td>
+      <td>
+        <div style="display:flex;gap:5px;">
+          <button class="btn btn-secondary" style="padding:4px 10px;font-size:11px;" onclick="openEditDest('${H(g.email)}','${H(g.nombre)}')">Editar</button>
+          <button class="btn btn-danger" style="padding:4px 10px;font-size:11px;" onclick="delDestPersona('${H(g.email)}','${H(g.nombre)}')">Eliminar</button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+  document.getElementById('destTable').innerHTML=`<table><thead><tr><th>Nombre</th><th>Email</th><th>Permisos</th><th>Acciones</th></tr></thead><tbody>${rows}</tbody></table>`;
+}
+
+async function openNewDest() {
+  await ensurePermisosCache();
+  document.getElementById('destNombre').value = '';
+  document.getElementById('destEmail').value = '';
+  const box = document.getElementById('destPermisosCheckboxes');
+  box.innerHTML = _permisosCache.map(p => `
+    <label style="display:flex;align-items:center;gap:8px;padding:5px 4px;cursor:pointer;font-size:12.5px;border-radius:7px;transition:background 0.1s;" onmouseover="this.style.background='#f0fdfa'" onmouseout="this.style.background=''">
+      <input type="checkbox" value="${H(p.clave)}" style="width:14px;height:14px;accent-color:#0f766e;">
+      ${H(p.etiqueta)}
+    </label>`).join('');
+  document.getElementById('destModalMsg').style.display = 'none';
+  openModal('destModal');
+}
+
+async function saveNewDest() {
+  const nombre = document.getElementById('destNombre').value.trim();
+  const email = document.getElementById('destEmail').value.trim();
+  const checked = [...document.querySelectorAll('#destPermisosCheckboxes input[type=checkbox]:checked')].map(cb => cb.value);
+  if (!nombre || !email) return showModalMsg('destModalMsg','error','Nombre y email son requeridos.');
+  if (!checked.length) return showModalMsg('destModalMsg','error','Seleccione al menos un permiso.');
+  let errors = 0;
+  for (const clave of checked) {
+    const r = await fetch(API+'/admin/destinatarios', {method:'POST', headers:headers(), body:JSON.stringify({permiso_clave:clave, nombre, email})});
+    if (!r.ok) errors++;
+  }
+  if (errors) showModalMsg('destModalMsg','warn',`Guardado con ${errors} error(es). Algunos permisos ya pueden existir.`);
+  else { closeModal('destModal'); loadDestinatarios(); }
+}
+
+function openEditDest(email, nombre) {
+  const filas = _destsData.filter(d => d.email.toLowerCase().trim() === email.toLowerCase().trim());
+  document.getElementById('destEditNombre').textContent = nombre;
+  document.getElementById('destEditEmail').textContent = email;
+  document.getElementById('destEditMsg').style.display = 'none';
+
+  const claveToLabel = {};
+  _permisosCache.forEach(p => { claveToLabel[p.clave] = p.etiqueta; });
+  const clavesActuales = new Set(filas.map(f => f.permiso_clave));
+
+  const tags = document.getElementById('destEditPermisosTags');
+  tags.innerHTML = filas.map(f => `
+    <span style="display:inline-flex;align-items:center;gap:6px;padding:4px 10px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:99px;font-size:11.5px;font-weight:700;color:#1d4ed8;">
+      ${H(claveToLabel[f.permiso_clave] || f.permiso_clave)}
+      <button onclick="removePermisoDest(${f.id})" style="background:none;border:none;cursor:pointer;color:#dc2626;font-size:14px;line-height:1;padding:0;" title="Quitar permiso">×</button>
+    </span>`).join('') || '<span style="color:#94a3b8;font-size:12px;">Sin permisos asignados</span>';
+
+  const sel = document.getElementById('destEditAddSelect');
+  sel.innerHTML = '<option value="">Seleccione permiso...</option>';
+  _permisosCache.filter(p => !clavesActuales.has(p.clave)).forEach(p => {
+    sel.appendChild(new Option(p.etiqueta, p.clave));
+  });
+
+  document.getElementById('destEditModal')._email = email;
+  document.getElementById('destEditModal')._nombre = nombre;
+  openModal('destEditModal');
+}
+
+async function removePermisoDest(destId) {
+  if (!confirm('¿Quitar este permiso del destinatario?')) return;
+  const r = await fetch(API+'/admin/destinatarios/'+destId, {method:'DELETE', headers:headers()});
+  if (r.ok) {
+    await loadDestinatarios();
+    const modal = document.getElementById('destEditModal');
+    openEditDest(modal._email, modal._nombre);
+  }
+}
+
+async function addPermisoDest() {
+  const modal = document.getElementById('destEditModal');
+  const clave = document.getElementById('destEditAddSelect').value;
+  if (!clave) return;
+  const r = await fetch(API+'/admin/destinatarios', {method:'POST', headers:headers(), body:JSON.stringify({
+    permiso_clave: clave,
+    nombre: modal._nombre,
+    email: modal._email,
+  })});
+  if (r.ok) {
+    await loadDestinatarios();
+    openEditDest(modal._email, modal._nombre);
+  } else {
+    const d = await r.json();
+    showModalMsg('destEditMsg','error', d.detail||'Error al agregar permiso.');
+  }
+}
+
+async function delDestPersona(email, nombre) {
+  if (!confirm(`¿Eliminar a ${nombre} y todos sus permisos asignados?`)) return;
+  const filas = _destsData.filter(d => d.email.toLowerCase().trim() === email.toLowerCase().trim());
+  for (const f of filas) {
+    await fetch(API+'/admin/destinatarios/'+f.id, {method:'DELETE', headers:headers()});
+  }
+  loadDestinatarios();
+}
+
+// ── Lista Blanca ───────────────────────────────────────────────────────────────
+
+async function loadLB() {
+  const resp = await fetch(API+'/admin/lista-blanca', {headers:headers()});
+  _lbData = await resp.json();
+  renderLB();
+}
+
+function renderLB() {
+  if (!_lbData.length) { document.getElementById('lbTable').innerHTML='<div class="empty-state">Sin administradores.</div>'; return; }
+  const rows = _lbData.map((lb,i) => `<tr>
+    <td><div style="display:flex;align-items:center;gap:8px;">
+      <div class="avatar-sm">${H(lb.avatar||lb.nombre.slice(0,2).toUpperCase())}</div>
+      <div><div style="font-weight:700;">${H(lb.nombre)}</div><div style="font-size:11px;color:#94a3b8;">${H(lb.usunombre)}</div></div>
+    </div></td>
+    <td style="font-size:12px;">${H(lb.usuemail)}</td>
+    <td><span class="badge ${lb.activo?'badge-ok':'badge-error'}">${lb.activo?'Activo':'Inactivo'}</span></td>
+    <td><button class="btn btn-danger" style="padding:4px 10px;font-size:11px;" onclick="delLB(${lb.id})">Eliminar</button></td>
+  </tr>`).join('');
+  document.getElementById('lbTable').innerHTML=`<table><thead><tr><th>Usuario</th><th>Email</th><th>Estado</th><th></th></tr></thead><tbody>${rows}</tbody></table>`;
+}
+
+function openNewLB() {
+  openModal('lbModal');
+  document.getElementById('lbId').value = '';
+  document.getElementById('lbUser').value = '';
+  document.getElementById('lbEmail').value = '';
+  document.getElementById('lbNombre').value = '';
+}
+
+async function saveLb() {
+  const id = document.getElementById('lbId').value;
+  const body = { usunombre:document.getElementById('lbUser').value.trim(), usuemail:document.getElementById('lbEmail').value.trim(), nombre:document.getElementById('lbNombre').value.trim() };
+  const url = id ? API+'/admin/lista-blanca/'+id : API+'/admin/lista-blanca';
+  const r = await fetch(url, {method:id?'PATCH':'POST', headers:headers(), body:JSON.stringify(body)});
+  const d = await r.json();
+  if (r.ok) { closeModal('lbModal'); loadLB(); }
+  else showModalMsg('lbModalMsg','error', d.detail||'Error.');
+}
+
+async function delLB(id) {
+  if (!confirm('¿Eliminar este administrador?')) return;
+  await fetch(API+'/admin/lista-blanca/'+id, {method:'DELETE',headers:headers()});
+  loadLB();
+}
+
+// ── Vista Previa ─────────────────────────────────────────────────────────────
+
+async function loadPreview() {
+  document.getElementById('previewCard').innerHTML='<div style="text-align:center;padding:20px;color:#64748b;font-size:13px;">Cargando...</div>';
+  const [encR, secR, permR, fijosR] = await Promise.all([
+    fetch(API+'/admin/encabezado', {headers:headers()}),
+    fetch(API+'/config/secciones'),
+    fetch(API+'/config/permisos'),
+    fetch(API+'/admin/firmantes-fijos', {headers:headers()}),
+  ]);
+  const enc=await encR.json(), secs=await secR.json(), perms=await permR.json(), fijos=await fijosR.json();
+  const logo="{% static 'logos-hudn/logo-hudn-colores-vertical.png' %}";
+
+  const firmaBoxes=[
+    {label:'Coordinador de Área',sub:'Según área de servicios'},
+    {label:'Responsable Contratista',sub:'Empresa tercerizada o Coordinador x2'},
+    {label:'Funcionario',sub:'Firmado al enviar el formulario'},
+    {label:'Coord. Talento Humano',sub:fijos.find(f=>f.rol==='coord_talento_humano')?.nombre||'(sin configurar)'},
+    {label:'Coord. Gestión de Información',sub:fijos.find(f=>f.rol==='coord_gestion_info')?.nombre||'(sin configurar)'},
+  ];
+
+  const permChips = perms.map(p=>`<span style="display:inline-block;margin:3px 3px 3px 0;padding:4px 10px;background:${p.activo?'#f0fdf4':'#f3f4f6'};border:1px solid ${p.activo?'#86efac':'#d1d5db'};color:${p.activo?'#065f46':'#9ca3af'};border-radius:99px;font-size:11px;font-weight:700;">${H(p.etiqueta)}${!p.disponible_tercerizado?' <sup style="font-size:9px;opacity:0.6;">*</sup>':''}</span>`).join('');
+
+  const seccionesHtml = secs.map(s=>`<div style="margin:6px 0;padding:7px 12px;background:#f8fafc;border-left:3px solid #0d9488;border-radius:0 8px 8px 0;"><span style="font-size:10.5px;font-weight:800;color:#0f766e;">SECCIÓN ${s.numero}</span><span style="font-size:13px;font-weight:700;color:#0f172a;margin-left:8px;">${H(s.titulo)}</span></div>`).join('');
+
+  const firmasHtml = firmaBoxes.map(f=>`<div style="border:1.5px solid #334155;padding:10px;min-height:80px;text-align:center;flex:1;min-width:130px;"><div style="font-size:9.5px;font-weight:700;color:#475569;margin-bottom:4px;">${H(f.label)}</div><div style="height:34px;border-bottom:1px solid #94a3b8;margin-bottom:5px;"></div><div style="font-size:9.5px;color:#94a3b8;">${H(f.sub)}</div></div>`).join('');
+
+  document.getElementById('previewCard').innerHTML=`
+    <div style="max-width:800px;margin:0 auto;">
+      <div style="display:flex;justify-content:flex-end;gap:8px;margin-bottom:14px;">
+        <button class="btn btn-secondary" onclick="loadPreview()">↻ Recargar</button>
+        <button class="btn btn-primary" onclick="window.print()">🖨 Imprimir</button>
+      </div>
+      <table style="width:100%;border-collapse:collapse;border:1.5px solid #334155;margin-bottom:14px;">
+        <tr>
+          <td style="width:76px;border-right:1px solid #334155;padding:8px;text-align:center;vertical-align:middle;"><img src="${logo}" alt="HUDN" style="height:42px;object-fit:contain;" onerror="this.style.display='none'"></td>
+          <td style="border-right:1px solid #334155;padding:10px 14px;text-align:center;font-size:13px;font-weight:900;background:#0f172a;color:#fff;">${H(enc.titulo||'ASIGNACIÓN DE PERMISOS Y CLAVES')}</td>
+          <td style="border-right:1px solid #334155;padding:0;vertical-align:top;width:150px;">
+            <div style="padding:4px 8px;font-size:10px;border-bottom:1px solid #334155;"><b>Código:</b> ${H(enc.codigo||'FRSGI-002')}</div>
+            <div style="padding:4px 8px;font-size:10px;"><b>Versión:</b> ${H(enc.version||'06')}</div>
+          </td>
+          <td style="border-right:1px solid #334155;padding:0;vertical-align:top;width:190px;">
+            <div style="padding:4px 8px;font-size:9.5px;border-bottom:1px solid #334155;"><b>Fecha elaboración:</b> ${H(enc.fecha_elaboracion||'')}</div>
+            <div style="padding:4px 8px;font-size:9.5px;border-bottom:1px solid #334155;"><b>Fecha actualización:</b> ${H(enc.fecha_actualizacion||'')}</div>
+            <div style="padding:4px 8px;font-size:9.5px;"><b>Hoja:</b> ${H(enc.hoja||'1 DE 1')}</div>
+          </td>
+          <td style="width:70px;padding:8px;text-align:center;vertical-align:middle;"><img src="${logo}" alt="HUDN" style="height:42px;object-fit:contain;" onerror="this.style.display='none'"></td>
+        </tr>
+      </table>
+      <div style="margin-bottom:14px;">${seccionesHtml}</div>
+      <div style="padding:12px;border:1px solid #e2e8f0;border-radius:10px;margin-bottom:14px;">
+        <div style="font-size:11px;font-weight:800;text-transform:uppercase;color:#0f766e;margin-bottom:8px;">Sección 3 · Permisos y Accesos</div>
+        ${permChips}
+        <div style="margin-top:6px;font-size:10px;color:#94a3b8;">* No disponible para tercerizado/contratista</div>
+      </div>
+      ${enc.texto_mensaje?`<div style="padding:12px;background:#f0fdf4;border:1px solid #86efac;border-radius:10px;margin-bottom:14px;font-size:12px;color:#065f46;line-height:1.6;">${H(enc.texto_mensaje)}</div>`:''}
+      <div style="font-size:11px;font-weight:800;text-transform:uppercase;color:#94a3b8;margin-bottom:8px;">Firmas</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;">${firmasHtml}</div>
+    </div>`;
+}
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
+
+function openModal(id) {
+  document.getElementById(id).classList.add('show');
+  // Limpiar hidden IDs para que un nuevo "guardar" no use ID viejo
+  const fieldsToClear = { coordModal:'coordId', permModal:'permId', campoModal:'campoId', lbModal:'lbId' };
+  if (fieldsToClear[id]) document.getElementById(fieldsToClear[id]).value = '';
+}
+
+function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+
+function showModalMsg(id, tipo, txt) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.style.cssText = `display:block;padding:8px 12px;border-radius:9px;font-size:12px;font-weight:600;margin-bottom:10px;
+    background:${tipo==='error'?'#fef2f2':'#f0fdf4'};border:1px solid ${tipo==='error'?'#fecaca':'#86efac'};
+    color:${tipo==='error'?'#991b1b':'#166534'};`;
+  el.textContent = txt;
+}
+
+function showInlineMsg(id, tipo, txt) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.style.cssText = `display:block;padding:8px 12px;border-radius:9px;font-size:12px;font-weight:600;margin-top:8px;
+    background:${tipo==='error'?'#fef2f2':'#f0fdf4'};border:1px solid ${tipo==='error'?'#fecaca':'#86efac'};
+    color:${tipo==='error'?'#991b1b':'#166534'};`;
+  el.textContent = txt;
+  setTimeout(()=>{ el.style.display='none'; }, 3000);
+}
+
+document.addEventListener('DOMContentLoaded', loadSolicitudes);
+</script>
+</body>
+</html>
