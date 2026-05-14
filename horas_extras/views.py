@@ -485,9 +485,6 @@ class PersonalTemporalGeneralListView(LoginRequiredMixin, TemplateView):
         context['titulo'] = "Listado General - Planta Temporal (Según Excel)"
         context['tipo_planta'] = "Temporal"
         return context
-        context['titulo'] = "Listado General - Planta Temporal"
-        context['tipo_planta'] = "Temporal"
-        return context
 
 # --- NUEVAS VISTAS BASADAS EN EXCEL (CONCILIACIÓN) ---
 
@@ -496,7 +493,6 @@ def get_master_excel_data():
     cache_key = 'th_master_excel_data'
     data = cache.get(cache_key)
     if data is None:
-<<<<<<< HEAD
         data = [
             {
                 'CEDULA': t.documento,
@@ -508,18 +504,6 @@ def get_master_excel_data():
             for t in TrabajadorRecargos.objects.select_related('area').all()
         ]
         cache.set(cache_key, data, 3600)
-=======
-        path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data', 'personal.xlsx')
-        if os.path.exists(path):
-            df = pd.read_excel(path)
-            # Normalizar columnas
-            df.columns = [c.upper().strip() for c in df.columns]
-            # Convertir a lista de dicts para fácil manejo
-            data = df.to_dict('records')
-            cache.set(cache_key, data, 28800) # Cache por 8 horas para máxima velocidad
-        else:
-            data = []
->>>>>>> 8f7da6dbb874296f276fa48f1cf3a061f339fb6e
     return data
 
 class InformeConsistenciaExcelView(LoginRequiredMixin, TemplateView):
