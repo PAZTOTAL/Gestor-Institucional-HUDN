@@ -1,0 +1,175 @@
+{% extends "crue_traslados/base.html" %}
+{# Plantilla principal: sidebar condicional, barra de título con filtros y contenedor de tabla #}
+
+{% block titulo %}Sistema de Traslados{% endblock %}
+
+{% block contenido %}
+<div class="flex h-screen overflow-hidden bg-gray-100">
+	{% include 'crue_traslados/main_sidebar.html' %}
+
+	{# ═══════════════════════════════════════════════════════════════════════ #}
+	{# ÁREA PRINCIPAL (barra de título + tabla)                                #}
+	{# ═══════════════════════════════════════════════════════════════════════ #}
+	<div class="flex-1 flex flex-col overflow-hidden">
+
+		{# ── Mensajes del sistema (ej. limpieza exitosa) ──────────────────── #}
+		{% if messages %}
+		<div class="px-6 pt-3 space-y-2">
+			{% for mensaje in messages %}
+			<div class="flex items-center gap-2 px-4 py-3 rounded-md text-sm font-medium
+				{% if mensaje.tags == 'success' %}bg-green-100 text-green-800 border border-green-300
+				{% elif mensaje.tags == 'error' %}bg-red-100 text-red-800 border border-red-300
+				{% else %}bg-blue-100 text-blue-800 border border-blue-300{% endif %}">
+				<svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+						d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+				</svg>
+				{{ mensaje }}
+			</div>
+			{% endfor %}
+		</div>
+		{% endif %}
+
+		{% include 'crue_traslados/main_title.html' %}
+		{# ── Barra de título con filtros ─────────────────────────────────── #}
+		<header id="filtros-form" class="bg-white shadow-sm px-6 py-3 flex items-center gap-4">
+
+			<h1 class="text-lg font-bold text-blue-900 mr-4">Filtros</h1>
+
+			{# ── Selector de mes ─────────────────────────────────────────── #}
+			<div class="flex items-center gap-2">
+				<label for="id_mes" class="text-sm font-medium text-gray-600">Mes:</label>
+				<select
+					id="id_mes"
+					name="mes"
+					class="border border-gray-300 rounded-md px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+					hx-get="{% url 'crue_traslados:tabla-traslados' %}"
+					hx-target="#contenedor-tabla"
+					hx-trigger="change"
+					hx-include="#filtros-form"
+				>
+					{% for numMes, nombreMes in meses %}
+					<option value="{{ numMes }}" {% if numMes == mesSeleccionado %}selected{% endif %} {% if numMes > mesActual %}disabled{% endif %}>
+						{{ nombreMes }}
+					</option>
+					{% endfor %}
+				</select>
+			</div>
+
+			{# ── Campo de búsqueda por documento o nombre ────────────────── #}
+			<div class="flex items-center gap-2">
+				<label for="id_busqueda" class="text-sm font-medium text-gray-600">Documento o Nombre:</label>
+				<input
+					type="text"
+					id="id_busqueda"
+					name="busqueda"
+					value="{{ busqueda }}"
+					maxlength="100"
+					placeholder="Documento o Nombre"
+					class="border border-gray-300 rounded-md px-2 py-1 text-sm w-48 focus:outline-none focus:ring-2 focus:ring-blue-500"
+				>
+			</div>
+
+			{# ── Botón Buscar ────────────────────────────────────────────── #}
+			<button
+				id="btn-buscar"
+				type="button"
+				class="px-3 py-1 rounded-md text-sm font-medium bg-blue-600 text-white hover:bg-blue-700 transition-colors"
+				hx-get="{% url 'crue_traslados:tabla-traslados' %}"
+				hx-target="#contenedor-tabla"
+				hx-swap="innerHTML"
+				hx-include="#filtros-form"
+			>
+				Buscar
+			</button>
+
+			{# ── Espaciador flexible ─────────────────────────────────────── #}
+			<div class="flex-1"></div>
+
+			{# ── Info de registros (lado derecho) ────────────────────────── #}
+			<span id="info-registros-header" class="text-sm text-gray-500">
+				—
+			</span>
+
+			{# ── Paginación (checkbox) ───────────────────────────────────── #}
+			<div x-data="{ paginado: true }" class="flex items-center gap-1">
+				<input type="hidden" name="paginar" :value="paginado ? '1' : '0'">
+				<input
+					type="checkbox"
+					id="id_paginar"
+					:checked="paginado"
+					@change="paginado = $el.checked; $nextTick(() => { htmx.trigger('#btn-buscar', 'click') })"
+					class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+				>
+				<label for="id_paginar" class="text-xs font-medium text-gray-600">Paginar</label>
+			</div>
+
+			{# ── Botón Orden (Recientes / Antiguos) ──────────────────────── #}
+			<div x-data="{ orden: 'desc' }" class="flex items-center">
+				<input type="hidden" name="orden" :value="orden" id="id_orden">
+				<button
+					type="button"
+					@click="orden = orden === 'desc' ? 'asc' : 'desc'; $nextTick(() => { htmx.trigger('#btn-buscar', 'click') })"
+					class="inline-flex items-center gap-1 px-2 py-1 rounded-md text-sm font-medium border border-gray-300 text-gray-700 hover:bg-gray-100 transition-colors"
+					:title="orden === 'desc' ? 'Mostrando recientes primero' : 'Mostrando antiguos primero'"
+				>
+					<svg class="w-4 h-4 transition-transform" :class="orden === 'asc' ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12"/>
+					</svg>
+					<span x-text="orden === 'desc' ? 'Recientes' : 'Antiguos'" class="text-xs"></span>
+				</button>
+			</div>
+
+			{# ── Botón Adicionar ─────────────────────────────────────────── #}
+			<button
+				hx-get="{% url 'crue_traslados:traslado-nuevo' %}?mes={{ mesSeleccionado }}"
+				hx-target="#modal-contenedor"
+				hx-swap="innerHTML"
+				class="inline-flex items-center gap-1 px-3 py-1.5 rounded-md text-sm font-medium bg-blue-600 text-white hover:bg-blue-700 transition-colors"
+			>
+				<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+				</svg>
+				Adicionar
+			</button>
+
+			{# ── Mensajes de error de validación ─────────────────────────── #}
+			{% if erroresFiltro %}
+			<div class="w-full mt-1">
+				{% for error in erroresFiltro %}
+				<p class="text-xs text-red-600 flex items-center gap-1">
+					<svg class="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+						<path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+					</svg>
+					{{ error }}
+				</p>
+				{% endfor %}
+			</div>
+			{% endif %}
+
+		</header>
+
+		{# ── Contenedor de tabla ─────────────────────────────────────────── #}
+		<main class="flex-1 overflow-auto p-4">
+			<div
+				id="contenedor-tabla"
+				hx-get="{% url 'crue_traslados:tabla-traslados' %}"
+				hx-trigger="load"
+				hx-vals='{"mes": "{{ mesSeleccionado }}", "paginar": "1"}'
+				class="bg-white rounded-lg shadow overflow-hidden"
+			>
+				{# ── Indicador de carga ──────────────────────────────────── #}
+				<div class="flex items-center justify-center py-16 text-gray-400">
+					<svg class="animate-spin w-6 h-6 mr-3" fill="none" viewBox="0 0 24 24">
+						<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+						<path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
+					</svg>
+					<span class="text-sm">Cargando registros…</span>
+				</div>
+			</div>
+		</main>
+
+	</div>{# fin área principal #}
+
+</div>{# fin flex h-screen #}
+{% endblock %}

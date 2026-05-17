@@ -1,0 +1,171 @@
+{% load i18n %}
+{# Partial HTMX: tabla de registros de traslados #}
+
+{# ── Información de registros (actualizada via HTMX en el header) ─────── #}
+<span id="info-registros" class="hidden">{{ totalRegistros }} registro{{ totalRegistros|pluralize:"s" }}</span>
+
+{# ── Tabla ───────────────────────────────────────────────────────────────── #}
+<div class="overflow-x-auto">
+	<table class="min-w-full divide-y divide-gray-200 text-xs">
+		<thead class="bg-blue-900 text-white">
+			<tr>
+				<th class="px-3 py-2 text-center font-semibold uppercase tracking-wide whitespace-nowrap">#</th>
+				<th class="px-3 py-2 text-left font-semibold uppercase tracking-wide whitespace-nowrap">Acciones</th>
+				<th class="px-3 py-2 text-left font-semibold uppercase tracking-wide whitespace-nowrap">Fecha Reporte</th>
+				<th class="px-3 py-2 text-left font-semibold uppercase tracking-wide whitespace-nowrap">Fecha Egreso</th>
+				<th class="px-3 py-2 text-left font-semibold uppercase tracking-wide whitespace-nowrap">Fecha Ingreso</th>
+				<th class="px-3 py-2 text-left font-semibold uppercase tracking-wide whitespace-nowrap">Nombre de Paciente</th>
+				<th class="px-3 py-2 text-left font-semibold uppercase tracking-wide whitespace-nowrap">Documento</th>
+				<th class="px-3 py-2 text-left font-semibold uppercase tracking-wide whitespace-nowrap">Servicio</th>
+				<th class="px-3 py-2 text-left font-semibold uppercase tracking-wide whitespace-nowrap">Quien Reporta</th>
+				<th class="px-3 py-2 text-left font-semibold uppercase tracking-wide whitespace-nowrap">Destino</th>
+				<th class="px-3 py-2 text-left font-semibold uppercase tracking-wide whitespace-nowrap">Procedimiento</th>
+				<th class="px-3 py-2 text-left font-semibold uppercase tracking-wide whitespace-nowrap">Médico</th>
+				<th class="px-3 py-2 text-left font-semibold uppercase tracking-wide whitespace-nowrap">Aux. Enfermería</th>
+				<th class="px-3 py-2 text-left font-semibold uppercase tracking-wide whitespace-nowrap">Conductor</th>
+				<th class="px-3 py-2 text-left font-semibold uppercase tracking-wide whitespace-nowrap">Radio Operador</th>
+				<th class="px-3 py-2 text-left font-semibold uppercase tracking-wide whitespace-nowrap">Ambulancia de Traslado</th>
+				<th class="px-3 py-2 text-left font-semibold uppercase tracking-wide whitespace-nowrap">Observación</th>
+			</tr>
+		</thead>
+		<tbody class="bg-white divide-y divide-gray-100" id="tabla-cuerpo">
+			{% for registro in registros %}
+			<tr
+				class="hover:bg-blue-50 transition-colors cursor-pointer"
+				data-editar-url="{% url 'crue_traslados:traslado-editar' registro.pk %}"
+				hx-get="{% url 'crue_traslados:traslado-editar' registro.pk %}"
+				hx-target="#modal-contenedor"
+				hx-swap="innerHTML"
+				hx-trigger="dblclick"
+			>
+				{# ── Columna consecutivo ──────────────────────────────────── #}
+				<td class="px-3 py-2 whitespace-nowrap text-center text-gray-500 font-mono text-xs">
+					{{ forloop.counter }}
+				</td>
+
+				{# ── Columna de acciones ──────────────────────────────────── #}
+				<td class="px-3 py-2 whitespace-nowrap">
+					<div class="flex items-center gap-1">
+						{# Botón Eliminar — habilitado solo si es staff o dueño del registro #}
+						{% if request.user.is_staff or request.user.username == registro.radio_operador %}
+						<button
+							hx-get="{% url 'crue_traslados:traslado-confirmar-eliminar' registro.pk %}"
+							hx-target="#modal-contenedor"
+							hx-swap="innerHTML"
+							class="bi bi-trash-fill px-2 py-1 rounded text-xs font-medium bg-red-100 text-red-700 hover:bg-red-200 transition-colors"
+							title="Eliminar el registro"
+						>
+						</button>
+						{% else %}
+						<button
+							disabled
+							class="bi bi-trash px-2 py-1 rounded text-xs font-medium bg-gray-100 text-gray-400 cursor-not-allowed"
+							title="No tiene permiso para eliminar este registro"
+						>
+						</button>
+						{% endif %}
+
+						{# Botón Clonar #}
+						<button
+							hx-get="{% url 'crue_traslados:traslado-clonar' registro.pk %}"
+							hx-target="#modal-contenedor"
+							hx-swap="innerHTML"
+							class="bi bi-files px-2 py-1 rounded text-xs font-medium bg-blue-100 text-blue-700 hover:bg-blue-200 transition-colors"
+							title="Clonar o copiar registro"
+						>
+						</button>
+
+						{# Botón Editar #}
+						<button
+							hx-get="{% url 'crue_traslados:traslado-editar' registro.pk %}"
+							hx-target="#modal-contenedor"
+							hx-swap="innerHTML"
+							class="bi bi-pencil-square px-2 py-1 rounded text-xs font-medium bg-amber-100 text-amber-700 hover:bg-amber-200 transition-colors"
+							title="Editar el registro"
+						>
+						</button>
+					</div>
+				</td>
+
+				{# ── Columnas de datos ────────────────────────────────────── #}
+				<td class="px-3 py-2 whitespace-nowrap">{{ registro.fecha_reporte|date:"d/m/Y H:i" }}</td>
+				<td class="px-3 py-2 whitespace-nowrap">{{ registro.fecha_egreso|date:"d/m/Y H:i"|default:"—" }}</td>
+				<td class="px-3 py-2 whitespace-nowrap">{{ registro.fecha_ingreso|date:"d/m/Y H:i"|default:"—" }}</td>
+				<td class="px-3 py-2 whitespace-nowrap">{{ registro.nombre_paciente }}</td>
+				<td class="px-3 py-2 whitespace-nowrap">{{ registro.documento }}</td>
+				<td class="px-3 py-2 whitespace-nowrap">{{ registro.servicio }}</td>
+				<td class="px-3 py-2 whitespace-nowrap">{{ registro.quien_reporta }}</td>
+				<td class="px-3 py-2 whitespace-nowrap">{{ registro.destino }}</td>
+				<td class="px-3 py-2 whitespace-nowrap">{{ registro.procedimiento }}</td>
+				<td class="px-3 py-2 whitespace-nowrap">{{ registro.medico }}</td>
+				<td class="px-3 py-2 whitespace-nowrap">{{ registro.aux_enfermeria|default:"—" }}</td>
+				<td class="px-3 py-2 whitespace-nowrap">{{ registro.conductor }}</td>
+				<td class="px-3 py-2 whitespace-nowrap">{{ registro.radio_operador }}</td>
+				<td class="px-3 py-2 whitespace-nowrap">{{ registro.ambulancia }}</td>
+				<td class="px-3 py-2 whitespace-nowrap">{{ registro.observacion|default:"—" }}</td>
+			</tr>
+			{% empty %}
+			<tr>
+				<td colspan="17" class="px-6 py-12 text-center text-gray-400 text-sm">
+					No hay registros para el período seleccionado.
+				</td>
+			</tr>
+			{% endfor %}
+		</tbody>
+	</table>
+</div>
+
+{# ── Paginación ──────────────────────────────────────────────────────────── #}
+{% if paginaObj.paginator.num_pages > 1 %}
+<div class="px-4 py-3 flex items-center justify-center gap-4 border-t border-gray-200">
+	{% if paginaObj.has_previous %}
+	<button
+		hx-get="{% url 'crue_traslados:tabla-traslados' %}"
+		hx-target="#contenedor-tabla"
+		hx-swap="innerHTML"
+		hx-vals='{"mes": "{{ mes }}", "busqueda": "{{ busqueda }}", "orden": "{{ orden }}", "paginar": "1", "pagina": "{{ paginaObj.previous_page_number }}"}'
+		class="px-3 py-1.5 rounded text-xs font-medium border border-gray-300 text-gray-700 hover:bg-gray-100 transition-colors"
+	>
+		← Anterior
+	</button>
+	{% else %}
+	<span class="px-3 py-1.5 rounded text-xs font-medium border border-gray-200 text-gray-300 cursor-not-allowed">
+		← Anterior
+	</span>
+	{% endif %}
+
+	<span class="text-xs text-gray-500">
+		Página {{ paginaObj.number }} de {{ paginaObj.paginator.num_pages }}
+	</span>
+
+	{% if paginaObj.has_next %}
+	<button
+		hx-get="{% url 'crue_traslados:tabla-traslados' %}"
+		hx-target="#contenedor-tabla"
+		hx-swap="innerHTML"
+		hx-vals='{"mes": "{{ mes }}", "busqueda": "{{ busqueda }}", "orden": "{{ orden }}", "paginar": "1", "pagina": "{{ paginaObj.next_page_number }}"}'
+		class="px-3 py-1.5 rounded text-xs font-medium border border-gray-300 text-gray-700 hover:bg-gray-100 transition-colors"
+	>
+		Siguiente →
+	</button>
+	{% else %}
+	<span class="px-3 py-1.5 rounded text-xs font-medium border border-gray-200 text-gray-300 cursor-not-allowed">
+		Siguiente →
+	</span>
+	{% endif %}
+</div>
+{% endif %}
+
+{# ── Contenedor del modal (se inyecta aquí via HTMX) ────────────────────── #}
+<div id="modal-contenedor"></div>
+
+{# ── Script: actualizar info de registros en el header ───────────────────── #}
+<script>
+	(function () {
+		var infoOculta = document.getElementById ('info-registros');
+		var infoVisible = document.getElementById ('info-registros-header');
+		if (infoOculta && infoVisible) {
+			infoVisible.textContent = infoOculta.textContent;
+		}
+	}) ();
+</script>

@@ -1,0 +1,208 @@
+	{# ═══════════════════════════════════════════════════════════════════════ #}
+	{# SIDEBAR IZQUIERDO                                                       #}
+	{# ═══════════════════════════════════════════════════════════════════════ #}
+	<aside
+		x-data="{ sidebarAbierto: true }"
+		:class="sidebarAbierto ? 'w-64' : 'w-16'"
+		class="bg-blue-900 text-white flex flex-col flex-shrink-0 shadow-lg transition-all duration-300 overflow-hidden"
+	>
+
+		{# ── Botón colapso/expansión ─────────────────────────────────────── #}
+		<div :class="sidebarAbierto ? 'flex justify-end' : 'flex justify-center'" class="px-3 py-2">
+			<button
+				@click="sidebarAbierto = !sidebarAbierto"
+				class="p-1 rounded-md text-blue-200 hover:bg-blue-700 hover:text-white transition-colors focus:outline-none"
+				:title="sidebarAbierto ? 'Colapsar sidebar' : 'Expandir sidebar'"
+			>
+				<svg
+					class="w-5 h-5 transition-transform duration-300"
+					:class="sidebarAbierto ? '' : 'rotate-180'"
+					fill="none" stroke="currentColor" viewBox="0 0 24 24"
+				>
+					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+				</svg>
+			</button>
+		</div>
+
+		{# ── Separador después del botón de colapso ──────────────────────── #}
+		<div class="border-b border-blue-700"></div>
+
+		{# ── Encabezado: usuario y fecha ─────────────────────────────────── #}
+		<div class="border-b border-blue-700" :class="sidebarAbierto ? 'px-5 py-6' : 'px-2 py-4 flex justify-center'">
+			{# ── Ícono de usuario genérico (visible solo en estado colapsado) ── #}
+			<div x-show="!sidebarAbierto" class="flex justify-center">
+				<svg class="w-8 h-8 text-blue-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+						d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+				</svg>
+			</div>
+			{# ── Info completa del usuario (visible solo en estado expandido) ── #}
+			<div x-show="sidebarAbierto" x-transition>
+				<p class="text-sm font-semibold text-blue-200 uppercase tracking-wide">Usuario</p>
+				<p class="text-lg font-bold truncate">{{ request.user.username }}</p>
+				<p class="text-xs text-blue-300 mt-1">{{ fechaActual|date:"d/m/Y" }}</p>
+			</div>
+		</div>
+
+		{# ── Navegación ──────────────────────────────────────────────────── #}
+		<nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+
+			{# ── Menú Reportes (Alpine.js collapsible) ───────────────────── #}
+			{# Expandido: menú colapsable completo con texto e ícono #}
+			<div x-show="sidebarAbierto" x-data="{ abierto: false }">
+				<button
+					@click="abierto = !abierto"
+					class="w-full flex items-center justify-between px-3 py-2 rounded-md text-sm font-medium text-blue-100 hover:bg-blue-700 hover:text-white transition-colors"
+				>
+					<span class="flex items-center gap-2">
+						<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+								d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414A1 1 0 0119 9.414V19a2 2 0 01-2 2z"/>
+						</svg>
+						<span>Reportes</span>
+					</span>
+					<svg class="w-4 h-4 transition-transform" :class="abierto ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+					</svg>
+				</button>
+				<div x-show="abierto" x-transition class="mt-1 ml-4 space-y-1">
+					<a
+						href="{% url 'crue_traslados:reporte-excel' %}?mes={{ mesSeleccionado }}"
+						class="block px-3 py-2 rounded-md text-sm text-blue-200 hover:bg-blue-700 hover:text-white transition-colors"
+					>
+						📊 Excel
+					</a>
+				</div>
+			</div>
+			{# Colapsado: solo ícono de Reportes centrado #}
+			<div x-show="!sidebarAbierto" class="flex justify-center">
+				<a
+					href="{% url 'crue_traslados:reporte-excel' %}?mes={{ mesSeleccionado }}"
+					class="p-2 rounded-md text-blue-100 hover:bg-blue-700 hover:text-white transition-colors"
+					title="Reportes"
+				>
+					<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+							d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414A1 1 0 0119 9.414V19a2 2 0 01-2 2z"/>
+					</svg>
+				</a>
+			</div>
+
+			{# ── Menú Gestión (Alpine.js collapsible) ────────────────────── #}
+			{# Expandido: menú colapsable completo con texto e ícono #}
+			<div x-show="sidebarAbierto" x-data="{ abierto: false }">
+				<button
+					@click="abierto = !abierto"
+					class="w-full flex items-center justify-between px-3 py-2 rounded-md text-sm font-medium text-blue-100 hover:bg-blue-700 hover:text-white transition-colors"
+				>
+					<span class="flex items-center gap-2">
+						<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+								d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+						</svg>
+						<span>Gestión</span>
+					</span>
+					<svg class="w-4 h-4 transition-transform" :class="abierto ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+					</svg>
+				</button>
+				<div x-show="abierto" x-transition class="mt-1 ml-4 space-y-1">
+					<a
+						href="{% url 'crue_traslados:cambiar-contrasena' %}"
+						class="block px-3 py-2 rounded-md text-sm text-blue-200 hover:bg-blue-700 hover:text-white transition-colors"
+					>
+						🔑 Contraseña
+					</a>
+				</div>
+			</div>
+			{# Colapsado: solo ícono de Gestión centrado #}
+			<div x-show="!sidebarAbierto" class="flex justify-center">
+				<a
+					href="{% url 'crue_traslados:cambiar-contrasena' %}"
+					class="p-2 rounded-md text-blue-100 hover:bg-blue-700 hover:text-white transition-colors"
+					title="Gestión"
+				>
+					<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+							d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+					</svg>
+				</a>
+			</div>
+
+			{# ── Menú Importar (Alpine.js collapsible) — todos los usuarios ── #}
+			<div x-show="sidebarAbierto" x-data="{ abierto: false }">
+				<button
+					@click="abierto = !abierto"
+					class="w-full flex items-center justify-between px-3 py-2 rounded-md text-sm font-medium text-blue-100 hover:bg-blue-700 hover:text-white transition-colors"
+				>
+					<span class="flex items-center gap-2">
+						<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+								d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
+						</svg>
+						<span>Importar</span>
+					</span>
+					<svg class="w-4 h-4 transition-transform" :class="abierto ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+					</svg>
+				</button>
+				<div x-show="abierto" x-transition class="mt-1 ml-4 space-y-1">
+					<a
+						href="{% url 'crue_traslados:importar-excel' %}"
+						class="block px-3 py-2 rounded-md text-sm text-blue-200 hover:bg-blue-700 hover:text-white transition-colors"
+					>
+						📥 Desde formato FRREF-001
+					</a>
+				</div>
+			</div>
+			{# Colapsado: solo ícono de Importar centrado #}
+			<div x-show="!sidebarAbierto" class="flex justify-center">
+				<a
+					href="{% url 'crue_traslados:importar-excel' %}"
+					class="p-2 rounded-md text-blue-100 hover:bg-blue-700 hover:text-white transition-colors"
+					title="Importar"
+				>
+					<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+							d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
+					</svg>
+				</a>
+			</div>
+
+		</nav>
+
+		{# ── Botón Salir ─────────────────────────────────────────────────── #}
+		<div class="border-t border-blue-700" :class="sidebarAbierto ? 'px-3 py-4' : 'px-2 py-4'">
+			<form method="post" action="{% url 'logout' %}">
+				{% csrf_token %}
+				{# Expandido: ícono + texto #}
+				<button
+					x-show="sidebarAbierto"
+					type="submit"
+					class="w-full flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium text-blue-200 hover:bg-blue-700 hover:text-white transition-colors"
+				>
+					<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+							d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+					</svg>
+					<span>Salir</span>
+				</button>
+				{# Colapsado: solo ícono centrado #}
+				<div x-show="!sidebarAbierto" class="flex justify-center">
+					<button
+						type="submit"
+						class="p-2 rounded-md text-blue-200 hover:bg-blue-700 hover:text-white transition-colors"
+						title="Salir"
+					>
+						<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+								d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+						</svg>
+					</button>
+				</div>
+			</form>
+		</div>
+
+	</aside>

@@ -70,7 +70,6 @@ def create_initial_app_admin_user (env):
 			defaults={
 				"email": "admin@gmail.com",
 				"first_name": "Administrador CRUE",
-				"rol": "DIRECTOR",
 				"is_staff": True,
 				"is_superuser": True,
 				"is_active": True,
@@ -86,7 +85,6 @@ def create_initial_app_admin_user (env):
 			user.set_password(password)
 			user.email = "admin@gmail.com"
 			user.nombre = "Administrador CRUE"
-			user.rol = "DIRECTOR"
 			user.is_staff = True
 			user.is_superuser = True
 			user.is_active = True
