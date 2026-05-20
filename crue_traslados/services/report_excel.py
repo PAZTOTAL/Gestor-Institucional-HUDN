@@ -48,11 +48,27 @@ def generarExcel (queryset, mes):
 	hoja.append (ENCABEZADOS)
 
 	# Escribir una fila por registro
+	import zoneinfo
+	zonaLocal = zoneinfo.ZoneInfo ('America/Bogota')
+
 	for registro in queryset:
-		# Convertir a hora local y eliminar tzinfo para compatibilidad con openpyxl
-		fechaReporte = timezone.localtime (registro.fecha_reporte).replace (tzinfo=None) if registro.fecha_reporte else ''
-		fechaEgreso = timezone.localtime (registro.fecha_egreso).replace (tzinfo=None) if registro.fecha_egreso else ''
-		fechaIngreso = timezone.localtime (registro.fecha_ingreso).replace (tzinfo=None) if registro.fecha_ingreso else ''
+		# Convertir a hora local (America/Bogota) antes de escribir al Excel
+		fechaReporte = ''
+		fechaEgreso = ''
+		fechaIngreso = ''
+
+		if registro.fecha_reporte:
+			dt = registro.fecha_reporte.astimezone (zonaLocal)
+			fechaReporte = dt.strftime ('%Y-%m-%d %H:%M')
+
+		if registro.fecha_egreso:
+			dt = registro.fecha_egreso.astimezone (zonaLocal)
+			fechaEgreso = dt.strftime ('%Y-%m-%d %H:%M')
+
+		if registro.fecha_ingreso:
+			dt = registro.fecha_ingreso.astimezone (zonaLocal)
+			fechaIngreso = dt.strftime ('%Y-%m-%d %H:%M')
+
 		fila = [
 			fechaReporte,
 			fechaEgreso,

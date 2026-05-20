@@ -390,19 +390,14 @@ class VistaReporteExcel (CrueRequiredMixin, View):
 # ─── Vista: importar desde Excel ──────────────────────────────────────────────
 
 class VistaImportarExcel (CrueRequiredMixin, View):
-	"""Importa registros de traslados desde un archivo Excel (solo staff)."""
+	"""Importa registros de traslados desde un archivo Excel."""
 
 	def get (self, request):
 		"""Muestra el formulario de carga de archivo."""
-		if not _esStaff (request.user):
-			return HttpResponse ('No tiene permiso para acceder a esta función.', status=403)
 		return render (request, 'crue_traslados/importar_excel.html', {'paso': 'subir'})
 
 	def post (self, request):
 		"""Procesa la carga del archivo (paso 1) o ejecuta la importación (paso 2)."""
-		if not _esStaff (request.user):
-			return HttpResponse ('No tiene permiso para acceder a esta función.', status=403)
-
 		if 'archivo' in request.FILES:
 			return self._procesarArchivo (request)
 		elif 'hoja' in request.POST:
