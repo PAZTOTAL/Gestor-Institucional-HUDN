@@ -1,6 +1,6 @@
-#!/usr/bin/env python3
+#!/usr/bin/python 
 
-import pandas as pd 
+import pandas as pd
 import sys
 from pathlib import Path
 
@@ -67,63 +67,19 @@ def main ():
 		print ("Usage: python script.py input.xlsx [output.csv]")
 		sys.exit (1)
 
-	print (f"+++ {sys.argv=}")
-
 	input_file = sys.argv[1]
 	output_file = sys.argv[2] if len (sys.argv) > 2 else None
 
-	excelFormatoFRALG062ToCsv (input_file, output_file)
+	excelToCsv (input_file, output_file)
 
 #--------------------------------------------------------------------
-# Convert excel format FRALG-062 to CSV file
+# Convert excel in formato FRALG-062 to CSV 
 #--------------------------------------------------------------------
-def excelFormatoFRALG062ToCsv (input_path: str, output_path: str = None, sheet_name=None):
+def excelToCsv (input_path: str, output_path: str = None, sheet_name=None):
 	import os
+	row  = None
 	try:
 		df	 = excel_to_clean_df (input_path, sheet_name=sheet_name)
-		row  = None
-		rows = []	# Rows for dataframe
-		output_path = os.path.basename (input_path.split (".")[0] + ".csv")
-		for _, r in df.iterrows ():
-			print (f"+++ {r=}")
-			gestSi, gestNo = getBool (r[6], r[7], "SI", "NO")
-			sexF, sexM	   = getBool (r[9], r[8], "F", "M")
-			acepSi, acepNo, acepUrg = getBoolTri (r[25], r[26], r[27])		 # AceptaSI
-			nombre, id	   = getText (r[3]), getText (r[5])
-			if not nombre and not id:
-				continue
-			row = [
-				fechaHora (getDate (r[1]), getTime (r[2])), 
-				getText (r[3]), getTipoId (r[4]), getText (r[5]),  #...tipoId, id
-				selectOne (gestSi, gestNo), selectOne (sexM, sexF), 
-				getText (r[10]), getText (r[11]), "OTRA",		   # edad, diagnostico, especialidad
-				getRate (r[12]), getInt (r[13]), getInt (r[14]), getFloat (r[15]), getFloat (r[16]), getRate (r[17]), # Signos Vitales
-				getText (r[18]), getText (r[19]), getText (r[20]),								   #...municipo,
-				getText (r[21]), getText (r[22]), getText (r[23]), getText (r[24]),				   #...observacion
-				selectOne (acepSi, acepNo, acepUrg), 
-				fechaHora (getDate (r[28]), getTime (r[29])),					 #...fecha_res, hora_res
-				getOportunidad (r[1],r[2],r[28],r[29])											   #...oportunidad
-			]
-			rows.append (row)
-
-		# Create a dataframe and a Remision object
-		newDf = pd.DataFrame (rows, columns=HEADERS)
-		newDf.to_csv (output_path, index=False, encoding="utf-8")
-
-		print (f"✅ CSV created at: {output_path}")
-		return newDf
-	except Exception as ex:
-		print (f"+++ {ex=}")
-		raise Exception (f"Error importando excel to csv: Error en fila: {row}")
-	return None
-
-#--------------------------------------------------------------------
-#--------------------------------------------------------------------
-def excelFormatoAppToCsv (input_path: str, output_path: str = None, sheet_name=None):
-	import os
-	try:
-		df	 = excel_to_clean_df (input_path, sheet_name=sheet_name)
-		row  = None
 		rows = []	# Rows for dataframe
 		output_path = os.path.basename (input_path.split (".")[0] + ".csv")
 		for _, r in df.iterrows ():
@@ -140,15 +96,14 @@ def excelFormatoAppToCsv (input_path: str, output_path: str = None, sheet_name=N
 				getRate (r[12]), getInt (r[13]), getInt (r[14]), getFloat (r[15]), getFloat (r[16]), getRate (r[17]), #...Glasgow
 				getText (r[18]), getText (r[19]), getText (r[20]),								   #...municipo,
 				getText (r[21]), getText (r[22]), getText (r[23]), getText (r[24]),				   #...observacion
-				selectOne (selectOne (acepSi, acepNo), acepUrg),                                   # Aceptado: Si,No,UrgVit
-				getDate (r[28]), getTime (r[29]),					                               #...fecha_res, hora_res
+				acepSi, acepNo, acepUrg, getDate (r[28]), getTime (r[29]),					 #...fecha_res, hora_res
 				getOportunidad (r[1],r[2],r[28],r[29])											   #...oportunidad
 			]
 			rows.append (row)
 
 		# Create a dataframe and a Remision object
 		newDf = pd.DataFrame (rows, columns=HEADERS)
-		newDf.to_csv (output_path, index=False, encoding="utf-8")
+		#newDf.to_csv ("tmp-remisiones-from-excel-FRALG-062.csv", index=False, encoding="utf-8")
 
 		print (f"✅ CSV created at: {output_path}")
 		return newDf
@@ -157,29 +112,28 @@ def excelFormatoAppToCsv (input_path: str, output_path: str = None, sheet_name=N
 		raise Exception (f"Error importando excel to csv: Error en fila: {row}")
 	return None
 
-
-#---------------------------------------------------------------------------
-# Helpers para importar_desde_excel — mapeo de campos exclusivos
-#---------------------------------------------------------------------------
-#-- Select a or b
-def selectOne (a, b):
-	return a if a else b
-
-def fechaHora (fecha_str, hora_str):
-	"""
-	Combines date string 'YYYY-MM-DD' and time string 'HH:MM' into a datetime.
-	Returns None if either is empty/None.
-	Returns None if combination is invalid.
-	"""
-	from datetime import datetime as _datetime
-	fecha_s = str(fecha_str or '').strip()
-	hora_s = str(hora_str or '').strip()
-	if not fecha_s or not hora_s:
-		return None
+#--------------------------------------------------------------------
+# Return dataframe from excel backup (created by this app) 
+# Load the default first one sheet
+#--------------------------------------------------------------------
+def excelBackupToDataframe (input_path: str, output_path="tmp-remisiones-from-excel-backup.csv"):
+	import os
 	try:
-		return _datetime.strptime(f'{fecha_s} {hora_s}', '%Y-%m-%d %H:%M')
-	except ValueError:
-		return None
+		newDf = pd.read_excel(
+			input_path,
+			dtype=str             # read everything as text
+			#skiprows=10,          # start from row 11
+			#header=None,          # no header row
+		)
+
+		print (f"✅ CSV created at: {output_path}")
+		#newDf.to_csv (output_path, index=False, encoding="utf-8")
+		return newDf
+	except Exception as ex:
+		print (f"+++ {ex=}")
+		raise Exception (f"Error importando backup excel to csv")
+	return None
+
 
 #--------------------------------------------------------------------
 #--------------------------------------------------------------------
@@ -365,5 +319,4 @@ def getOportunidad (x1, y1, x2, y2):
 #--------------------------------------------------------------------
 #--------------------------------------------------------------------
 if __name__ == "__main__":
-	print (f"+++ {main=}")
 	main ()

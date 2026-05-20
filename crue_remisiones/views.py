@@ -277,12 +277,13 @@ def importar_excel(request):
     if form.is_valid():
         archivo = form.cleaned_data['archivo']
         sheet_name = request.POST.get('sheet_name', None)
+        tipo_formato = request.POST.get('tipoFormatoExcel', 'FRALG-062')
         with tempfile.NamedTemporaryFile(suffix='.xlsx', delete=False) as tmp:
             for chunk in archivo.chunks():
                 tmp.write(chunk)
             temp_path = tmp.name
         try:
-            resultado = importar_desde_excel(temp_path, request.user, sheet_name=sheet_name)
+            resultado = importar_desde_excel(temp_path, request.user, tipoFormatoExcel=tipo_formato, sheet_name=sheet_name)
         finally:
             if os.path.exists(temp_path):
                 os.unlink(temp_path)

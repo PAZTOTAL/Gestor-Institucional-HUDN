@@ -291,14 +291,17 @@ def truncate_fields(data: dict) -> dict:
 			print(f"+++ Truncando campo '{field}' "
 				  f"({len(val)} -> {max_len})")
 
-			data[field] = val[:max_len]
+		data[field] = str (val)[:max_len]
 
 	return data
 
+# ---------------------------------------------------------------------------
+# 3.5 — Importación desde Excel
+# Tipo de formato puede ser dos:
+#	- El del hospital (radiooperadores): FRALG-062
+#	- El que genera la aplicación como backup: APP_BACKUP
 ## ---------------------------------------------------------------------------
-## 3.5 — Importación desde Excel
-## ---------------------------------------------------------------------------
-def importar_desde_excel (archivo_o_path, usuario, excelFormatoType, sheet_name=None) -> dict:
+def importar_desde_excel (archivo_o_path, usuario, tipoFormatoExcel, sheet_name=None) -> dict:
 	from . import utils_lg
 	import tempfile, os
 	#-- Select a or b
@@ -319,22 +322,26 @@ def importar_desde_excel (archivo_o_path, usuario, excelFormatoType, sheet_name=
 		remFields = [f.name for f in Remision._meta.fields if f.name != "id"][:-1]
 		registros = []
 		omitidos  = 0
-		
-		if excelFormatoType == "FRALG-062":
-			df = utils_lg.excelFormatoFRALG062ToCsv (archivo_o_path, "remfrm.csv", sheet_name=sheet_name)
-		else:
-			df = utils_lg.excelFormatoAppToCsv (archivo_o_path, "remapp.csv",  sheet_name=sheet_name)
 
-		for rowReg in df.itertuples(index=False):
-#			rowReg = [
-#				fechaHora(r[1], r[2]), *r[3:6], sel(r[6], r[7]), sel(r[8], r[9]), r[10],
-#				"OTRA", *r[11:25], sel(sel(r[25], r[26]), r[27]), fechaHora(r[28], r[29])
-#			]
+		# Select from two format types
+		if tipoFormatoExcel == "FRALG-062":
+			df = utils_lg.excelToCsv (archivo_o_path, sheet_name=sheet_name)
+		elif tipoFormatoExcel == "APP_BACKUP":
+			df = utils_lg.excelBackupToDataframe (archivo_o_path)
+
+		for r in df.itertuples(index=False):
+			if tipoFormatoExcel == "FRALG-062":
+				rowReg = [
+					fechaHora(r[1], r[2]), *r[3:6], sel(r[6], r[7]), sel(r[8], r[9]), r[10],
+					"OTRA", *r[11:25], sel(sel(r[25], r[26]), r[27]), fechaHora(r[28], r[29])
+				]
+			else:
+				rowReg = [fechaHora (r[0]), *r[1:23], fechaHora(r[23]),r[24]]
+
 			fieldValueDic = dict(zip(remFields, rowReg))
 
 			# Truncate oversized text fields
 			fieldValueDic = truncate_fields(fieldValueDic)
-			print(f"\n+++ {fieldValueDic=}")
 
 			fecha  = fieldValueDic.get('fecha')
 			nombre = fieldValueDic.get('nombre')
@@ -362,66 +369,55 @@ def importar_desde_excel (archivo_o_path, usuario, excelFormatoType, sheet_name=
 		traceback.print_exc()
 		return {'ok': False, 'error': str(ex)}
 
-#def importar_desde_excel_v2 (archivo_o_path, usuario, sheet_name=None) -> dict:
-#	from . import utils_lg
-#	import tempfile, os
-#
-#	#-- Select a or b
-#	def sel (a, b):
-#		return a if a else b
-#
-#	try:
-#		# If archivo_o_path is a file-like object, save to temp file
-#		temp_path = None
-#		if hasattr (archivo_o_path, 'read'):
-#			with tempfile.NamedTemporaryFile (suffix='.xlsx', delete=False) as tmp:
-#				tmp.write (archivo_o_path.read())
-#				temp_path = tmp.name
-#			excel_path = temp_path
-#		else:
-#			excel_path = str(archivo_o_path)
-#
-#		# Create registros from dataframe
-#		remFields = [f.name for f in Remision._meta.fields if f.name != "id"][:-1] # Remision field names
-#		registros = []	 # Regs for Remision
-#		df		  = utils_lg.excelToCsv (archivo_o_path, sheet_name=sheet_name)
-#		for r in df.itertuples (index=False):
-#			rowReg = [
-#				fechaHora (r[1],r[2]), *r[3:6], sel(r[6],r[7]), sel(r[8],r[9]), r[10], 
-#				"OTRA", *r[11:25], sel(sel(r[25],r[26]),r[27]), fechaHora (r[28],r[29])
-#			]
-#			fieldValueDic = dict(zip(remFields, rowReg))
-#			print (f"\n+++ {fieldValueDic=}")
-#			remReg = Remision (**fieldValueDic)
-#			registros.append (remReg)
-#			
-#		# Bulk update of 'registros' to Remisions
-#		with transaction.atomic():
-#			Remision.objects.bulk_create (registros)
-#		
-#		return {'ok': True, 'importados': len(registros)}		
-#	except Exception as ex:
-#		print (f"+++ Error importando desde excel  {ex=}")
-#		traceback.print_exc()
-#		return {'ok': False, 'error': str(ex)}		
-
-#---------------------------------------------------------------------------
-# Helpers para importar_desde_excel — mapeo de campos exclusivos
-#---------------------------------------------------------------------------
-def fechaHora (fecha_str, hora_str):
+## ---------------------------------------------------------------------------
+## Helpers para importar_desde_excel — mapeo de campos exclusivos
+## ---------------------------------------------------------------------------
+def fechaHora(fecha_str, hora_str=None):
 	"""
-	Combines date string 'YYYY-MM-DD' and time string 'HH:MM' into a datetime.
-	Returns None if either is empty/None.
-	Returns None if combination is invalid.
+	- If fecha_str already contains a datetime ('YYYY-MM-DD HH:MM'),
+	  return datetime object directly.
+	- Otherwise combine fecha_str ('YYYY-MM-DD') and hora_str ('HH:MM').
+	- Return None if input is empty/invalid.
 	"""
 	from datetime import datetime as _datetime
+
 	fecha_s = str(fecha_str or '').strip()
-	hora_s = str(hora_str or '').strip()
-	if not fecha_s or not hora_s:
+	if not fecha_s:
 		return None
+
 	try:
-		return _datetime.strptime(f'{fecha_s} {hora_s}', '%Y-%m-%d %H:%M')
+		# Already date + time
+		if ' ' in fecha_s:
+			return _datetime.strptime( fecha_s, '%Y-%m-%d %H:%M:%S')
+
+		# Separate date + time
+		hora_s = str(hora_str or '').strip()
+		if not hora_s:
+			return None
+
+		return _datetime.strptime(
+			f'{fecha_s} {hora_s}',
+			'%Y-%m-%d %H:%M'
+		)
+
 	except ValueError:
 		return None
 
 
+#def fechaHora (fecha_str, hora_str):
+#	"""
+#	Combines date string 'YYYY-MM-DD' and time string 'HH:MM' into a datetime.
+#	Returns None if either is empty/None.
+#	Returns None if combination is invalid.
+#	"""
+#	from datetime import datetime as _datetime
+#	fecha_s = str(fecha_str or '').strip()
+#	hora_s = str(hora_str or '').strip()
+#	if not fecha_s or not hora_s:
+#		return None
+#	try:
+#		return _datetime.strptime(f'{fecha_s} {hora_s}', '%Y-%m-%d %H:%M')
+#	except ValueError:
+#		return None
+#
+#

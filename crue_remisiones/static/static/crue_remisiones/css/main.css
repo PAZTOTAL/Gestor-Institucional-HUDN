@@ -1,0 +1,934 @@
+/* ============================================================
+   CRUE Remisiones — Estilos principales
+   Tarea 18: estilos completos de tabla, sidebar, modal, filtros.
+   Requisitos: 3.1, 3.2, 4.2, 4.4, 4.5
+   ============================================================ */
+
+/* ─── Variables ─────────────────────────────────────────────── */
+:root {
+  --sidebar-width: 230px;
+  --sidebar-collapsed-width: 48px;
+  --sidebar-bg: #1e3a5f;
+  --sidebar-text: #bfdbfe;
+  --sidebar-hover: #1e4d8c;
+  --sidebar-border: #2563eb40;
+  --title-bar-bg: #f0f4f8;
+  --title-bar-border: #d0dce8;
+  --fila-verde-bg: #d4edda;
+  --fila-roja-bg: #f8d7da;
+  --detalle-bg: #f8f9fa;
+  --accent: #2563eb;
+  --danger: #c0392b;
+  --success: #27ae60;
+  --transition: 0.3s ease;
+}
+
+/* ─── Reset / Base ───────────────────────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  font-size: 0.8125rem;
+  background: #f5f7fa;
+  color: #2a3a4a;
+  overflow-x: hidden;
+}
+
+/* ─── Layout principal ───────────────────────────────────────── */
+/* Req 3.1: vista principal con panel lateral + panel central */
+.app-wrapper {
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* ─── Sidebar ────────────────────────────────────────────────── */
+/* Req 3.1: panel lateral izquierdo colapsable */
+/* Req 3.2: puede ocultarse/mostrarse con toggle — transición CSS */
+.sidebar {
+  width: var(--sidebar-width);
+  min-width: var(--sidebar-width);
+  background: var(--sidebar-bg);
+  color: var(--sidebar-text);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  overflow-x: hidden;
+  /* Transición CSS para colapsar/expandir (Req 3.2) */
+  transition: width var(--transition), min-width var(--transition);
+  flex-shrink: 0;
+  position: relative;
+  z-index: 100;
+}
+
+/* Estado colapsado: ancho mínimo para mostrar solo iconos */
+.sidebar.sidebar-collapsed {
+  width: var(--sidebar-collapsed-width);
+  min-width: var(--sidebar-collapsed-width);
+}
+
+/* Ocultar texto cuando está colapsado */
+.sidebar.sidebar-collapsed .sidebar-text {
+  display: none;
+}
+
+.sidebar.sidebar-collapsed .sidebar-divider {
+  margin: 4px 6px;
+}
+
+.sidebar.sidebar-collapsed .sidebar-menu-toggle {
+  justify-content: center;
+  padding: 6px;
+}
+
+.sidebar.sidebar-collapsed .sidebar-collapsible {
+  max-height: 0;
+  opacity: 0;
+}
+
+.sidebar.sidebar-collapsed .sidebar-spacer {
+  display: none;
+}
+
+.sidebar.sidebar-collapsed .sidebar-salir-section .sidebar-divider {
+  display: none;
+}
+
+/* Botón toggle del sidebar */
+.sidebar-toggle {
+  background: transparent;
+  border: none;
+  color: var(--sidebar-text);
+  padding: 10px 12px;
+  cursor: pointer;
+  font-size: 1.1rem;
+  text-align: left;
+  width: 100%;
+  transition: background var(--transition);
+  flex-shrink: 0;
+}
+.sidebar-toggle:hover {
+  background: var(--sidebar-hover);
+}
+
+/* Secciones del sidebar */
+.sidebar-section {
+  padding: 8px 10px;
+}
+
+.sidebar-divider {
+  border-color: var(--sidebar-border);
+  margin: 4px 10px;
+  opacity: 0.5;
+}
+
+/* Etiquetas de info de usuario */
+.sidebar-label {
+  display: flex;
+  align-items: center;
+  padding: 2px 0;
+  font-size: 0.8rem;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+/* Botón Salir */
+.sidebar-btn-salir {
+  font-size: 0.8rem;
+  white-space: nowrap;
+  background: none;
+  border: none;
+  color: var(--sidebar-text);
+  display: flex;
+  align-items: center;
+  padding: 6px 4px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background var(--transition), color var(--transition);
+  text-align: left;
+}
+.sidebar-btn-salir:hover {
+  background: var(--sidebar-hover);
+  color: #fff;
+}
+
+/* High-contrast colors for user info in sidebar */
+.user-info-section .sidebar-label {
+  color: #e8f0fe;
+}
+
+.user-info-section .sidebar-section-title {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #93c5fd;
+}
+
+.user-info-section .sidebar-user-detail {
+  color: #fff;
+  font-weight: 600;
+  padding-left: 4px;
+}
+
+.user-info-section .sidebar-user-detail.small {
+  color: #93c5fd;
+  font-weight: 400;
+}
+
+/* Títulos de sección del menú */
+.sidebar-menu-title {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #93c5fd;
+  padding: 4px 0 2px;
+  display: flex;
+  align-items: center;
+  white-space: nowrap;
+}
+
+/* Collapsible menu toggle button */
+.sidebar-menu-toggle {
+  background: none;
+  border: none;
+  color: var(--sidebar-text);
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 4px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 500;
+  transition: background var(--transition), color var(--transition);
+}
+.sidebar-menu-toggle:hover {
+  background: var(--sidebar-hover);
+  color: #fff;
+}
+.sidebar-menu-toggle-label {
+  display: flex;
+  align-items: center;
+}
+.sidebar-chevron {
+  font-size: 0.65rem;
+  transition: transform var(--transition);
+}
+.sidebar-menu-toggle[aria-expanded="true"] .sidebar-chevron {
+  transform: rotate(180deg);
+}
+
+/* Collapsible menu content */
+.sidebar-collapsible {
+  overflow: hidden;
+  max-height: 300px;
+  transition: max-height var(--transition), opacity var(--transition);
+  opacity: 1;
+  padding-left: 0;
+}
+.sidebar-collapsible.collapsed {
+  max-height: 0;
+  opacity: 0;
+}
+
+/* Sub-items inside collapsible menus — indented */
+.sidebar-sub-item {
+  display: flex;
+  align-items: center;
+  padding: 5px 8px 5px 28px;
+  color: var(--sidebar-text);
+  text-decoration: none;
+  border-radius: 4px;
+  transition: background var(--transition), color var(--transition);
+  white-space: nowrap;
+  font-size: 0.8rem;
+}
+.sidebar-sub-item:hover {
+  background: var(--sidebar-hover);
+  color: #fff;
+}
+
+/* Sub-content inside collapsible menus (e.g. Importar form) — indented */
+.sidebar-sub-content {
+  padding-left: 28px;
+  padding-right: 4px;
+  padding-top: 4px;
+}
+
+/* ─── Icon colors ────────────────────────────────────────────── */
+.icon-reportes  { color: #93c5fd; }  /* light blue */
+.icon-excel     { color: #4ade80; }  /* green */
+.icon-gestion   { color: #fbbf24; }  /* amber */
+.icon-key       { color: #f59e0b; }  /* orange */
+.icon-users     { color: #a78bfa; }  /* purple */
+.icon-importar  { color: #38bdf8; }  /* sky blue */
+.icon-salir     { color: #f87171; }  /* red */
+
+/* Spacer to push Salir to bottom */
+.sidebar-spacer {
+  flex: 1;
+}
+
+/* Salir section pinned to bottom */
+.sidebar-salir-section {
+  flex-shrink: 0;
+  padding-bottom: 4px;
+}
+
+/* Lista de menú */
+.sidebar-menu-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.sidebar-menu-item {
+  display: flex;
+  align-items: center;
+  padding: 5px 4px;
+  color: var(--sidebar-text);
+  text-decoration: none;
+  border-radius: 4px;
+  transition: background var(--transition);
+  white-space: nowrap;
+  font-size: 0.8rem;
+}
+.sidebar-menu-item:hover {
+  background: var(--sidebar-hover);
+  color: #fff;
+}
+
+/* Sección de importar Excel en sidebar */
+.sidebar-section .form-control-sm {
+  font-size: 0.75rem;
+  background-color: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+  color: #fff;
+}
+.sidebar-section .form-control-sm::file-selector-button {
+  background-color: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.2);
+  color: var(--sidebar-text);
+}
+.sidebar-section .form-control-sm:focus {
+  background-color: rgba(255, 255, 255, 0.15);
+  border-color: #93c5fd;
+  color: #fff;
+  box-shadow: 0 0 0 0.2rem rgba(147, 197, 253, 0.25);
+}
+
+/* Override Bootstrap btn-outline-primary inside sidebar */
+.sidebar .btn-outline-primary {
+  color: var(--sidebar-text);
+  border-color: rgba(255, 255, 255, 0.3);
+  background: transparent;
+}
+.sidebar .btn-outline-primary:hover {
+  background: var(--sidebar-hover);
+  border-color: rgba(255, 255, 255, 0.5);
+  color: #fff;
+}
+
+/* ─── Contenido principal ────────────────────────────────────── */
+/* Req 3.1: panel central con tabla de registros */
+.main-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-width: 0; /* evita desbordamiento en flex */
+}
+
+/* ─── Barra de título y filtros ──────────────────────────────── */
+/* Req 3.1: barra de título superior con controles de filtro */
+.title-bar {
+  background: var(--title-bar-bg);
+  border-bottom: 2px solid var(--title-bar-border);
+  padding: 8px 14px;
+  flex-shrink: 0;
+}
+
+.title-bar-top {
+  display: flex;
+  align-items: center;          /* instead of baseline */
+  justify-content: space-between;
+  gap: 16px;
+
+  padding: 10px 16px;
+  margin-bottom: 0;             /* remove floating effect */
+
+  background-color: #fff;
+  border-bottom: 2px solid #dee2e6;
+}
+
+/*
+ .title-bar-top {
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 6px;
+}
+*/
+
+.title-bar-heading {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #1a2a3a;
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  line-height: 1.3;
+}
+
+.title-bar-fecha {
+  font-size: 0.8rem;
+  color: #5a6a7a;
+  white-space: nowrap;
+}
+
+/* Formulario de filtros */
+.filtros-form {
+  /* contenedor del formulario de filtros */
+}
+
+.filtros-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 4px;
+}
+
+.filtros-label {
+  font-weight: 600;
+  color: #3a4a5a;
+  white-space: nowrap;
+  font-size: 0.8rem;
+}
+
+.filtro-radio-label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
+
+.filtro-radio-label input[type="radio"] {
+  cursor: pointer;
+  accent-color: var(--accent);
+}
+
+/* Controles de filtro (por mes / por rango / documento) */
+.filtro-ctrl {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  padding: 4px 0;
+}
+
+.filtro-select {
+  width: auto;
+  min-width: 110px;
+}
+
+.filtro-anio {
+  width: 80px;
+}
+
+.filtro-date {
+  width: 150px;
+}
+
+.filtro-doc {
+  width: 200px;
+}
+
+.filtro-doc-nombre {
+  width: 320px;
+}
+
+.filtro-check-label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.filtro-field-label {
+  font-size: 0.8rem;
+  color: #5a6a7a;
+  white-space: nowrap;
+}
+
+/* ─── Tabla de registros ─────────────────────────────────────── */
+/* Req 3.1: panel central con tabla de registros */
+.tabla-container {
+  flex: 1;
+  overflow: auto;
+  padding: 0 14px 8px 14px;
+}
+
+/* Req 4.2: tabla estilo Excel con truncado de texto */
+.tabla-remisiones {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 0.775rem;
+  /* table-layout fixed permite truncado consistente por columna */
+  table-layout: fixed;
+}
+
+.tabla-remisiones thead tr {
+  background: #1e3a5f;
+  color: #fff;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+}
+
+/* Ensure sticky works with border-collapse */
+.tabla-remisiones thead {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.tabla-remisiones th {
+  padding: 5px 6px;
+  text-align: left;
+  font-weight: 600;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  /* Truncado en encabezados también */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  border-right: 1px solid #3d5068;
+}
+
+.tabla-remisiones th:last-child {
+  border-right: none;
+}
+
+.tabla-remisiones tbody tr {
+  border-bottom: 1px solid #e0e8f0;
+  transition: background 0.1s;
+}
+
+.tabla-remisiones tbody tr.fila-remision:hover {
+  background: #eaf2fb !important;
+  cursor: pointer;
+}
+
+.tabla-remisiones td {
+  padding: 4px 6px;
+  vertical-align: middle;
+  border-right: 1px solid #e8eef4;
+}
+
+.tabla-remisiones td:last-child {
+  border-right: none;
+}
+
+/* Req 4.2: truncado de texto en celdas — overflow hidden, ellipsis, nowrap */
+.truncate,
+.tabla-remisiones td.truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 0; /* necesario con table-layout: fixed para que funcione el truncado */
+}
+
+/* Req 4.4: fila con ACEPTADO='SI' → fondo verde */
+.fila-verde {
+  background-color: var(--fila-verde-bg);
+}
+
+/* Req 4.5: fila con ACEPTADO='URG VITAL' → fondo rojo */
+.fila-roja {
+  background-color: var(--fila-roja-bg);
+}
+
+/* Anchos de columnas — diseño compacto estilo Excel */
+.col-acciones { width: 82px;  min-width: 82px; }
+.col-no       { width: 34px;  min-width: 34px;  text-align: center; }
+.col-fecha    { width: 108px; min-width: 100px; }
+.col-nombre   { width: 155px; min-width: 120px; }
+.col-tipo     { width: 58px;  min-width: 55px; }
+.col-doc      { width: 88px;  min-width: 80px; }
+.col-sexo     { width: 40px;  min-width: 38px;  text-align: center; }
+.col-edad     { width: 78px;  min-width: 68px; }
+.col-gest     { width: 40px;  min-width: 38px;  text-align: center; }
+.col-ta       { width: 68px;  min-width: 60px; }
+.col-fc       { width: 40px;  min-width: 36px;  text-align: center; }
+.col-fr       { width: 40px;  min-width: 36px;  text-align: center; }
+.col-t        { width: 46px;  min-width: 42px;  text-align: center; }
+.col-spo2     { width: 48px;  min-width: 44px;  text-align: center; }
+.col-glasg    { width: 54px;  min-width: 50px;  text-align: center; }
+.col-aceptado { width: 70px;  min-width: 66px; }
+
+/* ─── Botones de acción en tabla ─────────────────────────────── */
+.btn-accion {
+  background: none;
+  border: none;
+  padding: 1px 3px;
+  cursor: pointer;
+  font-size: 0.75rem;
+  font-family: monospace;
+  font-weight: 700;
+  border-radius: 2px;
+  transition: background 0.12s, color 0.12s;
+  line-height: 1.4;
+}
+
+.btn-eliminar       { color: var(--danger); }
+.btn-eliminar:hover { background: var(--danger); color: #fff; }
+
+.btn-editar         { color: #2563eb; }
+.btn-editar:hover   { background: #2563eb; color: #fff; }
+
+.btn-clonar         { color: var(--success); }
+.btn-clonar:hover   { background: var(--success); color: #fff; }
+
+.btn-detalle        { color: #7c3aed; }
+.btn-detalle:hover  { background: #7c3aed; color: #fff; }
+
+/* Placeholder para botón eliminar deshabilitado (registros históricos) */
+.btn-eliminar-disabled {
+  display: inline-block;
+  width: 22px;
+  color: transparent;
+  cursor: default;
+}
+
+/* ─── Fila de detalle expandida ──────────────────────────────── */
+.fila-detalle {
+  background: var(--detalle-bg);
+}
+
+.detalle-celda {
+  padding: 10px 16px !important;
+  border-top: 2px solid #c8d8e8;
+  border-bottom: 2px solid #c8d8e8;
+}
+
+.detalle-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 8px 20px;
+}
+
+.detalle-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.detalle-item-wide {
+  grid-column: span 2;
+}
+
+.detalle-label {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #7a8a9a;
+  margin-bottom: 2px;
+}
+
+.detalle-valor {
+  font-size: 0.8rem;
+  color: #2a3a4a;
+  word-break: break-word;
+}
+
+/* ─── Sin registros ──────────────────────────────────────────── */
+.sin-registros {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  color: #8a9aaa;
+  text-align: center;
+}
+
+/* ─── Paginación ─────────────────────────────────────────────── */
+.paginacion-nav {
+  padding: 8px 0;
+}
+
+/* ─── Modal ──────────────────────────────────────────────────── */
+/*
+  El modal usa Bootstrap 5 (.modal.fade, .modal-dialog, .modal-xl).
+  Bootstrap ya provee el overlay (backdrop) y el centrado.
+  Aquí añadimos estilos complementarios para el sistema médico.
+*/
+
+/* Overlay del modal — Bootstrap lo maneja con .modal-backdrop,
+   pero reforzamos el z-index y el scroll interno */
+.modal {
+  /* Bootstrap ya define position:fixed, top:0, left:0, width:100%, height:100% */
+  /* Aseguramos que el scroll sea interno al contenido del modal */
+}
+
+/* Tamaño máximo para modal grande */
+.modal-xl {
+  max-width: 960px;
+}
+
+/* Scroll interno en el cuerpo del modal */
+.modal-dialog-scrollable .modal-body {
+  overflow-y: auto;
+  max-height: calc(100vh - 200px);
+}
+
+/* Encabezado del modal */
+.modal-header {
+  background: #f0f4f8;
+  border-bottom: 1px solid #d0dce8;
+  padding: 10px 16px;
+}
+
+.modal-title {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #1a2a3a;
+}
+
+/* Cuerpo del modal */
+.modal-body {
+  padding: 14px 16px;
+  background: #fff;
+}
+
+/* Pie del modal */
+.modal-footer {
+  background: #f8f9fa;
+  border-top: 1px solid #d0dce8;
+  padding: 8px 16px;
+  gap: 8px;
+}
+
+/* Modal de confirmación de eliminación */
+.modal-header.bg-danger {
+  background: #c0392b !important;
+}
+
+/* ─── Formularios dentro del modal ───────────────────────────── */
+.form-label-sm {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #4a5a6a;
+  margin-bottom: 2px;
+  display: block;
+}
+
+/* Campos de formulario compactos */
+.form-control-sm,
+.form-select-sm {
+  font-size: 0.8rem;
+}
+
+/* Mensajes de error de validación */
+.invalid-feedback {
+  font-size: 0.7rem;
+}
+
+/* Alerta de errores del servidor en modal */
+#modal-errores {
+  font-size: 0.8rem;
+  padding: 8px 12px;
+}
+
+/* Badge de solo lectura en modal */
+#modal-readonly-badge {
+  font-size: 0.75rem;
+}
+
+/* ─── Página de login ────────────────────────────────────────── */
+.login-wrapper {
+  background: linear-gradient(135deg, #e8f0fe 0%, #f0f4f8 50%, #f8f9fa 100%);
+  min-height: 100vh;
+}
+
+.login-card {
+  border: none;
+  border-radius: 0.75rem;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.1);
+}
+
+.login-logo i {
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.15));
+}
+
+/* ─── Página de gestión de usuarios ─────────────────────────── */
+.usuarios-wrapper {
+  padding: 20px;
+  max-width: 95%;
+  margin: 0 auto;
+}
+
+.usuarios-tabla {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.usuarios-tabla th {
+  background: #1e3a5f;
+  color: #fff;
+  padding: 8px 12px;
+  text-align: left;
+  font-weight: 600;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.usuarios-tabla td {
+  padding: 7px 12px;
+  border-bottom: 1px solid #e0e8f0;
+  vertical-align: middle;
+}
+
+.usuarios-tabla tbody tr:hover {
+  background: #f0f6ff;
+}
+
+/* ─── Página de cambiar contraseña ───────────────────────────── */
+.cambiar-password-wrapper {
+  padding: 30px 20px;
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+/* ─── Utilidades generales ───────────────────────────────────── */
+
+/* Clase de utilidad para texto truncado fuera de tabla */
+.text-truncate-custom {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Indicador de carga */
+.loading-spinner {
+  display: inline-block;
+  width: 1rem;
+  height: 1rem;
+  border: 2px solid #c8d6e5;
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ─── Responsive básico ──────────────────────────────────────── */
+@media (max-width: 768px) {
+  /* En móvil el sidebar se superpone como drawer */
+  .sidebar {
+    position: fixed;
+    height: 100vh;
+    z-index: 200;
+    box-shadow: 2px 0 12px rgba(0, 0, 0, 0.3);
+  }
+
+  /* En móvil colapsado = completamente oculto */
+  .sidebar.sidebar-collapsed {
+    width: 0;
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  /* El contenido principal ocupa todo el ancho */
+  .main-content {
+    width: 100%;
+  }
+
+  /* Título más pequeño en móvil */
+  .title-bar-heading {
+    font-size: 0.75rem;
+  }
+
+  /* Tabla con scroll horizontal en móvil */
+  .tabla-container {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .tabla-remisiones {
+    font-size: 0.7rem;
+    min-width: 800px; /* fuerza scroll horizontal antes de comprimir columnas */
+  }
+
+  /* Modal a ancho completo en móvil */
+  .modal-xl,
+  .modal-dialog {
+    max-width: 100%;
+    margin: 0.5rem;
+  }
+
+  /* Filtros en columna en móvil */
+  .filtros-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+
+  .filtro-ctrl {
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 480px) {
+  .title-bar {
+    padding: 6px 10px;
+  }
+
+  .tabla-container {
+    padding: 6px 8px;
+  }
+
+  .detalle-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .detalle-item-wide {
+    grid-column: span 1;
+  }
+}
+
+/* ─── Uppercase text inputs in modal ─────────────────────────── */
+/* All text inputs and textareas in the remision modal display uppercase */
+#form-remision input[type="text"],
+#form-remision textarea {
+  text-transform: uppercase;
+}
+
+#form-remision input[type="text"]::placeholder,
+#form-remision textarea::placeholder {
+  text-transform: none;
+  color: #999;
+}
