@@ -221,8 +221,8 @@ function abrirModalEdicion(id) {
       limpiarErrores();
       rellenarFormulario(data);
       document.getElementById('modal-remision-id').value = id;
-      // Editable only if record is from today AND belongs to current user
-      const canEdit = data.es_editable && data.es_propio;
+      // Admin/staff can always edit; others need editable + own record
+      const canEdit = data.es_admin || (data.es_editable && data.es_propio);
       setModoModal(canEdit ? 'editar' : 'ver');
       // radio_operador is always read-only
       const radioEl = document.getElementById('id_radio_operador');
@@ -327,14 +327,14 @@ function guardarRemision() {
 
   limpiarErrores();
 
-  // Validación cliente: fecha_res debe ser posterior a fecha (si ambas están presentes)
+  // Validación cliente: fecha_res no puede ser anterior a fecha (si ambas están presentes)
   const fechaVal = document.getElementById('id_fecha').value;
   const fechaResVal = document.getElementById('id_fecha_res').value;
   if (fechaVal && fechaResVal) {
     const fecha = new Date(fechaVal);
     const fechaRes = new Date(fechaResVal);
-    if (fechaRes <= fecha) {
-      const msg = 'La fecha de respuesta debe ser posterior a la fecha de ingreso.';
+    if (fechaRes < fecha) {
+      const msg = 'La fecha de respuesta no puede ser anterior a la fecha de ingreso.';
       const alertaErrores = document.getElementById('modal-errores');
       if (alertaErrores) {
         alertaErrores.textContent = msg;
@@ -426,7 +426,7 @@ document.addEventListener('DOMContentLoaded', function () {
       if (fechaVal && fechaResVal) {
         const fecha = new Date(fechaVal);
         const fechaRes = new Date(fechaResVal);
-        if (fechaRes > fecha) {
+        if (fechaRes >= fecha) {
           const diffMin = Math.floor((fechaRes - fecha) / 60000);
           const hh = String(Math.floor(diffMin / 60)).padStart(2, '0');
           const mm = String(diffMin % 60).padStart(2, '0');
@@ -436,7 +436,7 @@ document.addEventListener('DOMContentLoaded', function () {
           // Mostrar error en la alerta del modal (visible siempre)
           const alertaErrores = document.getElementById('modal-errores');
           if (alertaErrores) {
-            alertaErrores.textContent = 'La fecha de respuesta debe ser posterior a la fecha de ingreso.';
+            alertaErrores.textContent = 'La fecha de respuesta no puede ser anterior a la fecha de ingreso.';
             alertaErrores.classList.remove('d-none');
           }
           if (fechaResDateEl) fechaResDateEl.classList.add('is-invalid');
@@ -479,19 +479,32 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 
-  // Importar Excel — sheet selection and AJAX import
-  const formImportar = document.getElementById('form-importar');
+  // ─── Importar Excel — Modal-based interaction ───────────────────────────────
+
+  // Open import modal from sidebar link
+  const btnAbrirImportar = document.getElementById('btn-abrir-modal-importar');
+  if (btnAbrirImportar) {
+    btnAbrirImportar.addEventListener('click', function (e) {
+      e.preventDefault();
+      const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('modal-importar-fralg'));
+      // Reset form state when opening
+      const fileInput = document.getElementById('id_archivo_importar');
+      const sheetContainer = document.getElementById('sheet-selector-container');
+      if (fileInput) fileInput.value = '';
+      if (sheetContainer) sheetContainer.style.display = 'none';
+      modal.show();
+    });
+  }
+
+  // When file is selected in the modal, fetch sheet names
   const fileInput = document.getElementById('id_archivo_importar');
   const sheetSelector = document.getElementById('id_sheet_selector');
-  const resultadoDiv = document.getElementById('importar-resultado');
+  const sheetContainer = document.getElementById('sheet-selector-container');
 
-  // When file is selected, fetch sheet names
   if (fileInput && sheetSelector) {
     fileInput.addEventListener('change', function () {
-      // Reset sheet selector
-      sheetSelector.style.display = 'none';
       sheetSelector.innerHTML = '';
-      if (resultadoDiv) { resultadoDiv.textContent = ''; resultadoDiv.className = 'mt-1 small sidebar-text sidebar-sub-content'; }
+      if (sheetContainer) sheetContainer.style.display = 'none';
 
       if (!this.files || !this.files[0]) return;
 
@@ -507,7 +520,6 @@ document.addEventListener('DOMContentLoaded', function () {
         .then(r => r.json())
         .then(data => {
           if (data.ok && data.hojas && data.hojas.length > 1) {
-            // Multiple sheets — show selector
             sheetSelector.innerHTML = '';
             data.hojas.forEach(function (nombre) {
               const opt = document.createElement('option');
@@ -515,34 +527,40 @@ document.addEventListener('DOMContentLoaded', function () {
               opt.textContent = nombre;
               sheetSelector.appendChild(opt);
             });
-            sheetSelector.style.display = '';
-          } else {
-            // Single sheet or error — hide selector
-            sheetSelector.style.display = 'none';
+            if (sheetContainer) sheetContainer.style.display = '';
           }
         })
-        .catch(() => {
-          sheetSelector.style.display = 'none';
-        });
+        .catch(() => {});
     });
   }
 
-  // Handle import form submit — show modal dialog
-  if (formImportar) {
-    formImportar.addEventListener('submit', function (e) {
-      e.preventDefault();
-      const formData = new FormData(this);
+  // Handle import button click in the modal
+  const btnImportarSubmit = document.getElementById('btn-importar-submit');
+  const formImportar = document.getElementById('form-importar');
+
+  if (btnImportarSubmit && formImportar) {
+    btnImportarSubmit.addEventListener('click', function () {
+      if (!fileInput || !fileInput.files || !fileInput.files[0]) {
+        alert('Seleccione un archivo Excel.');
+        return;
+      }
+
+      const formData = new FormData(formImportar);
+
+      // Close the file selection modal
+      const fileModal = bootstrap.Modal.getInstance(document.getElementById('modal-importar-fralg'));
+      if (fileModal) fileModal.hide();
 
       // Show processing modal
-      let importModal = document.getElementById('modal-importar-estado');
-      if (!importModal) {
-        importModal = document.createElement('div');
-        importModal.id = 'modal-importar-estado';
-        importModal.className = 'modal fade';
-        importModal.tabIndex = -1;
-        importModal.setAttribute('data-bs-backdrop', 'static');
-        importModal.setAttribute('data-bs-keyboard', 'false');
-        importModal.innerHTML = `
+      let statusModal = document.getElementById('modal-importar-estado');
+      if (!statusModal) {
+        statusModal = document.createElement('div');
+        statusModal.id = 'modal-importar-estado';
+        statusModal.className = 'modal fade';
+        statusModal.tabIndex = -1;
+        statusModal.setAttribute('data-bs-backdrop', 'static');
+        statusModal.setAttribute('data-bs-keyboard', 'false');
+        statusModal.innerHTML = `
           <div class="modal-dialog modal-sm modal-dialog-centered">
             <div class="modal-content">
               <div class="modal-body text-center py-4">
@@ -556,23 +574,22 @@ document.addEventListener('DOMContentLoaded', function () {
               </div>
             </div>
           </div>`;
-        document.body.appendChild(importModal);
+        document.body.appendChild(statusModal);
       }
 
-      const modalMsg = importModal.querySelector('#importar-modal-msg');
-      const modalSpinner = importModal.querySelector('#importar-modal-spinner');
-      const modalFooter = importModal.querySelector('#importar-modal-footer');
+      const modalMsg = statusModal.querySelector('#importar-modal-msg');
+      const modalSpinner = statusModal.querySelector('#importar-modal-spinner');
+      const modalFooter = statusModal.querySelector('#importar-modal-footer');
 
-      // Reset modal state
       modalMsg.textContent = 'Importando...';
       modalMsg.className = 'mb-0 fw-semibold';
       modalSpinner.classList.remove('d-none');
       modalFooter.classList.add('d-none');
 
-      const bsModal = bootstrap.Modal.getOrCreateInstance(importModal);
-      bsModal.show();
+      const bsStatusModal = bootstrap.Modal.getOrCreateInstance(statusModal);
+      bsStatusModal.show();
 
-      fetch(this.action, {
+      fetch(formImportar.action, {
         method: 'POST',
         headers: { 'X-Requested-With': 'XMLHttpRequest' },
         body: formData,
@@ -586,8 +603,7 @@ document.addEventListener('DOMContentLoaded', function () {
           if (data.ok) {
             modalMsg.textContent = `✓ ${data.importados} registros importados correctamente.`;
             modalMsg.className = 'mb-0 fw-semibold text-success';
-            // Reload after user closes modal
-            importModal.addEventListener('hidden.bs.modal', function () {
+            statusModal.addEventListener('hidden.bs.modal', function () {
               window.location.reload();
             }, { once: true });
           } else {

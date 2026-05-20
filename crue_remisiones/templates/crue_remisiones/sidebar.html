@@ -73,23 +73,14 @@
         </span>
         <i class="bi bi-chevron-down sidebar-text sidebar-chevron"></i>
       </button>
-      <div id="menu-importar" class="sidebar-collapsible collapsed">
-        <form id="form-importar" method="post" action="{% url 'crue_remisiones:importar_excel' %}" enctype="multipart/form-data" class="sidebar-sub-content">
-          {% csrf_token %}
-          <div class="sidebar-text">
-            <input type="file" name="archivo" id="id_archivo_importar"
-                   class="form-control form-control-sm mb-1"
-                   accept=".xlsx,.xls">
-            <select name="sheet_name" id="id_sheet_selector"
-                    class="form-select form-select-sm mb-1" style="display:none;">
-            </select>
-            <button type="submit" class="btn btn-outline-primary btn-sm w-100" id="btn-importar-submit">
-              <i class="bi bi-cloud-upload me-1"></i>Importar Excel
-            </button>
-          </div>
-        </form>
-        <div id="importar-resultado" class="mt-1 small sidebar-text sidebar-sub-content"></div>
-      </div>
+      <ul id="menu-importar" class="sidebar-menu-list sidebar-collapsible collapsed">
+        <li>
+          <a href="#" class="sidebar-sub-item" id="btn-abrir-modal-importar">
+            <i class="bi bi-file-earmark-spreadsheet me-1 icon-excel"></i>
+            <span class="sidebar-text">Desde formato FRALG-062</span>
+          </a>
+        </li>
+      </ul>
     </section>
 
     <!-- Spacer to push Salir to bottom -->
@@ -97,11 +88,6 @@
 
     <!-- --- Sección 5: Volver / Salir (fijado al fondo) --- -->
     <div class="sidebar-section sidebar-salir-section">
-      <hr class="sidebar-divider">
-      <a href="{% url 'home' %}" class="sidebar-menu-item sidebar-btn-salir w-100 d-flex align-items-center text-decoration-none">
-        <i class="bi bi-arrow-left-circle me-1 icon-salir"></i>
-        <span class="sidebar-text">Volver</span>
-      </a>
       <hr class="sidebar-divider">
       <form method="post" action="{% url 'crue_remisiones:logout' %}">
         {% csrf_token %}

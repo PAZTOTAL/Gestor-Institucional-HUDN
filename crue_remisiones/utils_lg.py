@@ -166,22 +166,6 @@ def _combinar_fecha_hora (fecha_str, hora_str):
 	except ValueError:
 		return None
 
-
-
-def getDate (x):
-	if not x:
-		return None
-	try:
-		dt = datetime.fromisoformat (str(x))
-		return dt.date ()
-	except:
-		try:
-			return datetime.strptime (str(x), "%Y-%m-%d").date()
-		except:
-			return None
-
-
-
 #--------------------------------------------------------------------
 # Parse a date and ensure it belongs to the current year.
 # Raises:

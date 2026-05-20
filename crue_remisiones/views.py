@@ -82,7 +82,7 @@ def main_view(request):
     if paginado_param is not None:
         paginado = (paginado_param == 'True')
     else:
-        paginado = False if es_mes_actual else True
+        paginado = True
 
     kwargs = {'orden': orden}
     if filtro == 'mes':
@@ -120,6 +120,7 @@ def main_view(request):
         'orden': orden,
         'mes_hoy': hoy.month,
         'anio_hoy': hoy.year,
+        'es_admin': request.user.is_staff or request.user.is_superuser,
         'usuario_nombre_completo': request.user.get_full_name(),
     }
     return render(request, 'crue_remisiones/main.html', context)
@@ -145,6 +146,11 @@ def remision_detail(request, pk):
     def fmt_dt(dt):
         if dt is None:
             return ''
+        # If timezone-aware, convert to local time before formatting
+        if hasattr(dt, 'tzinfo') and dt.tzinfo is not None:
+            import zoneinfo
+            local_tz = zoneinfo.ZoneInfo('America/Bogota')
+            dt = dt.astimezone(local_tz)
         return dt.strftime('%Y-%m-%dT%H:%M')
 
     data = {
@@ -176,6 +182,7 @@ def remision_detail(request, pk):
         'oportunidad': oportunidad,
         'es_editable': remision.es_editable,
         'es_propio': remision.created_by == request.user,
+        'es_admin': request.user.is_staff or request.user.is_superuser,
     }
     return JsonResponse(data)
 
@@ -183,12 +190,13 @@ def remision_detail(request, pk):
 @crue_required
 def remision_update(request, pk):
     remision = get_object_or_404(Remision, pk=pk)
+    is_admin = request.user.is_staff or request.user.is_superuser
 
-    if not es_registro_editable(remision):
-        return JsonResponse({'ok': False, 'error': 'Registro histórico: no se puede modificar.'}, status=403)
-
-    if remision.created_by != request.user:
-        return JsonResponse({'ok': False, 'error': 'Solo puede modificar sus propios registros.'}, status=403)
+    if not is_admin:
+        if not es_registro_editable(remision):
+            return JsonResponse({'ok': False, 'error': 'Registro histórico: no se puede modificar.'}, status=403)
+        if remision.created_by != request.user:
+            return JsonResponse({'ok': False, 'error': 'Solo puede modificar sus propios registros.'}, status=403)
 
     form = RemisionForm(request.POST, instance=remision)
     if form.is_valid():
@@ -201,12 +209,13 @@ def remision_update(request, pk):
 @crue_required
 def remision_delete(request, pk):
     remision = get_object_or_404(Remision, pk=pk)
+    is_admin = request.user.is_staff or request.user.is_superuser
 
-    if not es_registro_editable(remision):
-        return JsonResponse({'ok': False, 'error': 'Registro histórico: no se puede eliminar.'}, status=403)
-
-    if remision.created_by != request.user:
-        return JsonResponse({'ok': False, 'error': 'Solo puede eliminar sus propios registros.'}, status=403)
+    if not is_admin:
+        if not es_registro_editable(remision):
+            return JsonResponse({'ok': False, 'error': 'Registro histórico: no se puede eliminar.'}, status=403)
+        if remision.created_by != request.user:
+            return JsonResponse({'ok': False, 'error': 'Solo puede eliminar sus propios registros.'}, status=403)
 
     remision.delete()
     return JsonResponse({'ok': True})
@@ -242,8 +251,16 @@ def exportar_excel(request):
     if not qs.exists():
         return JsonResponse({'ok': False, 'error': 'No hay registros para el período seleccionado.'}, status=400)
 
+    # Force ascending order for the report (first to last day)
+    qs = qs.order_by('fecha')
+
     buffer = exportar_a_excel(qs)
-    filename = f"remisiones_{hoy.strftime('%Y-%m-%d')}.xlsx"
+
+    # Filename: reporte_remisiones_YYYY_MMMM_DD.xlsx
+    meses_es = ['Enero','Febrero','Marzo','Abril','Mayo','Junio',
+                'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']
+    nombre_mes = meses_es[hoy.month - 1]
+    filename = f"reporte_remisiones_{hoy.year}_{nombre_mes}_{hoy.day:02d}.xlsx"
     response = HttpResponse(
         buffer.read(),
         content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',

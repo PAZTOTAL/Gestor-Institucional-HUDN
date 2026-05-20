@@ -13,7 +13,6 @@ def crue_required(view_func):
 		if request.user.is_superuser:
 			return view_func(request, *args, **kwargs)
 		perms = getattr(request.user, '_permisos_apps_cache', set())
-		print (f"+++ {perms=}")
 		if APP_LABEL in perms:
 			return view_func(request, *args, **kwargs)
 		return HttpResponseForbidden(

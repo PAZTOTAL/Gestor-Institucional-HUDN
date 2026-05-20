@@ -1,12 +1,15 @@
 from django.urls import path
+from django.contrib.auth import views as authViews
 
 from . import views
 
 app_name = 'crue_remisiones'
 
 urlpatterns = [
-    path('login/', views.login_view, name='login'),
-    path('logout/', views.logout_view, name='logout'),
+#    path('login/', views.login_view, name='login'),
+#    path('logout/', views.logout_view, name='logout'),
+	path ('login/', authViews.LoginView.as_view (), name='login'),
+	path ('logout/', authViews.LogoutView.as_view (), name='logout'),
     path('', views.main_view, name='main'),
     path('remisiones/nueva/', views.remision_create, name='remision_create'),
     path('remisiones/<int:pk>/detalle/', views.remision_detail, name='remision_detail'),

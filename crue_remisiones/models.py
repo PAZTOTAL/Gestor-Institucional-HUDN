@@ -82,6 +82,7 @@ class Remision(models.Model):
         indexes = [
             models.Index(fields=['fecha']),
             models.Index(fields=['doc']),
+            models.Index(fields=['nombre']),
         ]
         verbose_name = 'Remisión'
         verbose_name_plural = 'Remisiones'

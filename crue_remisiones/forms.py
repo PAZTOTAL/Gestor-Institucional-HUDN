@@ -96,8 +96,8 @@ class RemisionForm(forms.ModelForm):
         cleaned_data = super().clean()
         fecha = cleaned_data.get('fecha')
         fecha_res = cleaned_data.get('fecha_res')
-        if fecha and fecha_res and fecha_res <= fecha:
-            raise forms.ValidationError('La fecha de respuesta debe ser posterior a la fecha de ingreso.')
+        if fecha and fecha_res and fecha_res < fecha:
+            raise forms.ValidationError('La fecha de respuesta no puede ser anterior a la fecha de ingreso.')
         return cleaned_data
 
 
