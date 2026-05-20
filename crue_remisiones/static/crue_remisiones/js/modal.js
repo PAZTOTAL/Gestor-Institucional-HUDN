@@ -481,18 +481,42 @@ document.addEventListener('DOMContentLoaded', function () {
 
   // ─── Importar Excel — Modal-based interaction ───────────────────────────────
 
-  // Open import modal from sidebar link
+  // Open import modal from sidebar links (both FRALG-062 and APP_BACKUP)
   const btnAbrirImportar = document.getElementById('btn-abrir-modal-importar');
+  const btnAbrirImportarBackup = document.getElementById('btn-abrir-modal-importar-backup');
+  const modalImportarTitulo = document.getElementById('modal-importar-titulo');
+  const hiddenFormato = document.getElementById('id_tipo_formato_excel');
+
+  function abrirModalImportar(formato) {
+    const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('modal-importar-fralg'));
+    // Reset form state
+    const fileInput = document.getElementById('id_archivo_importar');
+    const sheetContainer = document.getElementById('sheet-selector-container');
+    if (fileInput) fileInput.value = '';
+    if (sheetContainer) sheetContainer.style.display = 'none';
+    // Set format type
+    if (hiddenFormato) hiddenFormato.value = formato;
+    // Update modal title
+    if (modalImportarTitulo) {
+      if (formato === 'FRALG-062') {
+        modalImportarTitulo.innerHTML = '<i class="bi bi-file-earmark-spreadsheet me-2"></i>Importar desde FRALG-062';
+      } else {
+        modalImportarTitulo.innerHTML = '<i class="bi bi-file-earmark-arrow-up me-2"></i>Importar desde excel de backup';
+      }
+    }
+    modal.show();
+  }
+
   if (btnAbrirImportar) {
     btnAbrirImportar.addEventListener('click', function (e) {
       e.preventDefault();
-      const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('modal-importar-fralg'));
-      // Reset form state when opening
-      const fileInput = document.getElementById('id_archivo_importar');
-      const sheetContainer = document.getElementById('sheet-selector-container');
-      if (fileInput) fileInput.value = '';
-      if (sheetContainer) sheetContainer.style.display = 'none';
-      modal.show();
+      abrirModalImportar('FRALG-062');
+    });
+  }
+  if (btnAbrirImportarBackup) {
+    btnAbrirImportarBackup.addEventListener('click', function (e) {
+      e.preventDefault();
+      abrirModalImportar('APP_BACKUP');
     });
   }
 

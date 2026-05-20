@@ -504,6 +504,7 @@
       <div class="modal-body">
         <form id="form-importar" method="post" action="{% url 'crue_remisiones:importar_excel' %}" enctype="multipart/form-data">
           {% csrf_token %}
+          <input type="hidden" name="tipoFormatoExcel" id="id_tipo_formato_excel" value="FRALG-062">
           <div class="mb-3">
             <label for="id_archivo_importar" class="form-label fw-semibold">
               Seleccionar archivo Excel
