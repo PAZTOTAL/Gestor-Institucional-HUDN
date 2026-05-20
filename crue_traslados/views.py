@@ -362,7 +362,7 @@ class VistaReporteExcel (CrueRequiredMixin, View):
 		queryset = Traslado.objects.filter (
 			fecha_reporte__gte=fechaDesde,
 			fecha_reporte__lte=fechaHasta,
-		)
+		).order_by ('fecha_reporte')
 
 		if busqueda:
 			queryset = queryset.filter (

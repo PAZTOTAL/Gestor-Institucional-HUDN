@@ -8,6 +8,7 @@ import datetime
 
 from django.core.exceptions import ValidationError
 from django.db import models
+from django.utils import timezone
 
 
 # ─── Registro de traslado de paciente ────────────────────────────────────────
@@ -49,13 +50,15 @@ class Traslado (models.Model):
 	def clean (self):
 		"""Valida que la fecha de reporte no sea futura."""
 		if self.fecha_reporte:
-			self.mes = self.fecha_reporte.month
+			fechaLocal = timezone.localtime (self.fecha_reporte)
+			self.mes = fechaLocal.month
 			hoy = datetime.date.today ()
-			if self.fecha_reporte.date () > hoy:
+			if fechaLocal.date () > hoy:
 				raise ValidationError ({'fecha_reporte': 'La fecha no puede ser futura.'})
 
 	def save (self, *args, **kwargs):
-		"""Deriva el campo mes desde fecha_reporte y valida antes de persistir."""
-		self.mes = self.fecha_reporte.month
+		"""Deriva el campo mes desde fecha_reporte (hora local) y valida antes de persistir."""
+		fechaLocal = timezone.localtime (self.fecha_reporte)
+		self.mes = fechaLocal.month
 		self.full_clean ()
 		super ().save (*args, **kwargs)

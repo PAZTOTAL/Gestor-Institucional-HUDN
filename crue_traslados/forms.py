@@ -208,12 +208,14 @@ class FormularioTraslado (forms.ModelForm):
 		self.usuario = kwargs.pop ('usuario', None)
 		super ().__init__ (*args, **kwargs)
 
-		# Hacer radio_operador de solo lectura y auto-llenado con el usuario actual
-		self.fields ['radio_operador'].widget.attrs ['readonly'] = True
-		self.fields ['radio_operador'].widget.attrs ['class'] += ' bg-gray-100 cursor-not-allowed'
+		# Agregar uppercase a todos los inputs de texto
+		for nombre, campo in self.fields.items ():
+			if hasattr (campo, 'widget') and hasattr (campo.widget, 'attrs'):
+				if isinstance (campo.widget, (forms.TextInput, forms.Textarea)):
+					campo.widget.attrs ['style'] = campo.widget.attrs.get ('style', '') + 'text-transform: uppercase;'
 
+		# Radio operador: auto-llenado con el usuario actual para registros nuevos
 		if self.usuario:
-			# Para registros nuevos, llenar con el username del usuario actual
 			if self.instance is None or not self.instance.pk:
 				self.initial ['radio_operador'] = self.usuario.username
 
@@ -223,8 +225,8 @@ class FormularioTraslado (forms.ModelForm):
 			horaActual = datetime.datetime.now ().strftime ('%H:%M')
 
 			self.initial ['fecha_reporte'] = [hoyISO, horaActual]
-			self.initial ['fecha_egreso'] = [hoyISO, '00:00']
-			self.initial ['fecha_ingreso'] = [hoyISO, '00:00']
+			self.initial ['fecha_egreso'] = ['', '']
+			self.initial ['fecha_ingreso'] = ['', '']
 
 	def clean_fecha_egreso (self):
 		"""Retorna None si el componente de hora está vacío."""
@@ -235,13 +237,16 @@ class FormularioTraslado (forms.ModelForm):
 		return self.cleaned_data.get ('fecha_ingreso')
 
 	def clean_radio_operador (self):
-		"""Fuerza el valor de radio_operador al usuario actual (previene manipulación)."""
-		if self.instance and self.instance.pk:
-			# En edición, preservar el valor original del registro
-			return self.instance.radio_operador
-		if self.usuario:
-			return self.usuario.username
+		"""Retorna el valor ingresado por el usuario."""
 		return self.cleaned_data.get ('radio_operador', '')
+
+	def clean (self):
+		"""Convierte todos los campos de texto a mayúsculas."""
+		datos = super ().clean ()
+		for nombre, valor in datos.items ():
+			if isinstance (valor, str):
+				datos [nombre] = valor.upper ()
+		return datos
 
 
 # ─── Formulario de cambio de contraseña ──────────────────────────────────────

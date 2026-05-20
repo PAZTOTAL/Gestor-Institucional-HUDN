@@ -1,0 +1,23 @@
+/* Estilos personalizados de la aplicación crue_traslados.
+   Complementa Tailwind CSS con estilos específicos del dominio. */
+
+/* ─── Barra de título y filtros ──────────────────────────────── */
+.title-bar {
+  background: var(--title-bar-bg);
+  border-bottom: 2px solid var(--title-bar-border);
+  padding: 8px 14px;
+  flex-shrink: 0;
+}
+
+.title-bar-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+
+  padding: 10px 16px;
+  margin-bottom: 0;
+
+  background-color: #fff;
+  border-bottom: 2px solid #dee2e6;
+}

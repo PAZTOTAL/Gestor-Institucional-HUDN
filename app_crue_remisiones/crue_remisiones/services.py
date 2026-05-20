@@ -298,7 +298,7 @@ def truncate_fields(data: dict) -> dict:
 ## ---------------------------------------------------------------------------
 ## 3.5 — Importación desde Excel
 ## ---------------------------------------------------------------------------
-def importar_desde_excel (archivo_o_path, usuario, sheet_name=None) -> dict:
+def importar_desde_excel (archivo_o_path, usuario, excelFormatoType, sheet_name=None) -> dict:
 	from . import utils_lg
 	import tempfile, os
 	#-- Select a or b
@@ -319,13 +319,17 @@ def importar_desde_excel (archivo_o_path, usuario, sheet_name=None) -> dict:
 		remFields = [f.name for f in Remision._meta.fields if f.name != "id"][:-1]
 		registros = []
 		omitidos  = 0
-		df		  = utils_lg.excelToCsv(archivo_o_path, sheet_name=sheet_name)
+		
+		if excelFormatoType == "FRALG-062":
+			df = utils_lg.excelFormatoFRALG062ToCsv (archivo_o_path, "remfrm.csv", sheet_name=sheet_name)
+		else:
+			df = utils_lg.excelFormatoAppToCsv (archivo_o_path, "remapp.csv",  sheet_name=sheet_name)
 
-		for r in df.itertuples(index=False):
-			rowReg = [
-				fechaHora(r[1], r[2]), *r[3:6], sel(r[6], r[7]), sel(r[8], r[9]), r[10],
-				"OTRA", *r[11:25], sel(sel(r[25], r[26]), r[27]), fechaHora(r[28], r[29])
-			]
+		for rowReg in df.itertuples(index=False):
+#			rowReg = [
+#				fechaHora(r[1], r[2]), *r[3:6], sel(r[6], r[7]), sel(r[8], r[9]), r[10],
+#				"OTRA", *r[11:25], sel(sel(r[25], r[26]), r[27]), fechaHora(r[28], r[29])
+#			]
 			fieldValueDic = dict(zip(remFields, rowReg))
 
 			# Truncate oversized text fields
@@ -401,9 +405,9 @@ def importar_desde_excel (archivo_o_path, usuario, sheet_name=None) -> dict:
 #		traceback.print_exc()
 #		return {'ok': False, 'error': str(ex)}		
 
-## ---------------------------------------------------------------------------
-## Helpers para importar_desde_excel — mapeo de campos exclusivos
-## ---------------------------------------------------------------------------
+#---------------------------------------------------------------------------
+# Helpers para importar_desde_excel — mapeo de campos exclusivos
+#---------------------------------------------------------------------------
 def fechaHora (fecha_str, hora_str):
 	"""
 	Combines date string 'YYYY-MM-DD' and time string 'HH:MM' into a datetime.
