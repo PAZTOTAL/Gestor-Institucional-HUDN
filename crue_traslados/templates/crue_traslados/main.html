@@ -49,8 +49,28 @@
 					hx-include="#filtros-form"
 				>
 					{% for numMes, nombreMes in meses %}
-					<option value="{{ numMes }}" {% if numMes == mesSeleccionado %}selected{% endif %} {% if numMes > mesActual %}disabled{% endif %}>
+					<option value="{{ numMes }}" {% if numMes == mesSeleccionado %}selected{% endif %} {% if anioSeleccionado == anioActual and numMes > mesActual %}disabled{% endif %}>
 						{{ nombreMes }}
+					</option>
+					{% endfor %}
+				</select>
+			</div>
+
+			{# ── Selector de año ─────────────────────────────────────────── #}
+			<div class="flex items-center gap-2">
+				<label for="id_anio" class="text-sm font-medium text-gray-600">Año:</label>
+				<select
+					id="id_anio"
+					name="anio"
+					class="border border-gray-300 rounded-md px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+					hx-get="{% url 'crue_traslados:tabla-traslados' %}"
+					hx-target="#contenedor-tabla"
+					hx-trigger="change"
+					hx-include="#filtros-form"
+				>
+					{% for anio in anios %}
+					<option value="{{ anio }}" {% if anio == anioSeleccionado %}selected{% endif %}>
+						{{ anio }}
 					</option>
 					{% endfor %}
 				</select>

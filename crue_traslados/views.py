@@ -49,10 +49,12 @@ class VistaMain (CrueRequiredMixin, TemplateView):
 
 		hoy = datetime.date.today ()
 		mesActual = hoy.month
+		anioActual = hoy.year
 		erroresFiltro = []
 
 		# ── Leer parámetros de la query string ──────────────────────────────
 		mesParam = self.request.GET.get ('mes', '')
+		anioParam = self.request.GET.get ('anio', '')
 		busqueda = self.request.GET.get ('busqueda', '').strip ()
 
 		# ── Parsear mes ──────────────────────────────────────────────────────
@@ -61,6 +63,12 @@ class VistaMain (CrueRequiredMixin, TemplateView):
 		except ValueError:
 			mesSeleccionado = mesActual
 
+		# ── Parsear año ──────────────────────────────────────────────────────
+		try:
+			anioSeleccionado = int (anioParam) if anioParam else anioActual
+		except ValueError:
+			anioSeleccionado = anioActual
+
 		# ── Validar mes no mayor al mes actual ───────────────────────────────
 		if mesSeleccionado > mesActual:
 			erroresFiltro.append (
@@ -68,13 +76,23 @@ class VistaMain (CrueRequiredMixin, TemplateView):
 			)
 			mesSeleccionado = mesActual
 
+		# ── Validar año no mayor al actual ───────────────────────────────────
+		if anioSeleccionado > anioActual:
+			erroresFiltro.append (
+				f'Solo se permiten años hasta el actual ({anioActual}).'
+			)
+			anioSeleccionado = anioActual
+
 		contexto.update ({
 			'mesSeleccionado': mesSeleccionado,
+			'anioSeleccionado': anioSeleccionado,
 			'busqueda': busqueda,
 			'fechaActual': hoy,
 			'erroresFiltro': erroresFiltro,
 			'meses': NOMBRES_MESES,
 			'mesActual': mesActual,
+			'anioActual': anioActual,
+			'anios': list (range (anioActual, anioActual - 5, -1)),
 		})
 
 		return contexto
@@ -86,6 +104,7 @@ def _obtenerFiltros (request):
 	"""Extrae y valida los parámetros de filtro mes, anio y busqueda del request."""
 	hoy = datetime.date.today ()
 	mesActual = hoy.month
+	anioActual = hoy.year
 
 	try:
 		mes = int (request.GET.get ('mes', mesActual))
@@ -95,11 +114,20 @@ def _obtenerFiltros (request):
 	if mes < 1 or mes > 12:
 		mes = mesActual
 
+	try:
+		anio = int (request.GET.get ('anio', anioActual))
+	except (ValueError, TypeError):
+		anio = anioActual
+
+	# Validar que el año no sea mayor al actual
+	if anio > anioActual:
+		anio = anioActual
+
 	busqueda = request.GET.get ('busqueda', '').strip ()
 	if len (busqueda) > 100:
 		busqueda = busqueda [:100]
 
-	return mes, hoy.year, busqueda
+	return mes, anio, busqueda
 
 
 def _obtenerContextoTabla (mes, anio, busqueda='', orden='desc', pagina=1, porPagina=15):
@@ -370,7 +398,7 @@ class VistaReporteExcel (CrueRequiredMixin, View):
 			)
 
 		try:
-			bytesArchivo, nombreArchivo = generarExcel (queryset, mes)
+			bytesArchivo, nombreArchivo = generarExcel (queryset, mes, anio)
 		except Exception as exc:
 			logger.exception ('Error al generar el reporte Excel: %s', exc)
 			return render (request, 'crue_traslados/error_reporte.html', {

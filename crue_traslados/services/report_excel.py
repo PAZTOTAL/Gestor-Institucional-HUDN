@@ -26,7 +26,7 @@ ENCABEZADOS = [
 ]
 
 
-def generarExcel (queryset, mes):
+def generarExcel (queryset, mes, anio):
 	"""Genera un archivo Excel con los registros del queryset dado.
 
 	Crea un libro de trabajo con una hoja única que contiene los encabezados
@@ -105,7 +105,7 @@ def generarExcel (queryset, mes):
 
 	ahora = datetime.now()
 
-	fecha_actual = f"{ahora.year}-{meses[ahora.month]}-{ahora.day:02d}"
+	fecha_actual = f"{anio}-{meses[mes]}-{ahora.day:02d}"
 
 	nombreArchivo = f"reporte_traslados_{fecha_actual}.xlsx"
 

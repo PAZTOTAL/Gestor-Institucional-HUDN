@@ -66,8 +66,10 @@
 					</svg>
 				</button>
 				<div x-show="abierto" x-transition class="mt-1 ml-4 space-y-1">
+					{% url 'crue_traslados:reporte-excel' as reporte_excel_url %}
 					<a
-						href="{% url 'crue_traslados:reporte-excel' %}?mes={{ mesSeleccionado }}"
+						href="#"
+						onclick="this.href='{{ reporte_excel_url }}?mes=' + document.getElementById('id_mes').value + '&anio=' + document.getElementById('id_anio').value"
 						class="block px-3 py-2 rounded-md text-sm text-blue-200 hover:bg-blue-700 hover:text-white transition-colors"
 					>
 						📊 Excel
@@ -76,11 +78,13 @@
 			</div>
 			{# Colapsado: solo ícono de Reportes centrado #}
 			<div x-show="!sidebarAbierto" class="flex justify-center">
-				<a
-					href="{% url 'crue_traslados:reporte-excel' %}?mes={{ mesSeleccionado }}"
-					class="p-2 rounded-md text-blue-100 hover:bg-blue-700 hover:text-white transition-colors"
-					title="Reportes"
-				>
+				{% url 'crue_traslados:reporte-excel' as reporte_excel_url %}
+					<a
+						href="#"
+						onclick="this.href='{{ reporte_excel_url }}?mes=' + document.getElementById('id_mes').value + '&anio=' + document.getElementById('id_anio').value"
+						class="p-2 rounded-md text-blue-100 hover:bg-blue-700 hover:text-white transition-colors"
+						title="Reportes"
+					>
 					<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
 							d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414A1 1 0 0119 9.414V19a2 2 0 01-2 2z"/>
